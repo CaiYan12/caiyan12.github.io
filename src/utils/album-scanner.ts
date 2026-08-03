@@ -30,7 +30,7 @@ export function scanAlbums(): Album[] {
 				}));
 			return {
 				name: dir.name,
-				slug: encodeURIComponent(dir.name),
+				slug: dir.name, // 原始名称作为路由参数，Astro 会自动做 URL 编码
 				cover: photos[0]?.url ?? "",
 				photos,
 			};

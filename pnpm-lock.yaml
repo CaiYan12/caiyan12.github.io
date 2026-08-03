@@ -50,6 +50,9 @@ importers:
       dayjs:
         specifier: ^1.11.19
         version: 1.11.21
+      katex:
+        specifier: ^0.16.25
+        version: 0.16.47
       mdast-util-to-string:
         specifier: ^4.0.0
         version: 4.0.0

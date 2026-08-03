@@ -25,7 +25,7 @@ const albums = scanAlbums();
 				<div class="album-grid">
 					{albums.map((album) => (
 						<a
-							href={`/albums/${album.slug}/`}
+							href={`/albums/${encodeURIComponent(album.slug)}/`}
 							class="album-card"
 							title={`查看相册：${album.name}`}
 						>
