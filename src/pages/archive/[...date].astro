@@ -1,0 +1,63 @@
+---
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import PostCard from "../../components/layout/PostCard.astro";
+import Pagination from "../../components/layout/Pagination.astro";
+import { getCollection } from "astro:content";
+import { getSortedPosts } from "../../utils/content-utils";
+import dayjs from "dayjs";
+import { siteConfig } from "../../config";
+
+export async function getStaticPaths() {
+	const allPosts = await getCollection("posts");
+	// 按 YYYY-M 归档
+	const months = new Set<string>();
+	for (const p of allPosts) {
+		months.add(dayjs(p.data.published).format("YYYY-M"));
+	}
+	const paths: {
+		params: { date: string; page: string | undefined };
+		props: { label: string; posts: typeof allPosts; current: number; pages: number };
+	}[] = [];
+	for (const month of months) {
+		const posts = getSortedPosts(allPosts).filter(
+			(p) => !p.data.draft && dayjs(p.data.published).format("YYYY-M") === month,
+		);
+		const pages = Math.max(1, Math.ceil(posts.length / siteConfig.postsPerPage));
+		const [y, m] = month.split("-");
+		for (let i = 1; i <= pages; i++) {
+			paths.push({
+				params: { date: `${y}/${m}`, page: i === 1 ? undefined : `page/${i}` },
+				props: {
+					label: `${y}年${Number(m)}月`,
+					posts: posts.slice((i - 1) * siteConfig.postsPerPage, i * siteConfig.postsPerPage),
+					current: i,
+					pages,
+				},
+			});
+		}
+	}
+	return paths;
+}
+
+const { label, posts, current, pages } = Astro.props;
+---
+
+<MainGridLayout title={`归档：${label}`} description={`${label} 的文章归档`}>
+	<div class="page">
+		<header class="post-header">
+			<h2>
+				<i class="fa fa-archive" aria-hidden="true"></i>
+				归档：{label}
+				<span class="ml-2 text-sm font-normal text-gray-500">
+					共 {posts.length} 篇文章
+				</span>
+			</h2>
+		</header>
+	</div>
+
+	{posts.map((post) => (
+		<PostCard post={post} />
+	))}
+
+	<Pagination current={current} total={pages} urlTemplate="/archive/{n}/" />
+</MainGridLayout>

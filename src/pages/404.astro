@@ -1,0 +1,32 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+---
+
+<MainGridLayout title="404 页面未找到" description="你访问的页面不存在">
+	<div class="page">
+		<div class="error-404">
+			<div class="code">
+				<i class="fa fa-frown-o" aria-hidden="true"></i> 404
+			</div>
+			<div class="msg">
+				你访问的页面不存在，可能已被删除或移动。
+				<br />
+				你可以返回首页，或者搜索一下其他内容。
+			</div>
+			<div class="search-box">
+				<form method="get" action="/search/">
+					<input type="text" name="keyword" placeholder="搜搜更健康" />
+					<input type="submit" value="搜索" />
+				</form>
+			</div>
+			<div class="mt-8">
+				<a
+					href="/"
+					class="inline-block rounded border border-primary px-4 py-2 text-primary hover:bg-primary hover:text-white"
+				>
+					<i class="fa fa-home" aria-hidden="true"></i> 返回首页
+				</a>
+			</div>
+		</div>
+	</div>
+</MainGridLayout>

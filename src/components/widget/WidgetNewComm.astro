@@ -1,0 +1,32 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+import { recentComments } from "../../data/comments";
+import dayjs from "dayjs";
+---
+
+<WidgetLayout title="最新评论" icon="fa-comments-o">
+	{recentComments.length > 0 ? (
+		<ul>
+			{recentComments.slice(0, 6).map((c) => (
+				<li title={`${c.author}：${c.content}`}>
+					<i class="fa fa-angle-right" aria-hidden="true"></i>
+					<a
+						href={`/posts/${c.postSlug}/#comments`}
+						title={`${c.author} 在《${c.postTitle}》中的评论`}
+					>
+						{c.author}：{c.content.slice(0, 20)}
+						{c.content.length > 20 ? "…" : ""}
+					</a>
+					<span>{dayjs(c.date).format("MM-DD")}</span>
+				</li>
+			))}
+		</ul>
+	) : (
+		<ul>
+			<li>
+				<i class="fa fa-angle-right" aria-hidden="true"></i>
+				<a href="/guestbook/">来抢沙发吧</a>
+			</li>
+		</ul>
+	)}
+</WidgetLayout>

@@ -1,0 +1,92 @@
+---
+import "@fontsource-variable/jetbrains-mono";
+import "../styles/global.css";
+// Font Awesome 4 图标（原主题图标字体，class 名与原站完全一致）
+import "../styles/font-awesome.css";
+import { siteConfig } from "../config";
+import { getSortedPosts } from "../utils/content-utils";
+import { getCollection } from "astro:content";
+
+interface Props {
+	title?: string;
+	description?: string;
+	image?: string;
+}
+
+const { title, description, image } = Astro.props;
+
+const siteTitle = title
+	? `${title} - ${siteConfig.title}`
+	: siteConfig.title;
+const siteDescription = description ?? siteConfig.subtitle;
+
+// 站点统计（通过 data 属性传给客户端，避免 inline script 插值）
+const allPosts = await getCollection("posts");
+const posts = getSortedPosts(allPosts).filter((p) => !p.data.draft);
+const totalViews = posts.reduce((sum, p) => sum + p.data.views, 0);
+const totalComments = posts.reduce((sum, p) => sum + p.data.comments, 0);
+const totalDays = Math.floor(
+	(Date.now() - new Date(siteConfig.foundationTime).getTime()) / 86400000,
+);
+const siteStats = JSON.stringify({
+	totalPosts: posts.length,
+	totalViews,
+	totalComments,
+	totalDays,
+});
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="UTF-8" />
+		<title>{siteTitle}</title>
+		<meta name="keywords" content={siteConfig.keywords} />
+		<meta name="description" content={siteDescription} />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+		/>
+		<link rel="apple-touch-icon" href="/images/icon.png" />
+		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+		<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
+		<meta property="og:title" content={siteTitle} />
+		<meta property="og:description" content={siteDescription} />
+		<meta
+			property="og:image"
+			content={image ? new URL(image, siteConfig.siteURL) : "/images/avatar.png"}
+		/>
+		<meta property="og:type" content="website" />
+		<meta name="generator" content={Astro.generator} />
+		<slot name="head" />
+		<!-- 搜索索引：构建后 /_pagefind/ 存在，开发环境 404 静默跳过 -->
+		<script is:inline>
+			(function () {
+				var s = document.createElement("script");
+				s.src = "/_pagefind/pagefind.js";
+				s.async = true;
+				s.onerror = function () {};
+				document.head.appendChild(s);
+			})();
+		</script>
+	</head>
+	<body class="transition-swup-fade" data-site-stats={siteStats}>
+		<!-- 背景层：随机背景图 + 花纹遮罩（对应 footer.php 的 bg-image） -->
+		<img
+			class="bg-image"
+			src="/images/bg/{Math.floor(Math.random() * 3) + 1}.jpg"
+			alt=""
+		/>
+		<div class="bg-image-pattern"></div>
+
+		<slot />
+
+		<!-- 主题脚本：导航高亮、返回顶部、移动端菜单、双击滚动 -->
+		<script>
+			import { pagefindReady } from "../utils/theme-script";
+
+			// 全局初始化
+			pagefindReady();
+		</script>
+	</body>
+</html>

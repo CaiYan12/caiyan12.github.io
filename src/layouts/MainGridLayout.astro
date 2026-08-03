@@ -1,0 +1,94 @@
+---
+import Layout from "./Layout.astro";
+import Navbar from "../components/layout/Navbar.astro";
+import SideBar from "../components/layout/SideBar.astro";
+import Footer from "../components/layout/Footer.astro";
+import MMenu from "../components/layout/MMenu.astro";
+import BackToTop from "../components/control/BackToTop.astro";
+
+interface Props {
+	title?: string;
+	description?: string;
+	image?: string;
+	/** 是否显示侧栏 */
+	showSidebar?: boolean;
+}
+
+const { showSidebar = true } = Astro.props;
+---
+
+<Layout
+	title={Astro.props.title}
+	description={Astro.props.description}
+	image={Astro.props.image}
+>
+	<div id="lmhblog">
+		<Navbar />
+
+		<div class="wrapper-box">
+			<div id="container">
+				<div id="anitOut"></div>
+
+				<main
+					id="main"
+					class="transition-swup-fade"
+					data-pagefind-body
+					data-pagefind-filter="category"
+				>
+					<div
+						class:list={[
+							"main-grid",
+							showSidebar ? "" : "!grid-cols-1",
+						]}
+					>
+						<div id="content" role="main">
+							<slot />
+						</div>
+						{showSidebar && <SideBar />}
+					</div>
+				</main>
+			</div>
+
+			<div class="clear"></div>
+
+			<Footer />
+		</div>
+
+		<MMenu />
+		<BackToTop />
+
+		<!-- loading 动画（Swup 切换时显示） -->
+		<div class="colorful_loading_frame" id="loading-frame">
+			<div class="colorful_loading">
+				<i class="rect1"></i>
+				<i class="rect2"></i>
+				<i class="rect3"></i>
+				<i class="rect4"></i>
+				<i class="rect5"></i>
+			</div>
+		</div>
+	</div>
+</Layout>
+
+<script>
+	// Swup 切换动画时显示/隐藏 loading（与原主题 Pjax 手感受一致）
+	const frame = document.getElementById("loading-frame");
+	const show = () => {
+		if (frame) frame.style.display = "block";
+	};
+	const hide = () => {
+		if (frame) frame.style.display = "none";
+	};
+	type SwupLike = { on: (event: string, handler: () => void) => void };
+	const swup = window.Swup as SwupLike | undefined;
+	// 需要在 swup ready 后注册 hooks
+	const register = () => {
+		swup?.on("animation:out:start", show);
+		swup?.on("visit:end", hide);
+	};
+	if (swup) {
+		register();
+	} else {
+		window.addEventListener("swup:ready", () => register());
+	}
+</script>

@@ -1,0 +1,27 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import Search from "../components/control/Search.svelte";
+---
+
+<MainGridLayout title="站内搜索" description="搜索本站内容">
+	<div class="page">
+		<article role="article">
+			<header class="post-header">
+				<h2>
+					<i class="fa fa-search" aria-hidden="true"></i> 站内搜索
+				</h2>
+			</header>
+			<address class="post-metaa">
+				<i class="fa fa-home" aria-hidden="true"></i>
+				<a href="/" title="返回首页">首页</a>
+				&raquo;
+				<i class="fa fa-search" aria-hidden="true"></i>
+				站内搜索
+			</address>
+
+			<div class="post-context">
+				<Search client:only="svelte" />
+			</div>
+		</article>
+	</div>
+</MainGridLayout>

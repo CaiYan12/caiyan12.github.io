@@ -1,0 +1,23 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+import { getCollection } from "astro:content";
+import { getHotPosts } from "../../utils/content-utils";
+import dayjs from "dayjs";
+
+const allPosts = await getCollection("posts");
+const hotPosts = getHotPosts(allPosts, 8);
+---
+
+<WidgetLayout title="热门文章" icon="fa-fire">
+	<ul id="hotlog">
+		{hotPosts.map((post) => (
+			<li>
+				<i class="fa fa-angle-right" aria-hidden="true"></i>
+				<a href={`/posts/${post.id}/`} title={post.data.title}>
+					{post.data.title}
+				</a>
+				<span>{dayjs(post.data.published).format("MM-DD")}</span>
+			</li>
+		))}
+	</ul>
+</WidgetLayout>

@@ -1,0 +1,10 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+---
+
+<WidgetLayout title="搜索" icon="fa-search">
+	<form class="widget-search" name="keyform" method="get" action="/search/">
+		<input type="text" name="keyword" placeholder="搜搜更健康" aria-label="搜索关键词" />
+		<input type="submit" name="submit" value="搜索" />
+	</form>
+</WidgetLayout>

@@ -1,0 +1,53 @@
+---
+import { navBarConfig } from "../../config";
+import { getCollection } from "astro:content";
+import { getCategoryList } from "../../utils/content-utils";
+
+const allPosts = await getCollection("posts");
+const categories = getCategoryList(allPosts);
+const pathname = Astro.url.pathname;
+const isCurrent = (url: string) =>
+	pathname === url || (url !== "/" && pathname.startsWith(url.replace(/\/$/, "")));
+---
+
+<!-- 移动端全屏菜单（对应 #mmenu） -->
+<div id="mmenu-close" class="mmenu-close"></div>
+<nav id="mmenu" class="mmenu" role="navigation">
+	<div class="msearch">
+		<form name="keyform" method="get" action="/search/">
+			<input type="text" name="keyword" placeholder="搜搜更健康" />
+			<input type="submit" name="submit" value="搜索" />
+		</form>
+	</div>
+	<ul>
+		{navBarConfig.items.map((item) => (
+			<li class:list={[{ current: isCurrent(item.url) }]}>
+				<a href={item.url}>{item.name}</a>
+			</li>
+		))}
+		<li>
+			<a href="javascript:void(0)">附加功能</a>
+			<ul class="submenu">
+				{navBarConfig.extra.map((item) => (
+					<li>
+						<a href={item.url}>{item.name}</a>
+					</li>
+				))}
+			</ul>
+		</li>
+		{navBarConfig.showCategoryDropdown && categories.length > 0 && (
+			<li>
+				<a href="javascript:void(0)">文章分类</a>
+				<ul class="submenu">
+					{categories.map((cat) => (
+						<li>
+							<a href={`/category/${encodeURIComponent(cat.name)}/`}>
+								{cat.name}
+							</a>
+						</li>
+					))}
+				</ul>
+			</li>
+		)}
+	</ul>
+</nav>

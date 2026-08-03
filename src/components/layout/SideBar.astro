@@ -1,0 +1,36 @@
+---
+import WidgetBlogger from "../widget/WidgetBlogger.astro";
+import WidgetSearch from "../widget/WidgetSearch.astro";
+import WidgetSort from "../widget/WidgetSort.astro";
+import WidgetTag from "../widget/WidgetTag.astro";
+import WidgetArchive from "../widget/WidgetArchive.astro";
+import WidgetNewLog from "../widget/WidgetNewLog.astro";
+import WidgetHotLog from "../widget/WidgetHotLog.astro";
+import WidgetNewComm from "../widget/WidgetNewComm.astro";
+import WidgetLink from "../widget/WidgetLink.astro";
+import WidgetTwitter from "../widget/WidgetTwitter.astro";
+import WidgetCalendar from "../widget/WidgetCalendar.astro";
+import { sidebarConfig } from "../../config";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const widgetMap: Record<string, any> = {
+	blogger: WidgetBlogger,
+	search: WidgetSearch,
+	sort: WidgetSort,
+	tag: WidgetTag,
+	archive: WidgetArchive,
+	newlog: WidgetNewLog,
+	hotlog: WidgetHotLog,
+	newcomm: WidgetNewComm,
+	link: WidgetLink,
+	twitter: WidgetTwitter,
+	calendar: WidgetCalendar,
+};
+const widgets = sidebarConfig.widgets
+	.map((name) => widgetMap[name])
+	.filter(Boolean);
+---
+
+<aside id="sidebar" role="complementary">
+	{widgets.map((Comp) => <Comp />)}
+</aside>

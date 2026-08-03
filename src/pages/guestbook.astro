@@ -1,0 +1,30 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import Giscus from "../components/comment/Giscus.astro";
+---
+
+<MainGridLayout title="留言板" description="欢迎在留言板留下你的足迹">
+	<div class="page">
+		<article role="article">
+			<header class="post-header">
+				<h2>
+					<i class="fa fa-comments-o" aria-hidden="true"></i> 留言板
+				</h2>
+			</header>
+			<address class="post-metaa">
+				<i class="fa fa-home" aria-hidden="true"></i>
+				<a href="/" title="返回首页">首页</a>
+				&raquo;
+				<i class="fa fa-comments-o" aria-hidden="true"></i>
+				留言板
+			</address>
+
+			<div class="post-context">
+				<p>欢迎光临！有什么想说的都可以在这里留言，我会尽快回复。</p>
+			</div>
+
+			<!-- 留言板复用 Giscus 评论区 -->
+			<Giscus term="guestbook" />
+		</article>
+	</div>
+</MainGridLayout>

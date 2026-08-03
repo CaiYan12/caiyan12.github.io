@@ -1,0 +1,49 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { getCollection } from "astro:content";
+import { getCover } from "../utils/content-utils";
+
+const allPosts = await getCollection("posts");
+// 图片墙：展示所有文章的封面图（对应 page-images.php 的 imageswall 网格）
+const wallImages = allPosts
+	.filter((p) => !p.data.draft)
+	.slice(0, 40)
+	.map((post) => ({
+		title: post.data.title,
+		url: `/posts/${post.id}/`,
+		image: getCover(post),
+	}));
+---
+
+<MainGridLayout title="图片墙" description="文章封面图片墙">
+	<div class="page">
+		<article role="article">
+			<header class="post-header">
+				<h2>
+					<i class="fa fa-picture-o" aria-hidden="true"></i> 图片墙
+				</h2>
+			</header>
+			<address class="post-metaa">
+				<i class="fa fa-home" aria-hidden="true"></i>
+				<a href="/" title="返回首页">首页</a>
+				&raquo;
+				<i class="fa fa-picture-o" aria-hidden="true"></i>
+				图片墙
+			</address>
+
+			<div class="imageswall">
+				<div class="grid">
+					{wallImages.map((item) => (
+						<a href={item.url} title={item.title}>
+							<img
+								src={item.image}
+								alt={item.title}
+								loading="lazy"
+							/>
+						</a>
+					))}
+				</div>
+			</div>
+		</article>
+	</div>
+</MainGridLayout>

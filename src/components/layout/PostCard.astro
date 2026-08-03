@@ -1,0 +1,97 @@
+---
+import type { CollectionEntry } from "astro:content";
+import dayjs from "dayjs";
+import { getCover, getExcerpt, isNewPost } from "../../utils/content-utils";
+import { siteConfig } from "../../config";
+
+interface Props {
+	post: CollectionEntry<"posts">;
+	index?: number;
+}
+
+const { post } = Astro.props;
+const { title, published, category, author, views, comments } = post.data;
+const url = `/posts/${post.id}/`;
+const cover = getCover(post);
+const excerpt = getExcerpt(post, siteConfig.excerptLength);
+const showNew = isNewPost(post);
+const showHot = post.data.hotness >= 4;
+---
+
+<article class="post-list" role="article">
+	<header class="post-header">
+		<h2>
+			{post.data.pinned && (
+				<>
+					<span class="good-label">置顶</span>
+					<i class="good-arrow"></i>
+				</>
+			)}
+			{showNew && (
+				<>
+					<span class="new-label">近期更新</span>
+					<i class="new-arrow"></i>
+				</>
+			)}
+			{!post.data.pinned && showHot && comments >= 50 && (
+				<>
+					<span class="hot-label">热门</span>
+					<i class="hot-arrow"></i>
+				</>
+			)}
+			<a rel="bookmark" title={title} href={url}>
+				{title}
+			</a>
+		</h2>
+	</header>
+
+	<div class="post-meta">
+		<span class="pauthor">
+			<i class="fa fa-user" aria-hidden="true"></i>
+			{author}
+		</span>
+		<span class="ptime">
+			<i class="fa fa-calendar" aria-hidden="true"></i>
+			{dayjs(published).format("YYYY年MM月DD日")}
+		</span>
+		{category && (
+			<span class="pcate">
+				<i class="fa fa-folder-open-o" aria-hidden="true"></i>
+				<a
+					href={`/category/${encodeURIComponent(category)}/`}
+					title={`查看${category}下的全部文章`}
+				>
+					{category}
+				</a>
+			</span>
+		)}
+		<span class="pcomm">
+			<i class="fa fa-eye" aria-hidden="true"></i>
+			{views > 0 ? `${views}人围观` : "没人围观"}
+		</span>
+		<span class="pview">
+			<i class="fa fa-comments" aria-hidden="true"></i>
+			{comments > 0 ? (
+				<a title={`查看《${title}》的吐槽`} href={`${url}#comments`}>
+					{comments}次吐槽
+				</a>
+			) : (
+				<a title="抢沙发" href={`${url}#comments`}>
+					抢沙发
+				</a>
+			)}
+		</span>
+	</div>
+
+	<div class="post-content">
+		<div class="post-thumbnail">
+			<a href={url}>
+				<img src={cover} alt={title} title={title} loading="lazy" />
+			</a>
+		</div>
+		<div class="post-excerpt">{excerpt}</div>
+		<div class="goon">
+			<a href={url}>继续阅读&raquo;</a>
+		</div>
+	</div>
+</article>

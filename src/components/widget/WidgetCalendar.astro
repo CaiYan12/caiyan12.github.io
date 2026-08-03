@@ -1,0 +1,60 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+import { getCollection } from "astro:content";
+import dayjs from "dayjs";
+import "dayjs/locale/zh-cn";
+
+dayjs.locale("zh-cn");
+
+const allPosts = await getCollection("posts");
+// 只统计本月有文章的日子
+const now = dayjs();
+const monthPosts = new Map<string, string[]>();
+for (const post of allPosts) {
+	const d = dayjs(post.data.published);
+	if (d.format("YYYY-MM") === now.format("YYYY-MM")) {
+		const day = d.format("D");
+		if (!monthPosts.has(day)) monthPosts.set(day, []);
+		monthPosts.get(day)!.push(post.id);
+	}
+}
+
+// 构建日历网格：当月第一天前补空位
+const firstDay = now.startOf("month");
+const offset = firstDay.day(); // 0=周日
+const daysInMonth = now.daysInMonth();
+const cells: (number | null)[] = [
+	...Array.from({ length: offset }, () => null),
+	...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+];
+const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
+---
+
+<WidgetLayout title="日历" icon="fa-calendar">
+	<div class="px-2 py-1 text-center">
+		<div class="mb-1 font-bold">{now.format("YYYY年M月")}</div>
+		<div class="grid grid-cols-7 text-xs text-gray-500">
+			{weekdays.map((w) => (
+				<div>{w}</div>
+			))}
+		</div>
+		<div class="grid grid-cols-7 text-sm">
+			{cells.map((day) => {
+				if (day === null) return <div></div>;
+				const dayStr = String(day);
+				const hasPosts = monthPosts.has(dayStr);
+				return hasPosts ? (
+					<a
+						href={`/archive/${now.format("YYYY-M")}/${day}/`}
+						class="m-0.5 rounded bg-primary/15 text-primary hover:bg-primary hover:text-white"
+						title="当天有文章"
+					>
+						{day}
+					</a>
+				) : (
+					<div class="m-0.5 text-gray-700">{day}</div>
+				);
+			})}
+		</div>
+	</div>
+</WidgetLayout>

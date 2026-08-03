@@ -1,0 +1,56 @@
+---
+import { slideshowConfig } from "../../config";
+
+const { slides, interval } = slideshowConfig;
+---
+
+{slideshowConfig.enable && slides.length > 0 && (
+	<div class="slideshow" id="slideshow" data-interval={interval}>
+		<div class="slides">
+			{slides.map((s) => (
+				<a href="/">
+					<img src={s.image} alt="" loading="lazy" />
+				</a>
+			))}
+		</div>
+		<div class="dots">
+			{slides.map((_, i) => (
+				<span class:list={[i === 0 && "active"]} data-index={i}></span>
+			))}
+		</div>
+	</div>
+)}
+
+<script>
+	// 首页幻灯片轮播（仅首页存在该元素）
+	const el = document.getElementById("slideshow") as HTMLElement | null;
+	if (el) {
+		const slidesEl = el.querySelector(".slides") as HTMLElement;
+		const dots = [...el.querySelectorAll<HTMLElement>(".dots span")];
+		const count = dots.length;
+		let current = 0;
+		let timer: number | undefined;
+
+		const go = (index: number) => {
+			current = (index + count) % count;
+			slidesEl.style.transform = `translateX(-${current * 100}%)`;
+			dots.forEach((d, i) => d.classList.toggle("active", i === current));
+		};
+
+		const start = () => {
+			stop();
+			timer = window.setInterval(() => go(current + 1), Number(el.dataset.interval) || 4000);
+		};
+		const stop = () => window.clearInterval(timer);
+
+		dots.forEach((d) => {
+			d.addEventListener("click", () => {
+				go(Number(d.dataset.index));
+				start();
+			});
+		});
+		el.addEventListener("mouseenter", stop);
+		el.addEventListener("mouseleave", start);
+		start();
+	}
+</script>

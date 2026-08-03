@@ -1,0 +1,62 @@
+---
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import PostCard from "../../components/layout/PostCard.astro";
+import Pagination from "../../components/layout/Pagination.astro";
+import { getCollection } from "astro:content";
+import { getCategoryList, getSortedPosts } from "../../utils/content-utils";
+import { siteConfig } from "../../config";
+
+export async function getStaticPaths() {
+	const allPosts = await getCollection("posts");
+	const categories = getCategoryList(allPosts);
+	const paths: {
+		params: { category: string; page: string | undefined };
+		props: {
+			name: string;
+			posts: typeof allPosts;
+			current: number;
+			pages: number;
+		};
+	}[] = [];
+	for (const cat of categories) {
+		const posts = getSortedPosts(allPosts).filter(
+			(p) => !p.data.draft && p.data.category === cat.name,
+		);
+		const pages = Math.max(1, Math.ceil(posts.length / siteConfig.postsPerPage));
+		for (let i = 1; i <= pages; i++) {
+			paths.push({
+				params: { category: cat.name, page: i === 1 ? undefined : `page/${i}` },
+				props: {
+					name: cat.name,
+					posts: posts.slice((i - 1) * siteConfig.postsPerPage, i * siteConfig.postsPerPage),
+					current: i,
+					pages,
+				},
+			});
+		}
+	}
+	return paths;
+}
+
+const { name, posts, current, pages } = Astro.props;
+---
+
+<MainGridLayout title={`分类：${name}`} description={`分类 ${name} 下的全部文章`}>
+	<div class="page">
+		<header class="post-header">
+			<h2>
+				<i class="fa fa-folder-open-o" aria-hidden="true"></i>
+				分类：{name}
+				<span class="ml-2 text-sm font-normal text-gray-500">
+					共 {posts.length} 篇文章
+				</span>
+			</h2>
+		</header>
+	</div>
+
+	{posts.map((post) => (
+		<PostCard post={post} />
+	))}
+
+	<Pagination current={current} total={pages} urlTemplate={`/category/${encodeURIComponent(name)}/page/{n}/`} />
+</MainGridLayout>

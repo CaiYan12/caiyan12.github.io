@@ -1,0 +1,42 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { siteConfig } from "../config";
+import { getCollection, render } from "astro:content";
+
+const specPages = await getCollection("spec");
+const aboutPage = specPages.find((p) => p.id === "about");
+const aboutContent = aboutPage ? await render(aboutPage) : null;
+---
+
+<MainGridLayout title="关于我" description={`关于 ${siteConfig.author}`}>
+	<div class="page">
+		<article role="article">
+			<header class="post-header">
+				<h2>
+					<i class="fa fa-user" aria-hidden="true"></i> 关于我
+				</h2>
+			</header>
+			<address class="post-metaa">
+				<i class="fa fa-home" aria-hidden="true"></i>
+				<a href="/" title="返回首页">首页</a>
+				&raquo;
+				<i class="fa fa-user" aria-hidden="true"></i>
+				关于我
+			</address>
+
+			{aboutContent ? (
+				<div class="post-context prose">
+					<aboutContent.Content />
+				</div>
+			) : (
+				<div class="post-context">
+					<p>
+						你好！我是 <b>{siteConfig.author}</b>，这里是
+						<b>{siteConfig.title}</b>。
+					</p>
+					<p>关于页面内容在 <code>src/content/spec/about.md</code> 中编辑。</p>
+				</div>
+			)}
+		</article>
+	</div>
+</MainGridLayout>

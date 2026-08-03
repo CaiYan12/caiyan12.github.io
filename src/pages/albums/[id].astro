@@ -1,0 +1,54 @@
+---
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import { scanAlbums } from "../../utils/album-scanner";
+
+export async function getStaticPaths() {
+	const albums = scanAlbums();
+	return albums.map((album) => ({
+		params: { id: album.slug },
+		props: { album },
+	}));
+}
+
+const { album } = Astro.props;
+---
+
+<MainGridLayout title={`相册：${album.name}`} description={`相册 ${album.name}`}>
+	<div class="page">
+		<article role="article">
+			<header class="post-header">
+				<h2>
+					<i class="fa fa-camera-retro" aria-hidden="true"></i>
+					相册：{album.name}
+				</h2>
+			</header>
+			<address class="post-metaa">
+				<i class="fa fa-home" aria-hidden="true"></i>
+				<a href="/" title="返回首页">首页</a>
+				&raquo;
+				<i class="fa fa-camera-retro" aria-hidden="true"></i>
+				<a href="/albums/" title="返回相册列表">相册图库</a>
+				&raquo;
+				<i class="fa fa-clock-o" aria-hidden="true"></i>
+				{album.name}
+			</address>
+
+			<div class="photo-grid">
+				{album.photos.map((photo) => (
+					<a
+						href={photo.url}
+						data-fancybox="album"
+						data-caption={photo.name}
+						title={photo.name}
+					>
+						<img
+							src={photo.url}
+							alt={photo.name}
+							loading="lazy"
+						/>
+					</a>
+				))}
+			</div>
+		</article>
+	</div>
+</MainGridLayout>

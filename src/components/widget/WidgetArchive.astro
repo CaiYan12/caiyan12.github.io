@@ -1,0 +1,22 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+import { getCollection } from "astro:content";
+import { getArchiveList } from "../../utils/content-utils";
+
+const allPosts = await getCollection("posts");
+const archives = getArchiveList(allPosts);
+---
+
+<WidgetLayout title="文章归档" icon="fa-archive">
+	<ul id="record">
+		{archives.map(([month, monthPosts]) => (
+			<li>
+				<i class="fa fa-angle-right" aria-hidden="true"></i>
+				<a href={`/archive/${month.replace("年", "-").replace("月", "")}/`}>
+					{month}
+				</a>
+				<span>{monthPosts.length}</span>
+			</li>
+		))}
+	</ul>
+</WidgetLayout>

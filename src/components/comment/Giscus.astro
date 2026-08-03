@@ -1,0 +1,46 @@
+---
+import { commentConfig } from "../../config";
+
+interface Props {
+	/** 页面唯一标识（默认用当前路径） */
+	term?: string;
+}
+
+const { term } = Astro.props;
+const pageTerm = term ?? Astro.url.pathname;
+---
+
+{commentConfig.enable ? (
+	<section id="comments" class="giscus-wrap">
+		<h3>
+			<i class="fa fa-comments-o" aria-hidden="true"></i> 评论区
+		</h3>
+		<div
+			class="giscus"
+			data-repo={commentConfig.repo}
+			data-repo-id={commentConfig.repoId}
+			data-category={commentConfig.category}
+			data-category-id={commentConfig.categoryId}
+			data-mapping={commentConfig.mapping}
+			data-strict="0"
+			data-reactions-enabled={commentConfig.reactionsEnabled}
+			data-emit-metadata={commentConfig.emitMetadata}
+			data-input-position={commentConfig.inputPosition}
+			data-theme="preferred_color_scheme"
+			data-lang={commentConfig.lang}
+			data-loading="lazy"
+			{...{ "data-term": pageTerm }}
+		></div>
+	</section>
+) : (
+	<section id="comments">
+		<h3>
+			<i class="fa fa-comments-o" aria-hidden="true"></i> 评论区
+		</h3>
+		<p class="nop">
+			<i class="fa fa-pencil" aria-hidden="true"></i>
+			评论系统尚未启用——部署到 GitHub + Vercel 后，在
+			<code>src/config.ts</code> 中填入 Giscus 仓库信息即可开启。
+		</p>
+	</section>
+)}

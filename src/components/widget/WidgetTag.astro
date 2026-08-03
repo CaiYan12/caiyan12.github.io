@@ -1,0 +1,30 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+import { getCollection } from "astro:content";
+import { getTagList } from "../../utils/content-utils";
+
+const allPosts = await getCollection("posts");
+const tags = getTagList(allPosts);
+/** 按数量分 4 档字号（对应原主题标签云大小） */
+const maxCount = Math.max(...tags.map((t) => t.count), 1);
+const sizeClass = (count: number) => {
+	const ratio = count / maxCount;
+	if (ratio >= 0.75) return "size-4";
+	if (ratio >= 0.5) return "size-3";
+	if (ratio >= 0.25) return "size-2";
+	return "size-1";
+};
+---
+
+<WidgetLayout title="标签云" icon="fa-tags">
+	<div class="widget-tags">
+		{tags.map((tag) => (
+			<a
+				href={`/tag/${encodeURIComponent(tag.name)}/`}
+				class={sizeClass(tag.count)}
+			>
+				{tag.name}
+			</a>
+		))}
+	</div>
+</WidgetLayout>

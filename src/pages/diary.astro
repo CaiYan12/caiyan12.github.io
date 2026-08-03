@@ -1,0 +1,63 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { diary } from "../data/diary";
+import dayjs from "dayjs";
+---
+
+<MainGridLayout title="微言碎语" description="WindowsIt 的微言碎语">
+	<div class="page">
+		<article role="article">
+			<header>
+				<h2 class="post-header">
+					<i class="fa fa-twitter" aria-hidden="true"></i> 微言碎语
+				</h2>
+			</header>
+			<address class="post-metaa">
+				<a href="/" title="返回首页">
+					<i class="fa fa-home" aria-hidden="true"></i>首页
+				</a>
+				&raquo;
+				<i class="fa fa-file-text-o" aria-hidden="true"></i>
+				微言碎语
+			</address>
+
+			<div class="tw">
+				<div class="plus"></div>
+				<div class="plus2"></div>
+				<ul class="archives-monthlisting">
+					{diary.map((item) => (
+						<li>
+							<em1></em1>
+							<div class="avatar">
+								{dayjs(item.date).format("M月D日")}
+								<br />
+								{dayjs(item.date).format("HH:mm")}
+							</div>
+							<div class="tw-content">
+								<em></em>
+								{item.content}
+								{item.image && (
+									<br />
+									<a
+										title="查看图片"
+										href={item.image}
+										target="_blank"
+									>
+										<img
+											class="timg"
+											src={item.image}
+											alt="说说配图"
+										/>
+									</a>
+								)}
+								<div class="status-wall-meta">
+									<span>{item.date}</span>
+								</div>
+							</div>
+						</li>
+					))}
+				</ul>
+			</div>
+		</article>
+	</div>
+</MainGridLayout>
