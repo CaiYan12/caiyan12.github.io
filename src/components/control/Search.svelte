@@ -21,7 +21,8 @@
 		if (loaded || pagefind) return;
 		loaded = true;
 		try {
-			pagefind = await (window as any).pagefind;
+			const pagefindPath = "/pagefind/pagefind.js";
+			pagefind = await import(/* @vite-ignore */ pagefindPath);
 		} catch {
 			// 开发模式没有索引，静默降级
 		}
@@ -79,6 +80,7 @@
 		<input
 			type="text"
 			bind:value={keyword}
+			aria-label="搜索关键词"
 			placeholder="搜搜更健康"
 			class="h-9 flex-1 rounded border border-line bg-white px-3 text-sm outline-none focus:border-primary"
 		/>

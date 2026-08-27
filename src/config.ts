@@ -15,6 +15,8 @@ export const siteConfig = {
 	author: "WindowsIt",
 	/** 头像路径 */
 	avatar: "/images/avatar.png",
+	/** Colorful 桌面端圆形站点标志（对应 options.php 的 logo） */
+	desktopLogo: "/images/icon.png",
 	/** 时区 */
 	timezone: "Asia/Shanghai",
 	/** 语言 */
@@ -41,13 +43,10 @@ export const navBarConfig = {
 		{ name: "友情链接", url: "/friends/", type: "friends" },
 		{ name: "留言板", url: "/guestbook/", type: "guestbook" },
 	],
-	/** 附加功能下拉菜单（对应原主题"附加功能"） */
+	/** 附加功能下拉菜单（对应原主题"附加功能"，仅收与主菜单不重复的项） */
 	extra: [
-		{ name: "微言碎语", url: "/diary/" },
 		{ name: "相册图库", url: "/albums/" },
 		{ name: "图片墙", url: "/images/" },
-		{ name: "友情链接", url: "/friends/" },
-		{ name: "留言板", url: "/guestbook/" },
 	],
 	/** 是否显示"文章分类"下拉 */
 	showCategoryDropdown: true,
@@ -70,7 +69,6 @@ export const sidebarConfig = {
 		"tag",
 		"archive",
 		"newlog",
-		"hotlog",
 		"newcomm",
 		"link",
 		"twitter",

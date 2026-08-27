@@ -8,7 +8,12 @@ const aboutPage = specPages.find((p) => p.id === "about");
 const aboutContent = aboutPage ? await render(aboutPage) : null;
 ---
 
-<MainGridLayout title="关于我" description={`关于 ${siteConfig.author}`}>
+<MainGridLayout
+	title="关于我"
+	description={`关于 ${siteConfig.author}`}
+	showSidebar={false}
+	searchIndex
+>
 	<div class="page">
 		<article role="article">
 			<header class="post-header">

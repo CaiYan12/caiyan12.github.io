@@ -13,13 +13,15 @@ const isCurrent = (url: string) =>
 <!-- 移动端全屏菜单（对应 #mmenu） -->
 <div id="mmenu-close" class="mmenu-close"></div>
 <nav id="mmenu" class="mmenu" role="navigation">
-	<div class="msearch">
-		<form name="keyform" method="get" action="/search/">
-			<input type="text" name="keyword" placeholder="搜搜更健康" />
-			<input type="submit" name="submit" value="搜索" />
-		</form>
-	</div>
 	<ul>
+		<li>
+			<div class="msearch">
+				<form name="keyform" method="get" action="/search/">
+					<input type="text" name="keyword" placeholder="搜搜更健康" />
+					<input type="submit" name="submit" value="搜索" />
+				</form>
+			</div>
+		</li>
 		{navBarConfig.items.map((item) => (
 			<li class:list={[{ current: isCurrent(item.url) }]}>
 				<a href={item.url}>{item.name}</a>
@@ -49,5 +51,10 @@ const isCurrent = (url: string) =>
 				</ul>
 			</li>
 		)}
+		<li>
+			<button id="close-nav" class="close-nav" type="button" aria-label="关闭导航菜单">
+				<i class="fa fa-times" aria-hidden="true"></i>
+			</button>
+		</li>
 	</ul>
 </nav>

@@ -1,6 +1,8 @@
 ---
 import "@fontsource-variable/jetbrains-mono";
 import "../styles/global.css";
+// Markdown 扩展组件样式（admonition / spoiler / github-card / mermaid）
+import "../styles/markdown-extended.css";
 // Font Awesome 4 图标（原主题图标字体，class 名与原站完全一致）
 import "../styles/font-awesome.css";
 import { siteConfig } from "../config";
@@ -22,7 +24,7 @@ const siteDescription = description ?? siteConfig.subtitle;
 
 // 站点统计（通过 data 属性传给客户端，避免 inline script 插值）
 const allPosts = await getCollection("posts");
-const posts = getSortedPosts(allPosts).filter((p) => !p.data.draft);
+const posts = getSortedPosts(allPosts);
 const totalViews = posts.reduce((sum, p) => sum + p.data.views, 0);
 const totalComments = posts.reduce((sum, p) => sum + p.data.comments, 0);
 const totalDays = Math.floor(
@@ -34,6 +36,7 @@ const siteStats = JSON.stringify({
 	totalComments,
 	totalDays,
 });
+const backgroundImage = `/images/bg/${Math.floor(Math.random() * 3) + 1}.jpg`;
 ---
 
 <!doctype html>
@@ -45,12 +48,13 @@ const siteStats = JSON.stringify({
 		<meta name="description" content={siteDescription} />
 		<meta
 			name="viewport"
-			content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+			content="width=device-width, initial-scale=1.0"
 		/>
 		<link rel="apple-touch-icon" href="/images/icon.png" />
 		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
 		<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
 		<meta property="og:title" content={siteTitle} />
+		<meta data-pagefind-meta="title[content]" content={siteTitle} />
 		<meta property="og:description" content={siteDescription} />
 		<meta
 			property="og:image"
@@ -59,22 +63,12 @@ const siteStats = JSON.stringify({
 		<meta property="og:type" content="website" />
 		<meta name="generator" content={Astro.generator} />
 		<slot name="head" />
-		<!-- 搜索索引：构建后 /_pagefind/ 存在，开发环境 404 静默跳过 -->
-		<script is:inline>
-			(function () {
-				var s = document.createElement("script");
-				s.src = "/_pagefind/pagefind.js";
-				s.async = true;
-				s.onerror = function () {};
-				document.head.appendChild(s);
-			})();
-		</script>
 	</head>
 	<body class="transition-swup-fade" data-site-stats={siteStats}>
 		<!-- 背景层：随机背景图 + 花纹遮罩（对应 footer.php 的 bg-image） -->
 		<img
 			class="bg-image"
-			src="/images/bg/{Math.floor(Math.random() * 3) + 1}.jpg"
+			src={backgroundImage}
 			alt=""
 		/>
 		<div class="bg-image-pattern"></div>

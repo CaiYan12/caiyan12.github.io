@@ -12,7 +12,7 @@ const archives = getArchiveList(allPosts);
 		{archives.map(([month, monthPosts]) => (
 			<li>
 				<i class="fa fa-angle-right" aria-hidden="true"></i>
-				<a href={`/archive/${month.replace("年", "-").replace("月", "")}/`}>
+				<a href={`/archive/${month.replace("年", "/").replace("月", "")}/`}>
 					{month}
 				</a>
 				<span>{monthPosts.length}</span>

@@ -1,23 +1,70 @@
 ---
-import WidgetLayout from "./WidgetLayout.astro";
 import { getCollection } from "astro:content";
-import { getNewPosts } from "../../utils/content-utils";
-import dayjs from "dayjs";
+import { getHotPosts, getNewPosts, isPublicPost } from "../../utils/content-utils";
 
-const allPosts = await getCollection("posts");
+const allPosts = (await getCollection("posts")).filter(isPublicPost);
 const newPosts = getNewPosts(allPosts, 8);
+const hotPosts = getHotPosts(allPosts, 8);
+const surprisePosts = [...allPosts].sort((a, b) => a.id.localeCompare(b.id)).reverse().slice(0, 8);
+const panels = [newPosts, hotPosts, surprisePosts];
 ---
 
-<WidgetLayout title="最新文章" icon="fa-file-text-o">
-	<ul id="newlog">
-		{newPosts.map((post) => (
-			<li>
-				<i class="fa fa-angle-right" aria-hidden="true"></i>
-				<a href={`/posts/${post.id}/`} title={post.data.title}>
-					{post.data.title}
-				</a>
-				<span>{dayjs(post.data.published).format("MM-DD")}</span>
+<div class="widget tab-widget" data-tab-widget>
+	<div class="tab_nav">
+		<ul role="tablist" aria-label="文章推荐">
+			<li class="hover" role="tab" tabindex="0" aria-selected="true" data-tab="0">
+				<i class="fa fa-paint-brush" aria-hidden="true"></i>最新
 			</li>
+			<li role="tab" tabindex="0" aria-selected="false" data-tab="1">
+				<i class="fa fa-fire" aria-hidden="true"></i>热门推荐
+			</li>
+			<li role="tab" tabindex="0" aria-selected="false" data-tab="2">
+				<i class="fa fa-random" aria-hidden="true"></i>手气不错
+			</li>
+		</ul>
+		<div class="clear"></div>
+	</div>
+	<div class="tab_box">
+		{panels.map((posts, panelIndex) => (
+			<div class:list={[panelIndex !== 0 && "tab-panel-hidden"]} data-panel={panelIndex}>
+				<ul>
+					{posts.map((post, index) => (
+						<li>
+							<em class={index === 0 ? "hotone" : index === 1 ? "hottwo" : index === 2 ? "hotthree" : "hotSoSo"}>
+								{index + 1}
+							</em>
+							<a href={`/posts/${post.id}/`} title={post.data.title}>{post.data.title}</a>
+						</li>
+					))}
+				</ul>
+			</div>
 		))}
-	</ul>
-</WidgetLayout>
+	</div>
+</div>
+
+<script>
+	function initSidebarTabs() {
+		document.querySelectorAll<HTMLElement>("[data-tab-widget]").forEach((widget) => {
+			if (widget.dataset.initialized === "true") return;
+			widget.dataset.initialized = "true";
+			const tabs = [...widget.querySelectorAll<HTMLElement>("[data-tab]")];
+			const panels = [...widget.querySelectorAll<HTMLElement>("[data-panel]")];
+			const activate = (index: number) => {
+				tabs.forEach((tab, tabIndex) => {
+					tab.classList.toggle("hover", tabIndex === index);
+					tab.setAttribute("aria-selected", String(tabIndex === index));
+				});
+				panels.forEach((panel, panelIndex) => panel.classList.toggle("tab-panel-hidden", panelIndex !== index));
+			};
+			tabs.forEach((tab) => {
+				const open = () => activate(Number(tab.dataset.tab));
+				tab.addEventListener("click", open);
+				tab.addEventListener("keydown", (event) => {
+					if (event.key === "Enter" || event.key === " ") open();
+				});
+			});
+		});
+	}
+	initSidebarTabs();
+	document.addEventListener("colorful:page:loaded", initSidebarTabs);
+</script>

@@ -12,9 +12,11 @@ interface Props {
 	image?: string;
 	/** 是否显示侧栏 */
 	showSidebar?: boolean;
+	/** 是否将当前页面正文加入 Pagefind 索引 */
+	searchIndex?: boolean;
 }
 
-const { showSidebar = true } = Astro.props;
+const { showSidebar = true, searchIndex = false } = Astro.props;
 ---
 
 <Layout
@@ -25,39 +27,36 @@ const { showSidebar = true } = Astro.props;
 	<div id="lmhblog">
 		<Navbar />
 
-		<div class="wrapper-box">
-			<div id="container">
-				<div id="anitOut"></div>
-
-				<main
-					id="main"
-					class="transition-swup-fade"
-					data-pagefind-body
-					data-pagefind-filter="category"
-				>
-					<div
-						class:list={[
-							"main-grid",
-							showSidebar ? "" : "!grid-cols-1",
-						]}
-					>
-						<div id="content" role="main">
+		<div id="wrapper" class="wrapper-box">
+			<main
+				id="main"
+				class="transition-swup-fade"
+			>
+				<div id="container">
+					<div id="anitOut"></div>
+					<div class:list={["main-grid", !showSidebar && "main-grid-full"]}>
+						<div
+							id="content"
+							role="main"
+							data-pagefind-body={searchIndex ? true : undefined}
+						>
 							<slot />
 						</div>
 						{showSidebar && <SideBar />}
 					</div>
-				</main>
-			</div>
+				</div>
+			</main>
 
 			<div class="clear"></div>
-
-			<Footer />
+			<BackToTop />
 		</div>
 
+		<Footer />
 		<MMenu />
-		<BackToTop />
+		<div id="totop" class="totop" aria-hidden="true">
+			<i class="fa">&#61610;</i>
+		</div>
 
-		<!-- loading 动画（Swup 切换时显示） -->
 		<div class="colorful_loading_frame" id="loading-frame">
 			<div class="colorful_loading">
 				<i class="rect1"></i>
@@ -71,7 +70,6 @@ const { showSidebar = true } = Astro.props;
 </Layout>
 
 <script>
-	// Swup 切换动画时显示/隐藏 loading（与原主题 Pjax 手感受一致）
 	const frame = document.getElementById("loading-frame");
 	const show = () => {
 		if (frame) frame.style.display = "block";
@@ -79,16 +77,6 @@ const { showSidebar = true } = Astro.props;
 	const hide = () => {
 		if (frame) frame.style.display = "none";
 	};
-	type SwupLike = { on: (event: string, handler: () => void) => void };
-	const swup = window.Swup as SwupLike | undefined;
-	// 需要在 swup ready 后注册 hooks
-	const register = () => {
-		swup?.on("animation:out:start", show);
-		swup?.on("visit:end", hide);
-	};
-	if (swup) {
-		register();
-	} else {
-		window.addEventListener("swup:ready", () => register());
-	}
+	document.addEventListener("astro:before-swap", show);
+	document.addEventListener("astro:page-load", hide);
 </script>

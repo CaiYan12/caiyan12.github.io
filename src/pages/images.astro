@@ -1,21 +1,23 @@
 ---
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getCollection } from "astro:content";
-import { getCover } from "../utils/content-utils";
+import { getCover, isPublicPost } from "../utils/content-utils";
+import dayjs from "dayjs";
 
 const allPosts = await getCollection("posts");
 // 图片墙：展示所有文章的封面图（对应 page-images.php 的 imageswall 网格）
 const wallImages = allPosts
-	.filter((p) => !p.data.draft)
+	.filter(isPublicPost)
 	.slice(0, 40)
 	.map((post) => ({
 		title: post.data.title,
 		url: `/posts/${post.id}/`,
 		image: getCover(post),
+		published: post.data.published,
 	}));
 ---
 
-<MainGridLayout title="图片墙" description="文章封面图片墙">
+<MainGridLayout title="图片墙" description="文章封面图片墙" showSidebar={false}>
 	<div class="page">
 		<article role="article">
 			<header class="post-header">
@@ -34,12 +36,17 @@ const wallImages = allPosts
 			<div class="imageswall">
 				<div class="grid">
 					{wallImages.map((item) => (
-						<a href={item.url} title={item.title}>
+						<a class="image-card" href={item.url} title={item.title}>
+							<span class="imgtext">{item.title}</span>
 							<img
 								src={item.image}
 								alt={item.title}
 								loading="lazy"
 							/>
+							<span class="meta">
+								<i class="fa fa-calendar" aria-hidden="true"></i>
+								{dayjs(item.published).format("YYYY年MM月DD日")}
+							</span>
 						</a>
 					))}
 				</div>

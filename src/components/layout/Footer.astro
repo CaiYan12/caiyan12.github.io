@@ -3,6 +3,13 @@ import { siteConfig, footerConfig } from "../../config";
 
 const startYear = new Date(siteConfig.foundationTime).getFullYear();
 const currentYear = new Date().getFullYear();
+// 构建期直接计算运行天数（客户端脚本因执行时序读不到 window.__siteData）
+const totalDays = Math.max(
+	1,
+	Math.floor(
+		(Date.now() - new Date(siteConfig.foundationTime).getTime()) / 86400000,
+	),
+);
 ---
 
 <footer id="footer" class="site-footer" role="contentinfo">
@@ -10,7 +17,7 @@ const currentYear = new Date().getFullYear();
 		<i class="fa fa-html5" aria-hidden="true"></i>
 		Copyright&nbsp;©&nbsp;{startYear}-{currentYear}&nbsp;{siteConfig.title}
 		<div class="copyright">
-			&nbsp;|&nbsp;勉强运行：<span id="runtime-days">…</span>天&nbsp;|&nbsp;
+			&nbsp;|&nbsp;勉强运行：<span id="runtime-days">{totalDays}</span>天&nbsp;|&nbsp;
 			{siteConfig.icp && (
 				<>
 					<a href="http://www.miibeian.gov.cn" target="_blank">
@@ -31,10 +38,3 @@ const currentYear = new Date().getFullYear();
 		</div>
 	</address>
 </footer>
-
-<script>
-	const runtimeEl = document.getElementById("runtime-days");
-	if (runtimeEl && window.__siteData) {
-		runtimeEl.textContent = String(window.__siteData.totalDays);
-	}
-</script>

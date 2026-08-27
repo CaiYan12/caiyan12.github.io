@@ -7,8 +7,9 @@ import { toString } from "mdast-util-to-string";
 const DEFAULT_LENGTH = 120;
 
 function plainText(node) {
-	// 跳过代码块、图表等不需要计入摘要的节点
+	// 跳过代码块、数学式与叶子指令（::github{...} 等无正文语义的语法），不计入摘要
 	if (node.type === "code" || node.type === "math") return "";
+	if (node.type === "leafDirective") return "";
 	return toString(node);
 }
 
@@ -19,6 +20,6 @@ export function remarkExcerpt(options = {}) {
 		const text = plainText(tree).replace(/\s+/g, " ").trim();
 		const excerpt =
 			text.length > length ? text.slice(0, length) + "…" : text;
-		file.data.excerpt = excerpt;
+		file.data.astro.frontmatter.excerpt = excerpt;
 	};
 }

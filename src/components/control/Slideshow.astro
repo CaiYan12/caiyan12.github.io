@@ -1,51 +1,77 @@
 ---
+import { getCollection } from "astro:content";
 import { slideshowConfig } from "../../config";
+import { getSortedPosts } from "../../utils/content-utils";
 
-const { slides, interval } = slideshowConfig;
+const allPosts = await getCollection("posts");
+const posts = getSortedPosts(allPosts)
+	.filter((post) => !post.data.draft)
+	.slice(0, Math.min(slideshowConfig.slides.length, 5));
+const slides = posts.map((post, index) => ({
+	image: slideshowConfig.slides[index].image,
+	title: post.data.title,
+	url: `/posts/${post.id}/`,
+}));
 ---
 
 {slideshowConfig.enable && slides.length > 0 && (
-	<div class="slideshow" id="slideshow" data-interval={interval}>
-		<div class="slides">
-			{slides.map((s) => (
-				<a href="/">
-					<img src={s.image} alt="" loading="lazy" />
-				</a>
+	<div id="slider" class="carousel slide" data-interval={slideshowConfig.interval}>
+		<ol class="carousel-indicators" aria-label="幻灯片导航">
+			{slides.map((slide, index) => (
+				<li class:list={[index === 0 && "active"]} data-slide-to={index} title={slide.title}></li>
+			))}
+		</ol>
+		<div class="carousel-inner">
+			{slides.map((slide, index) => (
+				<div class:list={["item", index === 0 && "active"]}>
+					<a href={slide.url}>
+						<img src={slide.image} alt={slide.title} />
+						<span class="carousel-caption">{slide.title}</span>
+						<span class="carousel-bg"></span>
+					</a>
+				</div>
 			))}
 		</div>
-		<div class="dots">
-			{slides.map((_, i) => (
-				<span class:list={[i === 0 && "active"]} data-index={i}></span>
-			))}
-		</div>
+		<button class="left carousel-control" type="button" data-slide="prev" aria-label="上一张">
+			<span class="fa fa-angle-left" aria-hidden="true"></span>
+		</button>
+		<button class="right carousel-control" type="button" data-slide="next" aria-label="下一张">
+			<span class="fa fa-angle-right" aria-hidden="true"></span>
+		</button>
 	</div>
 )}
 
 <script>
-	// 首页幻灯片轮播（仅首页存在该元素）
-	const el = document.getElementById("slideshow") as HTMLElement | null;
-	if (el) {
-		const slidesEl = el.querySelector(".slides") as HTMLElement;
-		const dots = [...el.querySelectorAll<HTMLElement>(".dots span")];
-		const count = dots.length;
-		let current = 0;
+	function initColorfulCarousel() {
+		const el = document.getElementById("slider") as HTMLElement | null;
+		if (!el || el.dataset.initialized === "true") return;
+		el.dataset.initialized = "true";
+		const items = [...el.querySelectorAll<HTMLElement>(".carousel-inner > .item")];
+		const indicators = [...el.querySelectorAll<HTMLElement>(".carousel-indicators > li")];
+		if (items.length < 2) return;
+		let current = Math.max(0, items.findIndex((item) => item.classList.contains("active")));
 		let timer: number | undefined;
 
-		const go = (index: number) => {
-			current = (index + count) % count;
-			slidesEl.style.transform = `translateX(-${current * 100}%)`;
-			dots.forEach((d, i) => d.classList.toggle("active", i === current));
-		};
-
-		const start = () => {
-			stop();
-			timer = window.setInterval(() => go(current + 1), Number(el.dataset.interval) || 4000);
+		const show = (index: number) => {
+			current = (index + items.length) % items.length;
+			items.forEach((item, itemIndex) => item.classList.toggle("active", itemIndex === current));
+			indicators.forEach((indicator, itemIndex) => indicator.classList.toggle("active", itemIndex === current));
 		};
 		const stop = () => window.clearInterval(timer);
+		const start = () => {
+			stop();
+			timer = window.setInterval(() => show(current + 1), Number(el.dataset.interval) || 4000);
+		};
 
-		dots.forEach((d) => {
-			d.addEventListener("click", () => {
-				go(Number(d.dataset.index));
+		el.querySelectorAll<HTMLElement>("[data-slide]").forEach((control) => {
+			control.addEventListener("click", () => {
+				show(current + (control.dataset.slide === "next" ? 1 : -1));
+				start();
+			});
+		});
+		indicators.forEach((indicator) => {
+			indicator.addEventListener("click", () => {
+				show(Number(indicator.dataset.slideTo));
 				start();
 			});
 		});
@@ -53,4 +79,7 @@ const { slides, interval } = slideshowConfig;
 		el.addEventListener("mouseleave", start);
 		start();
 	}
+
+	initColorfulCarousel();
+	document.addEventListener("colorful:page:loaded", initColorfulCarousel);
 </script>

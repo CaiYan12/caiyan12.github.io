@@ -19,6 +19,6 @@ export function remarkReadingTime() {
 			cjkCount / WORDS_PER_MINUTE +
 				otherWords / (WORDS_PER_MINUTE * 2),
 		);
-		file.data.readingTime = Math.max(1, minutes);
+		file.data.astro.frontmatter.readingTime = Math.max(1, minutes);
 	};
 }

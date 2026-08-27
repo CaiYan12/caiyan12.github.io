@@ -6,10 +6,13 @@ interface Props {
 	total: number;
 	/** 分页 URL 模板：/page/{n}/（{n} 会被替换；第 1 页固定为 /） */
 	urlTemplate: string;
+	/** 第 1 页地址 */
+	firstPageUrl?: string;
 }
 
-const { current, total, urlTemplate } = Astro.props;
-const pageUrl = (n: number) => (n === 1 ? "/" : urlTemplate.replace("{n}", String(n)));
+const { current, total, urlTemplate, firstPageUrl = "/" } = Astro.props;
+const pageUrl = (n: number) =>
+	n === 1 ? firstPageUrl : urlTemplate.replace("{n}", String(n));
 
 /** 生成页码序列：1 … 2 3 4 … 10 */
 function pageList(): (number | "...")[] {

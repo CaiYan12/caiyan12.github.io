@@ -19,6 +19,8 @@ const postsCollection = defineCollection({
 		category: z.string().optional().nullable().default(""),
 		/** 置顶（对应 Emlog top 字段） */
 		pinned: z.boolean().optional().default(false),
+		/** 私密帖（对应 Emlog 私密日志：隐藏于各列表，但页面仍构建、可直接 URL 访问） */
+		private: z.boolean().optional().default(false),
 		/** 观看数（对应 Emlog views 字段，静态化后为历史值） */
 		views: z.number().optional().default(0),
 		/** 评论数（对应 Emlog comnum 字段，静态化后为历史值） */

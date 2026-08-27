@@ -22,8 +22,8 @@
     "@astrojs/tailwind": "^6.0.2",
     "@expressive-code/plugin-collapsible-sections": "^0.41.3",
     "@expressive-code/plugin-line-numbers": "^0.41.3",
-    "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@fancyapps/ui": "^6.1.6",
+    "@fontsource-variable/jetbrains-mono": "^5.2.8",
     "@swup/astro": "^1.7.0",
     "@tailwindcss/typography": "^0.5.19",
     "astro": "5.16.4",
@@ -31,18 +31,23 @@
     "dayjs": "^1.11.19",
     "katex": "^0.16.25",
     "mdast-util-to-string": "^4.0.0",
+    "mermaid": "^11.17.2",
     "pagefind": "^1.4.0",
+    "qrcode": "^1.5.4",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-katex": "^7.0.1",
     "rehype-slug": "^6.0.0",
+    "remark-directive": "^4.0.0",
     "remark-math": "^6.0.0",
     "svelte": "^5.45.5",
     "tailwindcss": "^3.4.18",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "unist-util-visit": "^5.1.0"
   },
   "devDependencies": {
     "@astrojs/ts-plugin": "^1.10.6",
     "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.6",
     "prettier": "^3.7.4"
   },
   "packageManager": "pnpm@10.26.2"

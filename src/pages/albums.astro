@@ -5,7 +5,7 @@ import { scanAlbums } from "../utils/album-scanner";
 const albums = scanAlbums();
 ---
 
-<MainGridLayout title="相册图库" description="WindowsIt 的相册图库">
+<MainGridLayout title="相册图库" description="WindowsIt 的相册图库" showSidebar={false}>
 	<div class="page">
 		<article role="article">
 			<header class="post-header">
@@ -29,12 +29,14 @@ const albums = scanAlbums();
 							class="album-card"
 							title={`查看相册：${album.name}`}
 						>
-							<img src={album.cover} alt={album.name} loading="lazy" />
+							<span class="album-cover">
+								<img src={album.cover} alt={album.name} loading="lazy" />
+								<span class="album-count">{album.photos.length} 张</span>
+							</span>
 							<span class="album-name">
 								<i class="fa fa-picture-o" aria-hidden="true"></i>
 								{album.name}
 							</span>
-							<span class="album-count">{album.photos.length} 张</span>
 						</a>
 					))}
 				</div>

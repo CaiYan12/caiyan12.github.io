@@ -1,0 +1,240 @@
+/* ============================================================
+ * Markdown 扩展组件样式（admonition / GitHub alerts / spoiler /
+ * github-card / mermaid），由 remark-extended 插件产生。
+ * 仅作用于文章正文（.post-context）内的扩展节点。
+ * ============================================================ */
+
+/* ---------- Admonition 提示块（:::note/tip/important/warning/caution） ---------- */
+.post-context .admonition {
+  position: relative;
+  margin: 1.25em 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid;
+  border-radius: 0.5rem;
+  font-size: 0.95em;
+  line-height: 1.75;
+}
+
+.post-context .admonition > :first-child {
+  margin-top: 0;
+}
+
+.post-context .admonition > :last-child {
+  margin-bottom: 0;
+}
+
+.post-context .admonition-title {
+  margin: 0 0 0.4em;
+  font-weight: 700;
+  font-size: 0.95em;
+}
+
+.post-context .admonition-note {
+  border-color: #cfe2fb;
+  background: #eef5ff;
+}
+.post-context .admonition-note .admonition-title {
+  color: #1a73e8;
+}
+
+.post-context .admonition-tip {
+  border-color: #bfe6d0;
+  background: #edfaf2;
+}
+.post-context .admonition-tip .admonition-title {
+  color: #1e8e3e;
+}
+
+.post-context .admonition-important {
+  border-color: #e0d0f5;
+  background: #f8f2fe;
+}
+.post-context .admonition-important .admonition-title {
+  color: #7c3aed;
+}
+
+.post-context .admonition-warning {
+  border-color: #f7e1b4;
+  background: #fef8ea;
+}
+.post-context .admonition-warning .admonition-title {
+  color: #b25e00;
+}
+
+.post-context .admonition-caution {
+  border-color: #f8cfcc;
+  background: #fdf0ef;
+}
+.post-context .admonition-caution .admonition-title {
+  color: #d93025;
+}
+
+/* ---------- GitHub 风格 alerts（> [!NOTE] 等） ---------- */
+.post-context .markdown-alert {
+  position: relative;
+  margin: 1.25em 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid #d0d7de;
+  border-left-width: 4px;
+  border-radius: 0.5rem;
+  font-size: 0.95em;
+  line-height: 1.75;
+}
+
+.post-context .markdown-alert > :first-child {
+  margin-top: 0;
+}
+
+.post-context .markdown-alert > :last-child {
+  margin-bottom: 0;
+}
+
+.post-context .markdown-alert-title {
+  margin: 0 0 0.4em;
+  font-weight: 700;
+  font-size: 0.95em;
+}
+
+.post-context .markdown-alert-note {
+  border-left-color: #0969da;
+}
+.post-context .markdown-alert-note .markdown-alert-title {
+  color: #0969da;
+}
+
+.post-context .markdown-alert-tip {
+  border-left-color: #1a7f37;
+}
+.post-context .markdown-alert-tip .markdown-alert-title {
+  color: #1a7f37;
+}
+
+.post-context .markdown-alert-important {
+  border-left-color: #8250df;
+}
+.post-context .markdown-alert-important .markdown-alert-title {
+  color: #8250df;
+}
+
+.post-context .markdown-alert-warning {
+  border-left-color: #9a6700;
+}
+.post-context .markdown-alert-warning .markdown-alert-title {
+  color: #9a6700;
+}
+
+.post-context .markdown-alert-caution {
+  border-left-color: #cf222e;
+}
+.post-context .markdown-alert-caution .markdown-alert-title {
+  color: #cf222e;
+}
+
+/* ---------- Spoiler（点击显示/隐藏） ---------- */
+.post-context .spoiler {
+  display: inline-block;
+  padding: 0 0.35em;
+  border-radius: 4px;
+  background: #2f2f2f;
+  color: transparent;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.post-context .spoiler:hover {
+  outline: 1px dashed #00c000;
+  outline-offset: 1px;
+}
+
+.post-context .spoiler.revealed {
+  background: #f1f3f4;
+  color: inherit;
+  cursor: text;
+  user-select: text;
+}
+
+/* ---------- GitHub 仓库卡片（::github{repo=...}） ---------- */
+.post-context .github-card {
+  margin: 1.25em 0;
+  border: 1px solid #d0d7de;
+  border-radius: 0.5rem;
+  background: #fff;
+  overflow: hidden;
+}
+
+.post-context .github-card-loading {
+  padding: 0.85rem 1rem;
+  color: #57606a;
+  font-size: 0.9em;
+}
+
+.post-context .github-card-link {
+  display: block;
+  padding: 0.85rem 1rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.post-context .github-card-link:hover {
+  background: #f6f8fa;
+}
+
+.post-context .github-card-name {
+  display: block;
+  margin-bottom: 0.25em;
+  color: #0969da;
+  font-weight: 700;
+}
+
+.post-context .github-card-desc {
+  display: block;
+  margin-bottom: 0.5em;
+  color: #57606a;
+  font-size: 0.9em;
+}
+
+.post-context .github-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em;
+  color: #57606a;
+  font-size: 0.85em;
+}
+
+.post-context .github-card-meta .github-card-lang::before {
+  content: "\25CF";
+  margin-right: 4px;
+}
+
+.post-context .github-card-error {
+  color: #cf222e;
+}
+
+/* ---------- Mermaid 图表（客户端渲染） ---------- */
+.post-context pre.mermaid {
+  margin: 1.25em auto;
+  padding: 1rem;
+  max-width: 100%;
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  text-align: center;
+  font-size: 0.95em;
+}
+
+.post-context pre.mermaid svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+
+@media screen and (max-width: 680px) {
+  .post-context .github-card-meta {
+    gap: 0.6em;
+  }
+}

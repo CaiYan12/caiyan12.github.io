@@ -10,7 +10,7 @@ export async function getStaticPaths() {
 	const allPosts = await getCollection("posts");
 	const tags = getTagList(allPosts);
 	const paths: {
-		params: { tag: string; page: string | undefined };
+		params: { tag: string };
 		props: { name: string; posts: typeof allPosts; current: number; pages: number };
 	}[] = [];
 	for (const tag of tags) {
@@ -20,7 +20,9 @@ export async function getStaticPaths() {
 		const pages = Math.max(1, Math.ceil(posts.length / siteConfig.postsPerPage));
 		for (let i = 1; i <= pages; i++) {
 			paths.push({
-				params: { tag: tag.name, page: i === 1 ? undefined : `page/${i}` },
+				params: {
+					tag: i === 1 ? tag.name : `${tag.name}/page/${i}`,
+				},
 				props: {
 					name: tag.name,
 					posts: posts.slice((i - 1) * siteConfig.postsPerPage, i * siteConfig.postsPerPage),
@@ -53,5 +55,10 @@ const { name, posts, current, pages } = Astro.props;
 		<PostCard post={post} />
 	))}
 
-	<Pagination current={current} total={pages} urlTemplate={`/tag/${encodeURIComponent(name)}/page/{n}/`} />
+	<Pagination
+		current={current}
+		total={pages}
+		urlTemplate={`/tag/${encodeURIComponent(name)}/page/{n}/`}
+		firstPageUrl={`/tag/${encodeURIComponent(name)}/`}
+	/>
 </MainGridLayout>

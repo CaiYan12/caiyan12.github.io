@@ -3,7 +3,7 @@ import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { friends } from "../data/friends";
 ---
 
-<MainGridLayout title="友情链接" description="我的友情链接">
+<MainGridLayout title="友情链接" description="我的友情链接" showSidebar={false}>
 	<div class="page">
 		<article role="article">
 			<header class="post-header">
@@ -26,7 +26,12 @@ import { friends } from "../data/friends";
 
 			<div class="link-content">
 				{friends.map((f) => (
-					<a href={f.url} target="_blank" rel="nofollow" title={f.description}>
+					<a
+						href={f.url}
+						target="_blank"
+						rel="nofollow noopener noreferrer"
+						title={f.description}
+					>
 						<div class="fname">
 							<i class="fa fa-globe" aria-hidden="true"></i> {f.name}
 						</div>

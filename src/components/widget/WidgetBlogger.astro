@@ -3,36 +3,16 @@ import { siteConfig } from "../../config";
 ---
 
 <div class="widget">
-	<div class="widget-blogger">
-		<div class="avatar">
-			<img src={siteConfig.avatar} alt={siteConfig.author} />
-		</div>
-		<div class="name">{siteConfig.author}</div>
-		<div class="des">{siteConfig.subtitle}</div>
-		<div class="stats">
-			<span>
-				<i class="fa fa-file-text-o" aria-hidden="true"></i>
-				文章 <b data-stat="posts">-</b>
-			</span>
-			<span>
-				<i class="fa fa-eye" aria-hidden="true"></i>
-				围观 <b data-stat="views">-</b>
-			</span>
-			<span>
-				<i class="fa fa-comments" aria-hidden="true"></i>
-				吐槽 <b data-stat="comments">-</b>
-			</span>
-		</div>
-	</div>
+	<span class="icon"><i class="fa fa-user" aria-hidden="true"></i></span>
+	<h3>吐槽水军</h3>
+	<ul id="readerwall">
+		<li>
+			<a href="/guestbook/" title={`${siteConfig.author} · 去留言板吐槽`}>
+				<img src={siteConfig.avatar} class="avatar" alt={siteConfig.author} />
+			</a>
+		</li>
+	</ul>
+	<p class="nop">
+		还没有水军出没，<a href="/guestbook/">点我去吐槽 →</a>
+	</p>
 </div>
-
-<script>
-	const data = window.__siteData;
-	document.querySelectorAll("[data-stat]").forEach((el) => {
-		const key = el.getAttribute("data-stat") || "";
-		const val = data?.[
-			(key === "posts" ? "totalPosts" : key === "views" ? "totalViews" : "totalComments") as keyof typeof data
-		];
-		if (val !== undefined) el.textContent = String(val);
-	});
-</script>

@@ -28,7 +28,7 @@ const archives = getArchiveList(allPosts);
 				<section>
 					<h3>
 						<i class="fa fa-calendar-o" aria-hidden="true"></i>
-						<a href={`/archive/${month.replace("年", "-").replace("月", "")}/`}>
+						<a href={`/archive/${month.replace("年", "/").replace("月", "")}/`}>
 							{month}
 						</a>
 						<span class="text-xs font-normal text-gray-400">

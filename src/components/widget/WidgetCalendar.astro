@@ -1,12 +1,13 @@
 ---
 import WidgetLayout from "./WidgetLayout.astro";
 import { getCollection } from "astro:content";
+import { isPublicPost } from "../../utils/content-utils";
 import dayjs from "dayjs";
 import "dayjs/locale/zh-cn";
 
 dayjs.locale("zh-cn");
 
-const allPosts = await getCollection("posts");
+const allPosts = (await getCollection("posts")).filter(isPublicPost);
 // 只统计本月有文章的日子
 const now = dayjs();
 const monthPosts = new Map<string, string[]>();
@@ -45,9 +46,9 @@ const weekdays = ["日", "一", "二", "三", "四", "五", "六"];
 				const hasPosts = monthPosts.has(dayStr);
 				return hasPosts ? (
 					<a
-						href={`/archive/${now.format("YYYY-M")}/${day}/`}
+						href={`/archive/${now.format("YYYY")}/${now.format("M")}/`}
 						class="m-0.5 rounded bg-primary/15 text-primary hover:bg-primary hover:text-white"
-						title="当天有文章"
+						title={`查看 ${now.format("YYYY年M月")}归档`}
 					>
 						{day}
 					</a>

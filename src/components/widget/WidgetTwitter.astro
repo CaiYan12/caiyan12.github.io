@@ -7,7 +7,7 @@ const latest = [...diary].slice(0, 4);
 ---
 
 <WidgetLayout title="最新微语" icon="fa-twitter">
-	<ul>
+	<ul class="widget-twitter-list">
 		{latest.map((item) => (
 			<li title={item.content}>
 				<i class="fa fa-angle-right" aria-hidden="true"></i>

@@ -31,6 +31,6 @@ const widgets = sidebarConfig.widgets
 	.filter(Boolean);
 ---
 
-<aside id="sidebar" role="complementary">
+<aside id="sidebar" role="complementary" data-pagefind-ignore="all">
 	{widgets.map((Comp) => <Comp />)}
 </aside>

@@ -10,9 +10,11 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeKatex from "rehype-katex";
 import rehypeSlug from "rehype-slug";
 import remarkMath from "remark-math";
+import remarkDirective from "remark-directive";
 import { siteConfig } from "./src/config.ts";
 import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
 import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
+import { remarkExtended } from "./src/plugins/remark-extended.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -33,6 +35,7 @@ export default defineConfig({
 			smoothScrolling: false, // 禁用平滑滚动以提升性能，避免与锚点导航冲突
 			cache: true,
 			preload: true, // swup 默认鼠标悬停预加载
+			ignore: ["[data-fancybox]"],
 			accessibility: true,
 			updateHead: true,
 			updateBodyClass: false,
@@ -95,6 +98,8 @@ export default defineConfig({
 	markdown: {
 		remarkPlugins: [
 			remarkMath,
+			remarkDirective,
+			remarkExtended,
 			remarkReadingTime,
 			remarkExcerpt,
 		],

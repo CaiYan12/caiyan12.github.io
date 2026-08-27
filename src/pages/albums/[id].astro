@@ -13,7 +13,11 @@ export async function getStaticPaths() {
 const { album } = Astro.props;
 ---
 
-<MainGridLayout title={`相册：${album.name}`} description={`相册 ${album.name}`}>
+<MainGridLayout
+	title={`相册：${album.name}`}
+	description={`相册 ${album.name}`}
+	showSidebar={false}
+>
 	<div class="page">
 		<article role="article">
 			<header class="post-header">

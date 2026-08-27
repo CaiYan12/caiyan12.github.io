@@ -3,9 +3,16 @@ import dayjs from "dayjs";
 
 export type Post = CollectionEntry<"posts">;
 
+/** 是否为公开文章：排除草稿与私密帖 */
+export function isPublicPost(post: Post): boolean {
+	return !post.data.draft && !post.data.private;
+}
+
 /** 按置顶 + 发布时间倒序排序（对应 Emlog 首页排序） */
 export function getSortedPosts(posts: Post[]): Post[] {
-	return [...posts].sort((a, b) => {
+	return [...posts]
+		.filter(isPublicPost)
+		.sort((a, b) => {
 		if (a.data.pinned !== b.data.pinned) {
 			return a.data.pinned ? -1 : 1;
 		}
@@ -17,6 +24,7 @@ export function getSortedPosts(posts: Post[]): Post[] {
 export function getTagList(posts: Post[]): { name: string; count: number }[] {
 	const map = new Map<string, number>();
 	for (const post of posts) {
+		if (!isPublicPost(post)) continue;
 		for (const tag of post.data.tags) {
 			map.set(tag, (map.get(tag) ?? 0) + 1);
 		}
@@ -32,6 +40,7 @@ export function getCategoryList(
 ): { name: string; count: number }[] {
 	const map = new Map<string, number>();
 	for (const post of posts) {
+		if (!isPublicPost(post)) continue;
 		const cat = post.data.category;
 		if (!cat) continue;
 		map.set(cat, (map.get(cat) ?? 0) + 1);
@@ -56,7 +65,7 @@ export function getArchiveList(posts: Post[]) {
 /** 获取热门文章（按 hotness 星级 + 评论数） */
 export function getHotPosts(posts: Post[], limit = 6): Post[] {
 	return [...posts]
-		.filter((p) => !p.data.draft)
+		.filter(isPublicPost)
 		.sort((a, b) => {
 			const score =
 				(a.data.hotness * 100 + a.data.comments) -
@@ -100,7 +109,15 @@ export function isNewPost(post: Post): boolean {
 export function getExcerpt(post: Post, length = 120): string {
 	if (post.data.excerpt) return post.data.excerpt;
 	const text = (post.body ?? "")
+		.replace(/```[\s\S]*?```/g, " ")
+		.replace(/`([^`]+)`/g, "$1")
+		.replace(/:::[a-z]+.*$|^:::$|^::[a-z]+\{[^}]*\}$/gim, " ")
+		.replace(/!?\[([^\]]*)\]\(([^)\s]+)\)/g, "$1")
+		.replace(/:([a-z-]+)\[([^\]]*)\]/g, "$2")
+		.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
 		.replace(/<[^>]+>/g, "")
+		.replace(/^\s{0,3}(?:#{1,6}|>|[-+*]|\d+[.)])\s+/gm, "")
+		.replace(/[*_~]+/g, "")
 		.replace(/\s+/g, " ")
 		.trim();
 	return text.length > length ? text.slice(0, length) + "…" : text;
