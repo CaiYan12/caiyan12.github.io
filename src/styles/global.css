@@ -1956,11 +1956,33 @@ img:hover {
   border-color: #555 transparent;
   border-style: solid;
   border-width: 6px 6px 0;
+  transition:
+    transform 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out);
 }
 
-#nav .dropdown:hover .arrow {
-  border-color: var(--colorful-green) transparent;
-  border-width: 0 6px 6px;
+/* hover 触发的动效仅在具备真实悬停能力的设备上启用 */
+@media (hover: hover) and (pointer: fine) {
+  #nav li ul {
+    transform-origin: top center;
+    animation: dropdown-in 0.18s var(--ease-out);
+  }
+
+  @keyframes dropdown-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  #nav .dropdown:hover .arrow {
+    border-color: var(--colorful-green) transparent;
+    transform: rotate(180deg);
+  }
 }
 
 #head-nav .m-nav {
@@ -3135,14 +3157,13 @@ img:hover {
   top: 0;
   left: -100%;
   z-index: 200;
-  display: none;
   box-sizing: border-box;
   width: 100%;
   height: 100%;
   padding: 0;
   background: #f8f8f8;
   box-shadow: none;
-  transition: left 0.5s;
+  transition: left 0.35s var(--ease-drawer);
 }
 
 #mmenu.open {
@@ -3234,6 +3255,80 @@ img:hover {
 .mmenu-close,
 .mmenu-close.open {
   display: none;
+}
+
+/* 全屏遮罩：盖住页面内容，层级低于菜单(200)与关闭按钮 */
+#mmenu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 199;
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.25s var(--ease-out),
+    visibility 0.25s;
+}
+
+#mmenu-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 菜单项逐项滑入（依附抽屉打开态触发，backwards 使延迟项先隐身） */
+@keyframes mmenu-item-in {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+#mmenu.open > ul > li {
+  animation: mmenu-item-in 0.25s var(--ease-out) backwards;
+  animation-delay: calc(var(--i) * 35ms);
+}
+
+#mmenu.open > ul > li:nth-child(1) {
+  --i: 0;
+}
+#mmenu.open > ul > li:nth-child(2) {
+  --i: 1;
+}
+#mmenu.open > ul > li:nth-child(3) {
+  --i: 2;
+}
+#mmenu.open > ul > li:nth-child(4) {
+  --i: 3;
+}
+#mmenu.open > ul > li:nth-child(5) {
+  --i: 4;
+}
+#mmenu.open > ul > li:nth-child(6) {
+  --i: 5;
+}
+#mmenu.open > ul > li:nth-child(7) {
+  --i: 6;
+}
+#mmenu.open > ul > li:nth-child(8) {
+  --i: 7;
+}
+#mmenu.open > ul > li:nth-child(n + 9) {
+  --i: 8;
+}
+
+/* 汉堡/关闭按钮按压反馈 */
+.open-nav,
+#mmenu .close-nav {
+  transition: transform 160ms var(--ease-out);
+}
+
+.open-nav:active,
+#mmenu .close-nav:active {
+  transform: scale(0.94);
 }
 
 @keyframes colorful-bounce-in {
@@ -3511,12 +3606,46 @@ img:hover {
     animation: none;
     transition: none;
   }
+
+  /* 导航动效降级：位移/缩放全部消失，仅保留透明度过渡（菜单即时开合） */
+  #mmenu,
+  .open-nav,
+  #mmenu .close-nav,
+  #nav li a.catbtns .arrow {
+    transition: none;
+  }
+
+  .open-nav:active,
+  #mmenu .close-nav:active {
+    transform: none;
+  }
+
+  #nav .dropdown:hover .arrow {
+    transform: none;
+  }
+
+  /* 重定义入场动画为纯淡入 */
+  @keyframes dropdown-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes mmenu-item-in {
+    from {
+      opacity: 0;
+    }
+  }
 }
 
 /* ---------- 完成迁移后的尺寸、可访问性与溢出修正 ---------- */
 :root {
   --colorful-green-accessible: #007a00;
   --colorful-text-secondary: #666;
+
+  /* 导航动效缓动 token（全站导航动效统一沿用） */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 html,

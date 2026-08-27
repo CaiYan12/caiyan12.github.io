@@ -196,19 +196,23 @@ function initMMenu() {
 	const menu = document.getElementById("mmenu");
 	const close = document.getElementById("mmenu-close");
 	const closeButton = document.getElementById("close-nav");
+	const backdrop = document.getElementById("mmenu-backdrop");
 	if (!openBtn || !menu || !close) return;
 	openBtn.addEventListener("click", () => {
 		menu.classList.add("open");
 		close.classList.add("open");
+		backdrop?.classList.add("open");
 		document.body.style.overflow = "hidden";
 	});
 	const closeMenu = () => {
 		menu.classList.remove("open");
 		close.classList.remove("open");
+		backdrop?.classList.remove("open");
 		document.body.style.overflow = "";
 	};
 	close.addEventListener("click", closeMenu);
 	closeButton?.addEventListener("click", closeMenu);
+	backdrop?.addEventListener("click", closeMenu);
 	menu.addEventListener("click", (e) => {
 		if ((e.target as HTMLElement).closest("a")) closeMenu();
 	});
