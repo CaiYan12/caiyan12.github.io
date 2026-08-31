@@ -61,3 +61,5 @@ jobs:
 
       - name: Run Astro Build
         run: pnpm build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

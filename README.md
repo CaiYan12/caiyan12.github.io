@@ -18,7 +18,8 @@
 ```bash
 pnpm install     # 安装依赖
 pnpm dev         # 本地开发（http://localhost:4321）
-pnpm build       # 构建到 dist/（含 Pagefind 索引）
+pnpm build       # 构建到 dist/（LQIP 占位图 + GitHub 仓库数据 + Pagefind 已串联）
+pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存
 pnpm preview     # 预览构建产物
 pnpm check       # 类型检查
 pnpm format      # Prettier 格式化
@@ -42,6 +43,8 @@ src/
   components/            ← 组件（导航/侧栏/文章卡片/小部件/评论…）
   styles/global.css      ← 主题样式（Colorful 视觉还原）
   utils/                 ← 工具函数
+  constants/             ← 构建期生成数据（LQIP 占位色、GitHub 仓库卡片元数据缓存）
+scripts/                 ← 构建脚本（LQIP 生成、GitHub 仓库数据拉取、新建文章）
 public/
   images/albums/         ← 相册（每个文件夹一个相册）
   fonts/                 ← Font Awesome 4 图标字体
@@ -52,7 +55,7 @@ public/
 
 1. 在 `src/content/posts/` 新建文件夹（文件夹名 = URL slug）
 2. 在文件夹里创建 `index.md`，frontmatter 字段见 `src/content.config.ts`
-3. `git add . && git commit && git push` → Vercel 自动部署
+3. `git add . && git commit && git push` → GitHub Actions 自动构建并部署到 GitHub Pages（`https://caiyan12.github.io/`）
 
 ## 如何开启评论（Giscus）
 

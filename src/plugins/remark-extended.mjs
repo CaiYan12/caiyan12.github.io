@@ -3,14 +3,25 @@
  * - `:::note/tip/important/warning/caution` 容器指令 → admonition 提示块
  * - `> [!NOTE]` 等 GitHub 风格 alerts → markdown-alert 提示块
  * - `:spoiler[内容]` 文本指令 → 可点击显示/隐藏的 spoiler
- * - `::github{repo="user/repo"}` 叶子指令 → GitHub 仓库卡片（内容由客户端拉取）
+ * - `::github{repo="user/repo"}` 叶子指令 → GitHub 仓库卡片（构建期渲染，
+ *   元数据来自 scripts/fetch-github-repos.mjs 缓存的 src/constants/github-repos.json）
  * - ```mermaid 代码块 → 交由客户端 mermaid.js 渲染为图表
  *
  * 说明：本插件在 remark 阶段把上述语法直接转换成 `html` 节点，
  * 依赖 Astro 默认的 allowDangerousHtml 透传原生 HTML。
  */
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { visit } from "unist-util-visit";
 import { toString } from "mdast-util-to-string";
+
+const REPO_DATA_FILE = path.join(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"..",
+	"constants",
+	"github-repos.json",
+);
 
 const ADMONITION_TYPES = new Set([
 	"note",
@@ -35,6 +46,27 @@ function escapeHtml(str) {
 		.replace(/"/g, "&quot;");
 }
 
+/** 读取构建期仓库元数据缓存（每次转换时惰性读取，dev 下运行拉取脚本后无需重启） */
+function loadRepoData() {
+	try {
+		return JSON.parse(readFileSync(REPO_DATA_FILE, "utf-8"));
+	} catch {
+		return {};
+	}
+}
+
+/** 渲染 GitHub 仓库卡片 HTML；缓存缺失时渲染回退链接 */
+function renderGithubCard(repoRaw, repoData) {
+	const repo = escapeHtml(repoRaw);
+	// owner 与仓库名分段编码，避免整体编码把 "/" 变成 %2F
+	const repoPath = repoRaw.split("/").map(encodeURIComponent).join("/");
+	const data = repoData[repoRaw];
+	if (!data) {
+		return `<div class="github-card"><a class="github-card-link github-card-error" href="https://github.com/${repoPath}" target="_blank" rel="noopener noreferrer">GitHub 仓库信息加载失败，点击前往 ${repo}</a></div>`;
+	}
+	return `<div class="github-card"><a class="github-card-link" href="${escapeHtml(data.html_url || `https://github.com/${repoPath}`)}" target="_blank" rel="noopener noreferrer"><span class="github-card-name">${escapeHtml(data.full_name || repoRaw)}</span><span class="github-card-desc">${escapeHtml(data.description || "")}</span><span class="github-card-meta"><span>★ ${Number(data.stargazers_count) || 0}</span><span>⑂ ${Number(data.forks_count) || 0}</span><span class="github-card-lang">${escapeHtml(data.language || "")}</span></span></a></div>`;
+}
+
 /** 提取容器指令中的标题节点（:::note[自定义标题]），返回标题 HTML；无则返回空串 */
 function extractLabel(directive) {
 	const idx = directive.children.findIndex(
@@ -47,6 +79,8 @@ function extractLabel(directive) {
 
 export function remarkExtended() {
 	return (tree) => {
+		const repoData = loadRepoData();
+
 		// 1. 容器指令（admonition）
 		visit(tree, "containerDirective", (node, index, parent) => {
 			const name = String(node.name || "").toLowerCase();
@@ -74,12 +108,12 @@ export function remarkExtended() {
 				String(node.name || "") !== "github"
 			)
 				return;
-			const repo = escapeHtml(
+			const repoRaw = String(
 				(node.attributes && node.attributes.repo) || "",
-			);
+			).trim();
 			parent.children.splice(index, 1, {
 				type: "html",
-				value: `<div class="github-card" data-repo="${repo}"><div class="github-card-loading">正在加载仓库信息…</div></div>`,
+				value: renderGithubCard(repoRaw, repoData),
 			});
 		});
 

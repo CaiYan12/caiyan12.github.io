@@ -165,12 +165,6 @@
   overflow: hidden;
 }
 
-.post-context .github-card-loading {
-  padding: 0.85rem 1rem;
-  color: #57606a;
-  font-size: 0.9em;
-}
-
 .post-context .github-card-link {
   display: block;
   padding: 0.85rem 1rem;

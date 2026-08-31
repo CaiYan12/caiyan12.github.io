@@ -94,7 +94,8 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 ```bash
 pnpm install     # 安装依赖（中国网络需先设 registry 为 https://registry.npmmirror.com）
 pnpm dev         # 本地开发 http://localhost:4321
-pnpm build       # 构建 dist/（含 Pagefind 索引生成，build 脚本已串联）
+pnpm build       # 构建 dist/（LQIP 生成 + GitHub 仓库数据拉取 + astro build + Pagefind，已串联）
+pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存（默认增量只拉缺失）
 pnpm preview     # 预览构建产物（需先 build）
 pnpm check       # astro check 类型检查
 pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
@@ -126,6 +127,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 | 搜索 | Pagefind（构建期索引，`src/components/control/Search.svelte`） |
 | 评论/留言板 | Giscus（`src/components/comment/Giscus.astro`，按 `commentConfig.enable` 开关） |
 | 图片灯箱 | Fancybox（`src/utils/theme-script.ts` 的 `initFancybox()` 懒加载绑定） |
+| GitHub 仓库卡片 | 构建期渲染：`scripts/fetch-github-repos.mjs` 拉取元数据缓存到 `src/constants/github-repos.json`，`remark-extended.mjs` 直接输出完整卡片 HTML；**客户端零请求**（规避访客 IP 匿名 API 60 次/小时限流），令牌解析 `GITHUB_TOKEN`/`GH_TOKEN` → `gh auth token` → 匿名，拉取失败渲染回退链接不阻塞构建 |
 | 代码高亮/公式 | Expressive Code + KaTeX（KaTeX CSS 按需动态导入） |
 
 ### 客户端脚本与 Swup 生命周期
@@ -145,3 +147,4 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ## 注意
 - 原始 Emlog 主题 `D:\pages\limh.me` 的 `module.php` 含 `/e` 修饰符 eval 漏洞、`function/favicon.php`/`image.php` 是开放代理——不可搬回本项目
 - 图片等静态资源都放 `public/` 直接引用，不走 Astro 的 import 管线
+- **修改 remark/rehype 插件逻辑后必须删除 `node_modules/.astro/` 再构建**：Astro 5 content layer 缓存（`node_modules/.astro/data-store.json`）在内容文件未变时复用旧渲染结果，touch 文件 mtime 无效；根目录 `.astro/` 只有 types/schema，删它没用

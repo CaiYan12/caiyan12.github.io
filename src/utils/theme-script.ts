@@ -66,15 +66,6 @@ function loadKatexCss() {
 	}
 }
 
-/** 简单的 HTML 转义（用于填充客户端生成的 DOM） */
-function escapeHtml(value: string): string {
-	return String(value)
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;");
-}
-
 /** 渲染 mermaid 图表（懒加载，仅在页面存在 pre.mermaid 时执行） */
 async function renderMermaid() {
 	const nodes = [...document.querySelectorAll<HTMLElement>("pre.mermaid")];
@@ -92,41 +83,6 @@ async function renderMermaid() {
 	} catch {
 		// mermaid 渲染失败不阻塞页面
 	}
-}
-
-/** 渲染 GitHub 仓库卡片（::github{repo=...}，内容来自 GitHub API） */
-async function renderGithubCards() {
-	const cards = [
-		...document.querySelectorAll<HTMLElement>(".github-card[data-repo]"),
-	];
-	await Promise.all(
-		cards.map(async (card) => {
-			if (card.dataset.rendered === "true") return;
-			card.dataset.rendered = "true";
-			const repo = card.dataset.repo || "";
-			// owner 与仓库名分段编码，避免整体编码把 "/" 变成 %2F
-			const repoPath = repo.split("/").map(encodeURIComponent).join("/");
-			try {
-				const res = await fetch(
-					`https://api.github.com/repos/${repoPath}`,
-				);
-				if (!res.ok) throw new Error(String(res.status));
-				const data = await res.json();
-				card.innerHTML = `
-					<a class="github-card-link" href="${escapeHtml(data.html_url || "")}" target="_blank" rel="noopener noreferrer">
-						<span class="github-card-name">${escapeHtml(data.full_name || repo)}</span>
-						<span class="github-card-desc">${escapeHtml(data.description || "")}</span>
-						<span class="github-card-meta">
-							<span>★ ${data.stargazers_count ?? 0}</span>
-							<span>⑂ ${data.forks_count ?? 0}</span>
-							<span class="github-card-lang">${escapeHtml(data.language || "")}</span>
-						</span>
-					</a>`;
-			} catch {
-				card.innerHTML = `<a class="github-card-link github-card-error" href="https://github.com/${repoPath}" target="_blank" rel="noopener noreferrer">GitHub 仓库信息加载失败，点击前往 ${escapeHtml(repo)}</a>`;
-			}
-		}),
-	);
 }
 
 /** spoiler 点击显示/隐藏（事件委托，Swup 切页后依然生效） */
@@ -439,7 +395,6 @@ function initSwupHooks() {
 		initLqipFade();
 		loadKatexCss();
 		renderMermaid();
-		renderGithubCards();
 	});
 	document.addEventListener("astro:page-load", () => {
 		window.scrollTo({ top: 0 });
@@ -497,6 +452,5 @@ export function pagefindReady() {
 	initFancybox();
 	loadKatexCss();
 	renderMermaid();
-	renderGithubCards();
 	initSwupHooks();
 }
