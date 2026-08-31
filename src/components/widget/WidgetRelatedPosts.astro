@@ -1,0 +1,50 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+import { getCollection } from "astro:content";
+import dayjs from "dayjs";
+import { isPublicPost, type Post } from "../../utils/content-utils";
+
+// 仅在文章页侧栏显示：从 URL 提取当前文章 slug，按分类/标签相似度推荐
+const slug = Astro.url.pathname.replace(/\/+$/, "").split("/")[2];
+let related: Post[] = [];
+
+if (slug) {
+	const allPosts = (await getCollection("posts")).filter(isPublicPost);
+	const current = allPosts.find((p) => p.id === slug);
+	if (current) {
+		const currentTags = new Set(current.data.tags);
+		related = allPosts
+			.filter((p) => p.id !== current.id)
+			.map((p) => {
+				let score = 0;
+				if (p.data.category && p.data.category === current.data.category) {
+					score += 100;
+				}
+				for (const tag of p.data.tags) {
+					if (currentTags.has(tag)) score += 10;
+				}
+				return { post: p, score, published: p.data.published.valueOf() };
+			})
+			.filter((item) => item.score > 0)
+			.sort((a, b) => b.score - a.score || b.published - a.published)
+			.slice(0, 6)
+			.map((item) => item.post);
+	}
+}
+---
+
+{related.length > 0 && (
+	<WidgetLayout title="相关文章推荐" icon="fa-random">
+		<ul id="relatedlog">
+			{related.map((post) => (
+				<li>
+					<i class="fa fa-angle-right" aria-hidden="true"></i>
+					<a href={`/posts/${post.id}/`} title={post.data.title}>
+						{post.data.title}
+					</a>
+					<span>{dayjs(post.data.published).format("MM-DD")}</span>
+				</li>
+			))}
+		</ul>
+	</WidgetLayout>
+)}
