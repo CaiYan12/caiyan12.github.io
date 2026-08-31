@@ -19,6 +19,10 @@ jobs:
         uses: actions/checkout@v7
       - name: Install, build, and upload your site
         uses: withastro/action@v6
+        with:
+          # 该 action 默认缓存 node_modules/.astro（Astro content layer 数据存储），
+          # remark 插件逻辑变更时会复用旧渲染结果导致产物陈旧，故关闭（正确性优先）
+          cache: false
         env:
           # 供构建期 fetch-github-repos 脚本拉取新增仓库元数据（Actions 自动提供）
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
