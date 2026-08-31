@@ -22,7 +22,7 @@ export const siteConfig = {
 	/** 语言 */
 	lang: "zh_CN",
 	/** 建站时间（用于 footer 运行天数） */
-	foundationTime: "2024-01-01",
+	foundationTime: "2026-01-01",
 	/** 每页文章数 */
 	postsPerPage: 8,
 	/** 首页摘要字数 */
@@ -30,7 +30,7 @@ export const siteConfig = {
 	/** 站点备案号（可留空） */
 	icp: "",
 	/** 页脚附加信息 */
-	footerInfo: "Powered by Astro",
+	footerInfo: "Powered by Astro & Colorful",
 };
 
 /** 高分辨率都市背景；来源记录见 public/images/bg/PEXELS-SOURCES.md */
@@ -57,7 +57,7 @@ export const navBarConfig = {
 	extra: [
 		{ name: "相册图库", url: "/albums/" },
 		{ name: "图片墙", url: "/images/" },
-		{ name: "项目展示", url: "/projects/" },
+		{ name: "我的项目", url: "/projects/" },
 		{ name: "技能图谱", url: "/skills/" },
 		{ name: "时间线", url: "/timeline/" },
 	],
@@ -74,7 +74,7 @@ export const navBarConfig = {
 
 /** 侧栏小部件配置（对应 Emlog 后台 widgets1 排序） */
 export const sidebarConfig = {
-	/** 依次显示的小部件 */
+	/** 依次显示的小部件（hotlog 仅首页显示、related 仅文章页显示，由各自组件按 URL 判断） */
 	widgets: [
 		"blogger",
 		"search",
@@ -82,14 +82,18 @@ export const sidebarConfig = {
 		"tag",
 		"archive",
 		"newlog",
+		"hotlog",
+		"related",
 		"newcomm",
 		"link",
 		"twitter",
 	],
 };
 
-/** 版权声明（对应 echo_log.php 的 post-lisence） */
+/** 文章版权声明（对应 echo_log.php 的 post-lisence，由 components/misc/License.astro 读取） */
 export const licenseConfig = {
+	/** 是否在文章页显示版权协议链接（关闭时仅显示原始版权文案） */
+	enable: true,
 	name: "CC BY-NC-SA 4.0",
 	url: "https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh",
 };
@@ -142,7 +146,7 @@ export const pioConfig = {
 		touch: [
 			"你在做什么呀？",
 			"不要一直戳我啦！",
-			"变态！",
+			"HENTAI!",
 			"不要这样欺负我呀！",
 		],
 		home: "点击这里返回首页！",

@@ -213,6 +213,113 @@
   color: #cf222e;
 }
 
+/* ---------- 外部项目卡片（About 页面） ---------- */
+.post-context .site-card {
+  margin: 1.25em 0;
+  border: 1px solid #d0d7de;
+  border-radius: 0.5rem;
+  background: var(--content-surface-nested);
+  overflow: hidden;
+}
+
+.post-context .site-card-link {
+  display: block;
+  padding: 0.85rem 1rem;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.post-context .site-card-link:hover {
+  background: rgba(0, 192, 0, 0.06);
+}
+
+.post-context .site-card-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.post-context .site-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin-bottom: 0.25em;
+}
+
+.post-context .site-card-mark {
+  display: inline-grid;
+  width: 1.6rem;
+  height: 1.6rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.post-context .site-card-name {
+  color: var(--primary-dark);
+  font-weight: 700;
+}
+
+.post-context .site-card-desc {
+  display: block;
+  margin-bottom: 0.55em;
+  color: var(--text-gray);
+  font-size: 0.9em;
+}
+
+.post-context .site-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65em 1em;
+  color: var(--text-gray);
+  font-size: 0.85em;
+}
+
+.post-context .site-card-meta span::before {
+  content: "•";
+  margin-right: 0.35em;
+  color: var(--primary);
+}
+
+/* ---------- 图片网格（[grid]...[/grid]，remark-image-grid 产生） ---------- */
+.post-context .image-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 1.25em 0;
+}
+
+.post-context .image-grid[data-cols="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.post-context .image-grid[data-cols="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.post-context .image-grid[data-cols="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.post-context .image-grid img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.5rem;
+}
+
+/* 小屏下 3/4 列退化为 2 列，避免过窄 */
+@media screen and (max-width: 680px) {
+  .post-context .image-grid[data-cols="3"],
+  .post-context .image-grid[data-cols="4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* ---------- Mermaid 图表（客户端渲染） ---------- */
 .post-context pre.mermaid {
   margin: 1.25em auto;

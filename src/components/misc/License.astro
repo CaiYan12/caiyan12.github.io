@@ -1,0 +1,33 @@
+---
+/**
+ * 文章版权声明（对应 echo_log.php 的 post-lisence 版权行，参考 Firefly 的 License.astro + licenseConfig）
+ * 由 licenseConfig.enable 控制是否附带协议链接；关闭时输出原 Colorful 文案。
+ * 输出为行内结构，嵌入 .post-lisence 中，视觉与原主题一致。
+ */
+import { licenseConfig } from "../../config";
+
+interface Props {
+	author: string;
+}
+
+const { author } = Astro.props;
+---
+
+<i class="fa fa-bullhorn" aria-hidden="true"></i>
+{
+	licenseConfig.enable ? (
+		<>
+			版权声明：若无特殊注明，本文皆为《{author}》原创，采用{" "}
+			<a
+				href={licenseConfig.url}
+				target="_blank"
+				rel="license noopener noreferrer"
+			>
+				{licenseConfig.name}
+			</a>{" "}
+			协议授权，转载请保留文章出处。
+		</>
+	) : (
+		<>版权声明：若无特殊注明，本文皆为《{author}》原创，转载请保留文章出处。</>
+	)
+}

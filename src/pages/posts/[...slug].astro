@@ -11,6 +11,7 @@ import {
 import { siteConfig } from "../../config";
 import QRCode from "qrcode";
 import PostToc from "../../components/control/PostToc.astro";
+import License from "../../components/misc/License.astro";
 
 export async function getStaticPaths() {
 	const posts = await getCollection("posts");
@@ -48,7 +49,7 @@ const starLevel = (comments: number) => {
 <MainGridLayout
 	title={title}
 	description={post.data.description || post.data.excerpt}
-	image={cover}
+	image={`/og/${post.id}.png`}
 	searchIndex={!post.data.private}
 >
 	<div class="page">
@@ -132,8 +133,7 @@ const starLevel = (comments: number) => {
 							<span>这篇文章木有标签</span>
 						)}
 					</div>
-					<i class="fa fa-bullhorn" aria-hidden="true"></i>
-					版权声明：若无特殊注明，本文皆为《{author}》原创，转载请保留文章出处。
+					<License author={author} />
 					<br />
 					<i class="fa fa-share-alt-square" aria-hidden="true"></i>
 					本文链接：
