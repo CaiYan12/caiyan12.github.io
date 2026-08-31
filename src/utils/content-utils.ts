@@ -62,15 +62,15 @@ export function getArchiveList(posts: Post[]) {
 	return [...map.entries()];
 }
 
-/** 获取热门文章（按 hotness 星级 + 评论数） */
+/** 获取热门文章（按 hotness 星级 + 评论数，同分按发布时间倒序） */
 export function getHotPosts(posts: Post[], limit = 6): Post[] {
 	return [...posts]
 		.filter(isPublicPost)
 		.sort((a, b) => {
 			const score =
-				(a.data.hotness * 100 + a.data.comments) -
-				(b.data.hotness * 100 + b.data.comments);
-			return score;
+				(b.data.hotness * 100 + b.data.comments) -
+				(a.data.hotness * 100 + a.data.comments);
+			return score || b.data.published.valueOf() - a.data.published.valueOf();
 		})
 		.slice(0, limit);
 }
