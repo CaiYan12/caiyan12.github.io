@@ -136,7 +136,11 @@ async function main() {
 
 	const dir = path.dirname(OUTPUT_FILE);
 	await fs.mkdir(dir, { recursive: true });
-	await fs.writeFile(OUTPUT_FILE, JSON.stringify(lqips, null, "\t"), "utf-8");
+	await fs.writeFile(
+		OUTPUT_FILE,
+		JSON.stringify(lqips, null, "\t") + "\n",
+		"utf-8",
+	);
 
 	console.log(
 		`\nDone! Processed ${processed}/${newFiles.length} new images. Total: ${Object.keys(lqips).length}. Output: ${OUTPUT_FILE}`,

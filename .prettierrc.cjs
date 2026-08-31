@@ -3,7 +3,7 @@ module.exports = {
   useTabs: true,
   singleQuote: false,
   trailingComma: "all",
-  endOfLine: "crlf",
+  endOfLine: "auto",
   overrides: [
     {
       files: "*.{css,scss,styl}",
