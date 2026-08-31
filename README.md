@@ -25,6 +25,15 @@ pnpm check       # 类型检查
 pnpm format      # Prettier 格式化
 ```
 
+> ⚠️ **踩坑警告**：修改 Markdown 渲染插件（remark/rehype）后构建产物没变化？Astro 5 content layer 缓存（`node_modules/.astro/`）会复用旧渲染结果——先删除该目录再构建，touch 文件无效。CI 侧 `deploy.yml` 已对 `withastro/action` 传 `cache: false` 关闭同类缓存，任何 workflow 改动勿恢复。
+
+## CI 构建与部署
+
+- Pull Request：`build.yml` 执行 `Astro Check` 和完整 `Astro Build`，`lint.yml` 执行 Prettier 检查。
+- `main` push：`build.yml` 只执行 `Astro Check`，其中的 `Astro Build` job 会跳过；完整构建由 `deploy.yml` 执行一次后部署到 GitHub Pages，避免重复构建。
+- 手动触发 `deploy.yml`：仍执行完整构建和部署。
+- `deploy.yml` 的 `withastro/action@v6` 必须保持 `cache: false`，避免跨 run 复用 `node_modules/.astro` 中过期的 content layer 渲染结果；同一 workflow/ref 的并发部署会取消旧 run。
+
 ## 目录结构
 
 ```

@@ -147,4 +147,17 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ## 注意
 - 原始 Emlog 主题 `D:\pages\limh.me` 的 `module.php` 含 `/e` 修饰符 eval 漏洞、`function/favicon.php`/`image.php` 是开放代理——不可搬回本项目
 - 图片等静态资源都放 `public/` 直接引用，不走 Astro 的 import 管线
-- **修改 remark/rehype 插件逻辑后必须删除 `node_modules/.astro/` 再构建**：Astro 5 content layer 缓存（`node_modules/.astro/data-store.json`）在内容文件未变时复用旧渲染结果，touch 文件 mtime 无效；根目录 `.astro/` 只有 types/schema，删它没用
+
+## ⚠️ 大坑警告：Astro content layer 缓存会"吃掉"插件改动（本地与 CI 都会踩）
+
+**症状**：修改了 remark/rehype 插件（或任何影响 Markdown 渲染的逻辑）后构建，产物仍是旧 HTML，全程无任何报错。本地和线上都可能发生，2026-08-31 两侧均已实际踩坑。
+
+**根因**：Astro 5 content layer 把渲染结果缓存在 `node_modules/.astro/data-store.json`，内容文件未变时构建直接复用缓存、**不重跑插件**；touch 内容文件 mtime 也无法使其失效。根目录 `.astro/` 只有 types/schema，删除它无效。
+
+**本地规则**：改插件逻辑后必须先删除 `node_modules/.astro/` 再构建。
+
+**CI 规则**：`withastro/action` 默认 `cache: true` 会跨 run 缓存 `node_modules/.astro`，同样复用旧渲染——**`deploy.yml` 已传 `cache: false` 关闭，任何 workflow 改动都不得恢复该缓存**。`build.yml` 用 `setup-node`（仅缓存 pnpm store）不受影响。
+
+**CI 执行拓扑**：Pull Request 由 `build.yml` 执行 `Astro Check` 和完整 `Astro Build`，`lint.yml` 执行 Prettier 检查；`main` push 时 `build.yml` 的 `Astro Build` job 通过 `if: ${{ github.event_name == 'pull_request' }}` 跳过，完整构建只由 `deploy.yml` 执行一次后部署。`deploy.yml` 也支持 `workflow_dispatch`，并通过 `concurrency` 取消同一 workflow/ref 的旧部署。
+
+**线上验证部署是否生效**：Fastly 边缘缓存 HTML `max-age=600`，且缓存键不含查询串（加 `?cb=` 无效）；看响应头 `Last-Modified` 是否晚于部署完成时间，或下载 Actions run 的 `github-pages` artifact 直接查 HTML（确定性验证）。

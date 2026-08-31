@@ -39,6 +39,7 @@ jobs:
         run: pnpm check
 
   build:
+    if: ${{ github.event_name == 'pull_request' }}
     runs-on: ubuntu-latest
     name: Astro Build
     steps:
