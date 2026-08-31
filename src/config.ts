@@ -7,8 +7,8 @@ export const siteConfig = {
 	title: "WindowsIt's Music Club",
 	/** 副标题/描述 */
 	subtitle: "音乐、代码与生活 —— WindowsIt 的个人博客",
-	/** 站点 URL（部署到 Vercel 后改成正式域名） */
-	siteURL: "https://myblog-omega-pearl.vercel.app",
+	/** 站点 URL（GitHub Pages 用户站点） */
+	siteURL: "https://caiyan12.github.io",
 	/** 站点关键词 */
 	keywords: "博客,音乐,WindowsIt,技术,生活",
 	/** 作者名 */
