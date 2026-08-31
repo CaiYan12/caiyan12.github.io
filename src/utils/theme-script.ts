@@ -143,6 +143,188 @@ function initSpoiler() {
 	});
 }
 
+/** 点击特效：社会主义核心价值观词组顺序循环（参考 zcjun.com，已去除其末尾的站点名），彩虹色上浮渐隐 */
+const CLICK_EFFECT_WORDS = [
+	"富强",
+	"民主",
+	"文明",
+	"和谐",
+	"自由",
+	"平等",
+	"公正",
+	"法治",
+	"爱国",
+	"敬业",
+	"诚信",
+	"友善",
+];
+let clickEffectIndex = 0;
+
+function initClickEffect() {
+	document.addEventListener("click", (e) => {
+		const slot = clickEffectIndex % CLICK_EFFECT_WORDS.length;
+		clickEffectIndex++;
+		const span = document.createElement("span");
+		span.className = "click-word";
+		span.textContent = CLICK_EFFECT_WORDS[slot];
+		// 色相按 30° 步进循环，12 个词恰好覆盖一圈彩虹色
+		span.style.color = `hsl(${slot * 30}, 100%, 45%)`;
+		span.style.left = `${e.clientX}px`;
+		span.style.top = `${e.clientY - 20}px`;
+		span.addEventListener("animationend", () => span.remove());
+		document.body.appendChild(span);
+	});
+}
+
+/** 点击特效 2：Canvas 粒子爆炸（移植自 https://eco.krt.moe/posts/effect-click/ 的 cursor-effects.js） */
+function initCanvasBoomEffect() {
+	if (document.getElementById("click-boom-canvas")) return;
+
+	class BoomCircle {
+		position: { x: number; y: number };
+		renderCount = 0;
+		constructor(
+			origin: { x: number; y: number },
+			private speed: number,
+			private color: string,
+			private angle: number,
+			private context: CanvasRenderingContext2D,
+		) {
+			this.position = { ...origin };
+		}
+		draw() {
+			this.context.fillStyle = this.color;
+			this.context.beginPath();
+			this.context.arc(this.position.x, this.position.y, 2, 0, Math.PI * 2);
+			this.context.fill();
+		}
+		move() {
+			// 速度取原版一半（用户要求慢 0.5 倍），重力项同步减半保持轨迹形状
+			this.position.x += (Math.sin(this.angle) * this.speed) / 2;
+			this.position.y +=
+				(Math.cos(this.angle) * this.speed) / 2 + this.renderCount * 0.15;
+			this.renderCount++;
+		}
+	}
+
+	class Boom {
+		circles: BoomCircle[] = [];
+		stop = false;
+		constructor(
+			private origin: { x: number; y: number },
+			private context: CanvasRenderingContext2D,
+			private circleCount = 10,
+			private area = { width: window.innerWidth, height: window.innerHeight },
+		) {}
+		private randomArray(range: string[]) {
+			return range[Math.floor(range.length * Math.random())];
+		}
+		private randomColor() {
+			const range = ["8", "9", "A", "B", "C", "D", "E", "F"];
+			return (
+				"#" +
+				Array.from({ length: 6 }, () => this.randomArray(range)).join("")
+			);
+		}
+		private randomRange(start: number, end: number) {
+			return (end - start) * Math.random() + start;
+		}
+		init() {
+			for (let i = 0; i < this.circleCount; i++) {
+				this.circles.push(
+					new BoomCircle(
+						this.origin,
+						this.randomRange(1, 6),
+						this.randomColor(),
+						this.randomRange(Math.PI - 1, Math.PI + 1),
+						this.context,
+					),
+				);
+			}
+		}
+		move() {
+			this.circles.forEach((circle, index) => {
+				if (
+					circle.position.x > this.area.width ||
+					circle.position.y > this.area.height
+				) {
+					this.circles.splice(index, 1);
+				}
+				circle.move();
+			});
+			if (this.circles.length === 0) {
+				this.stop = true;
+			}
+		}
+		draw() {
+			this.circles.forEach((circle) => circle.draw());
+		}
+	}
+
+	const canvas = document.createElement("canvas");
+	canvas.id = "click-boom-canvas";
+	const ctx = canvas.getContext("2d");
+	if (!ctx) return;
+	const style = canvas.style;
+	style.position = "fixed";
+	style.top = "0";
+	style.left = "0";
+	style.zIndex = "2147483647";
+	style.pointerEvents = "none";
+	style.width = `${window.innerWidth}px`;
+	style.height = `${window.innerHeight}px`;
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+	document.body.appendChild(canvas);
+
+	const booms: Boom[] = [];
+	let running = false;
+	const run = () => {
+		running = true;
+		if (booms.length === 0) {
+			running = false;
+			return;
+		}
+		requestAnimationFrame(run);
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		booms.forEach((boom, index) => {
+			if (boom.stop) {
+				booms.splice(index, 1);
+				return;
+			}
+			boom.move();
+			boom.draw();
+		});
+	};
+	window.addEventListener("mousedown", (e) => {
+		const boom = new Boom({ x: e.clientX, y: e.clientY }, ctx);
+		boom.init();
+		booms.push(boom);
+		if (!running) run();
+	});
+	window.addEventListener("pagehide", () => {
+		booms.length = 0;
+	});
+}
+
+/** 动态标题：切走时换告别语；切回先显示"算了，你走吧！"，2 秒后恢复原标题 */
+function initVisibilityTitle() {
+	let timer: ReturnType<typeof setTimeout> | undefined;
+	let originalTitle = "";
+	document.addEventListener("visibilitychange", () => {
+		if (document.visibilityState === "hidden") {
+			clearTimeout(timer);
+			originalTitle = document.title;
+			document.title = "别走啊...(っ°Д°;)っ";
+		} else {
+			document.title = "算了，你走吧！";
+			timer = setTimeout(() => {
+				document.title = originalTitle;
+			}, 2000);
+		}
+	});
+}
+
 /** 导航高亮：根据当前路径标记 current */
 function syncNavHighlight() {
 	const path = window.location.pathname;
@@ -279,6 +461,9 @@ export function pagefindReady() {
 	initDblClickScroll();
 	initMMenu();
 	initSpoiler();
+	initClickEffect();
+	initCanvasBoomEffect();
+	initVisibilityTitle();
 	initFancybox();
 	loadKatexCss();
 	renderMermaid();
