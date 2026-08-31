@@ -46,20 +46,36 @@
 		});
 	}
 
-	onMount(() => {
-		if (
-			pioConfig.hiddenOnMobile &&
-			window.matchMedia("(max-width: 1280px)").matches
-		) {
-			return;
-		}
-
+	function startPio() {
 		loadScript("/pio/static/l2d.js", "pio-l2d-script")
 			.then(() => loadScript("/pio/static/pio.js", "pio-main-script"))
 			.then(initPio)
 			.catch((error) => {
 				console.error("Pio 资源加载失败：", error);
 			});
+	}
+
+	onMount(() => {
+		if (!pioConfig.hiddenOnMobile) {
+			startPio();
+			return;
+		}
+
+		const desktopQuery = window.matchMedia("(max-width: 1280px)");
+
+		// 窄屏起载后拉宽到桌面宽度时补一次初始化（pioInitialized 防重复）
+		const handleViewportChange = (event) => {
+			if (!event.matches && !pioInitialized) {
+				startPio();
+			}
+		};
+
+		if (!desktopQuery.matches) {
+			startPio();
+		}
+		desktopQuery.addEventListener("change", handleViewportChange);
+
+		return () => desktopQuery.removeEventListener("change", handleViewportChange);
 	});
 </script>
 
