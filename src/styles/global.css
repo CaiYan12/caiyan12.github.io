@@ -475,7 +475,9 @@
     background: #fff;
   }
   .page .post-header {
-    padding: 12px 0 8px;
+    /* 统一竖线位置：抵消基础规则的 -20px 外拉，与文章页（header 在 article 内）对齐 */
+    margin-left: 0;
+    padding: 12px 0 8px 20px;
   }
   .page .post-header h2 {
     margin: 0;
@@ -2015,17 +2017,21 @@ img:hover {
 }
 
 #head-nav .m-nav li {
-  display: inline-block;
+  display: flex;
+  align-items: center;
   float: none;
   flex-shrink: 0;
-  height: 58px;
-  margin: 2px 0;
+  height: 55px;
+  margin: 0;
   padding: 0;
-  line-height: normal;
 }
 
 #head-nav .m-nav li a {
-  float: left;
+  /* 在 55px 导航条内垂直居中，绿线上下留呼吸空间；hover 用 padding 补偿边框增粗，避免下溢 */
+  display: block;
+  float: none;
+  /* 覆盖 .head-nav .m-nav li 的 line-height:55px 继承，防止行盒撑爆导航条 */
+  line-height: normal;
   padding: 10px;
   border-bottom: 3px solid #70b90d;
   color: #000;
@@ -2034,6 +2040,7 @@ img:hover {
 }
 
 #head-nav .m-nav li a:hover {
+  padding-bottom: 7px;
   border-bottom-width: 6px;
   color: #70b90d;
 }
@@ -2677,6 +2684,7 @@ img:hover {
 #newlog li,
 #randlog li,
 #hotlog li,
+#relatedlog li,
 .tab_box li {
   overflow: hidden;
   margin-right: 5px;
@@ -3139,6 +3147,75 @@ img:hover {
 
 .carousel-inner > .item.active {
   display: block;
+}
+
+/* 幻灯片双向推移：JS 在切换时给旧页挂 .leaving（绝对定位叠底、滑出），
+   新页按方向挂 .enter-right/.enter-left 滑入；初始 active 无方向类，首屏不播动画。
+   550ms 后由 JS 摘除 .leaving（回到 display:none），fill:both 防止摘类前闪回原位 */
+.carousel-inner > .item.active.enter-right {
+  position: relative;
+  z-index: 2;
+  animation: carousel-in-right 0.5s var(--ease-in-out) both;
+}
+
+.carousel-inner > .item.active.enter-left {
+  position: relative;
+  z-index: 2;
+  animation: carousel-in-left 0.5s var(--ease-in-out) both;
+}
+
+.carousel-inner > .item.leaving {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  pointer-events: none;
+}
+
+.carousel-inner > .item.leaving.leaving-left {
+  animation: carousel-out-left 0.5s var(--ease-in-out) both;
+}
+
+.carousel-inner > .item.leaving.leaving-right {
+  animation: carousel-out-right 0.5s var(--ease-in-out) both;
+}
+
+@keyframes carousel-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes carousel-out-left {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes carousel-in-left {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes carousel-out-right {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
 }
 
 .carousel-inner > .item > a > img {
@@ -3830,6 +3907,31 @@ img:hover {
       opacity: 0;
     }
   }
+
+  /* 轮播降级：推移改为交叉淡入淡出（保留状态可读性，去掉位移） */
+  @keyframes carousel-in-right {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes carousel-in-left {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes carousel-out-left {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes carousel-out-right {
+    to {
+      opacity: 0;
+    }
+  }
 }
 
 /* ---------- 完成迁移后的尺寸、可访问性与溢出修正 ---------- */
@@ -3840,6 +3942,7 @@ img:hover {
   /* 导航动效缓动 token（全站导航动效统一沿用） */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 html,
@@ -4311,6 +4414,24 @@ body,
   padding-bottom: 24px;
 }
 
+/* GitHub 个人统计 iframe（profile-summary-for-github，嵌入页自带白底样式） */
+/* 嵌入页 html 强制 overflow-y: scroll，内容不溢出也保留滚动条槽；跨域改不了它，用外层容器向右多裁 18px 藏掉 */
+.github-profile-wrap {
+	margin-top: 12px;
+	border: 1px solid var(--colorful-line);
+	border-radius: 5px;
+	overflow: hidden;
+	background: #fff;
+}
+
+.github-profile-summary {
+	display: block;
+	width: calc(100% + 18px); /* 右侧多露 18px，滚动条槽被 wrap 的 overflow: hidden 裁掉 */
+	height: 1150px; /* 实测结果页内容高约 1121px，预留余量避免内部滚动条 */
+	border: 0;
+	background: #fff;
+}
+
 .personal-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4523,6 +4644,29 @@ body,
   }
 }
 
+/* 点击特效：彩虹色词组上浮渐隐（触发逻辑在 theme-script.ts 的 initClickEffect） */
+.click-word {
+	position: fixed;
+	z-index: 9999;
+	font-weight: bold;
+	font-size: 13px;
+	pointer-events: none;
+	user-select: none;
+	animation: click-word-rise 1.5s cubic-bezier(0.37, 0, 0.63, 1) forwards;
+}
+
+/* 对齐 zcjun.com 原实现：立即开始，1500ms 内上浮 160px（y-20 → y-180）同时渐隐，jQuery swing 缓动 */
+@keyframes click-word-rise {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-160px);
+	}
+}
+
 @media (prefers-reduced-motion: reduce) {
   #sakura-canvas {
     display: none;
@@ -4530,5 +4674,15 @@ body,
 
   .personal-card {
     transition: none;
+  }
+
+  /* 降级：无位移，仅原地渐隐 */
+  @keyframes click-word-rise {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
   }
 }

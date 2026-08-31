@@ -8,7 +8,8 @@ const posts = getSortedPosts(allPosts)
 	.filter((post) => !post.data.draft)
 	.slice(0, Math.min(slideshowConfig.slides.length, 5));
 const slides = posts.map((post, index) => ({
-	image: slideshowConfig.slides[index].image,
+	// 文章有头图时优先用头图，否则回退到对应序号的默认 banner
+	image: post.data.image || slideshowConfig.slides[index].image,
 	title: post.data.title,
 	url: `/posts/${post.id}/`,
 }));
@@ -51,27 +52,50 @@ const slides = posts.map((post, index) => ({
 		if (items.length < 2) return;
 		let current = Math.max(0, items.findIndex((item) => item.classList.contains("active")));
 		let timer: number | undefined;
+		let leaveTimer: number | undefined;
 
-		const show = (index: number) => {
-			current = (index + items.length) % items.length;
-			items.forEach((item, itemIndex) => item.classList.toggle("active", itemIndex === current));
-			indicators.forEach((indicator, itemIndex) => indicator.classList.toggle("active", itemIndex === current));
+		// dir: 1 = 前进（旧页左出、新页右入），-1 = 后退（旧页右出、新页左入）
+		const show = (index: number, dir: 1 | -1) => {
+			const nextIndex = (index + items.length) % items.length;
+			if (nextIndex === current) return;
+			const oldItem = items[current];
+			const newItem = items[nextIndex];
+
+			// 清理上一次过渡的残留类，防止快速连点时叠加
+			window.clearTimeout(leaveTimer);
+			items.forEach((item) =>
+				item.classList.remove("leaving", "leaving-left", "leaving-right", "enter-right", "enter-left"),
+			);
+
+			oldItem.classList.remove("active");
+			oldItem.classList.add("leaving", dir === 1 ? "leaving-left" : "leaving-right");
+			newItem.classList.add("active", dir === 1 ? "enter-right" : "enter-left");
+			current = nextIndex;
+			indicators.forEach((indicator, indicatorIndex) =>
+				indicator.classList.toggle("active", indicatorIndex === current),
+			);
+			// 动画（500ms）结束后摘除退场类，旧页回到 display:none
+			leaveTimer = window.setTimeout(() => {
+				oldItem.classList.remove("leaving", "leaving-left", "leaving-right");
+			}, 550);
 		};
 		const stop = () => window.clearInterval(timer);
 		const start = () => {
 			stop();
-			timer = window.setInterval(() => show(current + 1), Number(el.dataset.interval) || 4000);
+			timer = window.setInterval(() => show(current + 1, 1), Number(el.dataset.interval) || 4000);
 		};
 
 		el.querySelectorAll<HTMLElement>("[data-slide]").forEach((control) => {
 			control.addEventListener("click", () => {
-				show(current + (control.dataset.slide === "next" ? 1 : -1));
+				const dir: 1 | -1 = control.dataset.slide === "next" ? 1 : -1;
+				show(current + dir, dir);
 				start();
 			});
 		});
 		indicators.forEach((indicator) => {
 			indicator.addEventListener("click", () => {
-				show(Number(indicator.dataset.slideTo));
+				const target = Number(indicator.dataset.slideTo);
+				show(target, target > current ? 1 : -1);
 				start();
 			});
 		});

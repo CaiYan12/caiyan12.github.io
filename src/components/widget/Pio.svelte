@@ -78,8 +78,14 @@
 </div>
 
 <style>
+	/* pio.js 关闭态依赖容器 .hidden 类：只藏画布/按钮/对话框，同时显示左下角 .pio-show 再现按钮。
+	   全局 Tailwind 生成的 .hidden 工具类（display:none）会把整个容器藏掉导致无法再现，此处提权对抗 */
+	.pio-container.hidden {
+		display: block;
+	}
+
 	@media (max-width: 1280px) {
-		.pio-hidden-on-mobile {
+		.pio-container.pio-hidden-on-mobile {
 			display: none;
 		}
 	}
