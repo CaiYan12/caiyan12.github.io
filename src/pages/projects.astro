@@ -5,10 +5,19 @@ import { projectsData } from "../data/projects";
 const statusLabels = { completed: "已完成", "in-progress": "进行中", planned: "计划中" } as const;
 ---
 
-<MainGridLayout title="项目展示" description="WindowsIt 的项目与作品" showSidebar={false} searchIndex>
+<MainGridLayout title="我的项目" description="WindowsIt 的项目与作品" showSidebar={false} searchIndex>
 	<div class="page personal-page">
-		<header class="post-header"><h2><i class="fa fa-briefcase" aria-hidden="true"></i> 项目展示</h2></header>
-		<address class="post-metaa"><i class="fa fa-home" aria-hidden="true"></i> <a href="/">首页</a> &raquo; 项目展示</address>
+		<header class="post-header"><h2><i class="fa fa-briefcase" aria-hidden="true"></i> 我的项目</h2></header>
+		<address class="post-metaa"><i class="fa fa-home" aria-hidden="true"></i> <a href="/">首页</a> &raquo; 我的项目</address>
+		{/* GitHub 个人统计（profile-summary-for-github，社区托管服务，外链 iframe；/user/<名> 为结果页路由，/search?q= 仅是搜索表单） */}
+		<div class="github-profile-wrap">
+			<iframe
+				class="github-profile-summary"
+				src="https://profile-summary-for-github.com/user/CaiYan12"
+				title="GitHub 个人统计概览"
+				loading="lazy"
+			></iframe>
+		</div>
 		<div class="personal-grid project-grid">
 			{projectsData.map((project) => (
 				<article class="personal-card project-card">
