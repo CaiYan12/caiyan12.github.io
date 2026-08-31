@@ -1,10 +1,10 @@
 ---
 title: 《Linux操作系统》课程练习题3：基本操作
 published: 2026-03-18
-description: 'Linux操作系统基本操作习题'
+description: "Linux操作系统基本操作习题"
 image: /images/posts/202603181619.jpg
-tags: [习题,Linux操作系统]
-category: '习题'
+tags: [习题, Linux操作系统]
+category: "习题"
 views: 0
 comments: 0
 hotness: 0
@@ -121,12 +121,12 @@ D．`cat /var/mesg`
 
 **区别：**
 
-| 特性     | more     | less   |
-| -------- | -------- | ------ |
-| 向前翻页 | 支持     | 支持   |
+| 特性     | more      | less    |
+| -------- | --------- | ------- |
+| 向前翻页 | 支持      | 支持    |
 | 向后翻页 | ❌ 不支持 | ✅ 支持 |
-| 搜索功能 | 有限     | 更强   |
-| 使用体验 | 较简单   | 更灵活 |
+| 搜索功能 | 有限      | 更强    |
+| 使用体验 | 较简单    | 更灵活  |
 
 👉 总结：**less 是 more 的增强版**
 

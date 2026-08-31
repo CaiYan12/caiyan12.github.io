@@ -42,14 +42,23 @@ export function remarkImageGrid() {
 					) {
 						containsGridStart = true;
 					}
-					if (last.type === "text" && last.value.trim().endsWith("[/grid]")) {
+					if (
+						last.type === "text" &&
+						last.value.trim().endsWith("[/grid]")
+					) {
 						containsGridEnd = true;
 					}
 
 					// Case 1: [grid] and [/grid] in the SAME paragraph
 					if (containsGridStart && containsGridEnd && !inGrid) {
-						first.value = first.value.replace(/^\s*\[grid\]\s*/, "");
-						last.value = last.value.replace(/\s*\[\/grid\]\s*$/, "");
+						first.value = first.value.replace(
+							/^\s*\[grid\]\s*/,
+							"",
+						);
+						last.value = last.value.replace(
+							/\s*\[\/grid\]\s*$/,
+							"",
+						);
 
 						// count images in the grid
 						const imgCount = node.children.filter(
@@ -71,7 +80,8 @@ export function remarkImageGrid() {
 								},
 							},
 							children: node.children.filter(
-								(n) => n.type !== "text" || n.value.trim() !== "",
+								(n) =>
+									n.type !== "text" || n.value.trim() !== "",
 							), // Remove empty text nodes left over
 						});
 						continue;
@@ -80,8 +90,14 @@ export function remarkImageGrid() {
 					// Case 2: Multi-paragraph
 					if (!inGrid && containsGridStart) {
 						inGrid = true;
-						first.value = first.value.replace(/^\s*\[grid\]\s*/, "");
-						if (node.children.length === 1 && first.value.trim() === "") {
+						first.value = first.value.replace(
+							/^\s*\[grid\]\s*/,
+							"",
+						);
+						if (
+							node.children.length === 1 &&
+							first.value.trim() === ""
+						) {
 							// [grid] stood alone, ignore this node
 						} else {
 							gridChildren.push(node);
@@ -91,8 +107,14 @@ export function remarkImageGrid() {
 
 					if (inGrid && containsGridEnd) {
 						inGrid = false;
-						last.value = last.value.replace(/\s*\[\/grid\]\s*$/, "");
-						if (node.children.length === 1 && last.value.trim() === "") {
+						last.value = last.value.replace(
+							/\s*\[\/grid\]\s*$/,
+							"",
+						);
+						if (
+							node.children.length === 1 &&
+							last.value.trim() === ""
+						) {
 							// [/grid] stood alone
 						} else {
 							gridChildren.push(node);

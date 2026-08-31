@@ -17,14 +17,14 @@ private: true
 
 ## 迁移技术栈
 
-| 原方案 | 新方案 |
-| ------ | ------ |
-| PHP + MySQL | 纯静态 HTML |
-| Pjax 无刷新 | Swup.js 页面过渡 |
-| Emlog 自带搜索 | Pagefind 静态索引 |
-| Emlog 评论 | Giscus（GitHub Discussions） |
-| Highslide 灯箱 | Fancybox |
-| jQuery 轮播 | 原生 JS 轮播 |
+| 原方案         | 新方案                       |
+| -------------- | ---------------------------- |
+| PHP + MySQL    | 纯静态 HTML                  |
+| Pjax 无刷新    | Swup.js 页面过渡             |
+| Emlog 自带搜索 | Pagefind 静态索引            |
+| Emlog 评论     | Giscus（GitHub Discussions） |
+| Highslide 灯箱 | Fancybox                     |
+| jQuery 轮播    | 原生 JS 轮播                 |
 
 ## 一些代码示例
 

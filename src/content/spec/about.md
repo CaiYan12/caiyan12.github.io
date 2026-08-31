@@ -45,4 +45,4 @@ updated: 2026-08-31
 
 ---
 
-*Built with ❤️ using Astro and inspired by modern web design principles.*
+_Built with ❤️ using Astro and inspired by modern web design principles._

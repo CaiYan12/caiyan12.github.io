@@ -48,7 +48,8 @@ export const projectsData: Project[] = [
 	{
 		id: "feijiemgr",
 		title: "飞捷管理后台",
-		description: "基于 Vue 3、TypeScript、Vite、Element Plus 和 Pinia 构建的运营管理网站（私有仓库）。",
+		description:
+			"基于 Vue 3、TypeScript、Vite、Element Plus 和 Pinia 构建的运营管理网站（私有仓库）。",
 		image: "",
 		category: "web",
 		techStack: ["Vue 3", "TypeScript", "Element Plus", "Pinia", "Vite"],
@@ -83,7 +84,8 @@ export const projectsData: Project[] = [
 	{
 		id: "windynotepad",
 		title: "WindyNotePad",
-		description: "一款基于 Qt 的轻量级文本编辑器，采用暗色主题，专注于简洁与实用。",
+		description:
+			"一款基于 Qt 的轻量级文本编辑器，采用暗色主题，专注于简洁与实用。",
 		image: "",
 		category: "desktop",
 		techStack: ["Qt", "C++"],
@@ -95,7 +97,8 @@ export const projectsData: Project[] = [
 	{
 		id: "studentmsgmgr",
 		title: "StudentMsgMgr",
-		description: "学生信息管理桌面应用，支持增删改查与 CSV 导入导出（Excel 兼容）。",
+		description:
+			"学生信息管理桌面应用，支持增删改查与 CSV 导入导出（Excel 兼容）。",
 		image: "",
 		category: "desktop",
 		techStack: ["Qt 6", "C++17", "MSVC"],

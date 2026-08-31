@@ -1,0 +1,11 @@
+name: 其他事项
+description: 不属于 Bug 或功能建议的事项
+title: "[Other]: "
+body:
+  - type: textarea
+    id: issue-description
+    attributes:
+      label: 事项描述
+      description: 请描述你的问题或事项。
+    validations:
+      required: true

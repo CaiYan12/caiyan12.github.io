@@ -1,0 +1,4 @@
+# 仅作为视觉对照参考的原始主题样式，不做格式化（保持与 Emlog 原版逐字节一致）
+src/styles/colorful-original.css
+# vendored 第三方库（Font Awesome 4）
+src/styles/font-awesome.css

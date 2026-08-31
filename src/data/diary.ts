@@ -16,7 +16,8 @@ export const diary: DiaryItem[] = [
 	},
 	{
 		date: "2026-07-20 09:12",
-		content: "今天给博客配好了 GitHub + Vercel 自动部署，以后写文章只要 git push 就行。",
+		content:
+			"今天给博客配好了 GitHub + Vercel 自动部署，以后写文章只要 git push 就行。",
 	},
 	{
 		date: "2026-07-10 23:05",

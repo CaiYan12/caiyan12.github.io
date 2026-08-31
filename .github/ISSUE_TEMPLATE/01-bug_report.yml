@@ -1,0 +1,54 @@
+name: Bug 报告
+description: 反馈站点或构建中的问题
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈，请尽量填写以下信息以便定位问题。
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: 问题描述
+      description: 清晰简洁地描述遇到的问题。
+    validations:
+      required: true
+  - type: textarea
+    id: to-reproduce
+    attributes:
+      label: 复现步骤
+      placeholder: |
+        1. 打开 '...'
+        2. 点击 '....'
+        3. 出现异常
+    validations:
+      required: true
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: 期望行为
+      description: 描述你期望的正确表现。
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: 操作系统
+      multiple: true
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Android
+        - iOS
+  - type: input
+    id: browser
+    attributes:
+      label: 浏览器
+      placeholder: 例如 Chrome、Safari 及版本号
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 补充信息
+      description: 截图、控制台报错或其他上下文。

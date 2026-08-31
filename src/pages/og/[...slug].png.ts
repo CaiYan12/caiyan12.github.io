@@ -102,7 +102,8 @@ export async function GET({
 	props,
 }: APIContext<{ post: CollectionEntry<"posts"> }>) {
 	const { post } = props;
-	const { regular: fontRegular, bold: fontBold } = await fetchNotoSansSCFonts();
+	const { regular: fontRegular, bold: fontBold } =
+		await fetchNotoSansSCFonts();
 	const avatarBase64 = await getAvatarPngDataUrl();
 
 	const description = post.data.description || post.data.excerpt;
@@ -188,7 +189,8 @@ export async function GET({
 												style: {
 													width: "10px",
 													height: "68px",
-													backgroundColor: primaryColor,
+													backgroundColor:
+														primaryColor,
 													borderRadius: "6px",
 													marginTop: "14px",
 												},
@@ -274,7 +276,9 @@ export async function GET({
 													fontWeight: 600,
 													color: textColor,
 												},
-												children: post.data.author || siteConfig.author,
+												children:
+													post.data.author ||
+													siteConfig.author,
 											},
 										},
 									],
@@ -283,7 +287,10 @@ export async function GET({
 							{
 								type: "div",
 								props: {
-									style: { fontSize: "28px", color: subtleTextColor },
+									style: {
+										fontSize: "28px",
+										color: subtleTextColor,
+									},
 									children: pubDate,
 								},
 							},

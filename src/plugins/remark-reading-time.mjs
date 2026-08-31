@@ -16,8 +16,7 @@ export function remarkReadingTime() {
 			.filter((w) => w.length > 0).length;
 
 		const minutes = Math.ceil(
-			cjkCount / WORDS_PER_MINUTE +
-				otherWords / (WORDS_PER_MINUTE * 2),
+			cjkCount / WORDS_PER_MINUTE + otherWords / (WORDS_PER_MINUTE * 2),
 		);
 		file.data.astro.frontmatter.readingTime = Math.max(1, minutes);
 	};

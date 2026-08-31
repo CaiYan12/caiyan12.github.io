@@ -29,11 +29,11 @@ git push -u origin main
 2. 选择 GitHub 仓库，Vercel 会自动识别 Astro 框架
 3. 构建配置（一般无需手动改）：
 
-| 配置项 | 值 |
-| ------ | --- |
-| Framework Preset | Astro |
-| Build Command | `pnpm build` |
-| Output Directory | `dist` |
+| 配置项           | 值           |
+| ---------------- | ------------ |
+| Framework Preset | Astro        |
+| Build Command    | `pnpm build` |
+| Output Directory | `dist`       |
 
 4. 点击 **Deploy**，等待构建完成即可
 

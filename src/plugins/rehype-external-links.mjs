@@ -27,7 +27,8 @@ export default function rehypeExternalLinks(options = {}) {
 			if (typeof href !== "string") return;
 
 			// 只处理 http/https 绝对链接
-			if (!href.startsWith("http://") && !href.startsWith("https://")) return;
+			if (!href.startsWith("http://") && !href.startsWith("https://"))
+				return;
 
 			// 跳过本站链接
 			if (siteHost) {

@@ -10,13 +10,14 @@ export function isPublicPost(post: Post): boolean {
 
 /** 按置顶 + 发布时间倒序排序（对应 Emlog 首页排序） */
 export function getSortedPosts(posts: Post[]): Post[] {
-	return [...posts]
-		.filter(isPublicPost)
-		.sort((a, b) => {
+	return [...posts].filter(isPublicPost).sort((a, b) => {
 		if (a.data.pinned !== b.data.pinned) {
 			return a.data.pinned ? -1 : 1;
 		}
-		return dayjs(b.data.published).valueOf() - dayjs(a.data.published).valueOf();
+		return (
+			dayjs(b.data.published).valueOf() -
+			dayjs(a.data.published).valueOf()
+		);
 	});
 }
 
@@ -68,9 +69,12 @@ export function getHotPosts(posts: Post[], limit = 6): Post[] {
 		.filter(isPublicPost)
 		.sort((a, b) => {
 			const score =
-				(b.data.hotness * 100 + b.data.comments) -
+				b.data.hotness * 100 +
+				b.data.comments -
 				(a.data.hotness * 100 + a.data.comments);
-			return score || b.data.published.valueOf() - a.data.published.valueOf();
+			return (
+				score || b.data.published.valueOf() - a.data.published.valueOf()
+			);
 		})
 		.slice(0, limit);
 }
@@ -128,6 +132,6 @@ export function getCover(post: Post): string {
 	if (post.data.image) return post.data.image;
 	// 用 slug 的 hash 稳定地选一张随机缩略图（避免每次构建随机）
 	const idx =
-		[...post.id].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 40 + 1;
+		([...post.id].reduce((acc, c) => acc + c.charCodeAt(0), 0) % 40) + 1;
 	return `/images/random/tb${idx}.jpg`;
 }
