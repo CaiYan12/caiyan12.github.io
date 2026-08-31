@@ -77,9 +77,7 @@ function escapeHtml(value: string): string {
 
 /** 渲染 mermaid 图表（懒加载，仅在页面存在 pre.mermaid 时执行） */
 async function renderMermaid() {
-	const nodes = [
-		...document.querySelectorAll<HTMLElement>("pre.mermaid"),
-	];
+	const nodes = [...document.querySelectorAll<HTMLElement>("pre.mermaid")];
 	const pending = nodes.filter((n) => n.dataset.mermaidRendered !== "true");
 	if (pending.length === 0) return;
 	try {
@@ -107,12 +105,11 @@ async function renderGithubCards() {
 			card.dataset.rendered = "true";
 			const repo = card.dataset.repo || "";
 			// owner 与仓库名分段编码，避免整体编码把 "/" 变成 %2F
-			const repoPath = repo
-				.split("/")
-				.map(encodeURIComponent)
-				.join("/");
+			const repoPath = repo.split("/").map(encodeURIComponent).join("/");
 			try {
-				const res = await fetch(`https://api.github.com/repos/${repoPath}`);
+				const res = await fetch(
+					`https://api.github.com/repos/${repoPath}`,
+				);
 				if (!res.ok) throw new Error(String(res.status));
 				const data = await res.json();
 				card.innerHTML = `
@@ -195,14 +192,21 @@ function initCanvasBoomEffect() {
 		draw() {
 			this.context.fillStyle = this.color;
 			this.context.beginPath();
-			this.context.arc(this.position.x, this.position.y, 2, 0, Math.PI * 2);
+			this.context.arc(
+				this.position.x,
+				this.position.y,
+				2,
+				0,
+				Math.PI * 2,
+			);
 			this.context.fill();
 		}
 		move() {
 			// 速度取原版一半（用户要求慢 0.5 倍），重力项同步减半保持轨迹形状
 			this.position.x += (Math.sin(this.angle) * this.speed) / 2;
 			this.position.y +=
-				(Math.cos(this.angle) * this.speed) / 2 + this.renderCount * 0.15;
+				(Math.cos(this.angle) * this.speed) / 2 +
+				this.renderCount * 0.15;
 			this.renderCount++;
 		}
 	}
@@ -214,7 +218,10 @@ function initCanvasBoomEffect() {
 			private origin: { x: number; y: number },
 			private context: CanvasRenderingContext2D,
 			private circleCount = 10,
-			private area = { width: window.innerWidth, height: window.innerHeight },
+			private area = {
+				width: window.innerWidth,
+				height: window.innerHeight,
+			},
 		) {}
 		private randomArray(range: string[]) {
 			return range[Math.floor(range.length * Math.random())];
@@ -223,7 +230,9 @@ function initCanvasBoomEffect() {
 			const range = ["8", "9", "A", "B", "C", "D", "E", "F"];
 			return (
 				"#" +
-				Array.from({ length: 6 }, () => this.randomArray(range)).join("")
+				Array.from({ length: 6 }, () => this.randomArray(range)).join(
+					"",
+				)
 			);
 		}
 		private randomRange(start: number, end: number) {
@@ -305,6 +314,25 @@ function initCanvasBoomEffect() {
 	window.addEventListener("pagehide", () => {
 		booms.length = 0;
 	});
+}
+
+/** LQIP 占位淡出：图片加载完成后隐藏渐变占位（无 JS 时图片加载完成后自然覆盖占位，不影响显示） */
+function initLqipFade() {
+	document
+		.querySelectorAll<HTMLElement>(".lqip-placeholder")
+		.forEach((placeholder) => {
+			if (placeholder.dataset.lqipBound === "true") return;
+			placeholder.dataset.lqipBound = "true";
+			const img = placeholder.parentElement?.querySelector("img");
+			if (!img) return;
+			const done = () => placeholder.classList.add("loaded");
+			if (img.complete && img.naturalWidth > 0) {
+				done();
+			} else {
+				img.addEventListener("load", done, { once: true });
+				img.addEventListener("error", done, { once: true });
+			}
+		});
 }
 
 /** 动态标题：切走时换告别语；切回先显示"算了，你走吧！"，2 秒后恢复原标题 */
@@ -408,6 +436,7 @@ function initSwupHooks() {
 	document.addEventListener("astro:after-swap", () => {
 		syncNavHighlight();
 		initFancybox();
+		initLqipFade();
 		loadKatexCss();
 		renderMermaid();
 		renderGithubCards();
@@ -461,6 +490,7 @@ export function pagefindReady() {
 	initDblClickScroll();
 	initMMenu();
 	initSpoiler();
+	initLqipFade();
 	initClickEffect();
 	initCanvasBoomEffect();
 	initVisibilityTitle();

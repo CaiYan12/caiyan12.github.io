@@ -7,6 +7,7 @@
     "baseUrl": ".",
     "strictNullChecks": true,
     "allowJs": false,
+    "resolveJsonModule": true,
     "plugins": [{ "name": "@astrojs/ts-plugin" }],
     "paths": {
       "@components/*": ["src/components/*"],

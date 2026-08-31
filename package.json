@@ -8,9 +8,10 @@
     "dev": "astro dev",
     "start": "astro dev",
     "check": "astro check",
-    "build": "astro build && pagefind --site dist",
+    "build": "node scripts/generate-lqips.mjs && astro build && pagefind --site dist",
     "preview": "astro preview",
     "new-post": "node scripts/new-post.mjs",
+    "lqips": "node scripts/generate-lqips.mjs",
     "astro": "astro",
     "format": "prettier --write ./src",
     "lint": "eslint ./src --fix"

@@ -1,6 +1,7 @@
 ---
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { scanAlbums } from "../utils/album-scanner";
+import { getLqipProps } from "../utils/lqip-utils";
 
 const albums = scanAlbums();
 ---
@@ -30,6 +31,7 @@ const albums = scanAlbums();
 							title={`查看相册：${album.name}`}
 						>
 							<span class="album-cover">
+								<span class="lqip-placeholder" style={getLqipProps(album.cover).style} aria-hidden="true"></span>
 								<img src={album.cover} alt={album.name} loading="lazy" />
 								<span class="album-count">{album.photos.length} 张</span>
 							</span>

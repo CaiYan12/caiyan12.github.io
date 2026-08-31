@@ -15,8 +15,8 @@
     --new: #00c700;
     --page-bg: #f4f5f7;
     --card-bg: #fff;
-	--content-surface: rgba(255, 255, 255, 0.86);
-	--content-surface-nested: rgba(255, 255, 255, 0.84);
+    --content-surface: rgba(255, 255, 255, 0.86);
+    --content-surface-nested: rgba(255, 255, 255, 0.84);
     --border: #eaeaea;
     --line: #ddd;
     --text: #000;
@@ -34,9 +34,7 @@
     background-attachment: fixed;
     color: var(--text);
     word-wrap: break-word;
-    font-family:
-      "Classic Grotesque W01", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei",
-      "WenQuanYi Micro Hei", Arial, SimSun, sans-serif;
+    font-family: "Classic Grotesque W01", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", "WenQuanYi Micro Hei", Arial, SimSun, sans-serif;
     cursor: url(/style/default.cur), default;
   }
 
@@ -93,13 +91,7 @@
     z-index: 3;
     width: 35px;
     height: 35px;
-    background: linear-gradient(
-      315deg,
-      #fff 45%,
-      #999aaa 50%,
-      #ccc 56%,
-      #fff 80%
-    );
+    background: linear-gradient(315deg, #fff 45%, #999aaa 50%, #ccc 56%, #fff 80%);
     box-shadow: -1px -1px 1px rgba(0, 0, 0, 0.4);
     content: "";
     pointer-events: none;
@@ -1602,9 +1594,7 @@ body {
   background-size: cover;
   color: #000;
   font-size: 13px;
-  font-family:
-    "Microsoft YaHei", "微软雅黑", "Trebuchet MS", Arial, Verdana, Tahoma,
-    sans-serif;
+  font-family: "Microsoft YaHei", "微软雅黑", "Trebuchet MS", Arial, Verdana, Tahoma, sans-serif;
   cursor: url(/style/default.cur), default;
 }
 
@@ -1643,9 +1633,7 @@ section {
   margin: 0;
   padding: 0;
   list-style: none;
-  font-family:
-    "Microsoft YaHei", "微软雅黑", "Trebuchet MS", Arial, Verdana, Tahoma,
-    sans-serif;
+  font-family: "Microsoft YaHei", "微软雅黑", "Trebuchet MS", Arial, Verdana, Tahoma, sans-serif;
 }
 
 a {
@@ -1727,7 +1715,7 @@ img:hover {
 
 #head-nav,
 #wrapper {
-	opacity: 1;
+  opacity: 1;
 }
 
 #header1 {
@@ -1762,31 +1750,31 @@ img:hover {
 
 #header .logo {
   float: left;
-	overflow: hidden;
+  overflow: hidden;
   width: 100px;
   height: 100px;
-	border-radius: 50%;
+  border-radius: 50%;
 }
 
 #header .logo img {
-	display: block;
-	box-sizing: border-box;
+  display: block;
+  box-sizing: border-box;
   width: 100px;
   height: 100px;
   border: 3px solid #eee;
   border-radius: 50%;
   vertical-align: middle;
   animation: colorful-bounce-in 1s linear;
-	transform: scale(0.97);
-	transition:
-		border-color 180ms ease-out,
-		transform 180ms ease-out;
-	transform-origin: center;
+  transform: scale(0.97);
+  transition:
+    border-color 180ms ease-out,
+    transform 180ms ease-out;
+  transform-origin: center;
 }
 
 #header .logo img:hover {
   border-color: var(--colorful-green);
-	transform: scale(1);
+  transform: scale(1);
 }
 
 #header h1 {
@@ -1821,20 +1809,8 @@ img:hover {
 
 /* 上下 4px 渐隐遮罩：滚动中间帧不再被硬裁一半 */
 #header .text {
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 4px,
-    #000 20px,
-    transparent 24px
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 4px,
-    #000 20px,
-    transparent 24px
-  );
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 4px, #000 20px, transparent 24px);
+  mask-image: linear-gradient(to bottom, transparent 0, #000 4px, #000 20px, transparent 24px);
 }
 
 #header .text li {
@@ -1870,7 +1846,7 @@ img:hover {
   margin: 0 auto;
   padding: 0 10px;
   border-radius: 5px;
-	background: var(--content-surface);
+  background: var(--content-surface);
   font-size: 16px;
   font-weight: 400;
   letter-spacing: -0.02em;
@@ -1931,7 +1907,7 @@ img:hover {
   width: 110px;
   margin: 0;
   padding: 0;
-	background: var(--content-surface);
+  background: var(--content-surface);
 }
 
 #nav .dropdown:hover > ul,
@@ -2051,7 +2027,7 @@ img:hover {
   margin: 20px auto;
   padding: 20px;
   border-radius: 5px;
-	background: var(--content-surface);
+  background: var(--content-surface);
   box-shadow: 0 2px 6px rgba(100, 100, 100, 0.3);
 }
 
@@ -2063,13 +2039,7 @@ img:hover {
   width: 35px;
   height: 35px;
   border-radius: 5px 0 5px;
-  background: linear-gradient(
-    315deg,
-    #fff 45%,
-    #999aaa 50%,
-    #ccc 56%,
-    #fff 80%
-  );
+  background: linear-gradient(315deg, #fff 45%, #999aaa 50%, #ccc 56%, #fff 80%);
   box-shadow: -1px -1px 1px rgba(0, 0, 0, 0.4);
   content: "";
   pointer-events: none;
@@ -2628,38 +2598,38 @@ img:hover {
   margin-bottom: 10px;
   border: 1px solid #eaeaea;
   border-radius: 0;
-	background: var(--content-surface-nested);
+  background: var(--content-surface-nested);
 }
 
 .widget > h3 {
-	box-sizing: border-box;
-	height: 30px;
+  box-sizing: border-box;
+  height: 30px;
   margin: 0;
-	padding: 0 10px;
+  padding: 0 10px;
   border-bottom: 1px solid #eaeaea;
   color: #000;
   font-size: 14px;
-	line-height: 30px;
+  line-height: 30px;
 }
 
 .widget > .icon + h3 {
-	text-indent: 10px;
+  text-indent: 10px;
 }
 
 .widget > .icon {
-	display: flex;
+  display: flex;
   float: left;
-	box-sizing: border-box;
-	align-items: center;
-	justify-content: center;
-	width: 47px;
-	min-width: 47px;
-	height: 30px;
-	margin: 0;
-	padding: 0;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  width: 47px;
+  min-width: 47px;
+  height: 30px;
+  margin: 0;
+  padding: 0;
   border-right: 1px solid #dadada;
   background: #fbfbfb;
-	line-height: 1;
+  line-height: 1;
 }
 
 .searchicon {
@@ -2753,7 +2723,7 @@ img:hover {
   resize: vertical;
   border: 1px solid #d9d9d9;
   border-radius: 2px;
-	background: var(--content-surface-nested);
+  background: var(--content-surface-nested);
   padding: 8px;
   color: #333;
   font: inherit;
@@ -2822,7 +2792,7 @@ img:hover {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-	background: var(--content-surface-nested);
+  background: var(--content-surface-nested);
   content: "";
 }
 
@@ -2868,23 +2838,23 @@ img:hover {
 }
 
 #sidebar .tab_nav ul {
-	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	overflow: visible;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: visible;
   padding: 0;
   color: #000;
   font-size: 14px;
 }
 
 #sidebar .tab_nav li {
-	display: flex;
-	float: none;
-	box-sizing: border-box;
-	align-items: center;
-	justify-content: center;
-	gap: 4px;
-	width: auto;
-	min-width: 0;
+  display: flex;
+  float: none;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: auto;
+  min-width: 0;
   height: 30px;
   padding: 0;
   border-right: 1px solid #eaeaea;
@@ -2892,7 +2862,7 @@ img:hover {
   background: #fbfbfb;
   line-height: 30px;
   text-align: center;
-	white-space: nowrap;
+  white-space: nowrap;
 }
 
 #sidebar .tab_nav li:last-child {
@@ -2974,61 +2944,61 @@ img:hover {
 }
 
 .sidebar-search-widget {
-	display: grid;
-	grid-template-columns: 47px minmax(0, 1fr);
-	position: relative;
+  display: grid;
+  grid-template-columns: 47px minmax(0, 1fr);
+  position: relative;
 }
 
 .sidebar-search-widget:focus-within {
-	outline: 0;
+  outline: 0;
 }
 
 .sidebar-search-widget:focus-within::after {
-	position: absolute;
-	z-index: 2;
-	inset: 0;
-	box-sizing: border-box;
-	border: 2px solid var(--colorful-green-accessible);
-	content: "";
-	pointer-events: none;
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  box-sizing: border-box;
+  border: 2px solid var(--colorful-green-accessible);
+  content: "";
+  pointer-events: none;
 }
 
 .sidebar-search-widget .searchicon {
-	display: flex;
-	float: none;
-	box-sizing: border-box;
-	align-items: center;
-	justify-content: center;
-	width: 47px;
-	height: 30px;
-	min-width: 0;
-	margin: 0;
-	padding: 0;
-	line-height: 1;
+  display: flex;
+  float: none;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  width: 47px;
+  height: 30px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1;
 }
 
 .sidebar-search {
-	height: 30px;
-	margin: 0;
-	padding: 0;
+  height: 30px;
+  margin: 0;
+  padding: 0;
 }
 
 .sidebar-search form {
-	position: relative;
-	display: flex;
-	height: 30px;
+  position: relative;
+  display: flex;
+  height: 30px;
 }
 
 .sidebar-search input {
-	box-sizing: border-box;
-	min-width: 0;
-	height: 30px;
-	flex: 1;
-	padding: 0 9px;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 30px;
+  flex: 1;
+  padding: 0 9px;
 }
 
 .sidebar-search input:focus-visible {
-	outline: 0;
+  outline: 0;
 }
 
 .sidebar-search button {
@@ -3046,11 +3016,11 @@ img:hover {
 
 .sidebar-search button:hover,
 .sidebar-search button:focus-visible {
-	background: var(--primary-dark);
+  background: var(--primary-dark);
 }
 
 .sidebar-search button:focus-visible {
-	outline: 0;
+  outline: 0;
 }
 
 #footer {
@@ -3736,8 +3706,8 @@ img:hover {
 
   /* 文字站点标志（替代原 Limh.Me 图片 logo） */
   #header1 .logo1 .logo1-text {
-		display: inline-block;
-		margin-top: 8px;
+    display: inline-block;
+    margin-top: 8px;
     color: #4a4a4a;
     font-weight: bold;
     font-size: 22px;
@@ -3866,9 +3836,9 @@ img:hover {
 }
 
 @media (prefers-reduced-motion: reduce) {
-	#header .logo img {
-		transform: none;
-	}
+  #header .logo img {
+    transform: none;
+  }
 
   #header .logo img,
   #header .text ul,
@@ -4417,19 +4387,19 @@ body,
 /* GitHub 个人统计 iframe（profile-summary-for-github，嵌入页自带白底样式） */
 /* 嵌入页 html 强制 overflow-y: scroll，内容不溢出也保留滚动条槽；跨域改不了它，用外层容器向右多裁 18px 藏掉 */
 .github-profile-wrap {
-	margin-top: 12px;
-	border: 1px solid var(--colorful-line);
-	border-radius: 5px;
-	overflow: hidden;
-	background: #fff;
+  margin-top: 12px;
+  border: 1px solid var(--colorful-line);
+  border-radius: 5px;
+  overflow: hidden;
+  background: #fff;
 }
 
 .github-profile-summary {
-	display: block;
-	width: calc(100% + 18px); /* 右侧多露 18px，滚动条槽被 wrap 的 overflow: hidden 裁掉 */
-	height: 1150px; /* 实测结果页内容高约 1121px，预留余量避免内部滚动条 */
-	border: 0;
-	background: #fff;
+  display: block;
+  width: calc(100% + 18px); /* 右侧多露 18px，滚动条槽被 wrap 的 overflow: hidden 裁掉 */
+  height: 1150px; /* 实测结果页内容高约 1121px，预留余量避免内部滚动条 */
+  border: 0;
+  background: #fff;
 }
 
 .personal-grid {
@@ -4444,7 +4414,7 @@ body,
   min-width: 0;
   border: 1px solid #e5e5e5;
   border-radius: 6px;
-	background: var(--content-surface-nested);
+  background: var(--content-surface-nested);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   padding: 18px;
   color: #555;
@@ -4644,27 +4614,50 @@ body,
   }
 }
 
+/* LQIP 模糊占位渐变（数据由 scripts/generate-lqips.mjs 生成，图片加载完成后由客户端淡出；
+   占位在图片下层，无 JS 时图片加载完成也会自然覆盖占位） */
+.lqip-wrap {
+  position: relative;
+}
+
+.lqip-placeholder {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-out;
+}
+
+.lqip-placeholder.loaded {
+  opacity: 0;
+}
+
+.lqip-wrap > img {
+  position: relative;
+  z-index: 1;
+}
+
 /* 点击特效：彩虹色词组上浮渐隐（触发逻辑在 theme-script.ts 的 initClickEffect） */
 .click-word {
-	position: fixed;
-	z-index: 9999;
-	font-weight: bold;
-	font-size: 13px;
-	pointer-events: none;
-	user-select: none;
-	animation: click-word-rise 1.5s cubic-bezier(0.37, 0, 0.63, 1) forwards;
+  position: fixed;
+  z-index: 9999;
+  font-weight: bold;
+  font-size: 13px;
+  pointer-events: none;
+  user-select: none;
+  animation: click-word-rise 1.5s cubic-bezier(0.37, 0, 0.63, 1) forwards;
 }
 
 /* 对齐 zcjun.com 原实现：立即开始，1500ms 内上浮 160px（y-20 → y-180）同时渐隐，jQuery swing 缓动 */
 @keyframes click-word-rise {
-	from {
-		opacity: 1;
-		transform: translateY(0);
-	}
-	to {
-		opacity: 0;
-		transform: translateY(-160px);
-	}
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-160px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
