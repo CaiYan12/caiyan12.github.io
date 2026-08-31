@@ -6,6 +6,7 @@ image: /images/guide-cover.png
 tags: [博客, 定制, 指南]
 category: 教程
 draft: false
+private: true
 ---
 
 本博客基于 [Astro](https://astro.build/) 构建。指南中没有提到的内容，可以在 [Astro 官方文档](https://docs.astro.build/) 中找到答案。

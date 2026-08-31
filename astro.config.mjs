@@ -11,6 +11,7 @@ import rehypeKatex from "rehype-katex";
 import rehypeSlug from "rehype-slug";
 import remarkMath from "remark-math";
 import remarkDirective from "remark-directive";
+import remarkCjkFriendly from "remark-cjk-friendly";
 import { siteConfig } from "./src/config.ts";
 import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
 import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
@@ -97,6 +98,7 @@ export default defineConfig({
 	],
 	markdown: {
 		remarkPlugins: [
+			remarkCjkFriendly, // 解析层扩展，须紧跟 Astro 内置 remark-gfm 之后、其余插件之前
 			remarkMath,
 			remarkDirective,
 			remarkExtended,

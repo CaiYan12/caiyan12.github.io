@@ -8,6 +8,7 @@ pinned: true
 views: 328
 comments: 12
 hotness: 4
+private: true
 ---
 
 欢迎来到 **WindowsIt's Music Club** 的全新站点！

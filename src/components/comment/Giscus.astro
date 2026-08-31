@@ -8,6 +8,7 @@ interface Props {
 
 const { term } = Astro.props;
 const pageTerm = term ?? Astro.url.pathname;
+const pageMapping = term ? "specific" : commentConfig.mapping;
 ---
 
 {commentConfig.enable ? (
@@ -15,13 +16,14 @@ const pageTerm = term ?? Astro.url.pathname;
 		<h3>
 			<i class="fa fa-comments-o" aria-hidden="true"></i> 评论区
 		</h3>
-		<div
-			class="giscus"
+		<script
+			is:inline
+			src="https://giscus.app/client.js"
 			data-repo={commentConfig.repo}
 			data-repo-id={commentConfig.repoId}
 			data-category={commentConfig.category}
 			data-category-id={commentConfig.categoryId}
-			data-mapping={commentConfig.mapping}
+			data-mapping={pageMapping}
 			data-strict="0"
 			data-reactions-enabled={commentConfig.reactionsEnabled}
 			data-emit-metadata={commentConfig.emitMetadata}
@@ -29,8 +31,10 @@ const pageTerm = term ?? Astro.url.pathname;
 			data-theme="preferred_color_scheme"
 			data-lang={commentConfig.lang}
 			data-loading="lazy"
+			crossorigin="anonymous"
+			async
 			{...{ "data-term": pageTerm }}
-		></div>
+		></script>
 	</section>
 ) : (
 	<section id="comments">

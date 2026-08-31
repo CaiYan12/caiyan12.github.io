@@ -161,7 +161,7 @@
   margin: 1.25em 0;
   border: 1px solid #d0d7de;
   border-radius: 0.5rem;
-  background: #fff;
+	background: var(--content-surface-nested);
   overflow: hidden;
 }
 

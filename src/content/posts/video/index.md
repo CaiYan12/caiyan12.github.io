@@ -5,6 +5,7 @@ description: 演示如何在博客文章中嵌入 YouTube 与哔哩哔哩视频�
 tags: [示例, 视频]
 category: 示例
 draft: false
+private: true
 ---
 
 把 YouTube 或其他平台的嵌入代码直接复制进 Markdown 文件即可。

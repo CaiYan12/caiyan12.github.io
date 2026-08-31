@@ -5,6 +5,7 @@ description: 介绍本站支持的 Markdown 扩展语法：GitHub 卡片、提�
 tags: [示例, Markdown, 扩展]
 category: 示例
 draft: false
+private: true
 ---
 
 ## GitHub 仓库卡片

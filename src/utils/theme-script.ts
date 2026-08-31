@@ -253,8 +253,27 @@ function loadSiteStats() {
 	}
 }
 
+/** 每次完整打开页面随机选择背景；Swup 切页时保留当前背景 */
+function initRandomBackground() {
+	const background = document.querySelector<HTMLImageElement>(
+		".bg-image[data-backgrounds]",
+	);
+	if (!background || background.dataset.selected === "true") return;
+
+	try {
+		const images = JSON.parse(background.dataset.backgrounds || "[]");
+		if (!Array.isArray(images) || images.length === 0) return;
+		const index = Math.floor(Math.random() * images.length);
+		background.src = images[index];
+		background.dataset.selected = "true";
+	} catch {
+		// 背景配置解析失败时保留纯色页面背景
+	}
+}
+
 export function pagefindReady() {
 	loadSiteStats();
+	initRandomBackground();
 	syncNavHighlight();
 	initBackToTop();
 	initDblClickScroll();

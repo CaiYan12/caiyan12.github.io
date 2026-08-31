@@ -14,9 +14,9 @@ export const siteConfig = {
 	/** 作者名 */
 	author: "WindowsIt",
 	/** 头像路径 */
-	avatar: "/images/avatar.png",
+	avatar: "/images/avatar.webp",
 	/** Colorful 桌面端圆形站点标志（对应 options.php 的 logo） */
-	desktopLogo: "/images/icon.png",
+	desktopLogo: "/images/avatar.webp",
 	/** 时区 */
 	timezone: "Asia/Shanghai",
 	/** 语言 */
@@ -33,6 +33,16 @@ export const siteConfig = {
 	footerInfo: "Powered by Astro",
 };
 
+/** 高分辨率都市背景；来源记录见 public/images/bg/PEXELS-SOURCES.md */
+export const backgroundConfig = {
+	images: [
+		"/images/bg/pexels-65441.jpg",
+		"/images/bg/pexels-5981771.jpg",
+		"/images/bg/pexels-8561543.jpg",
+		"/images/bg/pexels-30123516.jpg",
+	],
+};
+
 /** 导航栏配置（对应 Emlog 后台自定义导航 + Colorful 附加功能菜单） */
 export const navBarConfig = {
 	items: [
@@ -47,6 +57,9 @@ export const navBarConfig = {
 	extra: [
 		{ name: "相册图库", url: "/albums/" },
 		{ name: "图片墙", url: "/images/" },
+		{ name: "项目展示", url: "/projects/" },
+		{ name: "技能图谱", url: "/skills/" },
+		{ name: "时间线", url: "/timeline/" },
 	],
 	/** 是否显示"文章分类"下拉 */
 	showCategoryDropdown: true,
@@ -107,6 +120,51 @@ export const slideshowConfig = {
 		{ image: "/images/slide/slide-4.jpg" },
 		{ image: "/images/slide/slide-5.jpg" },
 	],
+};
+
+/** Pio Live2D 看板娘配置（迁移自 mizuki） */
+export const pioConfig = {
+	/** 是否启用看板娘 */
+	enable: true,
+	/** Live2D 模型配置文件路径 */
+	models: ["/pio/models/pio/model.json"],
+	/** 桌面端固定位置 */
+	position: "left" as const,
+	/** Canvas 尺寸 */
+	width: 280,
+	height: 250,
+	/** 固定在视口底部，避免拖拽后模型下沿脱离底部基线 */
+	mode: "fixed" as const,
+	/** 旧项目以 1280px 为移动端隐藏断点 */
+	hiddenOnMobile: true,
+	dialog: {
+		welcome: "欢迎来到 WindowsIt's Music Club！",
+		touch: [
+			"你在做什么呀？",
+			"不要一直戳我啦！",
+			"变态！",
+			"不要这样欺负我呀！",
+		],
+		home: "点击这里返回首页！",
+		skin: ["想看看我的新衣服吗？", "新衣服很好看吧～"],
+		close: "QWQ 下次再见啦～",
+		link: "https://github.com/matsuzaka-yuki/Mizuki",
+	},
+};
+
+/** 樱花环境动效配置（迁移自 mizuki） */
+export const sakuraConfig = {
+	enable: true,
+	sakuraNum: 11,
+	size: { min: 0.5, max: 1.1 },
+	opacity: { min: 0.3, max: 0.9 },
+	speed: {
+		horizontal: { min: -1.7, max: -1.2 },
+		vertical: { min: 1.5, max: 2.2 },
+		rotation: 0.03,
+		fadeSpeed: 0.03,
+	},
+	zIndex: 51,
 };
 
 /** 页脚信息（对应 footer.php） */

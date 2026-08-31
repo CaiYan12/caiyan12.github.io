@@ -5,7 +5,9 @@ import "../styles/global.css";
 import "../styles/markdown-extended.css";
 // Font Awesome 4 图标（原主题图标字体，class 名与原站完全一致）
 import "../styles/font-awesome.css";
-import { siteConfig } from "../config";
+import Pio from "../components/widget/Pio.svelte";
+import Sakura from "../components/control/Sakura.astro";
+import { backgroundConfig, pioConfig, siteConfig } from "../config";
 import { getSortedPosts } from "../utils/content-utils";
 import { getCollection } from "astro:content";
 
@@ -36,7 +38,6 @@ const siteStats = JSON.stringify({
 	totalComments,
 	totalDays,
 });
-const backgroundImage = `/images/bg/${Math.floor(Math.random() * 3) + 1}.jpg`;
 ---
 
 <!doctype html>
@@ -50,15 +51,16 @@ const backgroundImage = `/images/bg/${Math.floor(Math.random() * 3) + 1}.jpg`;
 			name="viewport"
 			content="width=device-width, initial-scale=1.0"
 		/>
-		<link rel="apple-touch-icon" href="/images/icon.png" />
-		<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon" />
+		<link rel="apple-touch-icon" href="/images/avatar.webp" />
+		<link rel="icon" href="/images/avatar.webp" type="image/webp" />
 		<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
+		{pioConfig.enable && <link rel="stylesheet" href="/pio/static/pio.css" />}
 		<meta property="og:title" content={siteTitle} />
 		<meta data-pagefind-meta="title[content]" content={siteTitle} />
 		<meta property="og:description" content={siteDescription} />
 		<meta
 			property="og:image"
-			content={image ? new URL(image, siteConfig.siteURL) : "/images/avatar.png"}
+			content={image ? new URL(image, siteConfig.siteURL) : "/images/avatar.webp"}
 		/>
 		<meta property="og:type" content="website" />
 		<meta name="generator" content={Astro.generator} />
@@ -68,12 +70,18 @@ const backgroundImage = `/images/bg/${Math.floor(Math.random() * 3) + 1}.jpg`;
 		<!-- 背景层：随机背景图 + 花纹遮罩（对应 footer.php 的 bg-image） -->
 		<img
 			class="bg-image"
-			src={backgroundImage}
+			data-backgrounds={JSON.stringify(backgroundConfig.images)}
 			alt=""
+			aria-hidden="true"
+			fetchpriority="high"
+			decoding="async"
 		/>
 		<div class="bg-image-pattern"></div>
+		<Sakura />
 
 		<slot />
+
+		{pioConfig.enable && <Pio client:idle />}
 
 		<!-- 主题脚本：导航高亮、返回顶部、移动端菜单、双击滚动 -->
 		<script>

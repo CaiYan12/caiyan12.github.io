@@ -4,6 +4,7 @@ published: 2025-01-20
 description: 一份完整的 Markdown 语法示例，涵盖核心语法与扩展（GFM）。
 tags: [Markdown, 语法]
 category: 教程
+private: true
 ---
 
 # Markdown 语法教程

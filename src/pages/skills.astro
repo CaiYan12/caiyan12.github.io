@@ -1,0 +1,34 @@
+---
+import MainGridLayout from "../layouts/MainGridLayout.astro";
+import { skillsData } from "../data/skills";
+
+const categoryLabels = { frontend: "前端", backend: "后端与编程", database: "数据库", tools: "工具", other: "其他" } as const;
+const levelLabels = { beginner: "入门", intermediate: "熟练", advanced: "进阶", expert: "擅长" } as const;
+const categories = Object.entries(categoryLabels).map(([key, label]) => ({ key: key as keyof typeof categoryLabels, label }));
+const experience = (years: number, months: number) => [years ? `${years} 年` : "", months ? `${months} 个月` : ""].filter(Boolean).join(" ") || "不足 1 个月";
+---
+
+<MainGridLayout title="技能图谱" description="WindowsIt 的技能与工具" showSidebar={false} searchIndex>
+	<div class="page personal-page">
+		<header class="post-header"><h2><i class="fa fa-code" aria-hidden="true"></i> 技能图谱</h2></header>
+		<address class="post-metaa"><i class="fa fa-home" aria-hidden="true"></i> <a href="/">首页</a> &raquo; 技能图谱</address>
+		{categories.map((category) => {
+			const skills = skillsData.filter((skill) => skill.category === category.key);
+			return skills.length > 0 && (
+				<section class="skill-section">
+					<h3>{category.label}<span>{skills.length} 项</span></h3>
+					<div class="personal-grid skill-grid">
+						{skills.map((skill) => (
+							<article class="personal-card skill-card" style={`--skill-color: ${skill.color ?? "#00c000"}`}>
+								<div class="personal-card-heading"><h4>{skill.name}</h4><span class={`level level-${skill.level}`}>{levelLabels[skill.level]}</span></div>
+								<p>{skill.description}</p>
+								<p class="personal-meta"><i class="fa fa-clock-o" aria-hidden="true"></i> 使用经验：{experience(skill.experience.years, skill.experience.months)}</p>
+							</article>
+						))}
+					</div>
+				</section>
+			);
+		})}
+	</div>
+</MainGridLayout>
+

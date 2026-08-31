@@ -7,6 +7,7 @@ description: 把 Astro 静态博客部署到 GitHub + Vercel 的完整流程
 views: 89
 comments: 0
 hotness: 1
+private: true
 ---
 
 这篇博客本身就是跑在 GitHub + Vercel 上的。这里记录一下部署流程，方便日后查阅。

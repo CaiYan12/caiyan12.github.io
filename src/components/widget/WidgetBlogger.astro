@@ -5,14 +5,24 @@ import { siteConfig } from "../../config";
 <div class="widget">
 	<span class="icon"><i class="fa fa-user" aria-hidden="true"></i></span>
 	<h3>吐槽水军</h3>
-	<ul id="readerwall">
-		<li>
-			<a href="/guestbook/" title={`${siteConfig.author} · 去留言板吐槽`}>
-				<img src={siteConfig.avatar} class="avatar" alt={siteConfig.author} />
-			</a>
-		</li>
-	</ul>
-	<p class="nop">
-		还没有水军出没，<a href="/guestbook/">点我去吐槽 →</a>
-	</p>
+	<div
+		class="sidebar-comment-composer"
+		data-comment-provider="giscus"
+		data-comment-term="guestbook"
+	>
+		<img src={siteConfig.avatar} class="avatar" alt="" />
+		<div class="sidebar-comment-editor">
+			<label class="sr-only" for="sidebar-comment-draft">吐槽内容</label>
+			<textarea
+				id="sidebar-comment-draft"
+				rows="3"
+				placeholder="说点什么吧……"
+				aria-describedby="sidebar-comment-status"
+			></textarea>
+			<div class="sidebar-comment-footer">
+				<span id="sidebar-comment-status">Giscus 尚未启用</span>
+				<a href="/guestbook/#comments">去留言板</a>
+			</div>
+		</div>
+	</div>
 </div>

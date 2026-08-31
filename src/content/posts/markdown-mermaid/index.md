@@ -5,6 +5,7 @@ description: 在 Markdown 中使用 Mermaid 绘制流程图、时序图、甘特
 tags: [Markdown, Mermaid, 图表]
 category: 示例
 draft: false
+private: true
 ---
 
 # 用 Mermaid 绘制各种图表

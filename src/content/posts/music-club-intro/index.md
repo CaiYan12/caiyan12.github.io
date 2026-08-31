@@ -7,6 +7,7 @@ description: 站点名称 WindowsIt's Music Club 的由来
 views: 156
 comments: 3
 hotness: 2
+private: true
 ---
 
 这个博客叫 **WindowsIt's Music Club**，名字的由来很简单：
