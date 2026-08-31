@@ -6,8 +6,9 @@
 
 - 仓库：`CaiYan12/caiyan12.github.io`
 - 测试基线：`1126198ac729db6051e55594e4d75358198277f0`
-- 测试方式：Windows PowerShell 本地构建产物 + Chromium 实际浏览器
+- 测试方式：Windows PowerShell 本地构建产物、Chromium 实际浏览器、GitHub Pages 线上页面
 - 本地预览：`http://127.0.0.1:4321/`
+- 线上站点：`https://caiyan12.github.io/`
 - 浏览器视口：桌面 `1366×900`，移动端文章页 `390×844`
 - 文章样本：公开文章、私密文章、草稿、Markdown 扩展测试文章、Mermaid 测试文章
 
@@ -44,7 +45,7 @@
 | Pagefind 搜索                   | 通过，搜索“数据库原理”返回 4 条结果，无错误信息                                     |
 | 移动端文章页 `390×844`          | 通过，HTTP 200，无横向溢出                                                          |
 
-浏览器网络检查中，文章、Pio 模型资源、Pagefind 资源和 GitHub API 请求均返回成功。草稿 URL 的 404 请求属于本次预期验证结果。
+本地浏览器网络检查中，文章、Pio 模型资源、Pagefind 资源和 GitHub API 请求均返回成功。草稿 URL 的 404 请求属于本次预期验证结果。
 
 ### Pio 验证与已知限制
 
@@ -54,6 +55,19 @@
 
 上述响应式切换限制位于 `src/components/widget/Pio.svelte` 的一次性初始化逻辑中，属于后续可单独处理的交互问题，不影响本次文章构建和文章页面测试结论。
 
+### GitHub Pages 线上验收
+
+本次更新日志首次推送提交 `2b418c6a2eaab9b20fee7043ff18ee6c80ac8bce` 后，远端确认如下：
+
+- [`CHANGELOG.md`](https://github.com/CaiYan12/caiyan12.github.io/blob/main/CHANGELOG.md) 已存在于 GitHub `main`。
+- [Lint](https://github.com/CaiYan12/caiyan12.github.io/actions/runs/33372277525)、[Build and Check](https://github.com/CaiYan12/caiyan12.github.io/actions/runs/33372277628)、[Deploy to GitHub Pages](https://github.com/CaiYan12/caiyan12.github.io/actions/runs/33372277557) 均为 `completed / success`。
+- 线上首页 HTTP 200，显示 4 篇公开文章，私密帖和草稿标题未出现在首页；`1366×900` 首次加载时 Pio 的 `Paul_Pio`、`Live2D` 均加载成功，Canvas 为 `280×250`。
+- 线上公开文章 `/posts/202604021610/` HTTP 200，标题、正文和目录正常；私密文章 `/posts/private-post/` HTTP 200；草稿 `/posts/draft-example/` HTTP 404；线上 Pagefind 搜索“数据库原理”返回 4 条结果且无搜索错误。
+- 线上 Markdown 扩展文章 HTTP 200，提示块、alert、图片网格、外链属性、邮箱保护和 Spoiler 结构正常；Mermaid 文章的 6 个图表均渲染出 SVG。
+- 线上两个 GitHub 仓库卡片请求返回 HTTP 403，响应正文明确为 `API rate limit exceeded for 4.154.77.32.`，响应头为 `x-ratelimit-limit: 60`、`x-ratelimit-used: 60`、`x-ratelimit-remaining: 0`。页面按既有降级逻辑显示仓库信息加载失败链接；这是未认证 GitHub API 的 IP 限流，需后续决定是否改为构建期数据或带认证的服务端代理。
+
+因此，线上文章本身已发布并可用；GitHub 动态仓库卡片在本次线上浏览器环境中处于降级状态，不能记录为完整通过。
+
 ### 结论
 
-当前提交的博客文章构建、公开/私密/草稿路由、Markdown 扩展、搜索及移动端文章布局均通过本次正式测试。更新日志本身随本次提交上传后，还需以新的 GitHub Actions 运行结果作为远端发布确认。
+当前提交的博客文章构建、公开/私密/草稿路由、Markdown 扩展、搜索及移动端文章布局均通过本次正式测试，并已完成 GitHub Pages 发布验收。GitHub 动态仓库卡片因线上未认证 API 限流触发既有降级显示；Pio 的视口切换限制仍待单独处理。
