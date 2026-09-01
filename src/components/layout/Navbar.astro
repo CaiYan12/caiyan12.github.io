@@ -116,7 +116,9 @@ const isCurrent = (url: string) =>
 					</a>
 					<ul>
 						{navBarConfig.resourceSite.map((item) => (
-							<li><a href={item.url}>{item.name}</a></li>
+							<li>
+								<a href={item.url} data-no-swup={item.noSwup ? "" : undefined}>{item.name}</a>
+							</li>
 						))}
 					</ul>
 				</li>

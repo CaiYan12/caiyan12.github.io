@@ -1,5 +1,13 @@
 # 更新日志
 
+## 2026-09-01：AI日报迁移
+
+- 从 `D:\pages\test\ai-news` 迁移完整 React 运行时到本站 `/ai-news/`，保留 RSS 实时抓取、离线快照、搜索、筛选、阅读状态、主题、布局和橘鸦阅读风格。
+- “本站资源”菜单在“我的项目”后新增“AI日报”；AI日报顶栏和页脚均提供“返回主站”。
+- AI日报保持独立页面外壳，不加载博客导航、侧栏、Pio、樱花背景或 Colorful 页脚；页面进入 sitemap，不进入 Pagefind 博客搜索。
+- 新增 `pnpm smoke:ai-news` 作为本站可执行的基础 Smoke 验证命令。
+- 详细测试记录：[`docs/ai-news-migration-test.md`](docs/ai-news-migration-test.md)。
+
 ## 2026-08-31：博客文章正式测试
 
 ### 测试范围

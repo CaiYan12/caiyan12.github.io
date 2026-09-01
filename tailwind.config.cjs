@@ -11,6 +11,18 @@ module.exports = {
         new: "#00c700", // 近期更新
         pagebg: "#f4f5f7", // 页面背景
         line: "#eaeaea", // 边框线
+        bg: "var(--t-bg)",
+        surface: "var(--t-surface)",
+        card: "var(--t-card)",
+        border: "var(--t-border)",
+        text: "var(--t-text)",
+        "text-secondary": "var(--t-text-secondary)",
+        accent: "var(--t-accent)",
+        "accent-hover": "var(--t-accent-hover)",
+        "on-accent": "var(--t-on-accent)",
+        chip: "var(--t-chip)",
+        "chip-text": "var(--t-chip-text)",
+        read: "var(--t-read)",
       },
       fontFamily: {
         sans: [
@@ -32,12 +44,15 @@ module.exports = {
           "Consolas",
           "monospace",
         ],
+        heading: "var(--t-font-heading)",
+        body: "var(--t-font-body)",
       },
       boxShadow: {
         wrapper: "0 2px 6px rgba(100,100,100,0.3)",
       },
       borderRadius: {
         box: "5px",
+        card: "var(--t-radius)",
       },
     },
   },

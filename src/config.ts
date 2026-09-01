@@ -64,7 +64,10 @@ export const navBarConfig = {
 		{ name: "图片墙", url: "/images/" },
 	],
 	/** 本站资源下拉菜单 */
-	resourceSite: [{ name: "我的项目", url: "/projects/" }],
+	resourceSite: [
+		{ name: "我的项目", url: "/projects/" },
+		{ name: "AI日报", url: "/ai-news/", noSwup: true },
+	],
 	/** 右侧图标导航 */
 	social: {
 		weibo: { show: false, id: "", url: "" },

@@ -5,6 +5,7 @@
 ## 技术栈
 
 - **Astro 5.16** + TypeScript + Svelte 5（搜索组件）
+- **React 19 + @astrojs/react** — 独立 AI 日报阅读页
 - **Tailwind CSS 3**（样式重写，视觉还原 Colorful 海洋绿主题）
 - **Swup.js** — 无刷新页面切换（替代原 Pjax）
 - **Pagefind** — 构建期静态搜索索引
@@ -23,6 +24,7 @@ pnpm new-post -- <yyyymmddhhmmss> [标题]  # 按规范创建文章目录
 pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存
 pnpm preview     # 预览构建产物
 pnpm check       # 类型检查
+pnpm smoke:ai-news  # AI 日报入口、详情、返回与离线快照 Smoke（需先启动 pnpm dev）
 pnpm format      # Prettier 格式化
 ```
 
@@ -49,6 +51,7 @@ src/
     friends.ts           ← 友链
     comments.ts          ← 最新评论小部件数据
   pages/                 ← 路由（首页/文章/归档/说说/友链/相册/留言板/…）
+  ai-news/               ← AI 日报 React 阅读器运行时
   layouts/               ← 页面骨架（Layout / MainGridLayout）
   components/            ← 组件（导航/侧栏/文章卡片/小部件/评论…）
   styles/global.css      ← 主题样式（Colorful 视觉还原）
@@ -56,6 +59,7 @@ src/
   constants/             ← 构建期生成数据（LQIP 占位色、GitHub 仓库卡片元数据缓存）
 scripts/                 ← 构建脚本（LQIP 生成、GitHub 仓库数据拉取、新建文章）
 public/
+  ai-news/snapshot/      ← AI 日报离线 RSS 快照
   images/albums/         ← 相册（每个文件夹一个相册）
   fonts/                 ← Font Awesome 4 图标字体
   style/                 ← 自定义光标

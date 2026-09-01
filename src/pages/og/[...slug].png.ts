@@ -319,7 +319,7 @@ export async function GET({
 		});
 	}
 
-	const svg = await satori(template, {
+	const svg = await satori(template as unknown as import("react").ReactNode, {
 		width: 1200,
 		height: 630,
 		fonts,

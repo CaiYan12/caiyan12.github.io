@@ -1,0 +1,477 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --t-bg: #f5f4ed;
+  --t-surface: #ffffff;
+  --t-card: #ffffff;
+  --t-border: #e5e2d8;
+  --t-text: #2b2823;
+  --t-text-secondary: #6f6a5e;
+  --t-accent: #d97757;
+  --t-accent-hover: #c1502e;
+  --t-on-accent: #ffffff;
+  --t-chip: #efede4;
+  --t-chip-text: #4a463c;
+  --t-read: #a8a396;
+  --t-font-heading: Georgia, "Noto Serif SC", serif;
+  --t-font-body: "Segoe UI", "Noto Sans SC", sans-serif;
+  --t-radius: 10px;
+  --t-spacing: 12px;
+}
+
+/* ---- 原生控件随主题 ----
+   浏览器原生表单控件（focus 外圈/checkbox/range/选区/下拉选项）默认取系统色而非页面 CSS 变量，
+   必须显式挂主题变量，否则切主题后残留系统橙/默认蓝 */
+:root {
+  accent-color: var(--t-accent);
+  /* 动效曲线 token */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* ---- 滑条（range）自绘：track/thumb 原生渲染取 accent 暗色变体（不读主题 token，
+   浅色 UI 下突兀且随 accent 染色漂移）。track 用主题 chip 色，填充/手柄用 accent；
+   填充分割点由 --range-progress 变量驱动（组件按 (value-min)/(max-min) 换算注入） ---- */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 9999px;
+  background: linear-gradient(to right, var(--t-accent) 0%, var(--t-accent) var(--range-progress, 0%), var(--t-chip) var(--range-progress, 0%), var(--t-chip) 100%);
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: var(--t-accent);
+  border: 2px solid var(--t-card);
+  box-shadow: 0 0 0 1px var(--t-border);
+  transition: transform 120ms var(--ease-out);
+}
+
+input[type="range"]:hover::-webkit-slider-thumb,
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  input[type="range"]::-webkit-slider-thumb {
+    transition: none;
+  }
+}
+
+/* ---- 下拉/弹出菜单动画：从触发器展开（scale 0.95 + 淡入），退出对称 ---- */
+.menu-pop {
+  transform-origin: top center;
+  /* 滚动链切断：菜单内部滚到边界后不再把滚动传播给外层页面 */
+  overscroll-behavior: contain;
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+}
+
+@starting-style {
+  .menu-pop {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.menu-pop[data-closing="true"] {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* 向上展开的菜单：从触发器（底部）长出 */
+.menu-pop[data-dropup="true"] {
+  transform-origin: bottom center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-pop {
+    transition: opacity 120ms ease;
+    transform: none;
+  }
+  .menu-pop[data-closing="true"] {
+    transform: none;
+  }
+}
+
+/* 焦点外圈随主题：Chromium 的 UA focus 圈是 outline-style:auto，忽略作者 outline-color，
+   必须显式 solid 才挂得上主题变量。
+   基态即透明 solid 圈（同宽度同 offset），focus 只改 outline-color，
+   出现/消失因此可被 transition 淡入淡出。
+   负 offset 使圈覆盖在原有边框上（外缘与元件外缘齐平，视觉尺寸不变） */
+button,
+input,
+select,
+textarea,
+a {
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+}
+
+:focus-visible {
+  outline-color: var(--t-accent);
+}
+
+::selection {
+  background: var(--t-accent);
+  color: var(--t-on-accent);
+}
+
+select option {
+  background-color: var(--t-card);
+  color: var(--t-text);
+}
+
+select option:checked {
+  background-color: var(--t-accent);
+  color: var(--t-on-accent);
+}
+
+/* 隐藏 number 输入的原生步进器（Chromium），数值经键盘/滚轮调整即可 */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* 文档流滚动：不再锁定视口高度，整页自然滚动（吸顶交给 sticky 元素） */
+body {
+  margin: 0;
+  font-family: var(--t-font-body);
+  /* 基准字号与主题解耦：固定 14px，页面整体缩放交给浏览器原生缩放 */
+  font-size: 14px;
+  background: var(--t-bg);
+  color: var(--t-text);
+}
+
+/* ---- 主题切换过渡 ---- */
+body,
+article,
+header,
+nav,
+button,
+input,
+select,
+textarea,
+a,
+section,
+div.reader-body {
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    outline-color 0.2s ease;
+}
+
+/* ---- 卡片入场 ---- */
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-enter {
+  animation: card-enter 0.28s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-enter {
+    animation: none;
+  }
+  * {
+    transition: none !important;
+  }
+}
+
+/* ---- 设置抽屉：右侧滑出，遮罩淡入 ---- */
+.drawer-panel {
+  transition: transform 220ms var(--ease-out);
+}
+
+@starting-style {
+  .drawer-panel {
+    transform: translateX(100%);
+  }
+}
+
+.drawer-panel[data-closing="true"] {
+  transform: translateX(100%);
+}
+
+.drawer-scrim {
+  transition: opacity 220ms var(--ease-out);
+}
+
+@starting-style {
+  .drawer-scrim {
+    opacity: 0;
+  }
+}
+
+.drawer-scrim[data-closing="true"] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drawer-panel {
+    transition: opacity 120ms ease;
+  }
+  @starting-style {
+    .drawer-panel {
+      transform: none;
+      opacity: 0;
+    }
+  }
+  .drawer-panel[data-closing="true"] {
+    transform: none;
+    opacity: 0;
+  }
+}
+
+/* ---- 视图内导航条（详情页工具栏）：不随内容缩放，保持固定尺寸 ---- */
+.view-nav {
+  flex: none;
+}
+
+/* ---- 阅读视图排版（通用回退路径） ---- */
+.article-content h1,
+.article-content h2,
+.article-content h3 {
+  font-family: var(--t-font-heading);
+  font-weight: 700;
+  color: var(--t-accent);
+  margin: 1.2em 0 0.5em;
+}
+
+.article-content h1 {
+  font-size: 1.5em;
+}
+
+.article-content h2 {
+  font-size: 1.25em;
+}
+
+.article-content h3 {
+  font-size: 1.1em;
+}
+
+.article-content p {
+  margin: 0.6em 0;
+}
+
+.article-content img {
+  max-width: 100%;
+  border-radius: var(--t-radius);
+  margin: 0.8em auto;
+  display: block;
+}
+
+.article-content blockquote {
+  border-left: 3px solid var(--t-accent);
+  background: var(--t-chip);
+  color: var(--t-chip-text);
+  padding: 0.6em 1em;
+  margin: 0.8em 0;
+  border-radius: 0 var(--t-radius) var(--t-radius) 0;
+}
+
+.article-content ul,
+.article-content ol {
+  padding-left: 1.4em;
+  margin: 0.6em 0;
+}
+
+.article-content a {
+  color: var(--t-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ---- 杂志风首条 ---- */
+.magazine-featured img {
+  height: 16rem;
+}
+
+/* ---- 响应式网格：桌面按设置列数分列，窄屏降为单列 ----
+   列数由组件经 --cols 注入（1–4），断点接管后忽略变量 */
+.cols-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(var(--cols, 2), minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+  .cols-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- 返回顶部：入场淡入上浮（@starting-style），退出直接消失 ---- */
+.backtop {
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+}
+
+@starting-style {
+  .backtop {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backtop {
+    transition: opacity 120ms ease;
+  }
+}
+
+/* ---- 滚动条 ---- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--t-border);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---- Toast 全局单例提示：顶部居中（transform 由本规则独占，避免与动效 transform 冲突），
+   入场淡入 + 轻微下滑（@starting-style），时长与 .menu-pop 一致 ---- */
+.toast {
+  transform: translateX(-50%);
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+}
+
+@starting-style {
+  .toast {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-8px);
+  }
+}
+
+/* 退场与进场对称：同一顶边、同一偏移（data-closing 由延迟卸载驱动） */
+.toast[data-closing="true"] {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    transition: opacity 120ms ease;
+  }
+}
+
+/* ---- 按压反馈与统一交互过渡 ----
+   用 #root 提升特异性盖过 Tailwind 的单属性过渡类（transition-colors 等）：
+   transition-property 是单一列表，颜色与 transform 必须并入同一声明才能共存。
+   属性列表因此包含颜色 / 阴影 / 透明度 / transform，既有 hover 效果全部保留。 */
+#root :is(button, [role="button"]) {
+  transition-property: color, background-color, border-color, outline-color, box-shadow, opacity, transform;
+  transition-duration: 160ms;
+  transition-timing-function: var(--ease-out);
+}
+
+/* 按压反馈（近不可察档）：scale 连同子内容一起缩小，读起来是物理按压。
+   :active 是真实按压，触屏同样生效，无需 hover 门控 */
+#root :is(button, [role="button"]):active {
+  transform: scale(0.97);
+}
+
+/* Select 下拉菜单经 portal 挂在 #root 外，单独覆盖 */
+body > .menu-pop button {
+  transition-property: color, background-color, transform;
+  transition-duration: 150ms;
+  transition-timing-function: var(--ease-out);
+}
+
+body > .menu-pop button:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #root :is(button, [role="button"]):active,
+  body > .menu-pop button:active {
+    transform: none;
+  }
+}
+
+/* ---- 路由切换（列表 ↔ 详情）：View Transitions API 交叉淡入淡出 ----
+   JS 侧做了特性检测与 reduced-motion 跳过，此处再兜一层底 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 200ms;
+  animation-timing-function: var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
+}
+
+/* ---- 筛选面板折叠（移动端）----
+   折叠是高度动画唯一被容忍的形态；grid fr 过渡（0fr→1fr）是无需 JS 量高的实现。
+   内层 overflow/min-height 是 0fr 可收缩的前提 */
+.filter-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms var(--ease-out);
+}
+
+.filter-collapse[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+
+.filter-collapse-inner {
+  min-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 200ms var(--ease-out);
+}
+
+.filter-collapse[data-open="true"] .filter-collapse-inner {
+  opacity: 1;
+}
+
+/* 桌面常开：无折叠也无过渡（置于 data-open 规则之后，窄屏状态失效） */
+@media (min-width: 640px) {
+  .filter-collapse {
+    grid-template-rows: 1fr;
+    transition: none;
+  }
+  .filter-collapse-inner {
+    opacity: 1;
+    transition: none;
+  }
+}
+
+/* ---- 封面图淡入：懒加载图片就绪后浮现，避免生硬弹出 ----
+   onLoad 与 onError 双路加类（加载失败也要揭示占位，不能永远隐身） */
+.img-fade {
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out);
+}
+
+.img-fade.img-loaded {
+  opacity: 1;
+}
