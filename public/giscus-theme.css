@@ -119,6 +119,14 @@ a:hover,
   box-shadow: 0 1px 3px rgb(100 100 100 / 12%);
   font-size: 13px;
   line-height: 1.6;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.gsc-comment > .color-bg-primary:hover {
+  border-color: #00c000;
+  box-shadow: 0 4px 12px rgb(0 192 0 / 18%);
 }
 
 .gsc-comment-header {
@@ -129,7 +137,26 @@ a:hover,
 
 .gsc-comment-author-avatar {
   border: 2px solid #fff;
-  box-shadow: 0 1px 3px rgb(34 25 25 / 35%);
+}
+
+.gsc-comment-author > div > .color-box-border-info {
+  display: inline-flex;
+  align-items: center;
+  column-gap: 3px;
+  color: #0a0;
+  font-size: 0;
+}
+
+.gsc-comment-author > div > .color-box-border-info::before {
+  width: 11px;
+  height: 11px;
+  background: url("/images/admin.png") center / contain no-repeat;
+  content: "";
+}
+
+.gsc-comment-author > div > .color-box-border-info::after {
+  font-size: 12px;
+  content: "站长";
 }
 
 .gsc-comment-content {
@@ -209,4 +236,10 @@ a:hover,
 
 .gsc-homepage-bg {
   background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gsc-comment > .color-bg-primary {
+    transition: none;
+  }
 }
