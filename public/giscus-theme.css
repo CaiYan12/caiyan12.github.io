@@ -1,0 +1,212 @@
+/* WindowsIt's Music Club / Colorful Giscus theme */
+
+:root {
+  color-scheme: light;
+}
+
+main {
+  --color-btn-text: #505050;
+  --color-btn-bg: #fff;
+  --color-btn-border: #ddd;
+  --color-btn-shadow: 0 0 transparent;
+  --color-btn-inset-shadow: 0 0 transparent;
+  --color-btn-hover-bg: #f7f7f7;
+  --color-btn-hover-border: #00c000;
+  --color-btn-active-bg: #edfaf2;
+  --color-btn-active-border: #00c000;
+  --color-btn-selected-bg: #edfaf2;
+  --color-btn-primary-text: #fff;
+  --color-btn-primary-bg: #00c000;
+  --color-btn-primary-border: #00a000;
+  --color-btn-primary-shadow: 0 0 transparent;
+  --color-btn-primary-inset-shadow: 0 0 transparent;
+  --color-btn-primary-hover-bg: #0a0;
+  --color-btn-primary-hover-border: #008800;
+  --color-btn-primary-selected-bg: #0a0;
+  --color-btn-primary-selected-shadow: 0 0 transparent;
+  --color-btn-primary-disabled-text: rgb(255 255 255 / 70%);
+  --color-btn-primary-disabled-bg: rgb(0 192 0 / 60%);
+  --color-btn-primary-disabled-border: rgb(0 160 0 / 60%);
+  --color-action-list-item-default-hover-bg: rgb(0 192 0 / 8%);
+  --color-segmented-control-bg: #fff;
+  --color-segmented-control-button-bg: #fff;
+  --color-segmented-control-button-selected-border: #00c000;
+  --color-fg-default: #000;
+  --color-fg-muted: #505050;
+  --color-fg-subtle: #999;
+  --color-canvas-default: #fff;
+  --color-canvas-overlay: #fff;
+  --color-canvas-inset: #fff;
+  --color-canvas-subtle: #f7f7f7;
+  --color-border-default: #ddd;
+  --color-border-muted: #eaeaea;
+  --color-neutral-muted: rgb(0 0 0 / 8%);
+  --color-accent-fg: #0a0;
+  --color-accent-emphasis: #00c000;
+  --color-accent-muted: rgb(0 192 0 / 40%);
+  --color-accent-subtle: rgb(0 192 0 / 10%);
+  --color-success-fg: #0a0;
+  --color-attention-fg: #ffba00;
+  --color-danger-fg: #b03535;
+  --color-primer-shadow-inset: 0 0 transparent;
+  --color-scale-gray-7: #f7f7f7;
+  --color-scale-blue-8: #edfaf2;
+  --color-social-reaction-bg-hover: rgb(0 192 0 / 10%);
+  --color-social-reaction-bg-reacted-hover: rgb(0 192 0 / 18%);
+
+  color: #000;
+  font-family:
+    "Classic Grotesque W01",
+    "Hiragino Sans GB",
+    "STHeiti",
+    "Microsoft YaHei",
+    "WenQuanYi Micro Hei",
+    Arial,
+    SimSun,
+    sans-serif;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+html,
+body {
+  background: transparent;
+}
+
+body {
+  margin: 0;
+}
+
+main {
+  max-width: 100%;
+}
+
+a,
+.link-primary,
+.link-secondary {
+  color: #0a0;
+}
+
+a:hover,
+.link-primary:hover,
+.link-secondary:hover {
+  color: #008800;
+}
+
+.gsc-reactions {
+  margin-bottom: 12px;
+}
+
+.gsc-reactions-button,
+.gsc-direct-reaction-button,
+.gsc-upvote-button {
+  border-radius: 3px;
+}
+
+.gsc-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ddd;
+}
+
+.gsc-comment {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.gsc-comment > .color-bg-primary {
+  border-radius: 3px !important;
+  box-shadow: 0 1px 3px rgb(100 100 100 / 12%);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.gsc-comment-header {
+  padding: 8px 12px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.gsc-comment-author-avatar {
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgb(34 25 25 / 35%);
+}
+
+.gsc-comment-content {
+  padding: 12px;
+  border-radius: 3px 3px 0 0;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.gsc-comment-content blockquote {
+  border-left: 4px solid #00c000;
+  background: #f5fff7;
+  color: #505050;
+}
+
+.gsc-comment-content code {
+  border: 1px solid #d6d6d6;
+  border-radius: 2px;
+  background: #f7f7f9;
+  color: #d14;
+}
+
+.gsc-comment-content pre {
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background: #f7f7f7;
+}
+
+.gsc-comment-footer {
+  padding: 0 12px 8px;
+}
+
+.gsc-comment-box {
+  border-radius: 3px !important;
+  box-shadow: 0 1px 3px rgb(100 100 100 / 10%);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.gsc-comment-box-tabs {
+  border-radius: 3px 3px 0 0 !important;
+  background: #f7f7f7;
+}
+
+.gsc-comment-box-md-toolbar {
+  border-color: #ddd;
+  background: #fff;
+}
+
+.gsc-toolbar-item {
+  color: #505050;
+}
+
+.gsc-comment-box-textarea {
+  min-height: 100px;
+  border-color: #ddd;
+  border-radius: 3px 3px 0 0;
+  background: #fff;
+  color: #000;
+  font: inherit;
+  line-height: 1.7;
+}
+
+.gsc-comment-box-textarea:focus {
+  border-color: #00c000;
+  box-shadow: 0 0 0 2px rgb(0 192 0 / 15%);
+}
+
+.gsc-comment-box-buttons {
+  padding-top: 8px;
+}
+
+.gsc-comment-box-buttons .btn-primary {
+  border-radius: 2px !important;
+  font-size: 12px;
+}
+
+.gsc-homepage-bg {
+  background: transparent;
+}

@@ -115,6 +115,7 @@ export const commentConfig = {
 	emitMetadata: "0",
 	inputPosition: "bottom",
 	lang: "zh-CN",
+	theme: `${siteConfig.siteURL}/giscus-theme.css`,
 };
 
 /** 幻灯片配置（对应 options.php 的 index_slide，仅首页显示） */
