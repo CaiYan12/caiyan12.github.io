@@ -2,6 +2,20 @@
 
 This file provides guidance to AI coding agents (Claude Code, Codex, etc.) when working with code in this repository.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and specs for this repo live as GitHub issues; use the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the default labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, and `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repo. Read `CONTEXT.md` and relevant records in `docs/adr/` before exploring; see `docs/agents/domain.md`.
+
 ## **#0: Always be smart to use skills** like
 
 - /grill-me on big changes sessions or any other you need to know.
@@ -111,7 +125,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - `siteConfig` — 标题、作者、URL、每页文章数、备案号等
 - `navBarConfig` — 导航项、"附加功能"下拉、文章分类下拉、社交图标
 - `sidebarConfig` — 侧栏小部件顺序
-- `commentConfig` — **Giscus 评论**，`enable` 目前为 false；启用需填 repo/repoId/category/categoryId
+- `commentConfig` — **Giscus 评论**，`enable` 已开启；仓库和分类标识在 `src/config.ts` 中维护
 - `slideshowConfig` — 首页幻灯片（图片在 `public/images/slide/`）
 
 ### 内容组织

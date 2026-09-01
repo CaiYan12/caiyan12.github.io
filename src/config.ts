@@ -103,13 +103,13 @@ export const licenseConfig = {
 	url: "https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh",
 };
 
-/** Giscus 评论配置（部署后填入真实仓库信息） */
+/** Giscus 评论配置 */
 export const commentConfig = {
-	enable: false, // 配置好仓库后改为 true
-	repo: "", // 格式: owner/repo
-	repoId: "",
+	enable: true,
+	repo: "CaiYan12/caiyan12.github.io",
+	repoId: "R_kgDOUJeNhw",
 	category: "Announcements",
-	categoryId: "",
+	categoryId: "DIC_kwDOUJeNh84DEonO",
 	mapping: "pathname",
 	reactionsEnabled: "1",
 	emitMetadata: "0",
