@@ -36,6 +36,12 @@
 
 | 检查项 | 结果 |
 | --- | --- |
-| GitHub Actions | 待推送后记录 |
-| 页面 HTTP 状态、标题与资源加载 | 待推送后记录 |
-| 主站 AI日报入口、页面顶部/页脚返回主站 | 待推送后记录 |
+| GitHub Actions | 功能提交 `3f9ade87aaa410cad3280961c3b9941eb59aea11`：Build and Check、Lint、Deploy 均通过；Build and Check 按现有 main push 条件仅执行 Astro Check |
+| 页面 HTTP 状态、标题与资源加载 | 通过：主站与 AI日报均 HTTP 200；`Last-Modified: Tue, 01 Sep 2026 07:49:51 GMT`；浏览器同源响应无 4xx/5xx 或请求失败 |
+| 主站 AI日报入口、页面顶部/页脚返回主站 | 通过：线上浏览器检查入口、标题、顶部返回和页脚返回 |
+
+对应工作流：
+
+- [Build and Check run 33483950684](https://github.com/CaiYan12/caiyan12.github.io/actions/runs/33483950684)
+- [Lint run 33483950655](https://github.com/CaiYan12/caiyan12.github.io/actions/runs/33483950655)
+- [Deploy to GitHub Pages run 33483950670](https://github.com/CaiYan12/caiyan12.github.io/actions/runs/33483950670)
