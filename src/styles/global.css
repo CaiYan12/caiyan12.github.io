@@ -2927,67 +2927,23 @@ img:hover {
 }
 
 .sidebar-comment-composer {
-  display: flex;
-  gap: 8px;
   padding: 12px 10px 10px;
 }
 
-.sidebar-comment-composer > .avatar {
-  flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
-  border: 3px solid #fff;
-  border-radius: 50%;
-  object-fit: cover;
-  box-shadow: 0 1px 3px rgba(34, 25, 25, 0.35);
-}
-
-.sidebar-comment-editor {
-  min-width: 0;
-  flex: 1;
-}
-
-.sidebar-comment-editor textarea {
+.sidebar-comment-button {
   display: block;
   box-sizing: border-box;
   width: 100%;
-  min-height: 68px;
-  resize: vertical;
-  border: 1px solid #d9d9d9;
-  border-radius: 2px;
-  background: var(--content-surface-nested);
-  padding: 8px;
-  color: #333;
-  font: inherit;
-  line-height: 1.5;
-}
-
-.sidebar-comment-editor textarea:focus {
-  outline: 2px solid rgba(0, 192, 0, 0.2);
-  border-color: var(--colorful-green);
-}
-
-.sidebar-comment-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding-top: 7px;
-  color: #999;
-  font-size: 11px;
-}
-
-.sidebar-comment-footer a {
-  flex: 0 0 auto;
   border-radius: 2px;
   background: var(--colorful-green);
-  padding: 5px 9px;
+  padding: 8px 9px;
   color: #fff !important;
+  text-align: center;
   line-height: 1;
 }
 
-.sidebar-comment-footer a:hover,
-.sidebar-comment-footer a:focus-visible {
+.sidebar-comment-button:hover,
+.sidebar-comment-button:focus-visible {
   background: var(--primary-dark);
 }
 

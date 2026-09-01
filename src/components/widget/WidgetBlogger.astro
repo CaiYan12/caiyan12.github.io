@@ -1,28 +1,10 @@
----
-import { siteConfig } from "../../config";
----
-
 <div class="widget">
 	<span class="icon"><i class="fa fa-user" aria-hidden="true"></i></span>
 	<h3>吐槽水军</h3>
-	<div
-		class="sidebar-comment-composer"
-		data-comment-provider="giscus"
-		data-comment-term="guestbook"
-	>
-		<img src={siteConfig.avatar} class="avatar" alt="" />
-		<div class="sidebar-comment-editor">
-			<label class="sr-only" for="sidebar-comment-draft">吐槽内容</label>
-			<textarea
-				id="sidebar-comment-draft"
-				rows="3"
-				placeholder="说点什么吧……"
-				aria-describedby="sidebar-comment-status"
-			></textarea>
-			<div class="sidebar-comment-footer">
-				<span id="sidebar-comment-status">请到留言板发表评论</span>
-				<a href="/guestbook/#comments">去留言板</a>
-			</div>
-		</div>
+	<div class="sidebar-comment-composer">
+		<a class="sidebar-comment-button" href="/guestbook/#comments">
+			<i class="fa fa-commenting-o" aria-hidden="true"></i>
+			去留言板
+		</a>
 	</div>
 </div>
