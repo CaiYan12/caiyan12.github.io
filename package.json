@@ -8,7 +8,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "check": "astro check",
-    "build": "node scripts/generate-lqips.mjs && node scripts/fetch-github-repos.mjs && astro build && pagefind --site dist",
+    "build": "node scripts/validate-post-slugs.mjs && node scripts/generate-lqips.mjs && node scripts/fetch-github-repos.mjs && astro build && pagefind --site dist",
     "preview": "astro preview",
     "new-post": "node scripts/new-post.mjs",
     "lqips": "node scripts/generate-lqips.mjs",

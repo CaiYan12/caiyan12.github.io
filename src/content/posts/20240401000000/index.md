@@ -44,13 +44,14 @@ draft: false
 
 ## 文章文件放在哪里
 
-文章文件放在 `src/content/posts/` 目录，目录名即 URL slug。可以用子目录来组织文章与资源：
+文章文件放在 `src/content/posts/` 目录，目录名即 URL slug，必须为 14 位 `yyyymmddhhmmss`。可以用子目录来组织文章与资源：
 
 ```
 src/content/posts/
-├── post-1.md
-└── post-2/
-    ├── cover.png
+├── 20260831153000/
+│   ├── cover.png
+│   └── index.md
+└── 20260831153100/
     └── index.md
 ```
 

@@ -55,7 +55,12 @@
 				<div class="meBox-Button">
 					<a href="/">主站</a>
 					<a
-						href="javascript:window.alert('暂无联系方式，有事请烧纸。');"
+						href="#contact"
+						data-site-modal
+						data-site-modal-title="联系"
+						data-site-modal-message="暂无联系方式，有事请烧纸。"
+						data-site-modal-confirm="确认"
+						aria-controls="site-modal"
 						>联系</a
 					>
 				</div>
@@ -66,43 +71,56 @@
 				<!-- 第一个终端 -->
 				<div class="cmd">
 					<!-- 三个按钮 -->
-					<div class="click">
-						<div class="red" onclick="home()"></div>
-						<div
+					<div
+						class="click"
+						role="group"
+						aria-label="Window controls"
+					>
+						<button
+							type="button"
+							class="red"
+							data-window-action="close"
+							aria-label="Close window"
+							title="Close window"
+						></button>
+						<button
+							type="button"
 							class="yellow"
-							onclick="
-								window.alert(
-									'FullScreenMode are not supported.',
-								)
-							"
-						></div>
-						<div
+							data-window-action="maximize"
+							aria-label="Maximize window"
+							title="Maximize window"
+						></button>
+						<button
+							type="button"
 							class="green"
-							onclick="
-								window.alert('Minimal mode are not supported.')
-							"
-						></div>
+							data-window-action="minimize"
+							aria-label="Minimize window"
+							title="Minimize window"
+						></button>
 					</div>
 					<!-- 顶部标题 -->
 					<div class="title">
-						<span>activeight - bash</span>
+						<span>WindowsIt - bash</span>
 					</div>
 					<!-- 终端内文字 -->
 					<div class="cmdText">
-						<span style="color: rgb(0, 190, 0)">root@nutssss</span>
+						<span style="color: rgb(0, 190, 0)"
+							>root@windowsit</span
+						>
 						<span style="color: blue">~</span>
-						<span style="color: rgb(39, 39, 39)">./tianqi.sh</span>
+						<span style="color: rgb(39, 39, 39)">./weather.sh</span>
 						<br />
-						<iframe
-							scrolling="no"
-							src="https://tianqiapi.com/api.php?style=tc&skin=pitaya"
-							frameborder="0"
-							width="350"
-							height="24"
-							allowtransparency="true"
-						></iframe>
+						<span
+							id="weather-info"
+							class="weather-widget"
+							role="status"
+							aria-live="polite"
+							>天气加载中…</span
+						>
 						<br />
-						<span style="color: rgb(0, 190, 0)">root@nutssss</span>
+						<span style="color: rgb(0, 190, 0)"
+							>root@windowsit</span
+						>
 						<span style="color: blue">~</span>
 						<span style="color: rgb(39, 39, 39)">cat /me.txt</span>
 						<p>爱好音乐，会去自学自己感兴趣的一切东西</p>
@@ -117,7 +135,9 @@
 						<p>
 							即使前方的路看似绝境，也要有硬生生给自己开出一条路的勇气
 						</p>
-						<span style="color: rgb(0, 190, 0)">root@nutssss</span>
+						<span style="color: rgb(0, 190, 0)"
+							>root@windowsit</span
+						>
 						<span style="color: blue">~</span>
 						<span style="color: rgb(39, 39, 39)"
 							>sudo rm -rf /过去的自己/*</span
@@ -135,30 +155,42 @@
 				<!-- 第二个终端 -->
 				<div class="cmd cmd2">
 					<!-- 三个按钮 -->
-					<div class="click">
-						<div class="red" onclick="home()"></div>
-						<div
+					<div
+						class="click"
+						role="group"
+						aria-label="Window controls"
+					>
+						<button
+							type="button"
+							class="red"
+							data-window-action="close"
+							aria-label="Close window"
+							title="Close window"
+						></button>
+						<button
+							type="button"
 							class="yellow"
-							onclick="
-								window.alert(
-									'FullScreenMode are not supported.',
-								)
-							"
-						></div>
-						<div
+							data-window-action="maximize"
+							aria-label="Maximize window"
+							title="Maximize window"
+						></button>
+						<button
+							type="button"
 							class="green"
-							onclick="
-								window.alert('Minimal mode are not supported.')
-							"
-						></div>
+							data-window-action="minimize"
+							aria-label="Minimize window"
+							title="Minimize window"
+						></button>
 					</div>
 					<!-- 顶部标题 -->
 					<div class="title">
-						<span>usr01 - bash</span>
+						<span>WindowsIt - bash</span>
 					</div>
 					<!-- 终端内文字 -->
 					<div class="cmdText">
-						<span style="color: rgb(0, 190, 0)">root@usr01</span>
+						<span style="color: rgb(0, 190, 0)"
+							>root@windowsit</span
+						>
 						<span style="color: blue">~</span>
 						<span style="color: rgb(39, 39, 39)">./links.sh</span>
 						<p>我的其他站点：</p>
@@ -187,7 +219,9 @@
 								>
 							</li>
 						</ul>
-						<span style="color: rgb(0, 190, 0)">root@usr01</span>
+						<span style="color: rgb(0, 190, 0)"
+							>root@windowsit</span
+						>
 						<span style="color: blue">~</span>
 						<span style="color: black">_</span>
 					</div>
@@ -197,17 +231,11 @@
 
 		<!-- 页脚 -->
 		<div id="footer">
-			<p>
-				© 2020 NUTSSSS |
-				<a href="/domain/important.txt">湘ICP备XXXXXXXXX</a>
-			</p>
-			<p>THEME MADE BY <a href="http://www.xiaodao.biz/">Nutssss</a></p>
+			<p>WINDOWSIT 2018 - 2026</p>
+			<p>THX <a href="http://www.xiaodao.biz/">@NUTSSSS</a></p>
 		</div>
 
-		<script is:inline>
-			function home() {
-				window.location.href = "/";
-			}
-		</script>
+		<script src="/domain/js/weather.js" defer></script>
+		<script src="/domain/js/window-controls.js" defer></script>
 	</body>
 </html>

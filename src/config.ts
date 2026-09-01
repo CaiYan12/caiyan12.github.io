@@ -49,20 +49,22 @@ export const navBarConfig = {
 		{ name: "首页", url: "/", type: "home" },
 		{ name: "文章归档", url: "/archive/", type: "archive" },
 		{ name: "微言碎语", url: "/diary/", type: "diary" },
-		{ name: "关于我", url: "/about/", type: "about" },
-		{ name: "友情链接", url: "/friends/", type: "friends" },
 		{ name: "留言板", url: "/guestbook/", type: "guestbook" },
+	],
+	/** 关于本站下拉菜单 */
+	aboutSite: [
+		{ name: "关于站长", url: "/about/", type: "about" },
+		{ name: "我的技能", url: "/skills/", type: "skills" },
+		{ name: "时间线", url: "/timeline/", type: "timeline" },
+		{ name: "友情链接", url: "/friends/", type: "friends" },
 	],
 	/** 附加功能下拉菜单（对应原主题"附加功能"，仅收与主菜单不重复的项） */
 	extra: [
 		{ name: "相册图库", url: "/albums/" },
 		{ name: "图片墙", url: "/images/" },
-		{ name: "我的项目", url: "/projects/" },
-		{ name: "技能图谱", url: "/skills/" },
-		{ name: "时间线", url: "/timeline/" },
 	],
-	/** 是否显示"文章分类"下拉 */
-	showCategoryDropdown: true,
+	/** 本站资源下拉菜单 */
+	resourceSite: [{ name: "我的项目", url: "/projects/" }],
 	/** 右侧图标导航 */
 	social: {
 		weibo: { show: false, id: "", url: "" },

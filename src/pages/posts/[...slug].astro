@@ -109,7 +109,8 @@ const starLevel = (comments: number) => {
 					<div class="qrimg">
 						<a
 							href={qrDataUrl}
-							target="_blank"
+							data-fancybox="qr-code"
+							data-caption={title}
 							title="用手机扫描二维码访问"
 						>
 							<img
@@ -139,7 +140,15 @@ const starLevel = (comments: number) => {
 					<br />
 					<i class="fa fa-share-alt-square" aria-hidden="true"></i>
 					本文链接：
-					<a href={postUrl.toString()}>{title}</a>
+					<a
+						href={postUrl.toString()}
+						class="copy-post-link"
+						data-copy-link={postUrl.toString()}
+						title="点击复制本文链接"
+						aria-label={`复制本文链接：${title}`}
+					>
+						{title}
+					</a>
 				</div>
 
 				<div class="cutline">
@@ -155,7 +164,9 @@ const starLevel = (comments: number) => {
 							title={prev.data.title}
 						>
 							<span class="icon-wrap"></span>
-							<h3>{prev.data.title}</h3>
+							<h3>
+								<span class="post-navigation-title">{prev.data.title}</span>
+							</h3>
 						</a>
 					)}
 					{next && (
@@ -166,7 +177,9 @@ const starLevel = (comments: number) => {
 							title={next.data.title}
 						>
 							<span class="icon-wrap"></span>
-							<h3>{next.data.title}</h3>
+							<h3>
+								<span class="post-navigation-title">{next.data.title}</span>
+							</h3>
 						</a>
 					)}
 				</div>

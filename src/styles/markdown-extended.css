@@ -226,6 +226,7 @@
 
 .post-context .site-card-link:hover {
   background: rgba(0, 192, 0, 0.06);
+  text-decoration: none;
 }
 
 .post-context .site-card-link:focus-visible {
@@ -316,13 +317,17 @@
 
 /* ---------- Mermaid 图表（客户端渲染） ---------- */
 .post-context pre.mermaid {
+  position: relative;
   margin: 1.25em auto;
   padding: 1rem;
   max-width: 100%;
   overflow-x: auto;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.75rem;
+  background: var(--content-surface-nested);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--primary);
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(100, 100, 100, 0.12);
+  color: var(--text-gray);
   text-align: center;
   font-size: 0.95em;
 }
@@ -332,6 +337,7 @@
   max-width: 100%;
   height: auto;
   margin: 0 auto;
+  font-family: inherit;
 }
 
 @media screen and (max-width: 680px) {

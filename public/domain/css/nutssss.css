@@ -171,20 +171,24 @@ body {
     border-radius: 10px 10px 5px 5px;
     overflow: hidden;
     background-color: rgba(255, 255, 255, 0.9);
-    transition: all 0.3s;
+    transition: transform 300ms ease, box-shadow 300ms ease;
     font-size: 14px;
     color: rgb(88, 89, 92);
     position: relative;
     top: 0;
     left: 0;
+    transform-origin: top left;
 }
 
 .cmd:hover {
-    width: 610px;
-    height: 410px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-    margin: -5px 0 0 -5px;
     z-index: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .cmd:hover {
+        transform: translate(-5px, -5px) scale(1.0166667, 1.025);
+    }
 }
 
 .cmd .title {
@@ -207,40 +211,65 @@ body {
     float: left;
 }
 
-.cmd .click div {
+.cmd .click button {
+    position: relative;
+    width: 18px;
+    height: 18px;
+    border: 0;
+    border-radius: 50%;
+    margin: 4px 0 0 6px;
+    padding: 0;
+    float: left;
+    background: transparent;
+    cursor: pointer;
+}
+
+.cmd .click button::before {
+    position: absolute;
+    top: 4px;
+    left: 4px;
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    margin: 8px 0 0 10px;
-    float: left;
+    content: "";
+    transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
-.cmd .click .red {
+.cmd .click button:focus-visible {
+    outline: 2px solid rgba(0, 132, 255, 0.9);
+    outline-offset: 2px;
+}
+
+.cmd .click button:active::before {
+    transform: scale(0.85);
+}
+
+.cmd .click .red::before {
     background-color: #ff1b22;
     box-shadow: 0 0 1px #ff1b22;
 }
 
-.cmd .click .red:hover {
+.cmd .click .red:hover::before {
     background-color: #ff6268;
     box-shadow: 0 0 3px #ff1b22;
 }
 
-.cmd .click .yellow {
+.cmd .click .yellow::before {
     background-color: #ffaf00;
     box-shadow: 0 0 1px #ffaf00;
 }
 
-.cmd .click .yellow:hover {
+.cmd .click .yellow:hover::before {
     background-color: #ffd373;
     box-shadow: 0 0 3px #ffaf00;
 }
 
-.cmd .click .green {
+.cmd .click .green::before {
     background-color: #00931a;
     box-shadow: 0 0 1px #00931a;
 }
 
-.cmd .click .green:hover {
+.cmd .click .green:hover::before {
     background-color: rgb(0, 196, 36);
     box-shadow: 0 0 3px #00931a;
 }
@@ -248,6 +277,17 @@ body {
 .cmdText {
     padding-top: 10px;
     padding-left: 15px;
+}
+
+.weather-widget {
+    display: inline-block;
+    max-width: calc(100% - 15px);
+    min-height: 24px;
+    line-height: 24px;
+    vertical-align: top;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .cmd2 {
@@ -372,9 +412,8 @@ body {
         left: 0;
     }
     .cmd:hover {
-        width: 90%;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.4);
-        margin: 0 auto;
+        transform: none;
         z-index: 1;
     }
     .cmd iframe {
@@ -386,5 +425,79 @@ body {
         clear: both;
         margin-bottom: 0;
         padding: 20px 0 30px;
+    }
+}
+
+.cmd.is-maximized {
+    position: fixed;
+    inset: clamp(12px, 4vw, 32px);
+    width: auto;
+    height: auto;
+    margin: 0;
+    z-index: 20;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+}
+
+.cmd.is-maximized:hover {
+    width: auto;
+    height: auto;
+    margin: 0;
+    transform: none;
+}
+
+.cmd.is-maximized .cmdText {
+    box-sizing: border-box;
+    height: calc(100% - 25px);
+    overflow: auto;
+}
+
+.cmd.is-minimized,
+.cmd.is-minimized:hover {
+    position: fixed;
+    top: auto;
+    right: clamp(12px, 4vw, 32px);
+    bottom: calc(clamp(44px, 7vh, 62px) + var(--minimized-offset, 16px));
+    left: auto;
+    width: min(600px, calc(100vw - 64px));
+    height: 25px;
+    margin: 0;
+    transform: none;
+    z-index: 10;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.cmd.is-minimized .cmdText {
+    display: none;
+}
+
+body.domain-window-maximized {
+    overflow: hidden;
+}
+
+body.domain-window-maximized .cmd:not(.is-maximized):not(.is-minimized) {
+    visibility: hidden;
+}
+
+.cmd.is-state-changing {
+    transition: transform 220ms cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+#cmdBox.has-minimized-first,
+#cmdBox.has-maximized-first {
+    box-sizing: border-box;
+    padding-top: 400px;
+}
+
+@media screen and (max-width: 768px) {
+    .cmd.is-minimized,
+    .cmd.is-minimized:hover {
+        right: 16px;
+        width: calc(100vw - 32px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cmd.is-state-changing {
+        transition: none;
     }
 }

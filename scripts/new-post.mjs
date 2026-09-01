@@ -5,9 +5,10 @@ const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
 const values = args.filter((arg) => arg !== "--dry-run");
 const [slug, suppliedTitle] = values;
+const postSlugPattern = /^\d{14}$/u;
 
 if (!slug) {
-	console.error("用法：pnpm new-post -- <slug> [标题] [--dry-run]");
+	console.error("用法：pnpm new-post -- <yyyymmddhhmmss> [标题] [--dry-run]");
 	process.exit(1);
 }
 
@@ -16,13 +17,13 @@ if (slug === "." || slug === ".." || /[\\/:*?"<>|]/u.test(slug)) {
 	process.exit(1);
 }
 
+if (!postSlugPattern.test(slug)) {
+	console.error("文章 slug 必须严格为 14 位数字：yyyymmddhhmmss。");
+	process.exit(1);
+}
+
 const title = suppliedTitle || slug;
-const localDate = new Intl.DateTimeFormat("sv-SE", {
-	timeZone: "Asia/Shanghai",
-	year: "numeric",
-	month: "2-digit",
-	day: "2-digit",
-}).format(new Date());
+const published = `${slug.slice(0, 4)}-${slug.slice(4, 6)}-${slug.slice(6, 8)} ${slug.slice(8, 10)}:${slug.slice(10, 12)}:${slug.slice(12, 14)}`;
 const postDirectory = resolve("src", "content", "posts", slug);
 const postPath = resolve(postDirectory, "index.md");
 
@@ -33,7 +34,7 @@ if (existsSync(postDirectory)) {
 
 const content = `---
 title: ${JSON.stringify(title)}
-published: ${localDate}
+published: ${published}
 description: ""
 image: ""
 tags: []

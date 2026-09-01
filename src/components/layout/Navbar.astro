@@ -1,12 +1,8 @@
 ---
 import { navBarConfig, siteConfig } from "../../config";
 import { diary } from "../../data/diary";
-import { getCollection } from "astro:content";
 import dayjs from "dayjs";
-import { getCategoryList } from "../../utils/content-utils";
 
-const allPosts = await getCollection("posts");
-const categories = getCategoryList(allPosts);
 const pathname = Astro.url.pathname;
 const tickerItems = diary.slice(0, 4);
 
@@ -73,6 +69,26 @@ const isCurrent = (url: string) =>
 				</li>
 			))}
 
+			{navBarConfig.aboutSite.length > 0 && (
+				<li
+					class:list={[
+						"dropdown",
+						{
+							current: navBarConfig.aboutSite.some((item) => isCurrent(item.url)),
+						},
+					]}
+				>
+					<a class="catbtns" href="javascript:void(0)">
+						关于本站<i class="arrow"></i>
+					</a>
+					<ul>
+						{navBarConfig.aboutSite.map((item) => (
+							<li><a href={item.url}>{item.name}</a></li>
+						))}
+					</ul>
+				</li>
+			)}
+
 			{navBarConfig.extra.length > 0 && (
 				<li class="dropdown">
 					<a class="catbtns" href="javascript:void(0)">
@@ -86,22 +102,26 @@ const isCurrent = (url: string) =>
 				</li>
 			)}
 
-			{navBarConfig.showCategoryDropdown && categories.length > 0 && (
-				<li class="dropdown">
+			{navBarConfig.resourceSite.length > 0 && (
+				<li
+					class:list={[
+						"dropdown",
+						{
+							current: navBarConfig.resourceSite.some((item) => isCurrent(item.url)),
+						},
+					]}
+				>
 					<a class="catbtns" href="javascript:void(0)">
-						文章分类<i class="arrow"></i>
+						本站资源<i class="arrow"></i>
 					</a>
 					<ul>
-						{categories.map((cat) => (
-							<li>
-								<a href={`/category/${encodeURIComponent(cat.name)}/`}>
-									{cat.name}
-								</a>
-							</li>
+						{navBarConfig.resourceSite.map((item) => (
+							<li><a href={item.url}>{item.name}</a></li>
 						))}
 					</ul>
 				</li>
 			)}
+
 		</ul>
 
 		<ul class="m-nav">

@@ -1,5 +1,6 @@
 ---
 import MainGridLayout from "../layouts/MainGridLayout.astro";
+import SkillsOverview from "../components/skills/SkillsOverview.astro";
 import { skillsData } from "../data/skills";
 
 const categoryLabels = { frontend: "前端", backend: "后端与编程", database: "数据库", tools: "工具", other: "其他" } as const;
@@ -12,6 +13,7 @@ const experience = (years: number, months: number) => [years ? `${years} 年` : 
 	<div class="page personal-page">
 		<header class="post-header"><h2><i class="fa fa-code" aria-hidden="true"></i> 技能图谱</h2></header>
 		<address class="post-metaa"><i class="fa fa-home" aria-hidden="true"></i> <a href="/">首页</a> &raquo; 技能图谱</address>
+		<SkillsOverview />
 		{categories.map((category) => {
 			const skills = skillsData.filter((skill) => skill.category === category.key);
 			return skills.length > 0 && (
@@ -20,9 +22,24 @@ const experience = (years: number, months: number) => [years ? `${years} 年` : 
 					<div class="personal-grid skill-grid">
 						{skills.map((skill) => (
 							<article class="personal-card skill-card" style={`--skill-color: ${skill.color ?? "#00c000"}`}>
-								<div class="personal-card-heading"><h4>{skill.name}</h4><span class={`level level-${skill.level}`}>{levelLabels[skill.level]}</span></div>
-								<p>{skill.description}</p>
-								<p class="personal-meta"><i class="fa fa-clock-o" aria-hidden="true"></i> 使用经验：{experience(skill.experience.years, skill.experience.months)}</p>
+								<div class="skill-card-layout">
+									<span class="skill-card-icon" aria-hidden="true">
+										<img
+											src={`https://api.iconify.design/${skill.icon}.svg`}
+											alt=""
+											loading="lazy"
+											decoding="async"
+											data-skill-icon={skill.icon}
+											onerror="this.style.display='none'; this.nextElementSibling.style.display='grid';"
+										/>
+										<span class="skill-card-icon-fallback">{skill.name.slice(0, 1)}</span>
+									</span>
+									<div class="skill-card-content">
+										<div class="personal-card-heading"><h4>{skill.name}</h4><span class={`level level-${skill.level}`}>{levelLabels[skill.level]}</span></div>
+										<p>{skill.description}</p>
+										<p class="personal-meta"><i class="fa fa-clock-o" aria-hidden="true"></i> 使用经验：{experience(skill.experience.years, skill.experience.months)}</p>
+									</div>
+								</div>
 							</article>
 						))}
 					</div>
@@ -32,3 +49,65 @@ const experience = (years: number, months: number) => [years ? `${years} 年` : 
 	</div>
 </MainGridLayout>
 
+<style>
+	.skill-card-layout {
+		display: grid;
+		grid-template-columns: 44px minmax(0, 1fr);
+		align-items: start;
+		gap: 14px;
+	}
+
+	.skill-card-icon {
+		display: grid;
+		width: 44px;
+		height: 44px;
+		box-sizing: border-box;
+		place-items: center;
+		border: 1px solid color-mix(in srgb, var(--skill-color) 48%, #fff);
+		border-radius: 4px;
+		background: rgba(255, 255, 255, 0.66);
+		color: var(--skill-color);
+		font-size: 18px;
+		font-weight: 700;
+	}
+
+	.skill-card-icon img,
+	.skill-card-icon-fallback {
+		grid-area: 1 / 1;
+	}
+
+	.skill-card-icon img {
+		display: block;
+		width: 28px;
+		height: 28px;
+		object-fit: contain;
+	}
+
+	.skill-card-icon-fallback {
+		display: none;
+		place-items: center;
+		width: 100%;
+		height: 100%;
+	}
+
+	.skill-card-content {
+		min-width: 0;
+	}
+
+	@media (max-width: 680px) {
+		.skill-card-layout {
+			grid-template-columns: 40px minmax(0, 1fr);
+			gap: 12px;
+		}
+
+		.skill-card-icon {
+			width: 40px;
+			height: 40px;
+		}
+
+		.skill-card-icon img {
+			width: 25px;
+			height: 25px;
+		}
+	}
+</style>

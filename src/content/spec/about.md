@@ -4,7 +4,11 @@ description: WindowsIt 的个人介绍
 updated: 2026-08-31
 ---
 
-本博客基于 **Astro** 框架构建，主题视觉与结构源自 Emlog 的 **Colorful-Pjax** 主题，由[明月浩空](http://limh.me)制作。特别感谢 Emlog 与 Colorful 项目的贡献者。
+> 写在前面：
+>
+> 本站为非营利性网站，外部资源转载均来自于互联网，若侵犯了您的合法权益，请联系我删除。**本站无任何充值、打赏、捐赠及其他行为**，请谨慎判断信息来源的真实性，科学上网，理智浏览。
+>
+> 本博客基于 **Astro** 框架构建，主题视觉与结构源自 Emlog 的 **Colorful-Pjax** 主题，由[明月浩空](https://myhkw.cn/)制作。特别感谢 Emlog 与 Colorful 项目的贡献者。
 
 <div class="site-card" data-pagefind-ignore>
   <a class="site-card-link" href="https://myhkw.cn/" target="_blank" rel="noopener noreferrer">

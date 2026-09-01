@@ -75,6 +75,123 @@ export const skillsData: Skill[] = [
 		projects: ["inspira-ui"],
 		color: "#563D7C",
 	},
+	{
+		id: "astro",
+		name: "Astro",
+		description:
+			"本站的静态站点框架，负责内容集合、页面路由、静态构建与部署。",
+		icon: "logos:astro",
+		category: "frontend",
+		level: "advanced",
+		experience: { years: 0, months: 8 },
+		projects: ["my-astro-blog"],
+		color: "#FF5D01",
+	},
+	{
+		id: "typescript",
+		name: "TypeScript",
+		description: "本站及多个前端、桌面项目使用的类型化开发语言。",
+		icon: "logos:typescript",
+		category: "frontend",
+		level: "intermediate",
+		experience: { years: 0, months: 8 },
+		projects: [
+			"opia-rss-reader",
+			"windy-project-mgr",
+			"feijiemgr",
+			"my-astro-blog",
+		],
+		color: "#3178C6",
+	},
+	{
+		id: "vite",
+		name: "Vite",
+		description: "多个前端与桌面项目的开发服务器和构建工具。",
+		icon: "logos:vite",
+		category: "frontend",
+		level: "intermediate",
+		experience: { years: 0, months: 2 },
+		projects: ["opia-rss-reader", "windy-project-mgr", "feijiemgr"],
+		color: "#646CFF",
+	},
+	{
+		id: "react",
+		name: "React",
+		description:
+			"用于 Opia RSS Reader 与 Windy Project Manager 界面开发的组件框架。",
+		icon: "logos:react",
+		category: "frontend",
+		level: "intermediate",
+		experience: { years: 0, months: 1 },
+		projects: ["opia-rss-reader", "windy-project-mgr"],
+		color: "#61DAFB",
+	},
+	{
+		id: "vue3",
+		name: "Vue 3",
+		description: "用于飞捷 Web 门户与管理后台的页面和组件开发。",
+		icon: "logos:vue",
+		category: "frontend",
+		level: "intermediate",
+		experience: { years: 0, months: 2 },
+		projects: ["feijiemgr"],
+		color: "#42B883",
+	},
+	{
+		id: "tailwindcss",
+		name: "Tailwind CSS",
+		description:
+			"用于本站与 Opia RSS Reader 的界面样式、布局和响应式设计。",
+		icon: "logos:tailwindcss",
+		category: "frontend",
+		level: "intermediate",
+		experience: { years: 0, months: 8 },
+		projects: ["opia-rss-reader", "my-astro-blog"],
+		color: "#06B6D4",
+	},
+	{
+		id: "svelte",
+		name: "Svelte",
+		description: "本站通过 @astrojs/svelte 集成的交互组件技术。",
+		icon: "logos:svelte",
+		category: "frontend",
+		level: "beginner",
+		experience: { years: 0, months: 8 },
+		projects: ["my-astro-blog"],
+		color: "#FF3E00",
+	},
+	{
+		id: "pinia",
+		name: "Pinia",
+		description: "飞捷 Web 门户与管理后台使用的 Vue 状态管理库。",
+		icon: "logos:pinia",
+		category: "frontend",
+		level: "intermediate",
+		experience: { years: 0, months: 2 },
+		projects: ["feijiemgr"],
+		color: "#FFD859",
+	},
+	{
+		id: "element-plus",
+		name: "Element Plus",
+		description: "飞捷管理后台使用的 Vue 组件库。",
+		icon: "ep:element-plus",
+		category: "frontend",
+		level: "intermediate",
+		experience: { years: 0, months: 2 },
+		projects: ["feijiemgr"],
+		color: "#409EFF",
+	},
+	{
+		id: "gsap",
+		name: "GSAP",
+		description: "飞捷 Web 门户用于页面进入、列表和交互动效的动画库。",
+		icon: "logos:greensock",
+		category: "frontend",
+		level: "intermediate",
+		experience: { years: 0, months: 1 },
+		color: "#88CE02",
+	},
 
 	// Backend Skills
 	{
@@ -110,6 +227,28 @@ export const skillsData: Skill[] = [
 		projects: [],
 		color: "#3776AB",
 	},
+	{
+		id: "rust",
+		name: "Rust",
+		description:
+			"Windy Project Manager 的本地业务层，负责项目扫描、Git 信息和桌面操作。",
+		icon: "logos:rust",
+		category: "backend",
+		level: "intermediate",
+		experience: { years: 0, months: 1 },
+		projects: ["windy-project-mgr"],
+		color: "#DEA584",
+	},
+	{
+		id: "nodejs",
+		name: "Node.js",
+		description: "当前站点与多个项目使用的脚本和开发工具运行环境。",
+		icon: "logos:nodejs",
+		category: "backend",
+		level: "beginner",
+		experience: { years: 0, months: 2 },
+		color: "#339933",
+	},
 
 	// Database Skills
 	{
@@ -122,6 +261,17 @@ export const skillsData: Skill[] = [
 		experience: { years: 0, months: 6 },
 		projects: ["e-commerce-platform", "blog-system"],
 		color: "#4479A1",
+	},
+	{
+		id: "sqlite",
+		name: "SQLite",
+		description:
+			"Windy Media Center 本地曲库使用的持久化数据库，配合 QtSql 完成扫描结果存储。",
+		icon: "logos:sqlite",
+		category: "database",
+		level: "intermediate",
+		experience: { years: 0, months: 1 },
+		color: "#003B57",
 	},
 
 	// Tools
@@ -190,18 +340,83 @@ export const skillsData: Skill[] = [
 		projects: ["ui-design", "image-processing"],
 		color: "#31A8FF",
 	},
+	{
+		id: "electron",
+		name: "Electron",
+		description:
+			"Opia RSS Reader 的 Windows 桌面运行时，支持 RSS 阅读与 Mini 挂件模式。",
+		icon: "logos:electron",
+		category: "tools",
+		level: "advanced",
+		experience: { years: 0, months: 1 },
+		projects: ["opia-rss-reader"],
+		color: "#47848F",
+	},
+	{
+		id: "tauri",
+		name: "Tauri",
+		description:
+			"Windy Project Manager 的桌面应用运行时，通过 IPC 连接 React 界面与 Rust 本地层。",
+		icon: "logos:tauri",
+		category: "tools",
+		level: "intermediate",
+		experience: { years: 0, months: 1 },
+		projects: ["windy-project-mgr"],
+		color: "#FFC131",
+	},
+	{
+		id: "qt6",
+		name: "Qt 6",
+		description:
+			"Windy 系列桌面项目使用的跨平台框架，覆盖 Widgets、Qt Quick/QML、Multimedia 与 Sql。",
+		icon: "logos:qt",
+		category: "tools",
+		level: "advanced",
+		experience: { years: 0, months: 6 },
+		projects: [
+			"windypics",
+			"windycolourpicker",
+			"windynotepad",
+			"studentmsgmgr",
+			"windyqtmediaplayer",
+		],
+		color: "#41CD52",
+	},
+	{
+		id: "cmake",
+		name: "CMake",
+		description:
+			"Windy Media Center、WindyPics、WindyColourPicker 与媒体播放器项目的 C++ 构建系统。",
+		icon: "devicon:cmake",
+		category: "tools",
+		level: "intermediate",
+		experience: { years: 0, months: 6 },
+		projects: ["windypics", "windycolourpicker", "windyqtmediaplayer"],
+		color: "#064F8C",
+	},
 
 	// Other Skills
 	{
 		id: "flstudio",
 		name: "FL Studio",
 		description: "或许是最熟练的应用了，能快速完成编曲和混音工作。",
-		icon: "mdi:tune",
+		icon: "arcticons:fl-studio-mobile",
 		category: "other",
 		level: "expert",
 		experience: { years: 6, months: 11 },
 		projects: ["modern-api"],
 		color: "#E10098",
+	},
+	{
+		id: "wechat-mini-program",
+		name: "微信小程序",
+		description:
+			"飞捷无人机服务前端使用的原生微信小程序技术，连接远程 REST 后端。",
+		icon: "mdi:wechat",
+		category: "other",
+		level: "intermediate",
+		experience: { years: 0, months: 1 },
+		color: "#07C160",
 	},
 ];
 
@@ -241,13 +456,14 @@ export const getAdvancedSkills = () => {
 	);
 };
 
-// Calculate total years of experience
-export const getTotalExperience = () => {
+// Calculate average years of experience
+export const getAverageExperience = () => {
 	const totalMonths = skillsData.reduce((total, skill) => {
 		return total + skill.experience.years * 12 + skill.experience.months;
 	}, 0);
+	const averageMonths = Math.round(totalMonths / skillsData.length);
 	return {
-		years: Math.floor(totalMonths / 12),
-		months: totalMonths % 12,
+		years: Math.floor(averageMonths / 12),
+		months: averageMonths % 12,
 	};
 };

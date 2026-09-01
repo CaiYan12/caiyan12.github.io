@@ -7,6 +7,7 @@
  */
 
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
+import { showSiteToast } from "./site-toast";
 
 declare global {
 	interface Window {
@@ -59,6 +60,190 @@ function destroyFancybox() {
 	window.Fancybox?.close();
 }
 
+let copyLinkBound = false;
+
+let skillsDonutTooltipBound = false;
+
+/** 技能概览环形图悬浮详情（事件委托，Swup 切页后依然生效） */
+function initSkillsDonutTooltip() {
+	if (skillsDonutTooltipBound) return;
+	skillsDonutTooltipBound = true;
+
+	const showFrames = new WeakMap<HTMLElement, number>();
+	const getSegment = (target: EventTarget | null) => {
+		if (!(target instanceof Element)) return null;
+		return target.closest<SVGPathElement>(".skills-donut-segment-base");
+	};
+	const getTooltip = (segment: Element) =>
+		segment
+			.closest<HTMLElement>("[data-skills-overview]")
+			?.querySelector<HTMLElement>("[data-skills-donut-tooltip]") ?? null;
+	const isSameDonut = (segment: Element, target: EventTarget | null) => {
+		const relatedSegment = getSegment(target);
+		return (
+			relatedSegment?.closest("[data-skills-overview]") ===
+			segment.closest("[data-skills-overview]")
+		);
+	};
+	const resetTooltipPosition = (tooltip: HTMLElement) => {
+		tooltip.style.removeProperty("left");
+		tooltip.style.removeProperty("top");
+		tooltip.style.removeProperty("right");
+		tooltip.style.removeProperty("bottom");
+	};
+	const positionTooltip = (
+		tooltip: HTMLElement,
+		clientX: number,
+		clientY: number,
+	) => {
+		const gap = 14;
+		const viewportPadding = 12;
+		const rect = tooltip.getBoundingClientRect();
+		const maxLeft = Math.max(
+			viewportPadding,
+			window.innerWidth - rect.width - viewportPadding,
+		);
+		const maxTop = Math.max(
+			viewportPadding,
+			window.innerHeight - rect.height - viewportPadding,
+		);
+		let left = clientX + gap;
+		let top = clientY + gap;
+		if (left > maxLeft) left = clientX - rect.width - gap;
+		if (top > maxTop) top = clientY - rect.height - gap;
+		left = Math.min(maxLeft, Math.max(viewportPadding, left));
+		top = Math.min(maxTop, Math.max(viewportPadding, top));
+		tooltip.style.left = `${left}px`;
+		tooltip.style.top = `${top}px`;
+		tooltip.style.right = "auto";
+		tooltip.style.bottom = "auto";
+	};
+	const hideTooltip = (tooltip: HTMLElement | null) => {
+		if (!tooltip) return;
+		const frame = showFrames.get(tooltip);
+		if (frame !== undefined) cancelAnimationFrame(frame);
+		showFrames.delete(tooltip);
+		tooltip.classList.remove("is-visible");
+		tooltip.hidden = true;
+		tooltip.setAttribute("aria-hidden", "true");
+		resetTooltipPosition(tooltip);
+	};
+	const showTooltip = (
+		segment: SVGPathElement,
+		clientX?: number,
+		clientY?: number,
+	) => {
+		const tooltip = getTooltip(segment);
+		if (!tooltip) return;
+		const label = tooltip.querySelector<HTMLElement>(
+			"[data-skills-tooltip-label]",
+		);
+		const value = tooltip.querySelector<HTMLElement>(
+			"[data-skills-tooltip-value]",
+		);
+		const percentage = tooltip.querySelector<HTMLElement>(
+			"[data-skills-tooltip-percentage]",
+		);
+		const color = segment.dataset.skillColor || "#00c000";
+		if (label) label.textContent = segment.dataset.skillLabel || "技能等级";
+		if (value) value.textContent = segment.dataset.skillValue || "0";
+		if (percentage)
+			percentage.textContent = segment.dataset.skillPercentage || "0";
+		tooltip.style.setProperty("--skills-tooltip-color", color);
+		tooltip.hidden = false;
+		tooltip.setAttribute("aria-hidden", "false");
+		if (typeof clientX === "number" && typeof clientY === "number") {
+			positionTooltip(tooltip, clientX, clientY);
+		} else {
+			resetTooltipPosition(tooltip);
+		}
+		tooltip.classList.remove("is-visible");
+		const frame = requestAnimationFrame(() => {
+			if (!tooltip.hidden) tooltip.classList.add("is-visible");
+			showFrames.delete(tooltip);
+		});
+		showFrames.set(tooltip, frame);
+	};
+
+	document.addEventListener("pointerover", (event) => {
+		if (event.pointerType !== "mouse") return;
+		const segment = getSegment(event.target);
+		if (segment) showTooltip(segment, event.clientX, event.clientY);
+	});
+	document.addEventListener("pointermove", (event) => {
+		if (event.pointerType !== "mouse") return;
+		const segment = getSegment(event.target);
+		const tooltip = segment && getTooltip(segment);
+		if (segment && tooltip && !tooltip.hidden)
+			positionTooltip(tooltip, event.clientX, event.clientY);
+	});
+	document.addEventListener("pointerout", (event) => {
+		const segment = getSegment(event.target);
+		if (!segment || isSameDonut(segment, event.relatedTarget)) return;
+		hideTooltip(getTooltip(segment));
+	});
+	document.addEventListener("focusin", (event) => {
+		const segment = getSegment(event.target);
+		if (segment) showTooltip(segment);
+	});
+	document.addEventListener("focusout", (event) => {
+		const segment = getSegment(event.target);
+		if (!segment || isSameDonut(segment, event.relatedTarget)) return;
+		hideTooltip(getTooltip(segment));
+	});
+	document.addEventListener("keydown", (event) => {
+		if (event.key !== "Escape") return;
+		document
+			.querySelectorAll<HTMLElement>("[data-skills-donut-tooltip]")
+			.forEach(hideTooltip);
+	});
+}
+
+/** 写入剪贴板；受限环境下回退到隐藏 textarea */
+async function copyText(text: string) {
+	try {
+		if (navigator.clipboard?.writeText) {
+			await navigator.clipboard.writeText(text);
+			return;
+		}
+	} catch {
+		// 权限受限时继续尝试兼容性回退方案
+	}
+
+	const textarea = document.createElement("textarea");
+	textarea.value = text;
+	textarea.setAttribute("readonly", "");
+	textarea.style.position = "fixed";
+	textarea.style.opacity = "0";
+	textarea.style.pointerEvents = "none";
+	document.body.appendChild(textarea);
+	textarea.select();
+	const copied = document.execCommand("copy");
+	textarea.remove();
+	if (!copied) throw new Error("copy failed");
+}
+
+/** 本文链接复制（事件委托，Swup 切页后依然生效） */
+function initCopyLink() {
+	if (copyLinkBound) return;
+	copyLinkBound = true;
+	document.addEventListener("click", async (event) => {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const link = target.closest<HTMLAnchorElement>("[data-copy-link]");
+		if (!link) return;
+
+		event.preventDefault();
+		const text = link.dataset.copyLink || link.href;
+		try {
+			await copyText(text);
+			showSiteToast("已复制");
+		} catch {
+			showSiteToast("复制失败，请手动复制");
+		}
+	});
+}
+
 /** 页面存在 KaTeX 公式时按需加载其样式 */
 function loadKatexCss() {
 	if (document.querySelector(".katex")) {
@@ -73,9 +258,84 @@ async function renderMermaid() {
 	if (pending.length === 0) return;
 	try {
 		const { default: mermaid } = await import("mermaid");
+		const rootStyles = getComputedStyle(document.documentElement);
+		const cssVar = (name: string, fallback: string) =>
+			rootStyles.getPropertyValue(name).trim() || fallback;
+		const primary = cssVar("--primary", "#00c000");
+		const primaryDark = cssVar("--primary-dark", "#0a0");
+		const border = cssVar("--border", "#eaeaea");
+		const pageBackground = cssVar("--page-bg", "#f4f5f7");
+		const text = cssVar("--text", "#000");
+		const textGray = cssVar("--text-gray", "#505050");
+		const bodyFont = getComputedStyle(document.body).fontFamily;
+		const nodeBackground = "#edfaf2";
+
 		mermaid.initialize({
 			startOnLoad: false,
-			theme: "default",
+			theme: "base",
+			look: "classic",
+			fontFamily: bodyFont,
+			fontSize: 14,
+			themeVariables: {
+				background: pageBackground,
+				mainBkg: "#fff",
+				primaryColor: nodeBackground,
+				primaryTextColor: textGray,
+				primaryBorderColor: primary,
+				secondaryColor: "#fff",
+				tertiaryColor: pageBackground,
+				lineColor: primaryDark,
+				textColor: text,
+				nodeBkg: nodeBackground,
+				nodeBorder: primary,
+				nodeTextColor: textGray,
+				clusterBkg: "#fff",
+				clusterBorder: border,
+			},
+			themeCSS: `
+				.node rect, .node circle, .node ellipse, .node polygon, .node path {
+					fill: ${nodeBackground} !important;
+					stroke: ${primary} !important;
+				}
+				.node .label text, .nodeLabel, .label text {
+					fill: ${textGray} !important;
+					color: ${textGray} !important;
+				}
+				.edgeLabel, .edgeLabel rect {
+					fill: #fff !important;
+					background-color: #fff !important;
+				}
+				.mindmap-node.section-root rect,
+				.mindmap-node.section-root path,
+				.mindmap-node.section-root circle,
+				.mindmap-node.section-root polygon {
+					fill: ${primary} !important;
+					stroke: ${primaryDark} !important;
+				}
+				.mindmap-node.section-root text,
+				.mindmap-node.section-root span {
+					fill: #fff !important;
+					color: #fff !important;
+				}
+				.mindmap-node:not(.section-root) rect,
+				.mindmap-node:not(.section-root) path,
+				.mindmap-node:not(.section-root) circle,
+				.mindmap-node:not(.section-root) polygon {
+					fill: ${nodeBackground} !important;
+					stroke: ${primary} !important;
+				}
+				.mindmap-node:not(.section-root) text,
+				.mindmap-node:not(.section-root) span {
+					fill: ${textGray} !important;
+					color: ${textGray} !important;
+				}
+				[class*="section-edge-"] {
+					stroke: ${primaryDark} !important;
+				}
+				[class*="edge-depth-"] {
+					stroke-width: 2px !important;
+				}
+			`,
 			securityLevel: "strict",
 		});
 		await mermaid.run({ nodes: pending });
@@ -449,6 +709,8 @@ export function pagefindReady() {
 	initClickEffect();
 	initCanvasBoomEffect();
 	initVisibilityTitle();
+	initCopyLink();
+	initSkillsDonutTooltip();
 	initFancybox();
 	loadKatexCss();
 	renderMermaid();

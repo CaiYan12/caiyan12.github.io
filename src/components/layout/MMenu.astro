@@ -1,10 +1,6 @@
 ---
 import { navBarConfig } from "../../config";
-import { getCollection } from "astro:content";
-import { getCategoryList } from "../../utils/content-utils";
 
-const allPosts = await getCollection("posts");
-const categories = getCategoryList(allPosts);
 const pathname = Astro.url.pathname;
 const isCurrent = (url: string) =>
 	pathname === url || (url !== "/" && pathname.startsWith(url.replace(/\/$/, "")));
@@ -28,6 +24,22 @@ const isCurrent = (url: string) =>
 				<a href={item.url}>{item.name}</a>
 			</li>
 		))}
+		<li
+			class:list={[
+				{
+					current: navBarConfig.aboutSite.some((item) => isCurrent(item.url)),
+				},
+			]}
+		>
+			<a href="javascript:void(0)">关于本站</a>
+			<ul class="submenu">
+				{navBarConfig.aboutSite.map((item) => (
+					<li class:list={[{ current: isCurrent(item.url) }]}>
+						<a href={item.url}>{item.name}</a>
+					</li>
+				))}
+			</ul>
+		</li>
 		<li>
 			<a href="javascript:void(0)">附加功能</a>
 			<ul class="submenu">
@@ -38,20 +50,22 @@ const isCurrent = (url: string) =>
 				))}
 			</ul>
 		</li>
-		{navBarConfig.showCategoryDropdown && categories.length > 0 && (
-			<li>
-				<a href="javascript:void(0)">文章分类</a>
-				<ul class="submenu">
-					{categories.map((cat) => (
-						<li>
-							<a href={`/category/${encodeURIComponent(cat.name)}/`}>
-								{cat.name}
-							</a>
-						</li>
-					))}
-				</ul>
-			</li>
-		)}
+		<li
+			class:list={[
+				{
+					current: navBarConfig.resourceSite.some((item) => isCurrent(item.url)),
+				},
+			]}
+		>
+			<a href="javascript:void(0)">本站资源</a>
+			<ul class="submenu">
+				{navBarConfig.resourceSite.map((item) => (
+					<li class:list={[{ current: isCurrent(item.url) }]}>
+						<a href={item.url}>{item.name}</a>
+					</li>
+				))}
+			</ul>
+		</li>
 		<li>
 			<button id="close-nav" class="close-nav" type="button" aria-label="关闭导航菜单">
 				<i class="fa fa-times" aria-hidden="true"></i>

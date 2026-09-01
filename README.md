@@ -19,6 +19,7 @@
 pnpm install     # 安装依赖
 pnpm dev         # 本地开发（http://localhost:4321）
 pnpm build       # 构建到 dist/（LQIP 占位图 + GitHub 仓库数据 + Pagefind 已串联）
+pnpm new-post -- <yyyymmddhhmmss> [标题]  # 按规范创建文章目录
 pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存
 pnpm preview     # 预览构建产物
 pnpm check       # 类型检查
@@ -41,7 +42,7 @@ src/
   config.ts              ← 站点配置（标题、导航、侧栏、Giscus 等都在这里改）
   content.config.ts      ← 文章/页面的字段定义（schema）
   content/
-    posts/<slug>/index.md   ← 文章（目录即 slug，可放封面图）
+    posts/<yyyymmddhhmmss>/index.md   ← 文章（目录即 URL slug，可放封面图）
     spec/about.md           ← 关于页面
   data/
     diary.ts             ← 微言碎语
@@ -62,9 +63,17 @@ public/
 
 ## 怎么写文章
 
-1. 在 `src/content/posts/` 新建文件夹（文件夹名 = URL slug）
-2. 在文件夹里创建 `index.md`，frontmatter 字段见 `src/content.config.ts`
+1. 运行 `pnpm new-post -- <yyyymmddhhmmss> [标题]` 创建文章目录；构建规则会拒绝标题或中文 slug
+2. 在目录里编辑 `index.md`，frontmatter 字段见 `src/content.config.ts`
 3. `git add . && git commit && git push` → GitHub Actions 自动构建并部署到 GitHub Pages（`https://caiyan12.github.io/`）
+
+## 文章 URL 规范（强制）
+
+- 所有 `src/content/posts/` 的直接子目录（包括公开文章、私密文章和草稿）必须严格是 14 位数字：`yyyymmddhhmmss`。
+- 文章 URL 固定为 `/posts/<yyyymmddhhmmss>/`，禁止使用文章标题、中文或其他自定义 slug。
+- 目录名是文章 `id`，站内卡片、归档、RSS、二维码和“本文链接”都会从该目录名生成 URL。
+- `published` 只有日期时，目录时间部分统一使用 `000000`；已有时分秒应原样对应目录名。
+- `pnpm build` 会先运行 `scripts/validate-post-slugs.mjs`；新增文章应使用 `pnpm new-post -- <yyyymmddhhmmss> [标题]`。
 
 ## 如何开启评论（Giscus）
 

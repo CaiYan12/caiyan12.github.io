@@ -1,0 +1,589 @@
+---
+import { getAverageExperience, getSkillStats } from "../../data/skills";
+
+const stats = getSkillStats();
+const averageExperience = getAverageExperience();
+
+const levelData = [
+	{ key: "expert", label: "擅长", value: stats.byLevel.expert, color: "#ef4444" },
+	{ key: "advanced", label: "进阶", value: stats.byLevel.advanced, color: "#f97316" },
+	{ key: "intermediate", label: "熟练", value: stats.byLevel.intermediate, color: "#eab308" },
+	{ key: "beginner", label: "入门", value: stats.byLevel.beginner, color: "#22c55e" },
+] as const;
+
+const categoryData = [
+	{ key: "frontend", label: "前端开发", value: stats.byCategory.frontend, color: "#3b82f6" },
+	{ key: "backend", label: "后端与编程", value: stats.byCategory.backend, color: "#8b5cf6" },
+	{ key: "database", label: "数据库", value: stats.byCategory.database, color: "#10b981" },
+	{ key: "tools", label: "开发工具", value: stats.byCategory.tools, color: "#f59e0b" },
+	{ key: "other", label: "其他技能", value: stats.byCategory.other, color: "#ec4899" },
+] as const;
+
+const calculateDonutPath = (startAngle: number, endAngle: number, outerRadius = 40, innerRadius = 22) => {
+	const center = 50;
+	const startRadians = ((startAngle - 90) * Math.PI) / 180;
+	const endRadians = ((endAngle - 90) * Math.PI) / 180;
+	const outerStart = [center + outerRadius * Math.cos(startRadians), center + outerRadius * Math.sin(startRadians)];
+	const outerEnd = [center + outerRadius * Math.cos(endRadians), center + outerRadius * Math.sin(endRadians)];
+	const innerStart = [center + innerRadius * Math.cos(endRadians), center + innerRadius * Math.sin(endRadians)];
+	const innerEnd = [center + innerRadius * Math.cos(startRadians), center + innerRadius * Math.sin(startRadians)];
+	const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
+
+	return [
+		`M ${outerStart[0]} ${outerStart[1]}`,
+		`A ${outerRadius} ${outerRadius} 0 ${largeArcFlag} 1 ${outerEnd[0]} ${outerEnd[1]}`,
+		`L ${innerStart[0]} ${innerStart[1]}`,
+		`A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${innerEnd[0]} ${innerEnd[1]}`,
+		"Z",
+	].join(" ");
+};
+
+const totalLevel = levelData.reduce((sum, item) => sum + item.value, 0);
+let currentAngle = 0;
+const levelSegments = levelData.map((item) => {
+	const angle = totalLevel > 0 ? (item.value / totalLevel) * 360 : 0;
+	const startAngle = currentAngle;
+	currentAngle += angle;
+	return { ...item, startAngle, endAngle: currentAngle };
+});
+
+const maxCategory = Math.max(...categoryData.map((item) => item.value), 1);
+const percentage = (value: number, total: number) => (total > 0 ? Math.round((value / total) * 100) : 0);
+const experienceValue = `${averageExperience.years}.${averageExperience.months.toString().padStart(2, "0")}`;
+---
+
+<section class="skills-overview" data-skills-overview aria-label="技能总体概览">
+	<div class="skills-overview-grid">
+		<section class="skills-overview-panel skills-level-panel" aria-labelledby="skills-level-heading">
+			<h3 id="skills-level-heading">
+				<span class="skills-overview-marker skills-level-marker" aria-hidden="true"></span>
+				按等级分布
+			</h3>
+			<div class="skills-donut-wrap">
+				{totalLevel > 0 ? (
+					<svg
+						class="skills-donut"
+						viewBox="0 0 100 100"
+						role="img"
+						aria-labelledby="skills-level-chart-title skills-level-chart-description"
+					>
+						<title id="skills-level-chart-title">技能熟练度分布</title>
+						<desc id="skills-level-chart-description">共 {stats.total} 项技能，按入门、熟练、进阶和擅长等级分布。</desc>
+						{levelSegments.map((segment) => (
+							segment.endAngle > segment.startAngle && (
+								<g class="skills-donut-segment-group">
+									<path
+										class="skills-donut-segment skills-donut-segment-base"
+										d={calculateDonutPath(segment.startAngle, segment.endAngle)}
+										fill={segment.color}
+										tabindex="0"
+										aria-label={`${segment.label}：${segment.value} 项技能，占 ${percentage(segment.value, totalLevel)}%`}
+										data-skill-level={segment.key}
+										data-skill-label={segment.label}
+										data-skill-value={segment.value}
+										data-skill-percentage={percentage(segment.value, totalLevel)}
+										data-skill-color={segment.color}
+									/>
+									<path
+										class="skills-donut-segment skills-donut-segment-expanded"
+										d={calculateDonutPath(segment.startAngle, segment.endAngle, 43)}
+										fill={segment.color}
+										aria-hidden="true"
+									/>
+								</g>
+							)
+						))}
+					</svg>
+				) : (
+					<span class="skills-chart-empty">暂无数据</span>
+				)}
+			</div>
+			<ul class="skills-level-legend" aria-label="技能等级图例">
+				{levelData.map((item) => (
+					<li>
+						<span class="skills-level-label">
+							<span class="skills-legend-swatch" style={`background: ${item.color}`} aria-hidden="true"></span>
+							<span>{item.label}</span>
+						</span>
+						<span class="skills-level-value">
+							<strong>{item.value}</strong>
+							<small>{percentage(item.value, totalLevel)}%</small>
+						</span>
+					</li>
+				))}
+			</ul>
+			<div class="skills-donut-tooltip" data-skills-donut-tooltip hidden role="tooltip" aria-hidden="true">
+				<span class="skills-donut-tooltip-swatch" data-skills-tooltip-swatch aria-hidden="true"></span>
+				<div class="skills-donut-tooltip-content">
+					<strong data-skills-tooltip-label>技能等级</strong>
+					<span><b data-skills-tooltip-value>0</b> 项技能 · 占 <b data-skills-tooltip-percentage>0</b>%</span>
+				</div>
+			</div>
+		</section>
+
+		<section class="skills-overview-panel skills-category-panel" aria-labelledby="skills-category-heading">
+			<h3 id="skills-category-heading">
+				<span class="skills-overview-marker skills-category-marker" aria-hidden="true"></span>
+				按分类分布
+			</h3>
+			<div class="skills-category-list">
+				{categoryData.map((item) => (
+					<div class="skills-category-row">
+						<div class="skills-category-label">
+							<span class="skills-category-name">{item.label}</span>
+							<span class="skills-category-count">{item.value}</span>
+							<span class="skills-category-percentage">{percentage(item.value, stats.total)}%</span>
+						</div>
+						<div
+							class="skills-category-track"
+							role="progressbar"
+							aria-label={`${item.label}技能数量`}
+							aria-valuenow={item.value}
+							aria-valuemin="0"
+							aria-valuemax={maxCategory}
+						>
+							<span
+								class="skills-category-fill"
+								style={`--skill-overview-color: ${item.color}; --skill-overview-width: ${(item.value / maxCategory) * 100}%`}
+							></span>
+						</div>
+					</div>
+				))}
+			</div>
+			<div class="skills-summary-stats">
+				<div class="skills-summary-stat skills-experience-stat">
+					<span>平均经验</span>
+					<strong>{experienceValue}</strong>
+					<small>年</small>
+				</div>
+				<div class="skills-summary-stat skills-total-stat">
+					<span>总技能数</span>
+					<strong>{stats.total}</strong>
+					<small>技能展示</small>
+				</div>
+			</div>
+		</section>
+	</div>
+</section>
+
+<style>
+	.skills-overview {
+		margin: 18px 20px 28px;
+	}
+
+	.skills-overview-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 16px;
+		align-items: stretch;
+	}
+
+	.skills-overview-panel {
+		box-sizing: border-box;
+		min-width: 0;
+		border: 1px solid var(--line);
+		border-radius: 4px;
+		background: var(--content-surface);
+		padding: 20px;
+		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.04);
+	}
+
+	.skills-level-panel {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.skills-overview-panel h3 {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin: 0 0 16px;
+		color: #333;
+		font-size: 18px;
+		font-weight: 600;
+		line-height: 1.4;
+	}
+
+	.skills-overview-marker {
+		display: inline-block;
+		width: 9px;
+		height: 9px;
+		border-radius: 50%;
+		flex: 0 0 auto;
+	}
+
+	.skills-level-marker {
+		background: var(--colorful-green);
+	}
+
+	.skills-category-marker {
+		background: var(--colorful-green);
+	}
+
+	.skills-donut-wrap {
+		display: grid;
+		min-height: 228px;
+		place-items: center;
+	}
+
+	.skills-donut {
+		display: block;
+		width: min(100%, 260px);
+		height: auto;
+	}
+
+	.skills-donut-segment {
+		stroke: #fff;
+		stroke-width: 1.5;
+		stroke-linejoin: round;
+		transition: opacity 0.2s var(--ease-out);
+	}
+
+	.skills-donut-segment-group {
+		cursor: default;
+		opacity: 1;
+		transition: opacity 0.2s var(--ease-out);
+	}
+
+	.skills-donut-segment-base:focus-visible {
+		outline: none;
+	}
+
+	.skills-donut-segment-expanded {
+		pointer-events: none;
+		opacity: 0;
+		transform: scale(0.93);
+		transform-box: view-box;
+		transform-origin: 50% 50%;
+		transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+	}
+
+	.skills-donut-segment-group:focus-within .skills-donut-segment-expanded {
+		opacity: 1;
+		transform: scale(1);
+	}
+
+	.skills-donut-segment-group:focus-within {
+		opacity: 0.9;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.skills-overview-panel {
+			transition:
+				border-color 180ms ease,
+				box-shadow 180ms ease;
+		}
+
+		.skills-overview-panel:hover {
+			border-color: #ccc;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.09);
+		}
+
+		.skills-donut-segment-group {
+			cursor: pointer;
+		}
+
+		.skills-donut-segment-group:hover .skills-donut-segment-expanded {
+			opacity: 1;
+			transform: scale(1);
+		}
+
+		.skills-donut-segment-group:hover {
+			opacity: 0.9;
+		}
+	}
+
+	.skills-chart-empty {
+		color: var(--text-light);
+		font-size: 13px;
+	}
+
+	.skills-level-legend {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 10px 16px;
+		margin: auto 0 0;
+		padding: 16px 0 0;
+		border-top: 1px dashed var(--line);
+		list-style: none;
+	}
+
+	.skills-level-legend li,
+	.skills-level-label,
+	.skills-level-value {
+		display: flex;
+		align-items: center;
+	}
+
+	.skills-level-legend li {
+		justify-content: space-between;
+		gap: 8px;
+		color: var(--text-gray);
+		font-size: 13px;
+	}
+
+	.skills-level-label {
+		gap: 8px;
+		min-width: 0;
+	}
+
+	.skills-legend-swatch {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		flex: 0 0 auto;
+	}
+
+	.skills-level-value {
+		gap: 5px;
+		white-space: nowrap;
+	}
+
+	.skills-level-value strong {
+		color: var(--text);
+		font-size: 14px;
+	}
+
+	.skills-level-value small {
+		color: var(--text-light);
+		font-size: 12px;
+	}
+
+	.skills-donut-tooltip {
+		position: fixed;
+		left: auto;
+		top: auto;
+		right: 24px;
+		bottom: 24px;
+		z-index: 1000;
+		display: grid;
+		grid-template-columns: 10px minmax(0, 1fr);
+		gap: 10px;
+		width: max-content;
+		min-width: 176px;
+		max-width: calc(100vw - 32px);
+		box-sizing: border-box;
+		border: 1px solid var(--line);
+		border-left: 3px solid var(--skills-tooltip-color, var(--colorful-green));
+		border-radius: 3px;
+		background: rgba(255, 255, 255, 0.96);
+		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
+		padding: 11px 13px;
+		color: var(--text-gray);
+		opacity: 0;
+		transform: translateY(6px) scale(0.97);
+		transform-origin: bottom right;
+		transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+		pointer-events: none;
+	}
+
+	.skills-donut-tooltip[hidden] {
+		display: none;
+	}
+
+	.skills-donut-tooltip.is-visible {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+
+	.skills-donut-tooltip-swatch {
+		width: 10px;
+		height: 10px;
+		margin-top: 4px;
+		border-radius: 50%;
+		background: var(--skills-tooltip-color, var(--colorful-green));
+	}
+
+	.skills-donut-tooltip-content {
+		display: grid;
+		gap: 4px;
+	}
+
+	.skills-donut-tooltip-content strong {
+		color: var(--text);
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	.skills-donut-tooltip-content span {
+		color: var(--text-light);
+		font-size: 12px;
+		white-space: nowrap;
+	}
+
+	.skills-donut-tooltip-content b {
+		color: var(--text-gray);
+		font-weight: 600;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.skills-donut-segment,
+		.skills-donut-segment-expanded,
+		.skills-donut-segment-group,
+		.skills-overview-panel,
+		.skills-donut-tooltip {
+			transition-duration: 0ms;
+		}
+
+		.skills-donut-segment-expanded {
+			transform: none;
+		}
+
+		.skills-donut-segment-group:hover .skills-donut-segment-expanded,
+		.skills-donut-segment-group:focus-within .skills-donut-segment-expanded {
+			transform: none;
+		}
+
+		.skills-donut-tooltip {
+			transform: none;
+		}
+	}
+
+	.skills-category-list {
+		display: grid;
+		gap: 14px;
+	}
+
+	.skills-category-label {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		margin-bottom: 6px;
+	}
+
+	.skills-category-name {
+		min-width: 0;
+		color: var(--text-gray);
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	.skills-category-count {
+		padding: 1px 6px;
+		border: 1px solid var(--line);
+		border-radius: 2px;
+		background: rgba(255, 255, 255, 0.56);
+		color: var(--text-light);
+		font-size: 11px;
+		line-height: 1.3;
+	}
+
+	.skills-category-percentage {
+		margin-left: auto;
+		color: var(--text-light);
+		font-size: 13px;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.skills-category-track {
+		height: 8px;
+		overflow: hidden;
+		border-radius: 2px;
+		background: #eee;
+	}
+
+	.skills-category-fill {
+		display: block;
+		width: var(--skill-overview-width);
+		height: 100%;
+		border-radius: 2px;
+		background: var(--skill-overview-color);
+	}
+
+	.skills-summary-stats {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 12px;
+		margin-top: 18px;
+		border-top: 1px dashed var(--line);
+		padding-top: 16px;
+	}
+
+	.skills-summary-stat {
+		box-sizing: border-box;
+		padding: 12px;
+		border: 1px solid var(--line);
+		border-radius: 3px;
+		background: rgba(255, 255, 255, 0.56);
+	}
+
+	.skills-experience-stat {
+		border-top: 3px solid #0cf;
+	}
+
+	.skills-total-stat {
+		border-top: 3px solid var(--colorful-green);
+	}
+
+	.skills-summary-stat span,
+	.skills-summary-stat small {
+		display: block;
+		color: var(--text-light);
+	}
+
+	.skills-summary-stat span {
+		font-size: 12px;
+	}
+
+	.skills-summary-stat strong {
+		display: block;
+		margin-top: 3px;
+		font-size: 28px;
+		line-height: 1.2;
+	}
+
+	.skills-experience-stat strong {
+		color: #0089fa;
+	}
+
+	.skills-total-stat strong {
+		color: var(--colorful-green);
+	}
+
+	.skills-summary-stat small {
+		margin-top: 3px;
+		font-size: 11px;
+	}
+
+	@media screen and (max-width: 860px) {
+		.skills-overview-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	@media screen and (max-width: 680px) {
+		.skills-overview {
+			margin: 18px 14px 24px;
+		}
+
+		.skills-overview-panel {
+			padding: 16px;
+		}
+
+		.skills-overview-panel h3 {
+			font-size: 17px;
+		}
+
+		.skills-donut-wrap {
+			min-height: 210px;
+		}
+
+		.skills-donut {
+			width: min(100%, 240px);
+		}
+
+		.skills-donut-tooltip {
+			right: 14px;
+			bottom: 14px;
+			max-width: calc(100vw - 28px);
+		}
+
+		.skills-level-legend {
+			gap: 10px 12px;
+		}
+
+		.skills-level-legend li {
+			font-size: 12px;
+		}
+	}
+</style>

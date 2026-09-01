@@ -1,0 +1,16 @@
+---
+import domainHtml from "../../domain.html?raw";
+import siteModalStyles from "../../styles/site-modal.css?url";
+
+export const prerender = true;
+---
+
+<Fragment set:html={domainHtml} />
+
+<link rel="stylesheet" href={siteModalStyles} />
+
+<script>
+	import { initSiteModal } from "../../utils/site-modal";
+
+	initSiteModal();
+</script>

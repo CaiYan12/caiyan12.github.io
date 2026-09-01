@@ -1,15 +1,33 @@
 ---
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getCollection } from "astro:content";
-import { getArchiveList } from "../utils/content-utils";
+import { getSortedPosts } from "../utils/content-utils";
 import dayjs from "dayjs";
 
 const allPosts = await getCollection("posts");
-const archives = getArchiveList(allPosts);
+const sortedPosts = getSortedPosts(allPosts);
+const yearMap = new Map<string, typeof sortedPosts>();
+
+for (const post of sortedPosts) {
+	const year = dayjs(post.data.published).format("YYYY");
+	const yearPosts = yearMap.get(year) ?? [];
+	yearPosts.push(post);
+	yearMap.set(year, yearPosts);
+}
+
+const archives = [...yearMap.entries()];
+const formatTags = (post: (typeof sortedPosts)[number]) => {
+	const tags = post.data.tags.length > 0
+		? post.data.tags
+		: post.data.category
+			? [post.data.category]
+			: [];
+	return tags.map((tag) => `#${tag}`).join(" ");
+};
 ---
 
 <MainGridLayout title="文章归档" description="全站文章按年月归档">
-	<div class="page">
+	<div class="page archive-page">
 		<header class="post-header">
 			<h2>
 				<i class="fa fa-archive" aria-hidden="true"></i> 文章归档
@@ -23,30 +41,42 @@ const archives = getArchiveList(allPosts);
 			文章归档
 		</address>
 
-		<div class="archive-list">
-			{archives.map(([month, posts]) => (
-				<section>
-					<h3>
-						<i class="fa fa-calendar-o" aria-hidden="true"></i>
-						<a href={`/archive/${month.replace("年", "/").replace("月", "")}/`}>
-							{month}
-						</a>
-						<span class="text-xs font-normal text-gray-400">
-							（{posts.length} 篇）
-						</span>
-					</h3>
-					<ul>
-						{posts.map((post) => (
-							<li>
-								<a href={`/posts/${post.id}/`} title={post.data.title}>
-									{post.data.title}
-								</a>
-								<span class="date">
-									{dayjs(post.data.published).format("YYYY-MM-DD")}
-								</span>
-							</li>
-						))}
-					</ul>
+		<div class="archive-timeline" aria-label="文章归档时间线">
+			{archives.map(([year, posts]) => (
+				<section class="archive-year" aria-labelledby={`archive-year-${year}`}>
+					<header class="archive-year-heading">
+						<h3 id={`archive-year-${year}`}>{year}</h3>
+						<span class="archive-year-marker" aria-hidden="true"></span>
+						<span class="archive-year-count">{posts.length} 篇文章</span>
+					</header>
+					<ol class="archive-entries">
+						{posts.map((post) => {
+							const tags = formatTags(post);
+							return (
+								<li class="archive-entry">
+									<time
+										class="archive-entry-date"
+										datetime={dayjs(post.data.published).format("YYYY-MM-DD")}
+									>
+										{dayjs(post.data.published).format("MM-DD")}
+									</time>
+									<span class="archive-entry-marker" aria-hidden="true"></span>
+									<a
+										class="archive-entry-title"
+										href={`/posts/${post.id}/`}
+										title={post.data.title}
+									>
+										{post.data.title}
+									</a>
+									{tags && (
+										<span class="archive-entry-tags" aria-label={`文章标签：${tags}`}>
+											{tags}
+										</span>
+									)}
+								</li>
+							);
+						})}
+					</ol>
 				</section>
 			))}
 		</div>

@@ -95,6 +95,7 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 pnpm install     # 安装依赖（中国网络需先设 registry 为 https://registry.npmmirror.com）
 pnpm dev         # 本地开发 http://localhost:4321
 pnpm build       # 构建 dist/（LQIP 生成 + GitHub 仓库数据拉取 + astro build + Pagefind，已串联）
+pnpm new-post -- <yyyymmddhhmmss> [标题]  # 按强制 URL 规范创建文章
 pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存（默认增量只拉缺失）
 pnpm preview     # 预览构建产物（需先 build）
 pnpm check       # astro check 类型检查
@@ -114,11 +115,18 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - `slideshowConfig` — 首页幻灯片（图片在 `public/images/slide/`）
 
 ### 内容组织
-- 文章：`src/content/posts/<slug>/index.md`（**目录名即 URL slug**，可放封面图在同目录），schema 在 `src/content.config.ts`（posts + spec 两个 collection）
+- 文章：`src/content/posts/<yyyymmddhhmmss>/index.md`（**目录名即 URL slug**，可放封面图在同目录），schema 在 `src/content.config.ts`（posts + spec 两个 collection）
 - frontmatter 字段：title/published/category/tags/description/image/pinned/views/comments/hotness(0-5)/draft 等，其中 views/comments/hotness 是静态化后的历史值，用于首页"围观/吐槽/热门"展示
 - 特殊页面：`src/content/spec/about.md`（关于）
 - 数据文件：`src/data/diary.ts`（说说）、`friends.ts`（友链）、`comments.ts`（侧栏最新评论，默认空数组）
 - 相册：**文件夹驱动**——`public/images/albums/<相册名>/` 下放图即自动生成相册（`src/utils/album-scanner.ts` 构建期扫描，中文目录名没问题，slug 用原始名不要预编码）
+
+### 文章 URL 硬规则（必须遵守）
+- `src/content/posts/` 的所有直接子目录（公开、私密、草稿、模板示例均包括）必须严格匹配 `^\d{14}$`，格式为 `yyyymmddhhmmss`。
+- 文章路由固定为 `/posts/<yyyymmddhhmmss>/`；禁止使用标题、中文或其他自定义目录名作为 slug。
+- `published` 只有日期时，时间部分统一补 `000000`；已有时分秒必须与目录名保持对应，不得用文件系统时间替代。
+- 新文章使用 `pnpm new-post -- <yyyymmddhhmmss> [标题]`；`scripts/validate-post-slugs.mjs` 已接入 `pnpm build`，目录不合规时构建必须失败。
+- 整理旧文章目录后，必须同步检查 README、CHANGELOG、文章正文示例及其他静态引用中的旧 `/posts/.../` 路径。
 
 ### 静态替代动态功能的映射
 | 原 Emlog 功能 | 现实现 |

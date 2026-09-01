@@ -4,7 +4,7 @@ import { z } from "astro/zod";
 
 /**
  * posts：博客文章（对应 Emlog emlog_blog 表）
- * 使用 bundle 目录格式：src/content/posts/<slug>/index.md + 封面图
+ * 使用 bundle 目录格式：src/content/posts/<yyyymmddhhmmss>/index.md + 封面图
  */
 const postsCollection = defineCollection({
 	loader: glob({ pattern: "**/*.md", base: "./src/content/posts" }),

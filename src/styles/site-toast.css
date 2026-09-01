@@ -1,0 +1,48 @@
+/* 站内顶层提示：用于复制反馈等非阻塞消息 */
+.copy-post-link {
+  cursor: copy;
+}
+
+.copy-post-link:hover,
+.copy-post-link:focus-visible {
+  text-decoration: underline;
+}
+
+.site-toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  z-index: 10000;
+  box-sizing: border-box;
+  max-width: calc(100vw - 32px);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 3px;
+  background: var(--primary, #00c000);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  padding: 8px 18px;
+  color: #fff;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -12px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.site-toast.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.site-toast[hidden] {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-toast {
+    transition: none;
+  }
+}
