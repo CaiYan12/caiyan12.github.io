@@ -9,7 +9,12 @@ import "../styles/markdown-extended.css";
 import "../styles/font-awesome.css";
 import Pio from "../components/widget/Pio.svelte";
 import Sakura from "../components/control/Sakura.astro";
-import { backgroundConfig, pioConfig, siteConfig } from "../config";
+import {
+	backgroundConfig,
+	myhkwPlayerConfig,
+	pioConfig,
+	siteConfig,
+} from "../config";
 import { getSortedPosts } from "../utils/content-utils";
 import { getCollection } from "astro:content";
 
@@ -40,6 +45,15 @@ const siteStats = JSON.stringify({
 	totalComments,
 	totalDays,
 });
+
+// myhkw 使用非标准的 `key` 脚本属性，使用字符串属性映射保留原始嵌入协议。
+const myhkwScriptAttributes: Record<string, string> = {
+	id: "myhk",
+	key: myhkwPlayerConfig.playerId,
+	m: myhkwPlayerConfig.mobile ? "1" : "0",
+	lr: myhkwPlayerConfig.position === "left" ? "l" : "r",
+	skin: myhkwPlayerConfig.skin,
+};
 ---
 
 <!doctype html>
@@ -84,6 +98,25 @@ const siteStats = JSON.stringify({
 		<slot />
 
 		{pioConfig.enable && <Pio client:idle />}
+
+		{myhkwPlayerConfig.enable && (
+			<>
+				{/* 明月浩空播放器要求 jQuery 先于播放器脚本加载 */}
+				<script is:inline src="https://myhkw.cn/player/js/jquery.min.js"></script>
+				<script
+					is:inline
+					src={`https://myhkw.cn/api/player/${myhkwPlayerConfig.playerId}`}
+					{...myhkwScriptAttributes}
+				></script>
+			</>
+		)}
+
+		<style is:inline>
+			/* myhkw 与 Pio 同在左下角：播放器必须覆盖 Pio，避免控制面板被模型遮挡。 */
+			#myhkplayer {
+				z-index: 10000000000 !important;
+			}
+		</style>
 
 		<!-- 主题脚本：导航高亮、返回顶部、移动端菜单、双击滚动 -->
 		<script>

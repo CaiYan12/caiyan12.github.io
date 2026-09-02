@@ -162,6 +162,20 @@ export const pioConfig = {
 	},
 };
 
+/** 明月浩空音乐播放器配置（授权域名：caiyan12.github.io） */
+export const myhkwPlayerConfig = {
+	/** 是否启用播放器 */
+	enable: true,
+	/** 控制台注册的播放器 ID，同时作为嵌入代码的 key */
+	playerId: "178815680112",
+	/** 经典皮肤 */
+	skin: "player",
+	/** 左侧浮窗（与 Pio 同侧，层级由 Layout.astro 覆盖） */
+	position: "left" as const,
+	/** 允许移动端加载 */
+	mobile: true,
+} as const;
+
 /** 樱花环境动效配置（迁移自 mizuki） */
 export const sakuraConfig = {
 	enable: true,
