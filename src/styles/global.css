@@ -2219,12 +2219,16 @@ img:hover {
 }
 
 #head-nav .m-nav li a {
-  /* 在 55px 导航条内垂直居中，绿线上下留呼吸空间；hover 用 padding 补偿边框增粗，避免下溢 */
-  display: block;
+  /* 等宽链接：内容居中，左右留呼吸空间；hover 用 padding 补偿边框增粗，避免下溢 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   float: none;
   /* 覆盖 .head-nav .m-nav li 的 line-height:55px 继承，防止行盒撑爆导航条 */
   line-height: normal;
-  padding: 10px;
+  width: 64px;
+  padding: 10px 0;
   border-bottom: 3px solid #70b90d;
   color: #000;
   white-space: nowrap;
@@ -2235,6 +2239,96 @@ img:hover {
   padding-bottom: 7px;
   border-bottom-width: 6px;
   color: #70b90d;
+}
+
+/* B站图标（内联 SVG，尺寸对齐 .fa 14px；固定 px 不受 ≤860px font-size:0 影响） */
+#head-nav .m-nav li a .bilibili-icon {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* 原主题彩色轮换（colorful-original.css .m-nav li:nth-child 规则）改为品牌色：
+   B站粉 / QQ 蓝 / 微信 绿 / RSS 橙（色值取自 simple-icons 官方品牌数据；
+   B站取其另一官方色粉红，避免与相邻 QQ 蓝混淆）；默认仍为海洋绿 */
+#head-nav .m-nav li a.bilibili {
+  border-color: #fb7299;
+}
+
+#head-nav .m-nav li a.bilibili:hover {
+  color: #fb7299;
+}
+
+#head-nav .m-nav li a.qq {
+  border-color: #1ebafc;
+}
+
+#head-nav .m-nav li a.qq:hover {
+  color: #1ebafc;
+}
+
+#head-nav .m-nav li a.wechat {
+  border-color: #07c160;
+}
+
+#head-nav .m-nav li a.wechat:hover {
+  color: #07c160;
+}
+
+#head-nav .m-nav li a.rss {
+  border-color: #ffa500;
+}
+
+#head-nav .m-nav li a.rss:hover {
+  color: #ffa500;
+}
+
+/* QQ/微信 hover 二维码弹层：白色圆角卡片在 nav 下方浮出 */
+#head-nav .m-nav li a.qrcode {
+  position: relative;
+}
+
+#head-nav .m-nav li a.qrcode .qrcode-pop {
+  position: absolute;
+  left: 50%;
+  /* 100% 是链接 padding box（不含 hover 时 6px 下边框），+16 = 10px 视觉间隙 + 6px 边框补偿 */
+  top: calc(100% + 16px);
+  z-index: 999;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  visibility: hidden;
+  transform: translate(-50%, -6px);
+  transition:
+    opacity 0.2s var(--ease-out),
+    transform 0.2s var(--ease-out),
+    visibility 0s linear 0.2s;
+  pointer-events: none;
+}
+
+#head-nav .m-nav li a.qrcode:hover .qrcode-pop,
+#head-nav .m-nav li a.qrcode:focus-visible .qrcode-pop {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, 0);
+  transition:
+    opacity 0.2s var(--ease-out),
+    transform 0.2s var(--ease-out),
+    visibility 0s;
+}
+
+#head-nav .m-nav li a.qrcode .qrcode-pop img {
+  display: block;
+  /* 覆盖 Tailwind preflight 的 max-width:100%——绝对定位 shrink-to-fit 容器内会循环依赖把图压扁 */
+  /* 方形裁切：码点居中，只裁掉原图上下留白，弹层观感更紧凑 */
+  width: 140px;
+  max-width: none;
+  height: 140px;
+  object-fit: cover;
 }
 
 #wrapper {
@@ -3951,7 +4045,7 @@ img:hover {
   }
 
   #head-nav .m-nav li a {
-    padding: 10px 8px;
+    padding: 10px 0;
   }
 }
 
@@ -3966,13 +4060,14 @@ img:hover {
   }
 
   #head-nav .m-nav li a {
-    padding: 10px 6px;
+    padding: 10px 0;
   }
 }
 
 @media screen and (max-width: 860px) {
   #head-nav .m-nav li a {
-    padding: 10px 8px;
+    width: 40px;
+    padding: 10px 0;
     font-size: 0;
   }
 
@@ -4193,6 +4288,17 @@ img:hover {
 
   #nav .dropdown:hover .arrow {
     transform: none;
+  }
+
+  /* 二维码弹层：去位移与过渡，仅即时显隐（保留 translateX 水平居中） */
+  #head-nav .m-nav li a.qrcode .qrcode-pop {
+    transition: none;
+    transform: translateX(-50%);
+  }
+
+  #head-nav .m-nav li a.qrcode:hover .qrcode-pop,
+  #head-nav .m-nav li a.qrcode:focus-visible .qrcode-pop {
+    transform: translateX(-50%);
   }
 
   /* 重定义入场动画为纯淡入 */

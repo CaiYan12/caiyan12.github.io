@@ -231,7 +231,7 @@ function initCopyLink() {
 		const text = link.dataset.copyLink || link.href;
 		try {
 			await copyText(text);
-			showSiteToast("已复制");
+			showSiteToast(link.dataset.copyMessage || "已复制");
 		} catch {
 			showSiteToast("复制失败，请手动复制");
 		}
