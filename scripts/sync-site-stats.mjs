@@ -319,18 +319,6 @@ function roundHourToISO(input) {
 	return d.toISOString();
 }
 
-function nextHourToISO(input) {
-	const d = new Date(input);
-	if (Number.isNaN(d.getTime())) {
-		throw new Error(
-			"Invalid GoatCounter end time: expected an RFC3339 datetime",
-		);
-	}
-	d.setUTCMinutes(0, 0, 0);
-	d.setUTCHours(d.getUTCHours() + 1);
-	return d.toISOString();
-}
-
 async function fetchGoatCounterWithRetry(fetchImpl, url, headers) {
 	for (let attempt = 0; ; attempt++) {
 		const res = await fetchImpl(url, { headers });
@@ -361,9 +349,8 @@ async function fetchGoatCounterViews({
 	startIso,
 	slugs,
 	gapMs,
-	now,
 }) {
-	const endIso = nextHourToISO(now());
+	const endIso = roundHourToISO(new Date());
 	const headers = {
 		Authorization: `Bearer ${apiKey}`,
 		"Content-Type": "application/json",
@@ -404,7 +391,6 @@ export async function syncSiteStats({
 	outputPath,
 	env = process.env,
 	gapMs = GOATCOUNTER_GAP_MS,
-	now = () => new Date(),
 } = {}) {
 	const output = path.resolve(
 		outputPath ?? env.SITE_STATS_OUTPUT ?? DEFAULT_OUTPUT,
@@ -542,7 +528,6 @@ export async function syncSiteStats({
 			startIso: gc.startIso,
 			slugs,
 			gapMs,
-			now,
 		});
 	} else {
 		const prevViews =
