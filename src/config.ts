@@ -3,6 +3,16 @@
  */
 import giscusSync from "./data/giscus-sync.json";
 
+const goatCounterSite =
+	typeof process !== "undefined" ? (process.env.GOATCOUNTER_SITE ?? "") : "";
+
+export const statsConfig = {
+	goatcounter: {
+		enabled: goatCounterSite.length > 0,
+		site: goatCounterSite,
+	},
+} as const;
+
 export const siteConfig = {
 	/** 站点标题 */
 	title: "WindowsIt's Music Club",

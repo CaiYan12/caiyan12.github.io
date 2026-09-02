@@ -23,7 +23,103 @@ declare global {
 			close: () => void;
 			destroy: () => void;
 		};
+		goatcounter?: {
+			count: (options: { path: string }) => void;
+		};
 	}
+}
+
+const GOATCOUNTER_LOAD_TIMEOUT = 5000;
+const GOATCOUNTER_POLL_INTERVAL = 50;
+
+type PendingGoatCounterHit = { path: string };
+
+let goatCounterQueue: PendingGoatCounterHit[] = [];
+const goatCounterDroppedHits = new WeakSet<PendingGoatCounterHit>();
+let goatCounterReadyPromise: Promise<boolean> | undefined;
+let goatCounterListenerBound = false;
+
+function flushGoatCounterQueue() {
+	const count = window.goatcounter?.count;
+	if (!count) return;
+
+	const pending = goatCounterQueue;
+	goatCounterQueue = [];
+	pending.forEach(({ path }) => count({ path }));
+}
+
+function waitForGoatCounter(): Promise<boolean> {
+	if (window.goatcounter?.count) return Promise.resolve(true);
+	if (goatCounterReadyPromise) return goatCounterReadyPromise;
+
+	goatCounterReadyPromise = new Promise<boolean>((resolve) => {
+		const deadline = Date.now() + GOATCOUNTER_LOAD_TIMEOUT;
+		const poll = () => {
+			if (window.goatcounter?.count) {
+				resolve(true);
+				return;
+			}
+			if (Date.now() >= deadline) {
+				console.warn(
+					"GoatCounter did not become ready before the timeout; skipping the pending page view.",
+				);
+				resolve(false);
+				return;
+			}
+			window.setTimeout(poll, GOATCOUNTER_POLL_INTERVAL);
+		};
+		poll();
+	}).finally(() => {
+		goatCounterReadyPromise = undefined;
+	});
+
+	return goatCounterReadyPromise;
+}
+
+function countCurrentPage(path: string) {
+	const hit = { path };
+	goatCounterQueue.push(hit);
+	waitForGoatCounter().then((ready) => {
+		if (ready) {
+			flushGoatCounterQueue();
+			return;
+		}
+
+		const index = goatCounterQueue.indexOf(hit);
+		if (index >= 0) {
+			goatCounterQueue.splice(index, 1);
+			goatCounterDroppedHits.add(hit);
+		}
+	});
+	return hit;
+}
+
+function initGoatCounter() {
+	if (goatCounterListenerBound) return;
+	if (!document.querySelector('script[src="https://gc.zgo.at/count.js"]'))
+		return;
+
+	goatCounterListenerBound = true;
+	const initialPath = window.location.pathname;
+	let initialPageLoadObserved = false;
+	let initialFallbackHit: PendingGoatCounterHit | undefined;
+	document.addEventListener("astro:page-load", () => {
+		const path = window.location.pathname;
+		if (!initialPageLoadObserved && initialFallbackHit && path === initialPath) {
+			if (!goatCounterDroppedHits.has(initialFallbackHit)) {
+				initialPageLoadObserved = true;
+				return;
+			}
+			initialFallbackHit = undefined;
+		}
+		initialPageLoadObserved = true;
+		countCurrentPage(path);
+	});
+	// @swup/astro does not emit page:view for the first direct load.
+	window.setTimeout(() => {
+		if (initialPageLoadObserved) return;
+		initialFallbackHit = countCurrentPage(initialPath);
+	}, 0);
 }
 
 /** 初始化当前页面的图片灯箱（懒加载 Fancybox） */
@@ -711,6 +807,7 @@ export function pagefindReady() {
 	initVisibilityTitle();
 	initCopyLink();
 	initSkillsDonutTooltip();
+	initGoatCounter();
 	initFancybox();
 	loadKatexCss();
 	renderMermaid();

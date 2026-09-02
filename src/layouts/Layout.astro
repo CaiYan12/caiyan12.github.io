@@ -14,6 +14,7 @@ import {
 	myhkwPlayerConfig,
 	pioConfig,
 	siteConfig,
+	statsConfig,
 } from "../config";
 import { getSortedPosts } from "../utils/content-utils";
 import { getCollection } from "astro:content";
@@ -77,6 +78,15 @@ const myhkwScriptAttributes: Record<string, string> = {
 		<link rel="apple-touch-icon" href="/images/avatar.webp" />
 		<link rel="icon" href="/images/avatar.webp" type="image/webp" />
 		<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
+		{import.meta.env.PROD && statsConfig.goatcounter.enabled && (
+			<script
+				is:inline
+				src="https://gc.zgo.at/count.js"
+				data-goatcounter={`https://${statsConfig.goatcounter.site}.goatcounter.com/count`}
+				data-goatcounter-settings='{"no_onload":true}'
+				async
+			></script>
+		)}
 		{pioConfig.enable && <link rel="stylesheet" href="/pio/static/pio.css" />}
 		<meta property="og:title" content={siteTitle} />
 		<meta data-pagefind-meta="title[content]" content={siteTitle} />
