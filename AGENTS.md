@@ -125,12 +125,12 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - `siteConfig` — 标题、作者、URL、每页文章数、备案号等
 - `navBarConfig` — 导航项、"附加功能"下拉、文章分类下拉、社交图标
 - `sidebarConfig` — 侧栏小部件顺序
-- `commentConfig` — **Giscus 评论**，`enable` 已开启；仓库和分类标识在 `src/config.ts` 中维护
+- `commentConfig` — **Giscus 评论**，已开启并绑定 `CaiYan12/caiyan12.github.io` 的 `Announcements` 分类；文章评论区使用 `pathname`，留言板使用 `specific` + `data-term="guestbook"`；`reactionsEnabled: "1"`、`emitMetadata: "0"`；其余 `repoId`、`categoryId`、语言和主题 URL 在 `src/config.ts` 中维护
 - `slideshowConfig` — 首页幻灯片（图片在 `public/images/slide/`）
 
 ### 内容组织
 - 文章：`src/content/posts/<yyyymmddhhmmss>/index.md`（**目录名即 URL slug**，可放封面图在同目录），schema 在 `src/content.config.ts`（posts + spec 两个 collection）
-- frontmatter 字段：title/published/category/tags/description/image/pinned/views/comments/hotness(0-5)/draft 等，其中 views/comments/hotness 是静态化后的历史值，用于首页"围观/吐槽/热门"展示
+- frontmatter 字段：title/published/category/tags/description/image/pinned/views/comments/hotness(0-5)/draft 等，其中 comments/hotness 用于首页吐槽与热门展示；views 为迁移兼容字段，当前不渲染围观数
 - 特殊页面：`src/content/spec/about.md`（关于）
 - 数据文件：`src/data/diary.ts`（说说）、`friends.ts`（友链）、`comments.ts`（侧栏最新评论，默认空数组）
 - 相册：**文件夹驱动**——`public/images/albums/<相册名>/` 下放图即自动生成相册（`src/utils/album-scanner.ts` 构建期扫描，中文目录名没问题，slug 用原始名不要预编码）
@@ -147,7 +147,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 |---|---|
 | Pjax 无刷新 | Swup.js（`astro.config.mjs` 的 swup 集成，容器 `main`） |
 | 搜索 | Pagefind（构建期索引，`src/components/control/Search.svelte`） |
-| 评论/留言板 | Giscus（`src/components/comment/Giscus.astro`，按 `commentConfig.enable` 开关） |
+| 评论/留言板 | Giscus（`src/components/comment/Giscus.astro`，按 `commentConfig.enable` 开关；文章尾部保留原生表情；主题样式见 `public/giscus-theme.css`） |
 | 图片灯箱 | Fancybox（`src/utils/theme-script.ts` 的 `initFancybox()` 懒加载绑定） |
 | GitHub 仓库卡片 | 构建期渲染：`scripts/fetch-github-repos.mjs` 拉取元数据缓存到 `src/constants/github-repos.json`，`remark-extended.mjs` 直接输出完整卡片 HTML；**客户端零请求**（规避访客 IP 匿名 API 60 次/小时限流），令牌解析 `GITHUB_TOKEN`/`GH_TOKEN` → `gh auth token` → 匿名，拉取失败渲染回退链接不阻塞构建 |
 | 代码高亮/公式 | Expressive Code + KaTeX（KaTeX CSS 按需动态导入） |
@@ -155,11 +155,16 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ### 客户端脚本与 Swup 生命周期
 - `src/utils/theme-script.ts` 是唯一的客户端逻辑中枢：导航高亮、返回顶部、双击回顶、移动端菜单、Fancybox/KaTeX 初始化
 - **Swup 切换页面时组件脚本不会重跑**，所以需要重绑定的东西（Fancybox、导航高亮）都注册在 `initSwupHooks()` 的 `content:replace`/`page:view` 里；新增交互若依赖新页面 DOM，必须加到这两个 hook 中
-- 页面内 `<script>` 若含 `{...}` 模板插值必须加 `is:inline`（否则 Astro 当 TS 模块处理会解析失败）；站点统计数据通过 `<body data-site-stats>` 传给客户端，勿用 inline 插值
+- 页面内 `<script>` 若含 `{...}` 模板插值必须加 `is:inline`（否则 Astro 当 TS 模块处理会解析失败）
+
+### 统计与表情边界
+- 独立浏览量与 GoatCounter 已移除；frontmatter 的 `views` 仅作迁移兼容字段，不参与页面渲染。
+- Giscus 表情只由文章页尾部的原生评论组件显示，不复制到首页卡片、文章头部或热门排序；吐槽数仍由 Giscus 同步结果驱动。
 
 ### 样式
 - `src/styles/global.css`：Tailwind 指令 + 大量自定义 class（`.post-list`、`.tw`、`.widget`、`.pagenavi` 等，命名直接对应原主题 CSS），**视觉还原以 custom class 为主、utility 为辅**
 - `src/styles/colorful-original.css`：原主题 73KB 原始样式表，仅作对照参考，**不要直接引入**（路径基于 Emlog 模板目录）
+- `public/giscus-theme.css`：Giscus iframe 的 Colorful 主题覆盖；评论卡沿用白底、细边框、圆角和海洋绿 hover 阴影，头像框无阴影，站长徽标复用 `public/images/admin.png` 并显示“站长”
 - `src/styles/font-awesome.css`：Font Awesome 4，class 名与原站一致（`fa fa-xxx`），字体在 `public/fonts/`
 - 自定义光标：`public/style/default.cur` / `link.cur`
 

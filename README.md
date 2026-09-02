@@ -9,7 +9,7 @@
 - **Tailwind CSS 3**（样式重写，视觉还原 Colorful 海洋绿主题）
 - **Swup.js** — 无刷新页面切换（替代原 Pjax）
 - **Pagefind** — 构建期静态搜索索引
-- **Giscus** — 评论系统（GitHub Discussions，留言板已启用；主题样式见 `public/giscus-theme.css`）
+- **Giscus** — 评论系统（GitHub Discussions，文章评论区与留言板已启用；文章尾部使用 Giscus 原生表情；主题样式见 `public/giscus-theme.css`）
 - **Fancybox** — 图片灯箱（替代原 Highslide）
 - **Expressive Code** + **KaTeX** — 代码高亮与数学公式
 - **@astrojs/rss / @astrojs/sitemap** — 订阅与 SEO
@@ -81,13 +81,14 @@ public/
 
 ## Giscus 评论
 
-留言板 `/guestbook/` 已启用 Giscus，当前配置位于 `src/config.ts` 的 `commentConfig`：
+文章评论区与留言板 `/guestbook/` 均已启用 Giscus，当前配置位于 `src/config.ts` 的 `commentConfig`：
 
 - 仓库：`CaiYan12/caiyan12.github.io`
 - 仓库 ID：`R_kgDOUJeNhw`
 - Discussions 分类：`Announcements`
 - 分类 ID：`DIC_kwDOUJeNh84DEonO`
-- 页面映射：`pathname`
+- 页面映射：文章评论区为 `pathname`；留言板为 `specific`，`data-term="guestbook"`
+- 表情反应：`reactionsEnabled: "1"`，由文章页底部 Giscus 原生界面显示；`emitMetadata: "0"`，不复制或单独同步表情数量
 - 语言：`zh-CN`
 - 主题：`https://caiyan12.github.io/giscus-theme.css`，源文件为 `public/giscus-theme.css`
 
@@ -112,7 +113,7 @@ public/
 
 ## 与 Emlog 原站的差异
 
-- 移除：IP 归属地显示、用户注册、Flash 播放器、评论表情面板
+- 移除：IP 归属地显示、用户注册、Flash 播放器、原 Emlog 评论表情面板（现由 Giscus 原生表情反应提供）
 - 评论数据由 Giscus 承载（侧栏"最新评论"小部件可手动维护 `src/data/comments.ts`）
 - 首页幻灯片图片在 `src/config.ts` 的 `slideshowConfig` 中配置
 
@@ -120,7 +121,11 @@ public/
 
 - [ ] 主页——最新评论部分为Mock，无实际资源
 - [ ] 吐槽水军：考虑轮播展示留言板内容
-- [ ] nav订阅左侧新增同风格链接，考虑接入站长QQ与微信
+- [x] nav订阅左侧新增同风格链接，考虑接入站长QQ与微信
 - [ ] 本站资源添加：部分原纯HTML页面的移植
 - [ ] 图片墙页面：每个照片元件底部的日期高度不一，图片需要合适展示到一个固定的元件大小
 - [ ] 相册图库：UI部分问题修复
+- [ ] 宽屏模式当屏幕较窄时（平板模式？）标题会有部分文字掉到nav之下等其他UI问题
+- [ ] 首页banner当标题过长时会换到第二行，需要智能"..."截断
+- [ ] 目前测试得到/category/技术架构/ 下分类标题距离第一篇文章的距离异常过远
+- [ ] 为后续过多文章做好最大单页展示文章、分页的准备
