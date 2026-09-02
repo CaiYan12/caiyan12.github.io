@@ -3,6 +3,10 @@ import type { CollectionEntry } from "astro:content";
 import dayjs from "dayjs";
 import { getCover, getExcerpt, isNewPost } from "../../utils/content-utils";
 import { siteConfig } from "../../config";
+import {
+	getEffectiveComments,
+	getEffectiveViews,
+} from "../../utils/site-stats";
 
 interface Props {
 	post: CollectionEntry<"posts">;
@@ -10,7 +14,9 @@ interface Props {
 }
 
 const { post } = Astro.props;
-const { title, published, category, author, views, comments } = post.data;
+const { title, published, category, author } = post.data;
+const effectiveViews = getEffectiveViews(post);
+const effectiveComments = getEffectiveComments(post);
 const url = `/posts/${post.id}/`;
 const cover = getCover(post);
 const excerpt = getExcerpt(post, siteConfig.excerptLength);
@@ -33,7 +39,7 @@ const showHot = post.data.hotness >= 4;
 					<i class="new-arrow"></i>
 				</>
 			)}
-			{!post.data.pinned && showHot && comments >= 50 && (
+			{!post.data.pinned && showHot && effectiveComments >= 50 && (
 				<>
 					<span class="hot-label">热门</span>
 					<i class="hot-arrow"></i>
@@ -67,13 +73,13 @@ const showHot = post.data.hotness >= 4;
 		)}
 		<span class="pcomm">
 			<i class="fa fa-eye" aria-hidden="true"></i>
-			{views > 0 ? `${views}人围观` : "没人围观"}
+			{effectiveViews > 0 ? `${effectiveViews}人围观` : "没人围观"}
 		</span>
 		<span class="pview">
 			<i class="fa fa-comments" aria-hidden="true"></i>
-			{comments > 0 ? (
+			{effectiveComments > 0 ? (
 				<a title={`查看《${title}》的吐槽`} href={`${url}#comments`}>
-					{comments}次吐槽
+					{effectiveComments}次吐槽
 				</a>
 			) : (
 				<a title="抢沙发" href={`${url}#comments`}>

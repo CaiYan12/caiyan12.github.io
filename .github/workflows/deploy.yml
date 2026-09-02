@@ -4,16 +4,20 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # 非整点定时同步（GitHub schedule 可能因负载延迟；与 push 同 ref 时旧 run 会被取消，可接受）
+  schedule:
+    - cron: "17 * * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-# 允许该 job 克隆仓库并创建 Pages 部署
+# 允许该 job 克隆仓库、创建 Pages 部署并只读读取 Discussions（评论数同步）
 permissions:
   contents: read
   pages: write
   id-token: write
+  discussions: read
 
 jobs:
   build:
@@ -21,6 +25,15 @@ jobs:
     steps:
       - name: Checkout your repository using git
         uses: actions/checkout@v7
+      # 构建前同步 Giscus 评论数与（可选）GoatCounter 浏览量到 src/data/site-stats.json；
+      # 同步失败以非零码退出并跳过本次部署，线上保留上一个成功版本（fail-closed）
+      - name: Sync comments and views
+        run: node scripts/sync-site-stats.mjs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GOATCOUNTER_SITE: ${{ vars.GOATCOUNTER_SITE }}
+          GOATCOUNTER_START: ${{ vars.GOATCOUNTER_START }}
+          GOATCOUNTER_API_KEY: ${{ secrets.GOATCOUNTER_API_KEY }}
       - name: Install, build, and upload your site
         uses: withastro/action@v6
         with:
@@ -30,6 +43,8 @@ jobs:
         env:
           # 供构建期 fetch-github-repos 脚本拉取新增仓库元数据（Actions 自动提供）
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 仅公开 site code（不含 API key）；未配置变量时浏览器统计脚本不渲染
+          GOATCOUNTER_SITE: ${{ vars.GOATCOUNTER_SITE }}
         # 默认 node-version 24（与本机构建环境 v24.18.0 一致）；
         # package-manager 由 pnpm-lock.yaml 自动检测；build-cmd 默认执行 pnpm run build
 

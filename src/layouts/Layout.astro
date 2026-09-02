@@ -17,6 +17,10 @@ import {
 } from "../config";
 import { getSortedPosts } from "../utils/content-utils";
 import { getCollection } from "astro:content";
+import {
+	getEffectiveComments,
+	getEffectiveViews,
+} from "../utils/site-stats";
 
 interface Props {
 	title?: string;
@@ -34,8 +38,11 @@ const siteDescription = description ?? siteConfig.subtitle;
 // 站点统计（通过 data 属性传给客户端，避免 inline script 插值）
 const allPosts = await getCollection("posts");
 const posts = getSortedPosts(allPosts);
-const totalViews = posts.reduce((sum, p) => sum + p.data.views, 0);
-const totalComments = posts.reduce((sum, p) => sum + p.data.comments, 0);
+const totalViews = posts.reduce((sum, p) => sum + getEffectiveViews(p), 0);
+const totalComments = posts.reduce(
+	(sum, p) => sum + getEffectiveComments(p),
+	0,
+);
 const totalDays = Math.floor(
 	(Date.now() - new Date(siteConfig.foundationTime).getTime()) / 86400000,
 );

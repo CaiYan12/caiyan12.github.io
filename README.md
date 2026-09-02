@@ -9,7 +9,7 @@
 - **Tailwind CSS 3**（样式重写，视觉还原 Colorful 海洋绿主题）
 - **Swup.js** — 无刷新页面切换（替代原 Pjax）
 - **Pagefind** — 构建期静态搜索索引
-- **Giscus** — 评论系统（GitHub Discussions）
+- **Giscus** — 评论系统（GitHub Discussions，留言板已启用；主题样式见 `public/giscus-theme.css`）
 - **Fancybox** — 图片灯箱（替代原 Highslide）
 - **Expressive Code** + **KaTeX** — 代码高亮与数学公式
 - **@astrojs/rss / @astrojs/sitemap** — 订阅与 SEO
@@ -79,12 +79,33 @@ public/
 - `published` 只有日期时，目录时间部分统一使用 `000000`；已有时分秒应原样对应目录名。
 - `pnpm build` 会先运行 `scripts/validate-post-slugs.mjs`；新增文章应使用 `pnpm new-post -- <yyyymmddhhmmss> [标题]`。
 
-## 如何开启评论（Giscus）
+## Giscus 评论
+
+留言板 `/guestbook/` 已启用 Giscus，当前配置位于 `src/config.ts` 的 `commentConfig`：
+
+- 仓库：`CaiYan12/caiyan12.github.io`
+- 仓库 ID：`R_kgDOUJeNhw`
+- Discussions 分类：`Announcements`
+- 分类 ID：`DIC_kwDOUJeNh84DEonO`
+- 页面映射：`pathname`
+- 语言：`zh-CN`
+- 主题：`https://caiyan12.github.io/giscus-theme.css`，源文件为 `public/giscus-theme.css`
+
+评论区主题沿用 Colorful 风格：白底、细边框、圆角卡片和海洋绿 hover 阴影；头像框不加阴影，站长徽标复用 `public/images/admin.png` 并显示“站长”。Giscus iframe 生成的原始身份文本仍由 Giscus 控制，主题 CSS 只做视觉替换。
+
+### 评论数与浏览量自动同步
+
+- **COMMENTS**：`deploy.yml` 在构建前运行 `scripts/sync-site-stats.mjs`，通过 GitHub GraphQL 读取 `Announcements` 分类下的 Discussions（口径：顶层评论 + 全部回复），按 `posts/<14位目录名>/` 精确匹配文章后写入 `src/data/site-stats.json`（原子写入，生成结果不提交回仓库；`guestbook` 与欢迎帖不计入）。没有 Discussion 的文章回退 frontmatter 历史值。
+- **views**：仅在仓库配置 `GOATCOUNTER_SITE`、`GOATCOUNTER_START`（Actions Variables）与 `GOATCOUNTER_API_KEY`（Actions Secret）后启用，按文章路径读取 GoatCounter 统计；口径为**页面加载次数**（需在 GoatCounter 的 Data collection → Sessions 关闭会话去重），并叠加在 frontmatter 迁移历史基线之上。
+- 定时同步：`deploy.yml` 每小时第 17 分钟（UTC）运行，另支持 push 与手动触发；同步失败会阻止当次部署，线上保留上一个成功版本。
+- 首页卡片、文章页头部、站点总统计与热门排序统一读取 `src/utils/site-stats.ts` 的有效值，不再直接使用 frontmatter 静态值。
+
+如需重新接入或更换仓库：
 
 1. 在 GitHub 仓库 **Settings → Features** 开启 **Discussions**
 2. 安装 [giscus app](https://github.com/apps/giscus)
-3. 到 [giscus.app](https://giscus.app) 生成 `repo / repoId / category / categoryId`
-4. 填入 `src/config.ts` 的 `commentConfig`，并将 `enable` 改为 `true`
+3. 到 [giscus.app](https://giscus.app) 生成新的 `repo / repoId / category / categoryId`
+4. 更新 `src/config.ts` 的 `commentConfig`，确认 `enable` 为 `true`，并保留主题文件路径
 
 ## 如何添加相册
 
@@ -95,3 +116,13 @@ public/
 - 移除：IP 归属地显示、用户注册、Flash 播放器、评论表情面板
 - 评论数据由 Giscus 承载（侧栏"最新评论"小部件可手动维护 `src/data/comments.ts`）
 - 首页幻灯片图片在 `src/config.ts` 的 `slideshowConfig` 中配置
+
+## TODO:
+
+- [ ] COMMENTS：自动同步 Giscus 评论数到首页、文章页、站点统计和热门排序
+- [ ] 主页——最新评论部分为Mock，无实际资源
+- [ ] 吐槽水军：考虑轮播展示留言板内容
+- [ ] nav订阅左侧新增同风格链接，考虑接入站长QQ与微信
+- [ ] 本站资源添加：部分原纯HTML页面的移植
+- [ ] 图片墙页面：每个照片元件底部的日期高度不一，图片需要合适展示到一个固定的元件大小
+- [ ] 相册图库：UI部分问题修复

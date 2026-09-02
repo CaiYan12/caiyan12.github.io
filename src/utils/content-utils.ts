@@ -1,5 +1,6 @@
 import type { CollectionEntry } from "astro:content";
 import dayjs from "dayjs";
+import { getEffectiveComments } from "./site-stats";
 
 export type Post = CollectionEntry<"posts">;
 
@@ -70,8 +71,8 @@ export function getHotPosts(posts: Post[], limit = 6): Post[] {
 		.sort((a, b) => {
 			const score =
 				b.data.hotness * 100 +
-				b.data.comments -
-				(a.data.hotness * 100 + a.data.comments);
+				getEffectiveComments(b) -
+				(a.data.hotness * 100 + getEffectiveComments(a));
 			return (
 				score || b.data.published.valueOf() - a.data.published.valueOf()
 			);

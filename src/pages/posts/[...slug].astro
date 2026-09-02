@@ -9,6 +9,10 @@ import {
 	getCover,
 } from "../../utils/content-utils";
 import { siteConfig } from "../../config";
+import {
+	getEffectiveComments,
+	getEffectiveViews,
+} from "../../utils/site-stats";
 import QRCode from "qrcode";
 import PostToc from "../../components/control/PostToc.astro";
 import License from "../../components/misc/License.astro";
@@ -25,7 +29,9 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { title, published, updated, category, tags, author, comments, views } = post.data;
+const { title, published, updated, category, tags, author } = post.data;
+const views = getEffectiveViews(post);
+const comments = getEffectiveComments(post);
 const { Content, headings } = await render(post);
 const allPosts = await getCollection("posts");
 const { prev, next } = getNeighbors(allPosts, post.id);
@@ -219,7 +225,7 @@ const starLevel = (comments: number) => {
 								热门指数：
 								<span
 									class="star-rating"
-									style={`--level: ${starLevel(p.data.comments)}`}
+									style={`--level: ${starLevel(getEffectiveComments(p))}`}
 								></span>
 							</div>
 						</li>

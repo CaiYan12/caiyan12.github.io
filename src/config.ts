@@ -1,6 +1,7 @@
 /**
  * 站点全局配置（对应 Emlog 后台设置 + Colorful 主题 options.php）
  */
+import giscusSync from "./data/giscus-sync.json";
 
 export const siteConfig = {
 	/** 站点标题 */
@@ -103,13 +104,11 @@ export const licenseConfig = {
 	url: "https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh",
 };
 
-/** Giscus 评论配置 */
+/** Giscus 评论配置（repo/category/categoryId 共享自 src/data/giscus-sync.json，供 Node 同步脚本复用） */
 export const commentConfig = {
 	enable: true,
-	repo: "CaiYan12/caiyan12.github.io",
+	...giscusSync,
 	repoId: "R_kgDOUJeNhw",
-	category: "Announcements",
-	categoryId: "DIC_kwDOUJeNh84DEonO",
 	mapping: "pathname",
 	reactionsEnabled: "1",
 	emitMetadata: "0",
