@@ -14,14 +14,7 @@ import {
 	myhkwPlayerConfig,
 	pioConfig,
 	siteConfig,
-	statsConfig,
 } from "../config";
-import { getSortedPosts } from "../utils/content-utils";
-import { getCollection } from "astro:content";
-import {
-	getEffectiveComments,
-	getEffectiveViews,
-} from "../utils/site-stats";
 
 interface Props {
 	title?: string;
@@ -35,24 +28,6 @@ const siteTitle = title
 	? `${title} - ${siteConfig.title}`
 	: siteConfig.title;
 const siteDescription = description ?? siteConfig.subtitle;
-
-// 站点统计（通过 data 属性传给客户端，避免 inline script 插值）
-const allPosts = await getCollection("posts");
-const posts = getSortedPosts(allPosts);
-const totalViews = posts.reduce((sum, p) => sum + getEffectiveViews(p), 0);
-const totalComments = posts.reduce(
-	(sum, p) => sum + getEffectiveComments(p),
-	0,
-);
-const totalDays = Math.floor(
-	(Date.now() - new Date(siteConfig.foundationTime).getTime()) / 86400000,
-);
-const siteStats = JSON.stringify({
-	totalPosts: posts.length,
-	totalViews,
-	totalComments,
-	totalDays,
-});
 
 // myhkw 使用非标准的 `key` 脚本属性，使用字符串属性映射保留原始嵌入协议。
 const myhkwScriptAttributes: Record<string, string> = {
@@ -78,15 +53,6 @@ const myhkwScriptAttributes: Record<string, string> = {
 		<link rel="apple-touch-icon" href="/images/avatar.webp" />
 		<link rel="icon" href="/images/avatar.webp" type="image/webp" />
 		<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
-		{import.meta.env.PROD && statsConfig.goatcounter.enabled && (
-			<script
-				is:inline
-				src="https://gc.zgo.at/count.js"
-				data-goatcounter={`https://${statsConfig.goatcounter.site}.goatcounter.com/count`}
-				data-goatcounter-settings='{"no_onload":true}'
-				async
-			></script>
-		)}
 		{pioConfig.enable && <link rel="stylesheet" href="/pio/static/pio.css" />}
 		<meta property="og:title" content={siteTitle} />
 		<meta data-pagefind-meta="title[content]" content={siteTitle} />
@@ -99,7 +65,7 @@ const myhkwScriptAttributes: Record<string, string> = {
 		<meta name="generator" content={Astro.generator} />
 		<slot name="head" />
 	</head>
-	<body class="transition-swup-fade" data-site-stats={siteStats}>
+	<body class="transition-swup-fade">
 		<!-- 背景层：随机背景图 + 花纹遮罩（对应 footer.php 的 bg-image） -->
 		<img
 			class="bg-image"

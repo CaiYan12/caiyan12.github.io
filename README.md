@@ -93,12 +93,11 @@ public/
 
 评论区主题沿用 Colorful 风格：白底、细边框、圆角卡片和海洋绿 hover 阴影；头像框不加阴影，站长徽标复用 `public/images/admin.png` 并显示“站长”。Giscus iframe 生成的原始身份文本仍由 Giscus 控制，主题 CSS 只做视觉替换。
 
-### 评论数与浏览量自动同步
+### 评论数自动同步
 
 - **COMMENTS**：`deploy.yml` 在构建前运行 `scripts/sync-site-stats.mjs`，通过 GitHub GraphQL 读取 `Announcements` 分类下的 Discussions（口径：顶层评论 + 全部回复），按 `posts/<14位目录名>/` 精确匹配文章后写入 `src/data/site-stats.json`（原子写入，生成结果不提交回仓库；`guestbook` 与欢迎帖不计入）。没有 Discussion 的文章回退 frontmatter 历史值。
-- **views**：仅在仓库配置 `GOATCOUNTER_SITE`、`GOATCOUNTER_START`（Actions Variables）与 `GOATCOUNTER_API_KEY`（Actions Secret）后启用，按文章路径读取 GoatCounter 统计；口径为**页面加载次数**（需在 GoatCounter 的 Data collection → Sessions 关闭会话去重），并叠加在 frontmatter 迁移历史基线之上。
 - 定时同步：`deploy.yml` 每小时第 17 分钟（UTC）运行，另支持 push 与手动触发；同步失败会阻止当次部署，线上保留上一个成功版本。
-- 首页卡片、文章页头部、站点总统计与热门排序统一读取 `src/utils/site-stats.ts` 的有效值，不再直接使用 frontmatter 静态值。
+- 首页卡片、文章页头部与热门排序中的吐槽数统一读取 `src/utils/site-stats.ts` 的有效值；文章页底部的表情数由 Giscus 原生界面显示，不再单独维护围观数。
 
 如需重新接入或更换仓库：
 
@@ -119,7 +118,6 @@ public/
 
 ## TODO:
 
-- [ ] COMMENTS：自动同步 Giscus 评论数到首页、文章页、站点统计和热门排序
 - [ ] 主页——最新评论部分为Mock，无实际资源
 - [ ] 吐槽水军：考虑轮播展示留言板内容
 - [ ] nav订阅左侧新增同风格链接，考虑接入站长QQ与微信

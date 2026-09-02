@@ -1,9 +1,8 @@
 /**
- * 站点统计读取层（对应 Emlog 的 views / comnum 字段）：
- * 构建期把 Actions 同步的 Giscus 评论数与 GoatCounter 浏览增量合并进静态渲染。
+ * Giscus 评论统计读取层（对应 Emlog 的 comnum 字段）：
+ * 构建期把 Actions 同步的 Giscus 评论数合并进静态渲染。
  *
  * - comments：快照中存在该 slug 键（含显式 0）时采用远端值，否则回退 frontmatter 历史值
- * - views：永远为 frontmatter 历史基线 + viewsDelta 增量（迁移前历史不重复计入）
  * - 数据来自构建期直接导入的 src/data/site-stats.json（Actions 工作区原子覆盖后的构建产物），
  *   不读取文件系统，不向浏览器暴露任何密钥
  */
@@ -13,12 +12,11 @@ export interface SiteStatsSnapshot {
 	schemaVersion: 1;
 	generatedAt: string;
 	comments: Record<string, number>;
-	viewsDelta: Record<string, number>;
 }
 
 export type PostStatInput = {
 	id: string;
-	data: { comments: number; views: number };
+	data: { comments: number };
 };
 
 const snapshot = baseline as SiteStatsSnapshot;
@@ -42,23 +40,7 @@ export function getEffectiveCommentsWith(
 		: normalizeCount(post.data.comments);
 }
 
-/** 依据给定快照解析有效浏览量：frontmatter 基线 + 快照增量 */
-export function getEffectiveViewsWith(
-	stats: Pick<SiteStatsSnapshot, "viewsDelta">,
-	post: PostStatInput,
-): number {
-	return (
-		normalizeCount(post.data.views) +
-		normalizeCount(stats.viewsDelta[post.id])
-	);
-}
-
 /** 有效评论数：快照有 key 即采用（显式 0 也是有效值），无 key 回退 frontmatter */
 export function getEffectiveComments(post: PostStatInput): number {
 	return getEffectiveCommentsWith(snapshot, post);
-}
-
-/** 有效浏览量：frontmatter 历史基线 + 快照增量 */
-export function getEffectiveViews(post: PostStatInput): number {
-	return getEffectiveViewsWith(snapshot, post);
 }

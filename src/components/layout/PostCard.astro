@@ -3,10 +3,7 @@ import type { CollectionEntry } from "astro:content";
 import dayjs from "dayjs";
 import { getCover, getExcerpt, isNewPost } from "../../utils/content-utils";
 import { siteConfig } from "../../config";
-import {
-	getEffectiveComments,
-	getEffectiveViews,
-} from "../../utils/site-stats";
+import { getEffectiveComments } from "../../utils/site-stats";
 
 interface Props {
 	post: CollectionEntry<"posts">;
@@ -15,7 +12,6 @@ interface Props {
 
 const { post } = Astro.props;
 const { title, published, category, author } = post.data;
-const effectiveViews = getEffectiveViews(post);
 const effectiveComments = getEffectiveComments(post);
 const url = `/posts/${post.id}/`;
 const cover = getCover(post);
@@ -71,10 +67,6 @@ const showHot = post.data.hotness >= 4;
 				</a>
 			</span>
 		)}
-		<span class="pcomm">
-			<i class="fa fa-eye" aria-hidden="true"></i>
-			{effectiveViews > 0 ? `${effectiveViews}人围观` : "没人围观"}
-		</span>
 		<span class="pview">
 			<i class="fa fa-comments" aria-hidden="true"></i>
 			{effectiveComments > 0 ? (

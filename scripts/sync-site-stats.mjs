@@ -1,18 +1,14 @@
-// 站点统计构建期同步脚本（对应计划 Task 3）：
+// Giscus 评论构建期同步脚本：
 // 1) 枚举 src/content/posts 下匹配 ^\d{14}$ 的直接子目录作为文章 slug（字典序排序）；
 // 2) 用 GitHub GraphQL 分页拉取 Announcements 分类 Discussions，
 //    按 title "posts/<slug>/" 精确匹配文章（guestbook、欢迎帖等不匹配即被忽略）；
 //    评论数口径 = 顶层 comments.totalCount + 所有回复 replies.totalCount；
 //    没有 Discussion 的文章不写入 key（消费层回退 frontmatter 历史值）；
-// 3) GOATCOUNTER_SITE / GOATCOUNTER_API_KEY / GOATCOUNTER_START 三者齐全时，
-//    按文章路径逐条读取 GoatCounter hits（自 GOATCOUNTER_START 整点起的页面加载次数，
-//    需在 GoatCounter 关闭 Sessions 去重）；三者全无则跳过 views（沿用既有 viewsDelta）；
-//    部分配置直接报错退出；
-// 4) 全部启用的数据源成功后：内存组装快照 → 校验 → 原子写输出文件（tmp + rename）；
-//    任一来源失败：输出文件字节不变，进程以非零码退出（fail-closed，阻止本次部署）。
+// 3) 内存组装快照 → 校验 → 原子写输出文件（tmp + rename）；
+//    GitHub 来源失败：输出文件字节不变，进程以非零码退出（fail-closed，阻止本次部署）。
 //
 // 令牌解析顺序：GITHUB_TOKEN → GH_TOKEN → `gh auth token`；全部缺失时报错退出；
-// 绝不打印令牌。测试可注入 fetchImpl / outputPath / env / gapMs；
+// 绝不打印令牌。测试可注入 fetchImpl / outputPath / env；
 // 环境变量 SITE_STATS_OUTPUT 可覆盖输出路径（workflow 不设置，用默认路径）。
 
 import fs from "node:fs/promises";
@@ -32,11 +28,6 @@ const GISCUS_CONFIG_FILE = path.join(
 );
 const POSTS_DIR = path.join(REPO_ROOT, "src", "content", "posts");
 const GRAPHQL_ENDPOINT = "https://api.github.com/graphql";
-// GoatCounter 限流 4 req/s：串行请求至少间隔 300ms
-const GOATCOUNTER_GAP_MS = 300;
-const MAX_RETRIES = 3;
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const DISCUSSIONS_QUERY = `query($owner: String!, $name: String!, $categoryId: ID!, $after: String) {
   repository(owner: $owner, name: $name) {
@@ -99,22 +90,6 @@ export function countDiscussionComments(discussionCommentPages) {
 	return totalCount + replies;
 }
 
-/** 解析 GoatCounter /stats/hits 响应：空 hits 为 0，否则取 hits[0].count */
-export function parseGoatCounterHits(payload) {
-	const hits = payload?.hits;
-	if (!Array.isArray(hits)) {
-		throw new Error("malformed GoatCounter response: hits is not an array");
-	}
-	if (hits.length === 0) return 0;
-	const count = hits[0]?.count;
-	if (!Number.isInteger(count) || count < 0) {
-		throw new Error(
-			"malformed GoatCounter response: invalid hits[0].count",
-		);
-	}
-	return count;
-}
-
 const SLUG_SET_ERROR = "snapshot keys must be current article slugs";
 
 function toMap(value) {
@@ -126,7 +101,7 @@ function toMap(value) {
 }
 
 /** 组装并校验快照：key 必须是当前文章 slug，计数必须为非负整数 */
-export function buildSnapshot({ slugs, discussions, views, generatedAt }) {
+export function buildSnapshot({ slugs, discussions, generatedAt }) {
 	if (!Array.isArray(slugs)) throw new Error("slugs must be an array");
 	for (const slug of slugs) {
 		if (typeof slug !== "string" || !SLUG_RE.test(slug)) {
@@ -147,17 +122,7 @@ export function buildSnapshot({ slugs, discussions, views, generatedAt }) {
 		}
 		comments[slug] = count;
 	}
-	const viewsDelta = {};
-	for (const [slug, count] of toMap(views)) {
-		if (!SLUG_RE.test(slug) || !slugSet.has(slug)) {
-			throw new Error(`${SLUG_SET_ERROR}: ${String(slug)}`);
-		}
-		if (!Number.isInteger(count) || count < 0) {
-			throw new Error(`invalid view count for ${slug}`);
-		}
-		viewsDelta[slug] = count;
-	}
-	return { schemaVersion: 1, generatedAt, comments, viewsDelta };
+	return { schemaVersion: 1, generatedAt, comments };
 }
 
 /** 写盘前的最终校验（快照结构与每个 key、每个计数） */
@@ -171,7 +136,7 @@ function validateSnapshot(snapshot) {
 	) {
 		throw new Error("snapshot.generatedAt must be a non-empty string");
 	}
-	for (const section of ["comments", "viewsDelta"]) {
+	for (const section of ["comments"]) {
 		const map = snapshot[section];
 		if (!map || typeof map !== "object" || Array.isArray(map)) {
 			throw new Error(`snapshot.${section} must be an object`);
@@ -226,7 +191,9 @@ function validateConnection(connection, label) {
 		throw new Error(`malformed ${label} connection`);
 	}
 	if (!Array.isArray(connection.nodes)) {
-		throw new Error(`malformed ${label} connection: nodes must be an array`);
+		throw new Error(
+			`malformed ${label} connection: nodes must be an array`,
+		);
 	}
 	const pageInfo = connection.pageInfo;
 	if (!pageInfo || typeof pageInfo !== "object" || Array.isArray(pageInfo)) {
@@ -260,7 +227,9 @@ function validateConnection(connection, label) {
 function nextConnectionCursor(pageInfo, after, label, seenCursors) {
 	if (!pageInfo.hasNextPage) return null;
 	if (pageInfo.endCursor === after) {
-		throw new Error(`malformed ${label} connection: cursor did not advance`);
+		throw new Error(
+			`malformed ${label} connection: cursor did not advance`,
+		);
 	}
 	if (seenCursors.has(pageInfo.endCursor)) {
 		throw new Error(`malformed ${label} connection: cursor already seen`);
@@ -288,7 +257,7 @@ async function githubGraphQL(fetchImpl, token, query, variables) {
 			Authorization: `Bearer ${token}`,
 			"Content-Type": "application/json",
 			Accept: "application/vnd.github+json",
-			"User-Agent": "myblog-site-stats-sync",
+			"User-Agent": "myblog-giscus-sync",
 		},
 		body: JSON.stringify({ query, variables }),
 	});
@@ -308,89 +277,10 @@ async function githubGraphQL(fetchImpl, token, query, variables) {
 	return body?.data;
 }
 
-function roundHourToISO(input) {
-	const d = new Date(input);
-	if (Number.isNaN(d.getTime())) {
-		throw new Error(
-			"Invalid GOATCOUNTER_START: expected an RFC3339 datetime",
-		);
-	}
-	d.setUTCMinutes(0, 0, 0);
-	return d.toISOString();
-}
-
-async function fetchGoatCounterWithRetry(fetchImpl, url, headers) {
-	for (let attempt = 0; ; attempt++) {
-		const res = await fetchImpl(url, { headers });
-		if (res.status !== 429) return res;
-		if (attempt >= MAX_RETRIES) {
-			throw new Error(
-				`GoatCounter 429 persisted after ${MAX_RETRIES} retries`,
-			);
-		}
-		const raRaw = res.headers?.get?.("retry-after");
-		const resetRaw = res.headers?.get?.("x-rate-limit-reset");
-		const retryAfter = raRaw === null || raRaw === undefined ? Number.NaN : Number(raRaw);
-		const reset = resetRaw === null || resetRaw === undefined ? Number.NaN : Number(resetRaw);
-		const waitSeconds = Number.isFinite(retryAfter) && retryAfter >= 0
-			? retryAfter
-			: Number.isFinite(reset) && reset >= 0
-				? reset
-				: 1;
-		await sleep(Math.min(waitSeconds, 30) * 1000);
-	}
-}
-
-/** 逐 slug 精确读取 /posts/<slug>/ 的 pageview 数（串行 + 间隔，规避限流歧义） */
-async function fetchGoatCounterViews({
-	fetchImpl,
-	site,
-	apiKey,
-	startIso,
-	slugs,
-	gapMs,
-}) {
-	const endIso = roundHourToISO(new Date());
-	const headers = {
-		Authorization: `Bearer ${apiKey}`,
-		"Content-Type": "application/json",
-	};
-	const views = new Map();
-	let lastAt = 0;
-	for (const slug of slugs) {
-		const params = new URLSearchParams({
-			start: startIso,
-			end: endIso,
-			limit: "1",
-			path_by_name: "true",
-			include_paths: `/posts/${slug}/`,
-		});
-		const url = `https://${site}.goatcounter.com/api/v0/stats/hits?${params}`;
-		const gap = gapMs - (Date.now() - lastAt);
-		if (gap > 0) await sleep(gap);
-		lastAt = Date.now();
-		const res = await fetchGoatCounterWithRetry(fetchImpl, url, headers);
-		if (!res.ok) {
-			throw new Error(`GoatCounter HTTP ${res.status} for /posts/${slug}/`);
-		}
-		let payload;
-		try {
-			payload = await res.json();
-		} catch {
-			throw new Error(
-				`GoatCounter returned malformed JSON for /posts/${slug}/`,
-			);
-		}
-		views.set(slug, parseGoatCounterHits(payload));
-	}
-	return views;
-}
-
 export async function syncSiteStats({
 	fetchImpl = globalThis.fetch,
 	outputPath,
 	env = process.env,
-	gapMs = GOATCOUNTER_GAP_MS,
 } = {}) {
 	const output = path.resolve(
 		outputPath ?? env.SITE_STATS_OUTPUT ?? DEFAULT_OUTPUT,
@@ -404,27 +294,6 @@ export async function syncSiteStats({
 	}
 	const token = resolveToken(env);
 
-	const gcValues = [
-		env.GOATCOUNTER_SITE,
-		env.GOATCOUNTER_API_KEY,
-		env.GOATCOUNTER_START,
-	];
-	const gcSet = gcValues.filter(
-		(v) => typeof v === "string" && v.length > 0,
-	).length;
-	let gc = null;
-	if (gcSet === 3) {
-		gc = {
-			site: env.GOATCOUNTER_SITE,
-			apiKey: env.GOATCOUNTER_API_KEY,
-			startIso: roundHourToISO(env.GOATCOUNTER_START),
-		};
-	} else if (gcSet > 0) {
-		throw new Error(
-			"GoatCounter partially configured: GOATCOUNTER_SITE, GOATCOUNTER_API_KEY and GOATCOUNTER_START must all be set or all be absent",
-		);
-	}
-
 	// 文章 slug 枚举（14 位目录名，字典序）
 	const entries = await fs.readdir(POSTS_DIR, { withFileTypes: true });
 	const slugs = entries
@@ -433,25 +302,17 @@ export async function syncSiteStats({
 		.sort();
 	const slugSet = new Set(slugs);
 
-	// 读取既有快照（views 未启用时沿用其 viewsDelta）
-	let existing = null;
-	try {
-		existing = JSON.parse(await fs.readFile(output, "utf-8"));
-	} catch {
-		existing = null;
-	}
-
 	// Discussions 游标分页
 	const matchedIds = new Map();
 	let after = null;
 	const seenDiscussionCursors = new Set();
 	while (true) {
-		const data = await githubGraphQL(
-			fetchImpl,
-			token,
-			DISCUSSIONS_QUERY,
-			{ owner, name, categoryId: giscus.categoryId, after },
-		);
+		const data = await githubGraphQL(fetchImpl, token, DISCUSSIONS_QUERY, {
+			owner,
+			name,
+			categoryId: giscus.categoryId,
+			after,
+		});
 		const conn = data?.repository?.discussions;
 		if (!conn) {
 			throw new Error("GitHub GraphQL: missing repository.discussions");
@@ -518,35 +379,10 @@ export async function syncSiteStats({
 		comments.set(slug, countDiscussionComments(pages));
 	}
 
-	// views：启用时逐路径读取；未启用时沿用既有 viewsDelta（仅保留当前 slug）
-	let views;
-	if (gc) {
-		views = await fetchGoatCounterViews({
-			fetchImpl,
-			site: gc.site,
-			apiKey: gc.apiKey,
-			startIso: gc.startIso,
-			slugs,
-			gapMs,
-		});
-	} else {
-		const prevViews =
-			existing &&
-			typeof existing.viewsDelta === "object" &&
-			existing.viewsDelta !== null &&
-			!Array.isArray(existing.viewsDelta)
-				? existing.viewsDelta
-				: {};
-		views = new Map(
-			Object.entries(prevViews).filter(([slug]) => slugSet.has(slug)),
-		);
-	}
-
 	const snapshot = validateSnapshot(
 		buildSnapshot({
 			slugs,
 			discussions: comments,
-			views,
 			generatedAt: new Date().toISOString(),
 		}),
 	);
@@ -574,7 +410,7 @@ if (isMain) {
 	syncSiteStats().then(
 		(snapshot) => {
 			console.log(
-				`[sync] site stats written: ${Object.keys(snapshot.comments).length} comment key(s), ${Object.keys(snapshot.viewsDelta).length} view delta key(s)`,
+				`[sync] Giscus comments written: ${Object.keys(snapshot.comments).length} comment key(s)`,
 			);
 		},
 		(err) => {

@@ -3,7 +3,7 @@ import { siteConfig, footerConfig } from "../../config";
 
 const startYear = new Date(siteConfig.foundationTime).getFullYear();
 const currentYear = new Date().getFullYear();
-// 构建期直接计算运行天数（客户端脚本因执行时序读不到 window.__siteData）
+// 构建期直接计算运行天数
 const totalDays = Math.max(
 	1,
 	Math.floor(
