@@ -105,7 +105,11 @@ function initGoatCounter() {
 	let initialFallbackHit: PendingGoatCounterHit | undefined;
 	document.addEventListener("astro:page-load", () => {
 		const path = window.location.pathname;
-		if (!initialPageLoadObserved && initialFallbackHit && path === initialPath) {
+		if (
+			!initialPageLoadObserved &&
+			initialFallbackHit &&
+			path === initialPath
+		) {
 			if (!goatCounterDroppedHits.has(initialFallbackHit)) {
 				initialPageLoadObserved = true;
 				return;
