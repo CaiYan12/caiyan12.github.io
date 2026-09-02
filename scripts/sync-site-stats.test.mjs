@@ -577,6 +577,7 @@ test("GoatCounter 全量配置：429 重试、空 hits 为 0、精确 include_pa
 		outputPath: output,
 		env,
 		gapMs: 0,
+		now: () => new Date("2026-09-02T06:57:53.877Z"),
 	});
 	assert.equal(snapshot.comments[slugA], 2);
 	assert.equal(snapshot.viewsDelta[slugA], 5);
@@ -589,6 +590,7 @@ test("GoatCounter 全量配置：429 重试、空 hits 为 0、精确 include_pa
 		`unexpected url: ${gcCalls[0]}`,
 	);
 	assert.ok(gcCalls[0].includes("start=2026-09-02T00%3A00%3A00.000Z"));
+	assert.ok(gcCalls[0].includes("end=2026-09-02T07%3A00%3A00.000Z"));
 	assert.ok(gcCalls[0].includes("path_by_name=true"));
 	assert.ok(gcCalls[0].includes("limit=1"));
 	await fs.rm(output, { force: true });
