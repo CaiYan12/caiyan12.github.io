@@ -71,7 +71,11 @@ export const navBarConfig = {
 	],
 	/** 右侧图标导航 */
 	social: {
-		bilibili: { show: true, id: "318867223", url: "https://space.bilibili.com/318867223" },
+		bilibili: {
+			show: true,
+			id: "318867223",
+			url: "https://space.bilibili.com/318867223",
+		},
 		qq: { show: true, id: "2265426573", image: "/images/qq-qrcode.jpg" },
 		wechat: { show: true, image: "/images/wechat-qrcode.jpg" },
 		rss: { show: true, url: "/rss.xml" },

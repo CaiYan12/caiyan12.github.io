@@ -4641,9 +4641,9 @@ body,
 
 .imageswall .image-card img {
   display: block;
+  /* 统一 3:2 裁切（180x120）：原图比例不一会导致卡片高度不齐、日期行错位 */
   width: 180px;
-  height: auto;
-  min-height: 120px;
+  height: 120px;
   border: 0;
   object-fit: cover;
 }
