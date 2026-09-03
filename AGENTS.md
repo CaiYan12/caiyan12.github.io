@@ -132,7 +132,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - 文章：`src/content/posts/<yyyymmddhhmmss>/index.md`（**目录名即 URL slug**，可放封面图在同目录），schema 在 `src/content.config.ts`（posts + spec 两个 collection）
 - frontmatter 字段：title/published/category/tags/description/image/pinned/views/comments/hotness(0-5)/draft 等，其中 comments/hotness 用于首页吐槽与热门展示；views 为迁移兼容字段，当前不渲染围观数
 - 特殊页面：`src/content/spec/about.md`（关于）
-- 数据文件：`src/data/diary.ts`（说说）、`friends.ts`（友链）、`comments.ts`（开发环境最新评论 mock）、`site-stats.json`（构建期同步快照）
+- 数据文件：`src/data/diary.ts`（说说）、`friends.ts`（友链）、`comments.ts`（开发环境最新评论 mock）、`guestbook.ts`（开发环境留言板单条换一批 mock）、`site-stats.json`（构建期同步快照）
 - 相册：**文件夹驱动**——`public/images/albums/<相册名>/` 下放图即自动生成相册（`src/utils/album-scanner.ts` 构建期扫描，中文目录名没问题，slug 用原始名不要预编码）
 
 ### 文章 URL 硬规则（必须遵守）
@@ -148,6 +148,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 | Pjax 无刷新 | Swup.js（`astro.config.mjs` 的 swup 集成，容器 `main`） |
 | 搜索 | Pagefind（构建期索引，`src/components/control/Search.svelte`） |
 | 评论/留言板 | Giscus（`src/components/comment/Giscus.astro`，按 `commentConfig.enable` 开关；文章尾部保留原生表情；主题样式见 `public/giscus-theme.css`） |
+| 主页吐槽水军 | 构建期从 guestbook Discussion 同步最多 20 条顶层留言到 `guestbookComments`，侧栏单条展示并复用“最新评论—换一批”系统，不在浏览器请求 GitHub/Giscus |
 | 图片灯箱 | Fancybox（`src/utils/theme-script.ts` 的 `initFancybox()` 懒加载绑定） |
 | GitHub 仓库卡片 | 构建期渲染：`scripts/fetch-github-repos.mjs` 拉取元数据缓存到 `src/constants/github-repos.json`，`remark-extended.mjs` 直接输出完整卡片 HTML；卡片左侧使用 `https://github.com/<owner>.png?size=128` owner 头像（桌面 `48×48`，移动 `40×40`），右侧为名称/描述/star/fork/语言；**客户端零 GitHub API 请求**（规避访客 IP 匿名 API 60 次/小时限流），令牌解析 `GITHUB_TOKEN`/`GH_TOKEN` → `gh auth token` → 匿名，拉取失败渲染回退链接不阻塞构建 |
 | Markdown 表格 | Markdown 表格经 `rehype-table-wrapper.mjs` 包裹 `.table-scroll`，原生 HTML 表格由 `remark-extended.mjs` 包裹；`global.css` 统一提供满宽、居中、边框和单元格上下居中样式，过宽表格仅在自身容器内滚动 |
@@ -174,6 +175,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ### 统计与表情边界
 - 独立浏览量与 GoatCounter 已移除；frontmatter 的 `views` 仅作迁移兼容字段，不参与页面渲染。
 - Giscus 表情只由文章页尾部的原生评论组件显示，不复制到首页卡片、文章头部或热门排序；吐槽数仍由 Giscus 同步结果驱动。
+- 留言板顶层留言单独写入 `site-stats.json` 的 `guestbookComments`，不参与文章吐槽数与“最新评论”随机池；侧栏单条展示与“换一批”只消费构建期嵌入数据。
 
 ### 样式
 - `src/layouts/Layout.astro` 全站引入 `src/styles/markdown-extended.css`；所有经 `MainGridLayout` 渲染的主站正文页共享 GitHub 卡片、提示块、spoiler、图片网格、Mermaid 等扩展样式，选择器统一收敛在 `.post-context` 下。独立的 `/ai-news/` React 页面不使用该 Layout，保持隔离。

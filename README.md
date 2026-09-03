@@ -50,6 +50,7 @@ src/
     diary.ts             ← 微言碎语
     friends.ts           ← 友链
     comments.ts          ← 最新评论小部件数据
+    guestbook.ts         ← 留言板单条换一批数据
   pages/                 ← 路由（首页/文章/归档/说说/友链/相册/留言板/…）
   ai-news/               ← AI 日报 React 阅读器运行时
   layouts/               ← 页面骨架（Layout / MainGridLayout）
@@ -108,6 +109,7 @@ public/
 
 - **COMMENTS**：`deploy.yml` 在构建前运行 `scripts/sync-site-stats.mjs`，通过 GitHub GraphQL 读取 `Announcements` 分类下的 Discussions（口径：顶层评论 + 全部回复），按 `posts/<14位目录名>/` 精确匹配文章后写入 `src/data/site-stats.json`（原子写入，生成结果不提交回仓库；`guestbook` 与欢迎帖不计入）。没有 Discussion 的文章回退 frontmatter 历史值。
 - **最新评论**：同一次构建期同步写入最多 20 条符合口径的评论到 `src/data/site-stats.json`；首页静态渲染最多 5 条，“换一批”只在浏览器内切换已嵌入数据，不请求 GitHub/Giscus。评论内容按展示长度截断，开发环境保留本地 mock 便于视觉验收。
+- **吐槽水军**：同一同步脚本单独读取标题为 `guestbook` 的 Discussion 顶层留言，按时间倒序写入 `guestbookComments`（最多 20 条）；侧栏 `WidgetBlogger` 每次只展示 1 条并复用最新评论的“换一批”系统，只使用构建期快照。
 - 定时同步：`deploy.yml` 每 6 小时第 17 分钟（UTC）运行，另支持 push 与手动触发；同步失败会阻止当次部署，线上保留上一个成功版本。
 - 首页卡片、文章页头部与热门排序中的吐槽数统一读取 `src/utils/site-stats.ts` 的有效值；文章页底部的表情数由 Giscus 原生界面显示，不再单独维护围观数。
 
@@ -145,7 +147,7 @@ public/
 
 - [x] 主页——最新评论使用构建期真实数据，最多展示 5 条并支持“换一批”（开发环境保留本地 mock）
 - [x] 主页右侧文章推荐去重：上方为“最新 / 手气不错”，下方保留唯一“热门推荐”，列表样式与排行旗帜标记按 Colorful 原主题语义区分
-- [ ] 吐槽水军：考虑轮播展示留言板内容
+- [x] 吐槽水军：单条展示留言板内容并支持“换一批”
 - [x] nav订阅左侧新增同风格链接，并接入站长 QQ 与微信 hover 二维码
 - [x] 图片墙页面：桌面端统一 `180×120`，移动端保持 `3:2`，日期栏对齐且无横向溢出
 - [x] 顶部导航 QQ/微信 hover 二维码：圆角弹层内距统一为 `10px`，二维码视觉尺寸统一

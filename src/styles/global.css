@@ -3200,6 +3200,109 @@ img:hover {
   background: var(--primary-dark);
 }
 
+/* 吐槽水军：构建期留言板快照，单条展示并复用最新评论“换一批”。 */
+#sidebar .guestbook-comment-list {
+  overflow: visible;
+  margin: 0;
+  padding: 10px 10px 0 12px;
+}
+
+#sidebar .guestbook-comment-list li[data-newcomment-item] {
+  overflow: visible;
+  margin: 0;
+  padding: 0;
+  border-bottom: 0;
+  white-space: normal;
+}
+
+.guestbook-comment {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 8px;
+  min-height: 78px;
+  min-width: 0;
+  color: #000 !important;
+}
+
+.guestbook-avatar {
+  box-sizing: content-box;
+  width: 30px;
+  height: 30px;
+  margin: 2px 0 0;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(34, 25, 25, 0.5);
+  object-fit: cover;
+}
+
+.guestbook-body {
+  display: block;
+  min-width: 0;
+}
+
+.guestbook-meta {
+  display: flex;
+  min-width: 0;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  line-height: 18px;
+}
+
+.guestbook-meta strong {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.guestbook-meta time {
+  flex: none;
+  color: #999aaa;
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.guestbook-content {
+  display: -webkit-box;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: 40px;
+  margin-top: 5px;
+  padding: 6px 7px;
+  border: 1px solid #dfdfdf;
+  border-radius: 2px;
+  background: #fff;
+  color: #333;
+  font-size: 12px;
+  line-height: 1.45;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow-wrap: anywhere;
+}
+
+.guestbook-link:focus-visible {
+  color: var(--colorful-green);
+}
+
+.guestbook-link {
+  display: block;
+  margin: 5px 10px 8px 12px;
+  color: var(--colorful-green) !important;
+  text-align: right;
+  font-size: 12px;
+  line-height: 18px;
+  transition: color 180ms var(--ease-out);
+}
+
+.guestbook-link:hover {
+  color: var(--primary-dark) !important;
+}
+
 #blogtags a,
 .post-tags a {
   position: relative;
@@ -4441,6 +4544,10 @@ img:hover {
 
   .newcomment-refresh.is-loading .fa {
     animation: none;
+  }
+
+  .guestbook-link {
+    transition: none;
   }
 
   /* 导航动效降级：位移/缩放全部消失，仅保留透明度过渡（菜单即时开合） */

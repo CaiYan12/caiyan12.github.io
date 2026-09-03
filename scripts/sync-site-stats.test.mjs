@@ -157,12 +157,28 @@ test("buildSnapshot 校验 key 与计数", () => {
 		slugs: ["20260320000000"],
 		discussions: new Map([["20260320000000", 0]]),
 		generatedAt: "2026-09-02T00:00:00.000Z",
+		guestbookComments: [
+			{
+				author: "guestbook-user",
+				avatar: "https://avatars.githubusercontent.com/u/10?s=40",
+				content: "留言板内容",
+				date: "2026-09-02T00:00:00Z",
+			},
+		],
 	});
 	assert.deepEqual(snapshot, {
 		schemaVersion: 1,
 		generatedAt: "2026-09-02T00:00:00.000Z",
 		comments: { 20260320000000: 0 },
 		recentComments: [],
+		guestbookComments: [
+			{
+				author: "guestbook-user",
+				avatar: "https://avatars.githubusercontent.com/u/10?s=40",
+				content: "留言板内容",
+				date: "2026-09-02T00:00:00Z",
+			},
+		],
 	});
 	assert.throws(() =>
 		buildSnapshot({
@@ -231,6 +247,20 @@ test("Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标�
 			},
 		]),
 		commentsPage(0, []),
+		commentsPage(2, [
+			{
+				replies: { totalCount: 3 },
+				author: { login: "guestbook-old" },
+				bodyText: "留言板旧内容",
+				createdAt: "2026-09-01T00:00:00Z",
+			},
+			{
+				replies: { totalCount: 0 },
+				author: { login: "guestbook-new" },
+				bodyText: "留言板新内容",
+				createdAt: "2026-09-03T00:00:00Z",
+			},
+		]),
 	];
 	const fetchImpl = async (url, opts) => {
 		calls.push({ url, body: JSON.parse(opts.body) });
@@ -244,8 +274,9 @@ test("Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标�
 		randomImpl: () => 0,
 	});
 	assert.equal(responses.length, 0);
-	assert.equal(calls.length, 4);
+	assert.equal(calls.length, 5);
 	assert.equal(calls[1].body.variables.after, "CUR1");
+	assert.equal(calls[4].body.variables.id, "D2");
 	assert.equal(snapshot.comments[slugA], 3); // 1 顶层 + 2 回复
 	assert.equal(snapshot.comments[slugB], 0); // 显式 0 保留
 	assert.ok(!("guestbook" in snapshot.comments));
@@ -267,6 +298,20 @@ test("Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标�
 			postTitle: "草稿示例",
 		},
 	]);
+	assert.deepEqual(snapshot.guestbookComments, [
+		{
+			author: "guestbook-new",
+			avatar: "https://avatars.githubusercontent.com/u/1?s=40",
+			content: "留言板新内容",
+			date: "2026-09-03T00:00:00Z",
+		},
+		{
+			author: "guestbook-old",
+			avatar: "https://avatars.githubusercontent.com/u/0?s=40",
+			content: "留言板旧内容",
+			date: "2026-09-01T00:00:00Z",
+		},
+	]);
 	for (const slug of slugs.slice(2)) {
 		assert.ok(!(slug in snapshot.comments), `unexpected key ${slug}`);
 	}
@@ -274,6 +319,38 @@ test("Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标�
 	const written = JSON.parse(await fs.readFile(output, "utf-8"));
 	assert.equal(written.comments[slugA], 3);
 	await fs.rm(output, { force: true });
+});
+
+test("guestbook 留言独立保存并只保留最新 20 条", async () => {
+	const guestbookNodes = Array.from({ length: 25 }, (_, index) => ({
+		replies: { totalCount: index },
+		author: { login: `guestbook-${index}` },
+		bodyText: `留言 ${index}`,
+		createdAt: `2026-09-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
+	}));
+	const responses = [
+		discussionsPage(
+			[{ id: "D-GUESTBOOK", title: "guestbook" }],
+			false,
+			null,
+		),
+		commentsPage(25, guestbookNodes),
+	];
+	const output = tmpFile();
+	try {
+		const snapshot = await syncSiteStats({
+			fetchImpl: async () => responses.shift(),
+			outputPath: output,
+			env: { GITHUB_TOKEN: "test-token" },
+		});
+		assert.deepEqual(snapshot.comments, {});
+		assert.equal(snapshot.recentComments.length, 0);
+		assert.equal(snapshot.guestbookComments.length, 20);
+		assert.equal(snapshot.guestbookComments[0].content, "留言 24");
+		assert.equal(snapshot.guestbookComments.at(-1).content, "留言 5");
+	} finally {
+		await fs.rm(output, { force: true });
+	}
 });
 
 test("有效的 Discussions 与 comments 分页超过 50 页仍完成", async () => {
@@ -312,6 +389,7 @@ test("有效的 Discussions 与 comments 分页超过 50 页仍完成", async ()
 		assert.equal(calls.length, totalPages * 2);
 		assert.equal(snapshot.comments[slugA], totalPages);
 		assert.equal(snapshot.recentComments.length, 20);
+		assert.deepEqual(snapshot.guestbookComments, []);
 	} finally {
 		await fs.rm(output, { force: true });
 	}

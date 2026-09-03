@@ -76,17 +76,18 @@ function setNewCommentShuffleLoading(
 ) {
 	const icon = button.querySelector<HTMLElement>("[data-newcomment-icon]");
 	const label = button.querySelector<HTMLElement>("[data-newcomment-label]");
+	const subject = button.dataset.shuffleSubject ?? "最新评论";
 
 	button.disabled = loading;
 	button.classList.toggle("is-loading", loading);
 	button.setAttribute("aria-busy", loading ? "true" : "false");
 	button.setAttribute(
 		"aria-label",
-		loading ? "正在加载最新评论" : "换一批最新评论",
+		loading ? `正在加载${subject}` : `换一批${subject}`,
 	);
 	button.setAttribute(
 		"title",
-		loading ? "正在加载最新评论" : "换一批最新评论",
+		loading ? `正在加载${subject}` : `换一批${subject}`,
 	);
 
 	if (icon) {
@@ -97,7 +98,7 @@ function setNewCommentShuffleLoading(
 	if (label) label.textContent = loading ? "加载中…" : "换一批";
 }
 
-/** 侧栏最新评论换一批（事件委托，Swup 切页后依然生效） */
+/** 侧栏评论换一批（事件委托，Swup 切页后依然生效） */
 function initNewCommentShuffle() {
 	if (newCommentShuffleBound) return;
 	newCommentShuffleBound = true;
@@ -120,7 +121,13 @@ function initNewCommentShuffle() {
 		const items = [
 			...list.querySelectorAll<HTMLElement>("[data-newcomment-item]"),
 		];
-		if (items.length <= NEW_COMMENT_DISPLAY_LIMIT) return;
+		const requestedLimit = Number(button.dataset.newcommentLimit);
+		const displayLimit =
+			Number.isInteger(requestedLimit) && requestedLimit > 0
+				? requestedLimit
+				: NEW_COMMENT_DISPLAY_LIMIT;
+		const limit = Math.min(displayLimit, items.length);
+		if (items.length <= limit) return;
 
 		const loadingStartedAt = performance.now();
 		button.dataset.newcommentLoading = "true";
@@ -134,7 +141,6 @@ function initNewCommentShuffle() {
 				const currentItems = new Set(
 					items.filter((item) => !item.hidden),
 				);
-				const limit = Math.min(NEW_COMMENT_DISPLAY_LIMIT, items.length);
 				let selectedItems: HTMLElement[] = [];
 				const isSameSelection = (candidate: HTMLElement[]) =>
 					candidate.length === currentItems.size &&

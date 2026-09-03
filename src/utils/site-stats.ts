@@ -3,17 +3,20 @@
  * 构建期把 Actions 同步的 Giscus 评论数合并进静态渲染。
  *
  * - comments：快照中存在该 slug 键（含显式 0）时采用远端值，否则回退 frontmatter 历史值
+ * - guestbookComments：构建期同步的留言板顶层留言，供侧栏吐槽水军单条换一批使用
  * - 数据来自构建期直接导入的 src/data/site-stats.json（Actions 工作区原子覆盖后的构建产物），
  *   不读取文件系统，不向浏览器暴露任何密钥
  */
 import baseline from "../data/site-stats.json" with { type: "json" };
 import type { RecentComment } from "../data/comments";
+import type { GuestbookComment } from "../data/guestbook";
 
 export interface SiteStatsSnapshot {
 	schemaVersion: 1;
 	generatedAt: string;
 	comments: Record<string, number>;
 	recentComments?: RecentComment[];
+	guestbookComments?: GuestbookComment[];
 }
 
 export type PostStatInput = {

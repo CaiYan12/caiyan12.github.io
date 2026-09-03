@@ -1,9 +1,10 @@
 // Giscus 评论构建期同步脚本：
 // 1) 枚举 src/content/posts 下匹配 ^\d{14}$ 的直接子目录作为文章 slug（字典序排序）；
 // 2) 用 GitHub GraphQL 分页拉取 Announcements 分类 Discussions，
-//    按 title "posts/<slug>/" 精确匹配文章（guestbook、欢迎帖等不匹配即被忽略）；
+//    按 title "posts/<slug>/" 精确匹配文章；guestbook 单独拉取其留言，
 //    评论数口径 = 顶层 comments.totalCount + 所有回复 replies.totalCount；
 //    同步匹配文章的最新评论作者、纯文本、时间与文章信息，供侧栏静态渲染；
+//    guestbook 留言写入独立 guestbookComments 通道，不计入文章吐槽数或 recentComments；
 //    没有 Discussion 的文章不写入 key（消费层回退 frontmatter 历史值）；
 // 3) 内存组装快照 → 校验 → 原子写输出文件（tmp + rename）；
 //    GitHub 来源失败：输出文件字节不变，进程以非零码退出（fail-closed，阻止本次部署）。
@@ -19,8 +20,10 @@ import { pathToFileURL } from "node:url";
 
 const SLUG_RE = /^\d{14}$/;
 const DISCUSSION_TITLE_RE = /^posts\/(\d{14})\/$/;
+const GUESTBOOK_DISCUSSION_TITLE = "guestbook";
 const RECENT_COMMENTS_DISPLAY_LIMIT = 5;
 const RECENT_COMMENTS_POOL_LIMIT = 20;
+const GUESTBOOK_COMMENTS_LIMIT = 20;
 const DELETED_AUTHOR_LABEL = "已删除用户";
 const FALLBACK_AVATAR = "/images/avatar.webp";
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
@@ -177,6 +180,31 @@ function validateRecentComment(comment, index, slugSet) {
 	}
 }
 
+function validateGuestbookComment(comment, index) {
+	const label = `guestbookComments[${index}]`;
+	if (!comment || typeof comment !== "object" || Array.isArray(comment)) {
+		throw new Error(`${label} must be an object`);
+	}
+	for (const field of ["author", "content", "date"]) {
+		if (
+			typeof comment[field] !== "string" ||
+			comment[field].trim().length === 0
+		) {
+			throw new Error(`${label}.${field} must be a non-empty string`);
+		}
+	}
+	if (
+		Object.prototype.hasOwnProperty.call(comment, "avatar") &&
+		(typeof comment.avatar !== "string" ||
+			comment.avatar.trim().length === 0)
+	) {
+		throw new Error(`${label}.avatar must be a non-empty string`);
+	}
+	if (!Number.isFinite(Date.parse(comment.date))) {
+		throw new Error(`${label}.date must be a valid date`);
+	}
+}
+
 /** 用 Fisher–Yates 从评论池中无偏随机抽取最多 limit 条评论。 */
 export function selectRandomComments(
 	comments,
@@ -220,6 +248,7 @@ export function buildSnapshot({
 	slugs,
 	discussions,
 	recentComments = [],
+	guestbookComments = [],
 	generatedAt,
 }) {
 	if (!Array.isArray(slugs)) throw new Error("slugs must be an array");
@@ -248,7 +277,19 @@ export function buildSnapshot({
 	recentComments.forEach((comment, index) =>
 		validateRecentComment(comment, index, slugSet),
 	);
-	return { schemaVersion: 1, generatedAt, comments, recentComments };
+	if (!Array.isArray(guestbookComments)) {
+		throw new Error("guestbookComments must be an array");
+	}
+	guestbookComments.forEach((comment, index) =>
+		validateGuestbookComment(comment, index),
+	);
+	return {
+		schemaVersion: 1,
+		generatedAt,
+		comments,
+		recentComments,
+		guestbookComments,
+	};
 }
 
 /** 写盘前的最终校验（快照结构与每个 key、每个计数） */
@@ -283,6 +324,12 @@ function validateSnapshot(snapshot) {
 	}
 	snapshot.recentComments.forEach((comment, index) =>
 		validateRecentComment(comment, index),
+	);
+	if (!Array.isArray(snapshot.guestbookComments)) {
+		throw new Error("snapshot.guestbookComments must be an array");
+	}
+	snapshot.guestbookComments.forEach((comment, index) =>
+		validateGuestbookComment(comment, index),
 	);
 	return snapshot;
 }
@@ -425,6 +472,18 @@ function toRecentComment(node, slug, postTitle) {
 	};
 }
 
+function toGuestbookComment(node, index) {
+	validateDiscussionCommentNode(node, GUESTBOOK_DISCUSSION_TITLE);
+	const comment = {
+		author: node.author?.login?.trim() ?? DELETED_AUTHOR_LABEL,
+		avatar: node.author?.avatarUrl?.trim() ?? FALLBACK_AVATAR,
+		content: node.bodyText.trim(),
+		date: node.createdAt,
+	};
+	validateGuestbookComment(comment, index);
+	return comment;
+}
+
 async function githubGraphQL(fetchImpl, token, query, variables) {
 	const res = await fetchImpl(GRAPHQL_ENDPOINT, {
 		method: "POST",
@@ -450,6 +509,46 @@ async function githubGraphQL(fetchImpl, token, query, variables) {
 		throw new Error(`GitHub GraphQL errors: ${messages.join("; ")}`);
 	}
 	return body?.data;
+}
+
+async function fetchCommentConnectionPages(
+	fetchImpl,
+	token,
+	id,
+	connectionLabel,
+	missingSuffix = "",
+) {
+	const pages = [];
+	const nodes = [];
+	let after = null;
+	const seenCursors = new Set();
+	while (true) {
+		const data = await githubGraphQL(fetchImpl, token, COMMENTS_QUERY, {
+			id,
+			after,
+		});
+		const conn = data?.node?.comments;
+		if (!conn) {
+			throw new Error(
+				`GitHub GraphQL: missing ${connectionLabel} connection${missingSuffix}`,
+			);
+		}
+		const pageInfo = validateConnection(conn, connectionLabel);
+		nodes.push(...conn.nodes);
+		pages.push(conn);
+		const next = nextConnectionCursor(
+			pageInfo,
+			after,
+			connectionLabel,
+			seenCursors,
+		);
+		if (next !== null) {
+			after = next;
+		} else {
+			break;
+		}
+	}
+	return { pages, nodes };
 }
 
 export async function syncSiteStats({
@@ -481,6 +580,7 @@ export async function syncSiteStats({
 
 	// Discussions 游标分页
 	const matchedIds = new Map();
+	let guestbookId = null;
 	let after = null;
 	const seenDiscussionCursors = new Set();
 	while (true) {
@@ -497,6 +597,12 @@ export async function syncSiteStats({
 		const pageInfo = validateConnection(conn, "Discussions");
 		for (const node of conn.nodes) {
 			validateDiscussionNode(node);
+			if (node.title === GUESTBOOK_DISCUSSION_TITLE) {
+				if (guestbookId && guestbookId !== node.id) {
+					throw new Error("multiple guestbook Discussions found");
+				}
+				guestbookId = node.id;
+			}
 			const m = DISCUSSION_TITLE_RE.exec(node.title);
 			if (m && slugSet.has(m[1])) matchedIds.set(m[1], node.id);
 		}
@@ -526,40 +632,37 @@ export async function syncSiteStats({
 	for (const slug of slugs) {
 		const id = matchedIds.get(slug);
 		if (!id) continue;
-		const pages = [];
-		after = null;
-		const seenCommentCursors = new Set();
-		while (true) {
-			const data = await githubGraphQL(fetchImpl, token, COMMENTS_QUERY, {
-				id,
-				after,
-			});
-			const conn = data?.node?.comments;
-			if (!conn) {
-				throw new Error(
-					`GitHub GraphQL: missing comments connection for ${slug}`,
-				);
-			}
-			const pageInfo = validateConnection(conn, "comments");
-			for (const node of conn.nodes) {
-				recentComments.push(
-					toRecentComment(node, slug, postTitles.get(slug)),
-				);
-			}
-			pages.push(conn);
-			const next = nextConnectionCursor(
-				pageInfo,
-				after,
-				"comments",
-				seenCommentCursors,
+		const { pages, nodes } = await fetchCommentConnectionPages(
+			fetchImpl,
+			token,
+			id,
+			"comments",
+			` for ${slug}`,
+		);
+		for (const node of nodes) {
+			recentComments.push(
+				toRecentComment(node, slug, postTitles.get(slug)),
 			);
-			if (next !== null) {
-				after = next;
-			} else {
-				break;
-			}
 		}
 		comments.set(slug, countDiscussionComments(pages));
+	}
+
+	let guestbookComments = [];
+	if (guestbookId) {
+		const { nodes } = await fetchCommentConnectionPages(
+			fetchImpl,
+			token,
+			guestbookId,
+			"guestbook comments",
+		);
+		guestbookComments = nodes
+			.map((node, index) => toGuestbookComment(node, index))
+			.sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+			.slice(0, GUESTBOOK_COMMENTS_LIMIT);
+	} else {
+		console.warn(
+			"[sync] guestbook Discussion not found; guestbookComments will be empty",
+		);
 	}
 
 	const snapshot = validateSnapshot(
@@ -571,6 +674,7 @@ export async function syncSiteStats({
 				randomImpl,
 				RECENT_COMMENTS_POOL_LIMIT,
 			),
+			guestbookComments,
 			generatedAt: new Date().toISOString(),
 		}),
 	);
@@ -598,7 +702,7 @@ if (isMain) {
 	syncSiteStats().then(
 		(snapshot) => {
 			console.log(
-				`[sync] Giscus comments written: ${Object.keys(snapshot.comments).length} comment key(s); recent comments: ${snapshot.recentComments.length}`,
+				`[sync] Giscus comments written: ${Object.keys(snapshot.comments).length} comment key(s); recent comments: ${snapshot.recentComments.length}; guestbook comments: ${snapshot.guestbookComments.length}`,
 			);
 		},
 		(err) => {
