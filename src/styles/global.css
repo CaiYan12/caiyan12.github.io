@@ -2665,6 +2665,12 @@ img:hover {
   background: transparent;
 }
 
+/* 列表页（分类/标签/归档）的 .page 只包标题条，后方紧跟文章列表；
+   去掉 500px 最小高度，避免标题与第一篇文章之间出现大段空白 */
+.page:has(+ .post-list) {
+  min-height: 0;
+}
+
 .page > article > .post-header {
   margin: 0 0 10px;
 }
