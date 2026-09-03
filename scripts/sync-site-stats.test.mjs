@@ -9,6 +9,7 @@ import {
 	syncSiteStats,
 	countDiscussionComments,
 	buildSnapshot,
+	selectRandomComments,
 } from "./sync-site-stats.mjs";
 
 // 与 syncSiteStats 相同的枚举规则（脚本相对仓库根解析）
@@ -55,6 +56,28 @@ function discussionsPage(nodes, hasNextPage, endCursor) {
 	});
 }
 
+function fixtureCommentNode(node, index) {
+	if (!node || typeof node !== "object" || Array.isArray(node)) return node;
+	const defaultAuthor = {
+		login: `fixture-user-${index}`,
+		avatarUrl: `https://avatars.githubusercontent.com/u/${index}?s=40`,
+	};
+	const fixture = {
+		author: defaultAuthor,
+		bodyText: `fixture comment ${index}`,
+		createdAt: "2026-09-02T00:00:00Z",
+		...node,
+	};
+	if (
+		node.author &&
+		typeof node.author === "object" &&
+		!Array.isArray(node.author)
+	) {
+		fixture.author = { ...defaultAuthor, ...node.author };
+	}
+	return fixture;
+}
+
 function commentsPage(
 	totalCount,
 	nodes,
@@ -66,7 +89,7 @@ function commentsPage(
 			node: {
 				comments: {
 					totalCount,
-					nodes,
+					nodes: nodes.map(fixtureCommentNode),
 					pageInfo: { hasNextPage, endCursor },
 				},
 			},
@@ -139,6 +162,7 @@ test("buildSnapshot 校验 key 与计数", () => {
 		schemaVersion: 1,
 		generatedAt: "2026-09-02T00:00:00.000Z",
 		comments: { 20260320000000: 0 },
+		recentComments: [],
 	});
 	assert.throws(() =>
 		buildSnapshot({
@@ -156,6 +180,26 @@ test("buildSnapshot 校验 key 与计数", () => {
 	);
 });
 
+test("selectRandomComments 支持展示上限和较大的构建期评论池", () => {
+	const comments = ["a", "b", "c", "d", "e", "f"];
+	const selected = selectRandomComments(comments, () => 0);
+
+	assert.equal(selected.length, 5);
+	assert.equal(new Set(selected).size, 5);
+	assert.deepEqual(comments, ["a", "b", "c", "d", "e", "f"]);
+	const pool = selectRandomComments(
+		Array.from({ length: 25 }, (_, index) => index),
+		() => 0,
+		20,
+	);
+	assert.equal(pool.length, 20);
+	assert.equal(new Set(pool).size, 20);
+	assert.throws(
+		() => selectRandomComments(comments, () => 1),
+		/randomImpl must return a value in \[0, 1\)/,
+	);
+});
+
 test("Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标题被忽略", async () => {
 	const calls = [];
 	const responses = [
@@ -163,14 +207,28 @@ test("Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标�
 			[
 				{ id: "D1", title: `posts/${slugA}/` },
 				{ id: "D2", title: "guestbook" },
+				{
+					id: "D-WELCOME",
+					title: "Welcome to caiyan12.github.io Discussions!",
+				},
 			],
 			true,
 			"CUR1",
 		),
 		discussionsPage([{ id: "D3", title: `posts/${slugB}/` }], false, null),
 		commentsPage(1, [
-			{ replies: { totalCount: 2 } },
-			{ replies: { totalCount: 0 } },
+			{
+				replies: { totalCount: 2 },
+				author: { login: "old-user" },
+				bodyText: "旧评论",
+				createdAt: "2026-09-01T00:00:00Z",
+			},
+			{
+				replies: { totalCount: 0 },
+				author: { login: "new-user" },
+				bodyText: "新评论",
+				createdAt: "2026-09-03T00:00:00Z",
+			},
 		]),
 		commentsPage(0, []),
 	];
@@ -183,6 +241,7 @@ test("Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标�
 		fetchImpl,
 		outputPath: output,
 		env: { GITHUB_TOKEN: "test-token" },
+		randomImpl: () => 0,
 	});
 	assert.equal(responses.length, 0);
 	assert.equal(calls.length, 4);
@@ -190,6 +249,24 @@ test("Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标�
 	assert.equal(snapshot.comments[slugA], 3); // 1 顶层 + 2 回复
 	assert.equal(snapshot.comments[slugB], 0); // 显式 0 保留
 	assert.ok(!("guestbook" in snapshot.comments));
+	assert.deepEqual(snapshot.recentComments, [
+		{
+			author: "new-user",
+			avatar: "https://avatars.githubusercontent.com/u/1?s=40",
+			content: "新评论",
+			date: "2026-09-03T00:00:00Z",
+			postSlug: slugA,
+			postTitle: "草稿示例",
+		},
+		{
+			author: "old-user",
+			avatar: "https://avatars.githubusercontent.com/u/0?s=40",
+			content: "旧评论",
+			date: "2026-09-01T00:00:00Z",
+			postSlug: slugA,
+			postTitle: "草稿示例",
+		},
+	]);
 	for (const slug of slugs.slice(2)) {
 		assert.ok(!(slug in snapshot.comments), `unexpected key ${slug}`);
 	}
@@ -234,6 +311,7 @@ test("有效的 Discussions 与 comments 分页超过 50 页仍完成", async ()
 		assert.equal(commentsPageIndex, totalPages);
 		assert.equal(calls.length, totalPages * 2);
 		assert.equal(snapshot.comments[slugA], totalPages);
+		assert.equal(snapshot.recentComments.length, 20);
 	} finally {
 		await fs.rm(output, { force: true });
 	}
@@ -484,20 +562,7 @@ test("comments 非递进游标 fail closed 且不替换既有快照", async () =
 	const responses = [
 		discussionsPage([{ id: "D1", title: `posts/${slugA}/` }], false, null),
 		commentsPage(2, [{ replies: { totalCount: 0 } }], true, "COMMENTS-1"),
-		gqlOk({
-			data: {
-				node: {
-					comments: {
-						totalCount: 2,
-						nodes: [{ replies: { totalCount: 0 } }],
-						pageInfo: {
-							hasNextPage: true,
-							endCursor: "COMMENTS-1",
-						},
-					},
-				},
-			},
-		}),
+		commentsPage(2, [{ replies: { totalCount: 0 } }], true, "COMMENTS-1"),
 	];
 	try {
 		await assert.rejects(

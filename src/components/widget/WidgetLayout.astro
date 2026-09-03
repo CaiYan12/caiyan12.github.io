@@ -13,6 +13,9 @@ const { title, icon } = Astro.props;
 			<i class={`fa ${icon}`} aria-hidden="true"></i>
 		</span>
 	)}
-	<h3>{title}</h3>
+	<h3>
+		{title}
+		<slot name="actions" />
+	</h3>
 	<slot />
 </section>

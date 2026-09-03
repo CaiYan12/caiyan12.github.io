@@ -2,7 +2,6 @@
 import WidgetLayout from "./WidgetLayout.astro";
 import { getCollection } from "astro:content";
 import { getHotPosts } from "../../utils/content-utils";
-import dayjs from "dayjs";
 
 const allPosts = await getCollection("posts");
 const hotPosts = getHotPosts(allPosts, 8);
@@ -15,13 +14,14 @@ const isHomePage =
 {isHomePage && (
 	<WidgetLayout title="热门推荐" icon="fa-fire">
 		<ul id="hotlog">
-			{hotPosts.map((post) => (
+			{hotPosts.map((post, index) => (
 				<li>
-					<i class="fa fa-angle-right" aria-hidden="true"></i>
+					<em class={index === 0 ? "hotone" : index === 1 ? "hottwo" : index === 2 ? "hotthree" : "hotSoSo"}>
+						{index + 1}
+					</em>
 					<a href={`/posts/${post.id}/`} title={post.data.title}>
 						{post.data.title}
 					</a>
-					<span>{dayjs(post.data.published).format("MM-DD")}</span>
 				</li>
 			))}
 		</ul>

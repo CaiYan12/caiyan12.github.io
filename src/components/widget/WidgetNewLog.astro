@@ -1,12 +1,22 @@
 ---
 import { getCollection } from "astro:content";
-import { getHotPosts, getNewPosts, isPublicPost } from "../../utils/content-utils";
+import { getNewPosts, isPublicPost } from "../../utils/content-utils";
+import dayjs from "dayjs";
 
 const allPosts = (await getCollection("posts")).filter(isPublicPost);
 const newPosts = getNewPosts(allPosts, 8);
-const hotPosts = getHotPosts(allPosts, 8);
-const surprisePosts = [...allPosts].sort((a, b) => a.id.localeCompare(b.id)).reverse().slice(0, 8);
-const panels = [newPosts, hotPosts, surprisePosts];
+const surprisePosts = [...allPosts];
+for (let index = surprisePosts.length - 1; index > 0; index -= 1) {
+	const randomIndex = Math.floor(Math.random() * (index + 1));
+	[surprisePosts[index], surprisePosts[randomIndex]] = [
+		surprisePosts[randomIndex],
+		surprisePosts[index],
+	];
+}
+const panels = [
+	{ id: "newlog", posts: newPosts },
+	{ id: "randlog", posts: surprisePosts.slice(0, 8) },
+];
 ---
 
 <div class="widget tab-widget" data-tab-widget>
@@ -16,24 +26,20 @@ const panels = [newPosts, hotPosts, surprisePosts];
 				<i class="fa fa-paint-brush" aria-hidden="true"></i>最新
 			</li>
 			<li role="tab" tabindex="0" aria-selected="false" data-tab="1">
-				<i class="fa fa-fire" aria-hidden="true"></i>热门推荐
-			</li>
-			<li role="tab" tabindex="0" aria-selected="false" data-tab="2">
 				<i class="fa fa-random" aria-hidden="true"></i>手气不错
 			</li>
 		</ul>
 		<div class="clear"></div>
 	</div>
 	<div class="tab_box">
-		{panels.map((posts, panelIndex) => (
+		{panels.map((panel, panelIndex) => (
 			<div class:list={[panelIndex !== 0 && "tab-panel-hidden"]} data-panel={panelIndex}>
-				<ul>
-					{posts.map((post, index) => (
+				<ul id={panel.id}>
+					{panel.posts.map((post) => (
 						<li>
-							<em class={index === 0 ? "hotone" : index === 1 ? "hottwo" : index === 2 ? "hotthree" : "hotSoSo"}>
-								{index + 1}
-							</em>
+							<i class="fa fa-angle-right" aria-hidden="true"></i>
 							<a href={`/posts/${post.id}/`} title={post.data.title}>{post.data.title}</a>
+							<span>{dayjs(post.data.published).format("MM-DD")}</span>
 						</li>
 					))}
 				</ul>

@@ -3,6 +3,7 @@
 // 2) 用 GitHub GraphQL 分页拉取 Announcements 分类 Discussions，
 //    按 title "posts/<slug>/" 精确匹配文章（guestbook、欢迎帖等不匹配即被忽略）；
 //    评论数口径 = 顶层 comments.totalCount + 所有回复 replies.totalCount；
+//    同步匹配文章的最新评论作者、纯文本、时间与文章信息，供侧栏静态渲染；
 //    没有 Discussion 的文章不写入 key（消费层回退 frontmatter 历史值）；
 // 3) 内存组装快照 → 校验 → 原子写输出文件（tmp + rename）；
 //    GitHub 来源失败：输出文件字节不变，进程以非零码退出（fail-closed，阻止本次部署）。
@@ -18,6 +19,10 @@ import { pathToFileURL } from "node:url";
 
 const SLUG_RE = /^\d{14}$/;
 const DISCUSSION_TITLE_RE = /^posts\/(\d{14})\/$/;
+const RECENT_COMMENTS_DISPLAY_LIMIT = 5;
+const RECENT_COMMENTS_POOL_LIMIT = 20;
+const DELETED_AUTHOR_LABEL = "已删除用户";
+const FALLBACK_AVATAR = "/images/avatar.webp";
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
 const DEFAULT_OUTPUT = path.join(REPO_ROOT, "src", "data", "site-stats.json");
 const GISCUS_CONFIG_FILE = path.join(
@@ -43,7 +48,12 @@ const COMMENTS_QUERY = `query($id: ID!, $after: String) {
     ... on Discussion {
       comments(first: 100, after: $after) {
         totalCount
-        nodes { replies { totalCount } }
+		nodes {
+			replies { totalCount }
+			author { login avatarUrl(size: 40) }
+			bodyText
+			createdAt
+        }
         pageInfo { hasNextPage endCursor }
       }
     }
@@ -92,6 +102,111 @@ export function countDiscussionComments(discussionCommentPages) {
 
 const SLUG_SET_ERROR = "snapshot keys must be current article slugs";
 
+function parseFrontmatterTitle(value, slug) {
+	const raw = value.trim();
+	if (!raw) throw new Error(`missing post title for ${slug}`);
+
+	if (raw.startsWith('"')) {
+		if (!raw.endsWith('"'))
+			throw new Error(`invalid post title for ${slug}`);
+		try {
+			const parsed = JSON.parse(raw);
+			if (typeof parsed === "string" && parsed.trim())
+				return parsed.trim();
+		} catch {
+			// Fall through to the same explicit validation error below.
+		}
+		throw new Error(`invalid post title for ${slug}`);
+	}
+
+	if (raw.startsWith("'")) {
+		if (!raw.endsWith("'"))
+			throw new Error(`invalid post title for ${slug}`);
+		const parsed = raw.slice(1, -1).replace(/''/g, "'").trim();
+		if (parsed) return parsed;
+		throw new Error(`missing post title for ${slug}`);
+	}
+
+	return raw;
+}
+
+async function readPostTitles(slugs) {
+	const titles = new Map();
+	for (const slug of slugs) {
+		const file = path.join(POSTS_DIR, slug, "index.md");
+		const source = await fs.readFile(file, "utf-8");
+		const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(
+			source,
+		);
+		const titleLine = frontmatter?.[1].match(/^title:\s*(.+?)\s*$/m);
+		if (!titleLine) throw new Error(`missing post title for ${slug}`);
+		titles.set(slug, parseFrontmatterTitle(titleLine[1], slug));
+	}
+	return titles;
+}
+
+function validateRecentComment(comment, index, slugSet) {
+	const label = `recentComments[${index}]`;
+	if (!comment || typeof comment !== "object" || Array.isArray(comment)) {
+		throw new Error(`${label} must be an object`);
+	}
+	for (const field of ["author", "content", "date", "postTitle"]) {
+		if (
+			typeof comment[field] !== "string" ||
+			comment[field].trim().length === 0
+		) {
+			throw new Error(`${label}.${field} must be a non-empty string`);
+		}
+	}
+	if (
+		Object.prototype.hasOwnProperty.call(comment, "avatar") &&
+		(typeof comment.avatar !== "string" ||
+			comment.avatar.trim().length === 0)
+	) {
+		throw new Error(`${label}.avatar must be a non-empty string`);
+	}
+	if (
+		typeof comment.postSlug !== "string" ||
+		!SLUG_RE.test(comment.postSlug) ||
+		(slugSet && !slugSet.has(comment.postSlug))
+	) {
+		throw new Error(`${label}.postSlug must be a current article slug`);
+	}
+	if (!Number.isFinite(Date.parse(comment.date))) {
+		throw new Error(`${label}.date must be a valid date`);
+	}
+}
+
+/** 用 Fisher–Yates 从评论池中无偏随机抽取最多 limit 条评论。 */
+export function selectRandomComments(
+	comments,
+	randomImpl = Math.random,
+	limit = RECENT_COMMENTS_DISPLAY_LIMIT,
+) {
+	if (!Array.isArray(comments)) throw new Error("comments must be an array");
+	if (!Number.isInteger(limit) || limit < 0) {
+		throw new Error("recent comments limit must be a non-negative integer");
+	}
+	if (typeof randomImpl !== "function") {
+		throw new Error("randomImpl must be a function");
+	}
+
+	const shuffled = [...comments];
+	for (let i = shuffled.length - 1; i > 0; i -= 1) {
+		const randomValue = randomImpl();
+		if (
+			!Number.isFinite(randomValue) ||
+			randomValue < 0 ||
+			randomValue >= 1
+		) {
+			throw new Error("randomImpl must return a value in [0, 1)");
+		}
+		const j = Math.floor(randomValue * (i + 1));
+		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+	}
+	return shuffled.slice(0, limit);
+}
+
 function toMap(value) {
 	if (value instanceof Map) return value;
 	if (value && typeof value === "object") {
@@ -101,7 +216,12 @@ function toMap(value) {
 }
 
 /** 组装并校验快照：key 必须是当前文章 slug，计数必须为非负整数 */
-export function buildSnapshot({ slugs, discussions, generatedAt }) {
+export function buildSnapshot({
+	slugs,
+	discussions,
+	recentComments = [],
+	generatedAt,
+}) {
 	if (!Array.isArray(slugs)) throw new Error("slugs must be an array");
 	for (const slug of slugs) {
 		if (typeof slug !== "string" || !SLUG_RE.test(slug)) {
@@ -122,7 +242,13 @@ export function buildSnapshot({ slugs, discussions, generatedAt }) {
 		}
 		comments[slug] = count;
 	}
-	return { schemaVersion: 1, generatedAt, comments };
+	if (!Array.isArray(recentComments)) {
+		throw new Error("recentComments must be an array");
+	}
+	recentComments.forEach((comment, index) =>
+		validateRecentComment(comment, index, slugSet),
+	);
+	return { schemaVersion: 1, generatedAt, comments, recentComments };
 }
 
 /** 写盘前的最终校验（快照结构与每个 key、每个计数） */
@@ -152,6 +278,12 @@ function validateSnapshot(snapshot) {
 			}
 		}
 	}
+	if (!Array.isArray(snapshot.recentComments)) {
+		throw new Error("snapshot.recentComments must be an array");
+	}
+	snapshot.recentComments.forEach((comment, index) =>
+		validateRecentComment(comment, index),
+	);
 	return snapshot;
 }
 
@@ -250,6 +382,49 @@ function validateDiscussionNode(node) {
 	}
 }
 
+function validateDiscussionCommentNode(node, slug) {
+	if (!node || typeof node !== "object" || Array.isArray(node)) {
+		throw new Error(`malformed comment node for ${slug}`);
+	}
+	if (!Object.prototype.hasOwnProperty.call(node, "author")) {
+		throw new Error(`malformed comment node for ${slug}: missing author`);
+	}
+	if (
+		node.author !== null &&
+		(typeof node.author !== "object" ||
+			Array.isArray(node.author) ||
+			typeof node.author.login !== "string" ||
+			node.author.login.trim().length === 0 ||
+			typeof node.author.avatarUrl !== "string" ||
+			node.author.avatarUrl.trim().length === 0)
+	) {
+		throw new Error(`malformed comment node for ${slug}: invalid author`);
+	}
+	if (typeof node.bodyText !== "string") {
+		throw new Error(`malformed comment node for ${slug}: missing bodyText`);
+	}
+	if (
+		typeof node.createdAt !== "string" ||
+		!Number.isFinite(Date.parse(node.createdAt))
+	) {
+		throw new Error(
+			`malformed comment node for ${slug}: invalid createdAt`,
+		);
+	}
+}
+
+function toRecentComment(node, slug, postTitle) {
+	validateDiscussionCommentNode(node, slug);
+	return {
+		author: node.author?.login?.trim() ?? DELETED_AUTHOR_LABEL,
+		avatar: node.author?.avatarUrl?.trim() ?? FALLBACK_AVATAR,
+		content: node.bodyText.trim(),
+		date: node.createdAt,
+		postSlug: slug,
+		postTitle,
+	};
+}
+
 async function githubGraphQL(fetchImpl, token, query, variables) {
 	const res = await fetchImpl(GRAPHQL_ENDPOINT, {
 		method: "POST",
@@ -281,6 +456,7 @@ export async function syncSiteStats({
 	fetchImpl = globalThis.fetch,
 	outputPath,
 	env = process.env,
+	randomImpl = Math.random,
 } = {}) {
 	const output = path.resolve(
 		outputPath ?? env.SITE_STATS_OUTPUT ?? DEFAULT_OUTPUT,
@@ -301,6 +477,7 @@ export async function syncSiteStats({
 		.map((e) => e.name)
 		.sort();
 	const slugSet = new Set(slugs);
+	const postTitles = await readPostTitles(slugs);
 
 	// Discussions 游标分页
 	const matchedIds = new Map();
@@ -345,6 +522,7 @@ export async function syncSiteStats({
 
 	// 逐 Discussion 统计 顶层评论 + 全部回复
 	const comments = new Map();
+	const recentComments = [];
 	for (const slug of slugs) {
 		const id = matchedIds.get(slug);
 		if (!id) continue;
@@ -363,6 +541,11 @@ export async function syncSiteStats({
 				);
 			}
 			const pageInfo = validateConnection(conn, "comments");
+			for (const node of conn.nodes) {
+				recentComments.push(
+					toRecentComment(node, slug, postTitles.get(slug)),
+				);
+			}
 			pages.push(conn);
 			const next = nextConnectionCursor(
 				pageInfo,
@@ -383,6 +566,11 @@ export async function syncSiteStats({
 		buildSnapshot({
 			slugs,
 			discussions: comments,
+			recentComments: selectRandomComments(
+				recentComments,
+				randomImpl,
+				RECENT_COMMENTS_POOL_LIMIT,
+			),
 			generatedAt: new Date().toISOString(),
 		}),
 	);
@@ -410,7 +598,7 @@ if (isMain) {
 	syncSiteStats().then(
 		(snapshot) => {
 			console.log(
-				`[sync] Giscus comments written: ${Object.keys(snapshot.comments).length} comment key(s)`,
+				`[sync] Giscus comments written: ${Object.keys(snapshot.comments).length} comment key(s); recent comments: ${snapshot.recentComments.length}`,
 			);
 		},
 		(err) => {

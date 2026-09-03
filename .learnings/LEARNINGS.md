@@ -6,6 +6,33 @@ Corrections, insights, and knowledge gaps captured during development.
 
 ---
 
+## [LRN-20260903-001] correction
+
+**Logged**: 2026-09-03T11:31:04+08:00
+**Priority**: medium
+**Status**: resolved
+**Area**: frontend
+
+### Summary
+Sidebar ranking badges need screenshot-based optical alignment, not geometric centering alone.
+
+### Details
+The Colorful sidebar hot-list badge changed from a circle to a narrow CSS flag. The first taller variant made the badge feel visually heavier and less balanced even though the flex box was mathematically centered. The accepted direction keeps a narrow flag with a downward convex tail and preserves the number’s alignment with the title row.
+
+### Suggested Action
+For small CSS shapes with clipped corners or tails, compare the rendered screenshot and the adjacent text baseline before finalizing dimensions; keep the correction scoped to the badge selector.
+
+### Metadata
+- Source: user_feedback
+- Related Files: src/styles/global.css, src/components/widget/WidgetHotLog.astro
+- Tags: sidebar, colorful, optical-alignment, css-shape
+
+### Resolution
+- **Resolved**: 2026-09-03T11:31:04+08:00
+- **Notes**: Final sidebar state uses the narrow downward-convex flag badge requested by the user.
+
+---
+
 ## [LRN-20260830-001] correction
 
 **Logged**: 2026-08-30T21:50:00+08:00

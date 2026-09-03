@@ -2,22 +2,67 @@
 import WidgetLayout from "./WidgetLayout.astro";
 import { recentComments } from "../../data/comments";
 import dayjs from "dayjs";
+
+const truncateComment = (content: string) => {
+	const characters = Array.from(content);
+	return characters.length > 20
+		? `${characters.slice(0, 20).join("")}…`
+		: content;
+};
+
+const DISPLAY_LIMIT = 5;
+const initialVisibleCount = Math.min(recentComments.length, DISPLAY_LIMIT);
 ---
 
-<WidgetLayout title="最新评论" icon="fa-comments-o">
+<WidgetLayout title="最新评论" icon="fa-comments">
+	{recentComments.length > DISPLAY_LIMIT && (
+		<button
+			slot="actions"
+			class="newcomment-refresh"
+			type="button"
+			aria-controls="newcomment"
+			aria-label="换一批最新评论"
+			aria-busy="false"
+			title="换一批最新评论"
+			data-newcomment-refresh
+		>
+			<i
+				class="fa fa-random"
+				aria-hidden="true"
+				data-newcomment-icon
+			></i>
+			<span data-newcomment-label>换一批</span>
+		</button>
+	)}
 	{recentComments.length > 0 ? (
-		<ul>
-			{recentComments.slice(0, 6).map((c) => (
-				<li title={`${c.author}：${c.content}`}>
-					<i class="fa fa-angle-right" aria-hidden="true"></i>
-					<a
-						href={`/posts/${c.postSlug}/#comments`}
-						title={`${c.author} 在《${c.postTitle}》中的评论`}
-					>
-						{c.author}：{c.content.slice(0, 20)}
-						{c.content.length > 20 ? "…" : ""}
-					</a>
-					<span>{dayjs(c.date).format("MM-DD")}</span>
+		<ul id="newcomment" aria-live="polite">
+			{recentComments.map((c, index) => (
+				<li
+					data-newcomment-item
+					data-comment-last={
+						index === initialVisibleCount - 1 ? "true" : undefined
+					}
+					hidden={index >= DISPLAY_LIMIT}
+				>
+					<img
+						class="avatar"
+						src={c.avatar ?? "/images/avatar.webp"}
+						alt={`${c.author} 的头像`}
+					/>
+					<p class="name">{c.author}</p>
+					<p class="time">
+						<i class="fa fa-clock-o" aria-hidden="true"></i>
+						{dayjs(c.date).format("YYYY年MM月DD日")}
+					</p>
+					<p class="content">
+						<a
+							href={`/posts/${c.postSlug}/#comments`}
+							title={`${c.author} 在《${c.postTitle}》中的评论`}
+						>
+							{truncateComment(c.content)}
+						</a>
+						<span class="comment-tail" aria-hidden="true"></span>
+					</p>
 				</li>
 			))}
 		</ul>

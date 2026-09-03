@@ -4,9 +4,9 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  # 非整点定时同步（GitHub schedule 可能因负载延迟；与 push 同 ref 时旧 run 会被取消，可接受）
+  # 每 6 小时定时同步（GitHub schedule 可能因负载延迟；与 push 同 ref 时旧 run 会被取消，可接受）
   schedule:
-    - cron: "17 * * * *"
+    - cron: "17 */6 * * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

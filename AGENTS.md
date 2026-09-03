@@ -132,7 +132,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - 文章：`src/content/posts/<yyyymmddhhmmss>/index.md`（**目录名即 URL slug**，可放封面图在同目录），schema 在 `src/content.config.ts`（posts + spec 两个 collection）
 - frontmatter 字段：title/published/category/tags/description/image/pinned/views/comments/hotness(0-5)/draft 等，其中 comments/hotness 用于首页吐槽与热门展示；views 为迁移兼容字段，当前不渲染围观数
 - 特殊页面：`src/content/spec/about.md`（关于）
-- 数据文件：`src/data/diary.ts`（说说）、`friends.ts`（友链）、`comments.ts`（侧栏最新评论，默认空数组）
+- 数据文件：`src/data/diary.ts`（说说）、`friends.ts`（友链）、`comments.ts`（开发环境最新评论 mock）、`site-stats.json`（构建期同步快照）
 - 相册：**文件夹驱动**——`public/images/albums/<相册名>/` 下放图即自动生成相册（`src/utils/album-scanner.ts` 构建期扫描，中文目录名没问题，slug 用原始名不要预编码）
 
 ### 文章 URL 硬规则（必须遵守）
@@ -157,6 +157,12 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - **Swup 切换页面时组件脚本不会重跑**，所以需要重绑定的东西（Fancybox、导航高亮）都注册在 `initSwupHooks()` 的 `content:replace`/`page:view` 里；新增交互若依赖新页面 DOM，必须加到这两个 hook 中
 - 页面内 `<script>` 若含 `{...}` 模板插值必须加 `is:inline`（否则 Astro 当 TS 模块处理会解析失败）
 
+### 侧栏“最新评论”换一批交互硬约束
+- “换一批”必须提供可感知的加载状态：切换期间显示加载图标动画与“加载中…”文案，设置 `aria-busy="true"` 并禁用按钮，防止重复点击。
+- 切换完成、异常或空数据时必须恢复默认图标/文案、`aria-busy="false"` 与可用状态；不得让按钮永久停留在加载中。
+- 加载动画仅作用于“换一批”操作图标，必须遵守 `prefers-reduced-motion: reduce`；不得恢复最新评论头像的旋转效果。
+- “换一批”只能操作构建期嵌入的评论数据，客户端不得新增 GitHub/Giscus 请求或其他评论数据依赖。
+
 ### 统计与表情边界
 - 独立浏览量与 GoatCounter 已移除；frontmatter 的 `views` 仅作迁移兼容字段，不参与页面渲染。
 - Giscus 表情只由文章页尾部的原生评论组件显示，不复制到首页卡片、文章头部或热门排序；吐槽数仍由 Giscus 同步结果驱动。
@@ -169,6 +175,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - 自定义光标：`public/style/default.cur` / `link.cur`
 - 图片墙：`src/pages/images.astro` 的卡片图片桌面端保持 `180×120` 与 `object-fit: cover`；`max-width: 680px` 时图片宽度流体化，但必须通过 `height: auto` 与 `aspect-ratio: 3 / 2` 保持比例，避免日期栏错位或页面横向溢出。
 - 顶部二维码弹层：`src/components/layout/Navbar.astro` 中 QQ/微信共用 `.qrcode-frame`；`src/styles/global.css` 保持弹层四周 `10px` 内距、内部裁切框 `140×140`。由于 `public/images/qq-qrcode.jpg` 与 `public/images/wechat-qrcode.jpg` 的原图留白比例不同，两者使用独立的绝对定位裁切参数；更换资源后必须重新做真实 hover 视觉检查。
+- 首页右侧文章推荐固定为“最新 / 手气不错”两栏：两者使用普通箭头＋日期列表；“手气不错”仅在构建期随机抽取。首页下方只保留一个“热门推荐”，按 `getHotPosts` 的既有排序输出旗帜形序号标记；禁止复制热门元件或在浏览器端请求评论/文章数据。
 
 ### 工具函数
 `src/utils/content-utils.ts`：`getSortedPosts`（置顶+时间）、`getTagList`、`getCategoryList`、`getArchiveList`（YYYY年M月）、`getHotPosts`（hotness*100+comments 排序）、`getNeighbors`（前一篇/后一篇）、`getCover`（frontmatter image 兜底 hash 选 `public/images/random/tb1-40.jpg`）

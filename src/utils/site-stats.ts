@@ -7,11 +7,13 @@
  *   不读取文件系统，不向浏览器暴露任何密钥
  */
 import baseline from "../data/site-stats.json" with { type: "json" };
+import type { RecentComment } from "../data/comments";
 
 export interface SiteStatsSnapshot {
 	schemaVersion: 1;
 	generatedAt: string;
 	comments: Record<string, number>;
+	recentComments?: RecentComment[];
 }
 
 export type PostStatInput = {

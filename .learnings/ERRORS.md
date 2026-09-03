@@ -4,6 +4,38 @@ Command failures and integration errors.
 
 ---
 
+## [ERR-20260903-001] optional-eslint-check
+
+**Logged**: 2026-09-03T11:31:04+08:00
+**Priority**: low
+**Status**: resolved
+**Area**: tests
+
+### Summary
+The repository has no installed ESLint command or dependency.
+
+### Error
+```
+Command "eslint" not found
+```
+
+### Context
+- Attempted `pnpm exec eslint ./src` as an additional read-only pre-commit check.
+- The repository CI workflow runs Prettier Check and Astro Check, not ESLint.
+
+### Suggested Fix
+Do not add ESLint as part of this sidebar task; if linting is desired later, define it explicitly in `package.json` and CI.
+
+### Metadata
+- Reproducible: yes
+- Related Files: package.json, .github/workflows/lint.yml
+
+### Resolution
+- **Resolved**: 2026-09-03T11:31:04+08:00
+- **Notes**: Recorded as an optional tooling boundary; no dependency or workflow change added.
+
+---
+
 ## [ERR-20260902-001] computer-use
 
 **Logged**: 2026-09-02T07:10:00Z
