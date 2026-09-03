@@ -1,11 +1,11 @@
 ---
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getCollection } from "astro:content";
-import { getSortedPosts } from "../utils/content-utils";
+import { getSortedPosts, isPublicPost } from "../utils/content-utils";
 import dayjs from "dayjs";
 
 const allPosts = await getCollection("posts");
-const sortedPosts = getSortedPosts(allPosts);
+const sortedPosts = getSortedPosts(allPosts.filter(isPublicPost));
 const yearMap = new Map<string, typeof sortedPosts>();
 
 for (const post of sortedPosts) {

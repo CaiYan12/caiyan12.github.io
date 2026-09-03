@@ -100,7 +100,9 @@ export default defineConfig({
 		svelte({
 			preprocess: vitePreprocess(),
 		}),
-		sitemap(),
+		sitemap({
+			filter: (page) => !page.endsWith("/page/1/"),
+		}),
 	],
 	markdown: {
 		remarkPlugins: [

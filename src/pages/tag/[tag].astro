@@ -1,0 +1,55 @@
+---
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import PostCard from "../../components/layout/PostCard.astro";
+import Pagination from "../../components/layout/Pagination.astro";
+import { getCollection } from "astro:content";
+import { getSortedPosts, getTagList, isPublicPost } from "../../utils/content-utils";
+import { getPaginationUrl } from "../../utils/pagination";
+import { siteConfig } from "../../config";
+
+export async function getStaticPaths() {
+	const allPosts = await getCollection("posts");
+	const publicPosts = allPosts.filter(isPublicPost);
+	const sortedPosts = getSortedPosts(publicPosts);
+	return getTagList(publicPosts).map(({ name }) => {
+		const posts = sortedPosts.filter((post) => post.data.tags.includes(name));
+		return {
+			params: { tag: name },
+			props: { name, posts },
+		};
+	});
+}
+
+const { name, posts } = Astro.props;
+const rootUrl = `/tag/${encodeURIComponent(name)}/`;
+const pages = Math.max(1, Math.ceil(posts.length / siteConfig.postsPerPage));
+const pagePosts = posts.slice(0, siteConfig.postsPerPage);
+---
+
+<MainGridLayout
+	title={`标签：${name}`}
+	description={`标签 ${name} 下的全部文章`}
+	canonicalUrl={rootUrl}
+	nextUrl={pages > 1 ? getPaginationUrl(rootUrl, 2) : undefined}
+>
+	<div class="page">
+		<header class="post-header">
+			<h2>
+				<i class="fa fa-tags" aria-hidden="true"></i>
+				标签：{name}
+				<span class="ml-2 text-sm font-normal text-gray-500">
+					共 {posts.length} 篇文章
+				</span>
+			</h2>
+		</header>
+	</div>
+
+	{pagePosts.map((post) => <PostCard post={post} />)}
+
+	<Pagination
+		current={1}
+		total={pages}
+		urlTemplate={getPaginationUrl(rootUrl, "{n}")}
+		firstPageUrl={rootUrl}
+	/>
+</MainGridLayout>

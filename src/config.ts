@@ -25,7 +25,7 @@ export const siteConfig = {
 	/** 建站时间（用于 footer 运行天数） */
 	foundationTime: "2026-01-01",
 	/** 每页文章数 */
-	postsPerPage: 8,
+	postsPerPage: 6,
 	/** 首页摘要字数 */
 	excerptLength: 120,
 	/** 站点备案号（可留空） */

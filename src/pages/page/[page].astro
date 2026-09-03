@@ -1,0 +1,57 @@
+---
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import PostCard from "../../components/layout/PostCard.astro";
+import Pagination from "../../components/layout/Pagination.astro";
+import Slideshow from "../../components/control/Slideshow.astro";
+import { getCollection } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import { getSortedPosts, isPublicPost } from "../../utils/content-utils";
+import { getPaginationUrl } from "../../utils/pagination";
+import { siteConfig } from "../../config";
+
+export const getStaticPaths = (async ({ paginate }) => {
+	const allPosts = await getCollection("posts");
+	const posts = getSortedPosts(allPosts.filter(isPublicPost));
+	return paginate(posts, { pageSize: siteConfig.postsPerPage });
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+const rootUrl = "/";
+const current = page.currentPage;
+const total = page.lastPage;
+---
+
+<MainGridLayout
+	title={current > 1 ? `第 ${current} 页` : undefined}
+	description={siteConfig.subtitle}
+	canonicalUrl={getPaginationUrl(rootUrl, current)}
+	prevUrl={current > 1 ? getPaginationUrl(rootUrl, current - 1) : undefined}
+	nextUrl={current < total ? getPaginationUrl(rootUrl, current + 1) : undefined}
+>
+	{current === 1 && <Slideshow />}
+
+	{page.data.length > 0 ? (
+		page.data.map((post) => <PostCard post={post} />)
+	) : (
+		<div class="page">
+			<article role="article">
+				<header class="post-header">
+					<h2>
+						<i class="fa fa-question-circle" aria-hidden="true"></i>
+						Nothing Found!
+					</h2>
+				</header>
+				<div class="post-context">
+					对不起，你要搜索的内容在本站搜不到任何结果，请尝试其他关键词！
+				</div>
+			</article>
+		</div>
+	)}
+
+	<Pagination
+		current={current}
+		total={total}
+		urlTemplate={getPaginationUrl(rootUrl, "{n}")}
+		firstPageUrl={rootUrl}
+	/>
+</MainGridLayout>

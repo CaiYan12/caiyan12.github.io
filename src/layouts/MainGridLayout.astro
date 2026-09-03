@@ -10,6 +10,9 @@ interface Props {
 	title?: string;
 	description?: string;
 	image?: string;
+	canonicalUrl?: string;
+	prevUrl?: string;
+	nextUrl?: string;
 	/** 是否显示侧栏 */
 	showSidebar?: boolean;
 	/** 是否将当前页面正文加入 Pagefind 索引 */
@@ -23,6 +26,9 @@ const { showSidebar = true, searchIndex = false } = Astro.props;
 	title={Astro.props.title}
 	description={Astro.props.description}
 	image={Astro.props.image}
+	canonicalUrl={Astro.props.canonicalUrl}
+	prevUrl={Astro.props.prevUrl}
+	nextUrl={Astro.props.nextUrl}
 >
 	<div id="lmhblog">
 		<Navbar />
