@@ -167,6 +167,8 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - `public/giscus-theme.css`：Giscus iframe 的 Colorful 主题覆盖；评论卡沿用白底、细边框、圆角和海洋绿 hover 阴影，头像框无阴影，站长徽标复用 `public/images/admin.png` 并显示“站长”
 - `src/styles/font-awesome.css`：Font Awesome 4，class 名与原站一致（`fa fa-xxx`），字体在 `public/fonts/`
 - 自定义光标：`public/style/default.cur` / `link.cur`
+- 图片墙：`src/pages/images.astro` 的卡片图片桌面端保持 `180×120` 与 `object-fit: cover`；`max-width: 680px` 时图片宽度流体化，但必须通过 `height: auto` 与 `aspect-ratio: 3 / 2` 保持比例，避免日期栏错位或页面横向溢出。
+- 顶部二维码弹层：`src/components/layout/Navbar.astro` 中 QQ/微信共用 `.qrcode-frame`；`src/styles/global.css` 保持弹层四周 `10px` 内距、内部裁切框 `140×140`。由于 `public/images/qq-qrcode.jpg` 与 `public/images/wechat-qrcode.jpg` 的原图留白比例不同，两者使用独立的绝对定位裁切参数；更换资源后必须重新做真实 hover 视觉检查。
 
 ### 工具函数
 `src/utils/content-utils.ts`：`getSortedPosts`（置顶+时间）、`getTagList`、`getCategoryList`、`getArchiveList`（YYYY年M月）、`getHotPosts`（hotness*100+comments 排序）、`getNeighbors`（前一篇/后一篇）、`getCover`（frontmatter image 兜底 hash 选 `public/images/random/tb1-40.jpg`）

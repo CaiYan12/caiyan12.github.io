@@ -2323,12 +2323,33 @@ img:hover {
 
 #head-nav .m-nav li a.qrcode .qrcode-pop img {
   display: block;
-  /* 覆盖 Tailwind preflight 的 max-width:100%——绝对定位 shrink-to-fit 容器内会循环依赖把图压扁 */
-  /* 方形裁切：码点居中，只裁掉原图上下留白，弹层观感更紧凑 */
-  width: 140px;
   max-width: none;
+}
+
+#head-nav .m-nav li a.qrcode .qrcode-frame {
+  position: relative;
+  display: block;
+  flex: 0 0 140px;
+  width: 140px;
   height: 140px;
-  object-fit: cover;
+  overflow: hidden;
+}
+
+/* 按现有二维码原图中的实际码区裁切，保证两种 hover 视觉尺寸一致 */
+#head-nav .m-nav li a.qq .qrcode-frame img {
+  position: absolute;
+  top: -95.9px;
+  left: -14.4px;
+  width: 168.7px;
+  height: 306.1px;
+}
+
+#head-nav .m-nav li a.wechat .qrcode-frame img {
+  position: absolute;
+  top: -97.6px;
+  left: -35.5px;
+  width: 211px;
+  height: 313.6px;
 }
 
 #wrapper {
@@ -4726,6 +4747,8 @@ body,
   .photo-grid img,
   .imageswall .image-card img {
     width: 100%;
+    height: auto;
+    aspect-ratio: 3 / 2;
   }
 
   .post-related li {

@@ -159,7 +159,9 @@ const isCurrent = (url: string) =>
 					>
 						<i class="fa fa-qq"></i> QQ
 						<span class="qrcode-pop">
-							<img src={navBarConfig.social.qq.image} alt="QQ 二维码" loading="lazy" />
+							<span class="qrcode-frame">
+								<img src={navBarConfig.social.qq.image} alt="QQ 二维码" loading="lazy" />
+							</span>
 						</span>
 					</a>
 				</li>
@@ -173,7 +175,9 @@ const isCurrent = (url: string) =>
 					>
 						<i class="fa fa-wechat"></i> 微信
 						<span class="qrcode-pop">
-							<img src={navBarConfig.social.wechat.image} alt="微信二维码" loading="lazy" />
+							<span class="qrcode-frame">
+								<img src={navBarConfig.social.wechat.image} alt="微信二维码" loading="lazy" />
+							</span>
 						</span>
 					</a>
 				</li>
