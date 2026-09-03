@@ -3715,6 +3715,9 @@ img:hover {
   color: #fff;
   font-size: 16px;
   text-align: left;
+  /* 长标题单行"..."截断，避免换行顶出黑色背景条 */
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .carousel-bg {
@@ -4579,8 +4582,7 @@ body,
 .post-context,
 .post-context a,
 .widget,
-.widget a,
-.carousel-caption {
+.widget a {
   overflow-wrap: anywhere;
 }
 
