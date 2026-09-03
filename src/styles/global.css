@@ -2664,6 +2664,19 @@ img:hover {
   padding: 0;
 }
 
+.pagenavi .pagenavi-jump-submit {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--colorful-line);
+  border-radius: 5px;
+  background: #fff;
+  color: #000;
+  line-height: 26px;
+  transition: all 0.2s ease-in-out;
+}
+
 .pagenavi .pagenavi-page {
   background: #fff;
   color: #000;
@@ -2681,7 +2694,9 @@ img:hover {
 }
 
 .pagenavi a:hover,
-.pagenavi a:focus-visible {
+.pagenavi a:focus-visible,
+.pagenavi .pagenavi-jump-submit:hover,
+.pagenavi .pagenavi-jump-submit:focus-visible {
   background: var(--colorful-green);
   color: #fff;
 }
