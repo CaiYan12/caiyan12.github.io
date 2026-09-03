@@ -283,6 +283,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - GitHub 卡片的结构由 `remark-extended.mjs` 生成：`.github-card-link` 使用两列 grid，`.github-card-avatar` 为装饰性图片（`alt=""` + `aria-hidden="true"`），`.github-card-body` 必须 `min-width: 0`，仓库名允许任意位置换行，避免长仓库名撑破正文。
 - 表格通用规则位于 `global.css`：`.prose table`/`.prose th`/`.prose td` 提供 `#c4c4c4` 边框、`vertical-align: middle` 和表头底色；`.post-context table` 统一 `width: 100%`，`.table-scroll` 负责过宽表格的局部横向滚动。新增表格不要在文章内另写宽度或滚动容器样式。
 - `src/styles/global.css`：Tailwind 指令 + 大量自定义 class（`.post-list`、`.tw`、`.widget`、`.pagenavi` 等，命名直接对应原主题 CSS），**视觉还原以 custom class 为主、utility 为辅**
+- 分页控件（`src/components/layout/Pagination.astro` / `.pagenavi`）统一使用无圆角 40×40 方块；正常态为品牌色边框，当前/禁用态为深灰边框，跳转输入框为 120×40 且隐藏数字微调箭头；导航符号为 `<<`、`<`、`>`、`>>`、`→`，移动端仅保留首、前、当前、后、末五项。
 - `src/styles/colorful-original.css`：原主题 73KB 原始样式表，仅作对照参考，**不要直接引入**（路径基于 Emlog 模板目录）
 - `public/giscus-theme.css`：Giscus iframe 的 Colorful 主题覆盖；评论卡沿用白底、细边框、圆角和海洋绿 hover 阴影，头像框无阴影，站长徽标复用 `public/images/admin.png` 并显示“站长”
 - `src/styles/font-awesome.css`：Font Awesome 4，class 名与原站一致（`fa fa-xxx`），字体在 `public/fonts/`
