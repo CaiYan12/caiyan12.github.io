@@ -28,7 +28,7 @@ pnpm smoke:ai-news  # AI 日报入口、详情、返回与离线快照 Smoke（�
 pnpm format      # Prettier 格式化
 ```
 
-> ⚠️ **踩坑警告**：修改 Markdown 渲染插件（remark/rehype）后构建产物没变化？Astro 5 content layer 缓存（`node_modules/.astro/`）会复用旧渲染结果——先删除该目录再构建，touch 文件无效。CI 侧 `deploy.yml` 已对 `withastro/action` 传 `cache: false` 关闭同类缓存，任何 workflow 改动勿恢复。
+> ⚠️ **踩坑警告**：修改 Markdown 渲染插件（remark/rehype）后构建产物没变化？Astro 5 content layer 可能复用旧渲染结果——先删除 `node_modules/.astro/`，并在存在时删除 `.astro/data-store.json`，再构建；touch 文件无效。CI 侧 `deploy.yml` 已对 `withastro/action` 传 `cache: false` 关闭同类缓存，任何 workflow 改动勿恢复。
 
 ## CI 构建与部署
 
@@ -55,6 +55,8 @@ src/
   layouts/               ← 页面骨架（Layout / MainGridLayout）
   components/            ← 组件（导航/侧栏/文章卡片/小部件/评论…）
   styles/global.css      ← 主题样式（Colorful 视觉还原）
+  styles/markdown-extended.css ← Markdown 扩展组件样式（全站正文共用）
+  plugins/               ← Markdown 与构建期转换插件
   utils/                 ← 工具函数
   constants/             ← 构建期生成数据（LQIP 占位色、GitHub 仓库卡片元数据缓存）
 scripts/                 ← 构建脚本（LQIP 生成、GitHub 仓库数据拉取、新建文章）
@@ -64,6 +66,14 @@ public/
   fonts/                 ← Font Awesome 4 图标字体
   style/                 ← 自定义光标
 ```
+
+## Markdown 扩展与全站正文样式
+
+主站统一由 `src/layouts/Layout.astro` 引入 `src/styles/markdown-extended.css`。所有经 `MainGridLayout` 渲染的主站页面（文章、关于、归档、搜索、友链、留言板等）共享 `.post-context` 下的扩展组件样式；独立的 `/ai-news/` React 阅读页不使用这套 Layout，保持自己的运行时和视觉边界。
+
+- **GitHub 仓库卡片**：文章中的 `::github{repo="owner/name"}` 由 `src/plugins/remark-extended.mjs` 在构建期输出 `.github-card`。卡片左侧显示 owner 的 GitHub 头像（`https://github.com/<owner>.png?size=128`），桌面端为 `48×48`，移动端（`≤680px`）为 `40×40`；右侧显示仓库名、描述、star、fork 和语言。元数据来自 `src/constants/github-repos.json`，浏览器不请求 GitHub API；缓存缺失时保留可用的回退链接。
+- **Markdown 表格**：`src/styles/global.css` 中的 `.post-context table` 与 `.table-scroll` 规则在主站正文统一生效。Markdown 表格由 `src/plugins/rehype-table-wrapper.mjs` 包裹，原生 HTML 表格由 `src/plugins/remark-extended.mjs` 包裹；表格默认满正文宽度、居中，单元格文字上下居中，边框为 `#c4c4c4`，过宽内容只在自身滚动容器内横向滚动。
+- 修改上述插件或表格/卡片样式后，应至少检查一篇旧文章和一篇新文章的桌面、移动端布局，并补跑 `pnpm check`、`pnpm exec prettier --check ./src` 与 `pnpm build`。
 
 ## 怎么写文章
 

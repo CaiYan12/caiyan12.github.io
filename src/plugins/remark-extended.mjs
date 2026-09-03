@@ -55,16 +55,24 @@ function loadRepoData() {
 	}
 }
 
+function renderGithubAvatar(repoRaw) {
+	const owner = repoRaw.split("/")[0]?.trim();
+	if (!owner) return "";
+	const src = `https://github.com/${encodeURIComponent(owner)}.png?size=128`;
+	return `<img class="github-card-avatar" src="${escapeHtml(src)}" width="48" height="48" alt="" aria-hidden="true" loading="lazy" decoding="async">`;
+}
+
 /** 渲染 GitHub 仓库卡片 HTML；缓存缺失时渲染回退链接 */
 function renderGithubCard(repoRaw, repoData) {
 	const repo = escapeHtml(repoRaw);
 	// owner 与仓库名分段编码，避免整体编码把 "/" 变成 %2F
 	const repoPath = repoRaw.split("/").map(encodeURIComponent).join("/");
+	const avatar = renderGithubAvatar(repoRaw);
 	const data = repoData[repoRaw];
 	if (!data) {
-		return `<div class="github-card"><a class="github-card-link github-card-error" href="https://github.com/${repoPath}" target="_blank" rel="noopener noreferrer">GitHub 仓库信息加载失败，点击前往 ${repo}</a></div>`;
+		return `<div class="github-card"><a class="github-card-link github-card-error" href="https://github.com/${repoPath}" target="_blank" rel="noopener noreferrer">${avatar}<span class="github-card-body">GitHub 仓库信息加载失败，点击前往 ${repo}</span></a></div>`;
 	}
-	return `<div class="github-card"><a class="github-card-link" href="${escapeHtml(data.html_url || `https://github.com/${repoPath}`)}" target="_blank" rel="noopener noreferrer"><span class="github-card-name">${escapeHtml(data.full_name || repoRaw)}</span><span class="github-card-desc">${escapeHtml(data.description || "")}</span><span class="github-card-meta"><span>★ ${Number(data.stargazers_count) || 0}</span><span>⑂ ${Number(data.forks_count) || 0}</span><span class="github-card-lang">${escapeHtml(data.language || "")}</span></span></a></div>`;
+	return `<div class="github-card"><a class="github-card-link" href="${escapeHtml(data.html_url || `https://github.com/${repoPath}`)}" target="_blank" rel="noopener noreferrer">${avatar}<span class="github-card-body"><span class="github-card-name">${escapeHtml(data.full_name || repoRaw)}</span><span class="github-card-desc">${escapeHtml(data.description || "")}</span><span class="github-card-meta"><span>★ ${Number(data.stargazers_count) || 0}</span><span>⑂ ${Number(data.forks_count) || 0}</span><span class="github-card-lang">${escapeHtml(data.language || "")}</span></span></span></a></div>`;
 }
 
 /** 提取容器指令中的标题节点（:::note[自定义标题]），返回标题 HTML；无则返回空串 */
@@ -186,6 +194,18 @@ export function remarkExtended() {
 				...node.children,
 				htmlClose,
 			);
+		});
+
+		// 6. 原生 HTML 表格也放进滚动容器（Markdown 表格由 rehype 插件处理）
+		visit(tree, "html", (node) => {
+			const value = String(node.value || "");
+			if (
+				!/<table\b/i.test(value) ||
+				!/<\/table\s*>/i.test(value) ||
+				/\btable-scroll\b/i.test(value)
+			)
+				return;
+			node.value = `<div class="table-scroll">\n${value}\n</div>`;
 		});
 	};
 }

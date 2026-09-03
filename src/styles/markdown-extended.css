@@ -1,7 +1,7 @@
 /* ============================================================
  * Markdown 扩展组件样式（admonition / GitHub alerts / spoiler /
  * github-card / mermaid），由 remark-extended 插件产生。
- * 仅作用于文章正文（.post-context）内的扩展节点。
+ * 仅作用于主站正文（.post-context）内的扩展节点。
  * ============================================================ */
 
 /* ---------- Admonition 提示块（:::note/tip/important/warning/caution） ---------- */
@@ -166,7 +166,10 @@
 }
 
 .post-context .github-card-link {
-  display: block;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.85rem;
   padding: 0.85rem 1rem;
   color: inherit;
   text-decoration: none;
@@ -176,11 +179,26 @@
   background: #f6f8fa;
 }
 
+.post-context .github-card-avatar {
+  display: block;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #d0d7de;
+  border-radius: 0.65rem;
+  background: #fff;
+  object-fit: cover;
+}
+
+.post-context .github-card-body {
+  min-width: 0;
+}
+
 .post-context .github-card-name {
   display: block;
   margin-bottom: 0.25em;
   color: #0969da;
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .post-context .github-card-desc {
@@ -341,6 +359,16 @@
 }
 
 @media screen and (max-width: 680px) {
+  .post-context .github-card-link {
+    grid-template-columns: 40px minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .post-context .github-card-avatar {
+    width: 40px;
+    height: 40px;
+  }
+
   .post-context .github-card-meta {
     gap: 0.6em;
   }

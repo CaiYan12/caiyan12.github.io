@@ -149,7 +149,8 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 | 搜索 | Pagefind（构建期索引，`src/components/control/Search.svelte`） |
 | 评论/留言板 | Giscus（`src/components/comment/Giscus.astro`，按 `commentConfig.enable` 开关；文章尾部保留原生表情；主题样式见 `public/giscus-theme.css`） |
 | 图片灯箱 | Fancybox（`src/utils/theme-script.ts` 的 `initFancybox()` 懒加载绑定） |
-| GitHub 仓库卡片 | 构建期渲染：`scripts/fetch-github-repos.mjs` 拉取元数据缓存到 `src/constants/github-repos.json`，`remark-extended.mjs` 直接输出完整卡片 HTML；**客户端零请求**（规避访客 IP 匿名 API 60 次/小时限流），令牌解析 `GITHUB_TOKEN`/`GH_TOKEN` → `gh auth token` → 匿名，拉取失败渲染回退链接不阻塞构建 |
+| GitHub 仓库卡片 | 构建期渲染：`scripts/fetch-github-repos.mjs` 拉取元数据缓存到 `src/constants/github-repos.json`，`remark-extended.mjs` 直接输出完整卡片 HTML；卡片左侧使用 `https://github.com/<owner>.png?size=128` owner 头像（桌面 `48×48`，移动 `40×40`），右侧为名称/描述/star/fork/语言；**客户端零 GitHub API 请求**（规避访客 IP 匿名 API 60 次/小时限流），令牌解析 `GITHUB_TOKEN`/`GH_TOKEN` → `gh auth token` → 匿名，拉取失败渲染回退链接不阻塞构建 |
+| Markdown 表格 | Markdown 表格经 `rehype-table-wrapper.mjs` 包裹 `.table-scroll`，原生 HTML 表格由 `remark-extended.mjs` 包裹；`global.css` 统一提供满宽、居中、边框和单元格上下居中样式，过宽表格仅在自身容器内滚动 |
 | 代码高亮/公式 | Expressive Code + KaTeX（KaTeX CSS 按需动态导入） |
 
 ### 客户端脚本与 Swup 生命周期
@@ -175,6 +176,9 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - Giscus 表情只由文章页尾部的原生评论组件显示，不复制到首页卡片、文章头部或热门排序；吐槽数仍由 Giscus 同步结果驱动。
 
 ### 样式
+- `src/layouts/Layout.astro` 全站引入 `src/styles/markdown-extended.css`；所有经 `MainGridLayout` 渲染的主站正文页共享 GitHub 卡片、提示块、spoiler、图片网格、Mermaid 等扩展样式，选择器统一收敛在 `.post-context` 下。独立的 `/ai-news/` React 页面不使用该 Layout，保持隔离。
+- GitHub 卡片的结构由 `remark-extended.mjs` 生成：`.github-card-link` 使用两列 grid，`.github-card-avatar` 为装饰性图片（`alt=""` + `aria-hidden="true"`），`.github-card-body` 必须 `min-width: 0`，仓库名允许任意位置换行，避免长仓库名撑破正文。
+- 表格通用规则位于 `global.css`：`.prose table`/`.prose th`/`.prose td` 提供 `#c4c4c4` 边框、`vertical-align: middle` 和表头底色；`.post-context table` 统一 `width: 100%`，`.table-scroll` 负责过宽表格的局部横向滚动。新增表格不要在文章内另写宽度或滚动容器样式。
 - `src/styles/global.css`：Tailwind 指令 + 大量自定义 class（`.post-list`、`.tw`、`.widget`、`.pagenavi` 等，命名直接对应原主题 CSS），**视觉还原以 custom class 为主、utility 为辅**
 - `src/styles/colorful-original.css`：原主题 73KB 原始样式表，仅作对照参考，**不要直接引入**（路径基于 Emlog 模板目录）
 - `public/giscus-theme.css`：Giscus iframe 的 Colorful 主题覆盖；评论卡沿用白底、细边框、圆角和海洋绿 hover 阴影，头像框无阴影，站长徽标复用 `public/images/admin.png` 并显示“站长”
@@ -195,9 +199,9 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 
 **症状**：修改了 remark/rehype 插件（或任何影响 Markdown 渲染的逻辑）后构建，产物仍是旧 HTML，全程无任何报错。本地和线上都可能发生，2026-08-31 两侧均已实际踩坑。
 
-**根因**：Astro 5 content layer 把渲染结果缓存在 `node_modules/.astro/data-store.json`，内容文件未变时构建直接复用缓存、**不重跑插件**；touch 内容文件 mtime 也无法使其失效。根目录 `.astro/` 只有 types/schema，删除它无效。
+**根因**：Astro 5 content layer 会把渲染结果缓存到 data store；内容文件未变时构建直接复用缓存、**不重跑插件**；touch 内容文件 mtime 也无法使其失效。当前命令可能在 `node_modules/.astro/data-store.json` 或 `.astro/data-store.json` 生成 data store，不能只依赖其中一处。
 
-**本地规则**：改插件逻辑后必须先删除 `node_modules/.astro/` 再构建。
+**本地规则**：改插件逻辑后先删除 `node_modules/.astro/`，并在存在时删除 `.astro/data-store.json`，再构建。
 
 **CI 规则**：`withastro/action` 默认 `cache: true` 会跨 run 缓存 `node_modules/.astro`，同样复用旧渲染——**`deploy.yml` 已传 `cache: false` 关闭，任何 workflow 改动都不得恢复该缓存**。`build.yml` 用 `setup-node`（仅缓存 pnpm store）不受影响。
 

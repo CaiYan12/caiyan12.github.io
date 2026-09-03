@@ -1599,12 +1599,14 @@
   .prose table {
     width: 100%;
     margin: 1em 0;
+    border: 1px solid #c4c4c4;
     border-collapse: collapse;
   }
   .prose th,
   .prose td {
     padding: 6px 10px;
-    border: 1px solid var(--line);
+    border: 1px solid #c4c4c4;
+    vertical-align: middle;
   }
   .prose th {
     background: #f5f5f5;
@@ -4680,9 +4682,17 @@ body,
 }
 
 .post-context table {
-  display: block;
-  width: max-content;
+  box-sizing: border-box;
+  display: table;
+  width: 100%;
+  margin: 0;
   max-width: 100%;
+}
+
+.post-context .table-scroll {
+  width: 100%;
+  max-width: 100%;
+  margin: 1em auto;
   overflow-x: auto;
 }
 

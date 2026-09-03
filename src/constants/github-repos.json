@@ -1,4 +1,12 @@
 {
+	"Aider-AI/aider": {
+		"html_url": "https://github.com/Aider-AI/aider",
+		"full_name": "Aider-AI/aider",
+		"description": "aider is AI pair programming in your terminal",
+		"stargazers_count": 48689,
+		"forks_count": 4919,
+		"language": "Python"
+	},
 	"CaiYan12/windy-project-mgr": {
 		"html_url": "https://github.com/CaiYan12/windy-project-mgr",
 		"full_name": "CaiYan12/windy-project-mgr",
@@ -7,6 +15,374 @@
 		"forks_count": 0,
 		"language": "Rust"
 	},
+	"ComposioHQ/awesome-claude-skills": {
+		"html_url": "https://github.com/ComposioHQ/awesome-claude-skills",
+		"full_name": "ComposioHQ/awesome-claude-skills",
+		"description": "A curated list of awesome Claude Skills, resources, and tools for customizing Claude AI workflows",
+		"stargazers_count": 74335,
+		"forks_count": 8536,
+		"language": "Python"
+	},
+	"CopilotKit/CopilotKit": {
+		"html_url": "https://github.com/CopilotKit/CopilotKit",
+		"full_name": "CopilotKit/CopilotKit",
+		"description": "The Frontend Stack for Agents & Generative UI. React, Angular, Mobile, Slack, and more.  Makers of the AG-UI Protocol",
+		"stargazers_count": 37170,
+		"forks_count": 4601,
+		"language": "TypeScript"
+	},
+	"FlowiseAI/Flowise": {
+		"html_url": "https://github.com/FlowiseAI/Flowise",
+		"full_name": "FlowiseAI/Flowise",
+		"description": "Build AI Agents, Visually",
+		"stargazers_count": 55404,
+		"forks_count": 24971,
+		"language": "TypeScript"
+	},
+	"JUNGHERZ/GlassKit": {
+		"html_url": "https://github.com/JUNGHERZ/GlassKit",
+		"full_name": "JUNGHERZ/GlassKit",
+		"description": "A modern glassmorphism CSS component library inspired by iOS 26 Liquid Glass. 24 components, Dark & Light Mode, Design Tokens – no dependencies.",
+		"stargazers_count": 12,
+		"forks_count": 0,
+		"language": "HTML"
+	},
+	"OpenHands/OpenHands": {
+		"html_url": "https://github.com/OpenHands/OpenHands",
+		"full_name": "OpenHands/OpenHands",
+		"description": "🙌 OpenHands: AI-Driven Development",
+		"stargazers_count": 86015,
+		"forks_count": 11284,
+		"language": "TypeScript"
+	},
+	"Sec-Dome/Awesome-Skills": {
+		"html_url": "https://github.com/Sec-Dome/Awesome-Skills",
+		"full_name": "Sec-Dome/Awesome-Skills",
+		"description": "A curated directory of ready-to-use Agent Skills for building AI agents.",
+		"stargazers_count": 3,
+		"forks_count": 0,
+		"language": ""
+	},
+	"TanStack/query": {
+		"html_url": "https://github.com/TanStack/query",
+		"full_name": "TanStack/query",
+		"description": "🤖 Powerful asynchronous state management, server-state utilities and data fetching for the web. TS/JS, React Query, Solid Query, Svelte Query and Vue Query.",
+		"stargazers_count": 50252,
+		"forks_count": 4228,
+		"language": "TypeScript"
+	},
+	"TanStack/table": {
+		"html_url": "https://github.com/TanStack/table",
+		"full_name": "TanStack/table",
+		"description": "🤖 Headless UI for building powerful tables & datagrids for TS/JS -  React-Table, Vue-Table, Solid-Table, Svelte-Table",
+		"stargazers_count": 28400,
+		"forks_count": 3571,
+		"language": "TypeScript"
+	},
+	"TerminalSkills/skills": {
+		"html_url": "https://github.com/TerminalSkills/skills",
+		"full_name": "TerminalSkills/skills",
+		"description": "Open-source library of AI agent skills — SKILL.md files for Claude Code, Codex, Gemini CLI, Cursor",
+		"stargazers_count": 143,
+		"forks_count": 15,
+		"language": "Shell"
+	},
+	"VincentGarreau/particles.js": {
+		"html_url": "https://github.com/VincentGarreau/particles.js",
+		"full_name": "VincentGarreau/particles.js",
+		"description": "A lightweight JavaScript library for creating particles",
+		"stargazers_count": 30204,
+		"forks_count": 4816,
+		"language": "JavaScript"
+	},
+	"YanAndFish/liquid-glass": {
+		"html_url": "https://github.com/YanAndFish/liquid-glass",
+		"full_name": "YanAndFish/liquid-glass",
+		"description": "Liquid Glass is a library for creating beautiful, responsive, and accessible UI components.",
+		"stargazers_count": 1,
+		"forks_count": 0,
+		"language": "Vue"
+	},
+	"airbnb/lottie-web": {
+		"html_url": "https://github.com/airbnb/lottie-web",
+		"full_name": "airbnb/lottie-web",
+		"description": "Render After Effects animations natively on Web, Android and iOS, and React Native. http://airbnb.io/lottie/",
+		"stargazers_count": 32076,
+		"forks_count": 2942,
+		"language": "JavaScript"
+	},
+	"airbnb/visx": {
+		"html_url": "https://github.com/airbnb/visx",
+		"full_name": "airbnb/visx",
+		"description": "🐯 visx | visualization components",
+		"stargazers_count": 21035,
+		"forks_count": 771,
+		"language": "TypeScript"
+	},
+	"akilakeshara/zentak-glass-ui": {
+		"html_url": "https://github.com/akilakeshara/zentak-glass-ui",
+		"full_name": "akilakeshara/zentak-glass-ui",
+		"description": "A modern, copy-paste glassmorphism UI component library built with React and Tailwind CSS. Elevate your web applications with beautiful, ready-to-use glassy elements.",
+		"stargazers_count": 6,
+		"forks_count": 1,
+		"language": "JavaScript"
+	},
+	"animate-css/animate.css": {
+		"html_url": "https://github.com/animate-css/animate.css",
+		"full_name": "animate-css/animate.css",
+		"description": "🍿 A cross-browser library of CSS animations. As easy to use as an easy thing.",
+		"stargazers_count": 82774,
+		"forks_count": 15915,
+		"language": "CSS"
+	},
+	"anomalyco/opencode": {
+		"html_url": "https://github.com/anomalyco/opencode",
+		"full_name": "anomalyco/opencode",
+		"description": "The open source coding agent.",
+		"stargazers_count": 203329,
+		"forks_count": 26521,
+		"language": "TypeScript"
+	},
+	"ant-design/ant-design": {
+		"html_url": "https://github.com/ant-design/ant-design",
+		"full_name": "ant-design/ant-design",
+		"description": "An enterprise-class UI design language and React UI library",
+		"stargazers_count": 99365,
+		"forks_count": 54710,
+		"language": "TypeScript"
+	},
+	"anthropics/claude-code": {
+		"html_url": "https://github.com/anthropics/claude-code",
+		"full_name": "anthropics/claude-code",
+		"description": "Claude Code is an agentic coding tool that lives in your terminal, understands your codebase, and helps you code faster by executing routine tasks, explaining complex code, and handling git workflows - all through natural language commands.",
+		"stargazers_count": 143847,
+		"forks_count": 22994,
+		"language": "Python"
+	},
+	"anthropics/skills": {
+		"html_url": "https://github.com/anthropics/skills",
+		"full_name": "anthropics/skills",
+		"description": "Public repository for Agent Skills",
+		"stargazers_count": 173313,
+		"forks_count": 20575,
+		"language": "Python"
+	},
+	"antvis/G2": {
+		"html_url": "https://github.com/antvis/G2",
+		"full_name": "antvis/G2",
+		"description": "📊 The concise and progressive visualization grammar.",
+		"stargazers_count": 12601,
+		"forks_count": 1660,
+		"language": "TypeScript"
+	},
+	"apache/echarts": {
+		"html_url": "https://github.com/apache/echarts",
+		"full_name": "apache/echarts",
+		"description": "Apache ECharts is a powerful, interactive charting and data visualization library for browser",
+		"stargazers_count": 67225,
+		"forks_count": 19814,
+		"language": "TypeScript"
+	},
+	"apexcharts/apexcharts.js": {
+		"html_url": "https://github.com/apexcharts/apexcharts.js",
+		"full_name": "apexcharts/apexcharts.js",
+		"description": "📊 Interactive JavaScript Charts built on SVG",
+		"stargazers_count": 15144,
+		"forks_count": 1371,
+		"language": "JavaScript"
+	},
+	"biomejs/biome": {
+		"html_url": "https://github.com/biomejs/biome",
+		"full_name": "biomejs/biome",
+		"description": "A toolchain for web projects, aimed to provide functionalities to maintain them. Biome offers formatter and linter, usable via CLI and LSP.",
+		"stargazers_count": 25702,
+		"forks_count": 1220,
+		"language": "Rust"
+	},
+	"browser-use/browser-use": {
+		"html_url": "https://github.com/browser-use/browser-use",
+		"full_name": "browser-use/browser-use",
+		"description": "🌐 Make websites accessible for AI agents. Automate tasks online with ease.",
+		"stargazers_count": 112109,
+		"forks_count": 12334,
+		"language": "Python"
+	},
+	"chakra-ui/chakra-ui": {
+		"html_url": "https://github.com/chakra-ui/chakra-ui",
+		"full_name": "chakra-ui/chakra-ui",
+		"description": "Chakra UI is a component system for building SaaS products with speed ⚡️",
+		"stargazers_count": 40614,
+		"forks_count": 3639,
+		"language": "TypeScript"
+	},
+	"chartjs/Chart.js": {
+		"html_url": "https://github.com/chartjs/Chart.js",
+		"full_name": "chartjs/Chart.js",
+		"description": "Simple HTML5 Charts using the <canvas> tag",
+		"stargazers_count": 67676,
+		"forks_count": 11940,
+		"language": "JavaScript"
+	},
+	"cline/cline": {
+		"html_url": "https://github.com/cline/cline",
+		"full_name": "cline/cline",
+		"description": "Autonomous coding agent as an SDK, IDE extension, or CLI assistant.",
+		"stargazers_count": 67381,
+		"forks_count": 7278,
+		"language": "TypeScript"
+	},
+	"continuedev/continue": {
+		"html_url": "https://github.com/continuedev/continue",
+		"full_name": "continuedev/continue",
+		"description": "open-source coding agent",
+		"stargazers_count": 35735,
+		"forks_count": 5320,
+		"language": "TypeScript"
+	},
+	"d3/d3": {
+		"html_url": "https://github.com/d3/d3",
+		"full_name": "d3/d3",
+		"description": "Bring data to life with SVG, Canvas and HTML. :bar_chart::chart_with_upwards_trend::tada:",
+		"stargazers_count": 113601,
+		"forks_count": 22668,
+		"language": "Shell"
+	},
+	"danny-avila/LibreChat": {
+		"html_url": "https://github.com/danny-avila/LibreChat",
+		"full_name": "danny-avila/LibreChat",
+		"description": "Enhanced ChatGPT Clone: Features Agents, MCP, Skills, DeepSeek, Anthropic, AWS, OpenAI, Responses API, Azure, Groq, o1, GPT-5, Mistral, OpenRouter, Vertex AI, Gemini, Artifacts, AI model switching, message search, Code Interpreter, langchain, DALL-E-3, OpenAPI Actions, Functions, Secure Multi-User Auth, Presets, open-source for self-hosting. Active",
+		"stargazers_count": 42751,
+		"forks_count": 8844,
+		"language": "TypeScript"
+	},
+	"darkroomengineering/lenis": {
+		"html_url": "https://github.com/darkroomengineering/lenis",
+		"full_name": "darkroomengineering/lenis",
+		"description": "Smooth scroll as it should be",
+		"stargazers_count": 15675,
+		"forks_count": 677,
+		"language": "TypeScript"
+	},
+	"dashersw/liquid-glass-js": {
+		"html_url": "https://github.com/dashersw/liquid-glass-js",
+		"full_name": "dashersw/liquid-glass-js",
+		"description": "Liquid Glass UI - Apple-Inspired Glass Effects Library",
+		"stargazers_count": 810,
+		"forks_count": 60,
+		"language": "JavaScript"
+	},
+	"element-plus/element-plus": {
+		"html_url": "https://github.com/element-plus/element-plus",
+		"full_name": "element-plus/element-plus",
+		"description": "🎉 A Vue.js 3 UI Library made by Element team",
+		"stargazers_count": 27730,
+		"forks_count": 19837,
+		"language": "TypeScript"
+	},
+	"evanw/esbuild": {
+		"html_url": "https://github.com/evanw/esbuild",
+		"full_name": "evanw/esbuild",
+		"description": "An extremely fast bundler for the web",
+		"stargazers_count": 40033,
+		"forks_count": 1342,
+		"language": "Go"
+	},
+	"excalidraw/excalidraw": {
+		"html_url": "https://github.com/excalidraw/excalidraw",
+		"full_name": "excalidraw/excalidraw",
+		"description": "Virtual whiteboard for sketching hand-drawn like diagrams",
+		"stargazers_count": 131036,
+		"forks_count": 15120,
+		"language": "TypeScript"
+	},
+	"glincker/glinui": {
+		"html_url": "https://github.com/glincker/glinui",
+		"full_name": "glincker/glinui",
+		"description": "Liquid Glass UI components for React. 50+ production-ready primitives with frosted glass aesthetics, built on Radix UI + Tailwind CSS.",
+		"stargazers_count": 34,
+		"forks_count": 5,
+		"language": "TypeScript"
+	},
+	"greensock/GSAP": {
+		"html_url": "https://github.com/greensock/GSAP",
+		"full_name": "greensock/GSAP",
+		"description": "GSAP (GreenSock Animation Platform), a JavaScript animation library for the modern web",
+		"stargazers_count": 28201,
+		"forks_count": 2180,
+		"language": "JavaScript"
+	},
+	"greensock/gsap-skills": {
+		"html_url": "https://github.com/greensock/gsap-skills",
+		"full_name": "greensock/gsap-skills",
+		"description": "Official AI skills for GSAP. These skills teach AI coding agents how to correctly use GSAP (GreenSock Animation Platform), including best practices, common animation patterns, and plugin usage.",
+		"stargazers_count": 14831,
+		"forks_count": 886,
+		"language": ""
+	},
+	"jdan/98.css": {
+		"html_url": "https://github.com/jdan/98.css",
+		"full_name": "jdan/98.css",
+		"description": "A design system for building faithful recreations of old UIs",
+		"stargazers_count": 11473,
+		"forks_count": 379,
+		"language": "CSS"
+	},
+	"juliangarnier/anime": {
+		"html_url": "https://github.com/juliangarnier/anime",
+		"full_name": "juliangarnier/anime",
+		"description": "JavaScript animation engine",
+		"stargazers_count": 72615,
+		"forks_count": 4901,
+		"language": "JavaScript"
+	},
+	"kando-menu/kando": {
+		"html_url": "https://github.com/kando-menu/kando",
+		"full_name": "kando-menu/kando",
+		"description": "🌸 Do things with utmost efficiency.",
+		"stargazers_count": 6288,
+		"forks_count": 206,
+		"language": "TypeScript"
+	},
+	"langgenius/dify": {
+		"html_url": "https://github.com/langgenius/dify",
+		"full_name": "langgenius/dify",
+		"description": "Build Agentic workflows, RAG pipelines, with rich AI model and tool support on one collaborative workspace. Deploy on cloud, VPC, or self-hosted, so teams move from prototype to production without rebuilding the stack.",
+		"stargazers_count": 154281,
+		"forks_count": 24394,
+		"language": "TypeScript"
+	},
+	"lobehub/lobehub": {
+		"html_url": "https://github.com/lobehub/lobehub",
+		"full_name": "lobehub/lobehub",
+		"description": "🤯 LobeHub is your Chief Agent Operator, organizing your agents into 7×24 operations by hiring, scheduling, and reporting on your entire AI team.",
+		"stargazers_count": 82181,
+		"forks_count": 15850,
+		"language": "TypeScript"
+	},
+	"lucide-icons/lucide": {
+		"html_url": "https://github.com/lucide-icons/lucide",
+		"full_name": "lucide-icons/lucide",
+		"description": "Beautiful & consistent icon toolkit made by the community. Open-source project and a fork of Feather Icons.",
+		"stargazers_count": 24301,
+		"forks_count": 1544,
+		"language": "TypeScript"
+	},
+	"magicuidesign/magicui": {
+		"html_url": "https://github.com/magicuidesign/magicui",
+		"full_name": "magicuidesign/magicui",
+		"description": "UI Library for Design Engineers. Animated components and effects you can copy and paste into your apps. Free. Open Source.",
+		"stargazers_count": 22147,
+		"forks_count": 1115,
+		"language": "MDX"
+	},
+	"mantinedev/mantine": {
+		"html_url": "https://github.com/mantinedev/mantine",
+		"full_name": "mantinedev/mantine",
+		"description": "A fully featured React components library",
+		"stargazers_count": 31657,
+		"forks_count": 2363,
+		"language": "TypeScript"
+	},
 	"matsuzaka-yuki/Mizuki": {
 		"html_url": "https://github.com/matsuzaka-yuki/Mizuki",
 		"full_name": "matsuzaka-yuki/Mizuki",
@@ -14,5 +390,293 @@
 		"stargazers_count": 18,
 		"forks_count": 2,
 		"language": ""
+	},
+	"mckaywrigley/chatbot-ui": {
+		"html_url": "https://github.com/mckaywrigley/chatbot-ui",
+		"full_name": "mckaywrigley/chatbot-ui",
+		"description": "AI chat for any model.",
+		"stargazers_count": 33343,
+		"forks_count": 9423,
+		"language": "TypeScript"
+	},
+	"michalsnik/aos": {
+		"html_url": "https://github.com/michalsnik/aos",
+		"full_name": "michalsnik/aos",
+		"description": "Animate on scroll library",
+		"stargazers_count": 28057,
+		"forks_count": 2630,
+		"language": "JavaScript"
+	},
+	"microsoft/playwright": {
+		"html_url": "https://github.com/microsoft/playwright",
+		"full_name": "microsoft/playwright",
+		"description": "Playwright is a framework for Web Testing and Automation. It allows testing Chromium, Firefox and WebKit with a single API. ",
+		"stargazers_count": 95552,
+		"forks_count": 6381,
+		"language": "TypeScript"
+	},
+	"motiondivision/motion": {
+		"html_url": "https://github.com/motiondivision/motion",
+		"full_name": "motiondivision/motion",
+		"description": "A modern animation library for React and JavaScript",
+		"stargazers_count": 33460,
+		"forks_count": 1346,
+		"language": "TypeScript"
+	},
+	"mrdoob/three.js": {
+		"html_url": "https://github.com/mrdoob/three.js",
+		"full_name": "mrdoob/three.js",
+		"description": "JavaScript 3D Library.",
+		"stargazers_count": 115057,
+		"forks_count": 36518,
+		"language": "JavaScript"
+	},
+	"mui/base-ui": {
+		"html_url": "https://github.com/mui/base-ui",
+		"full_name": "mui/base-ui",
+		"description": "Unstyled UI components for building accessible web apps and design systems. From the creators of Radix, Floating UI, and Material UI.",
+		"stargazers_count": 10803,
+		"forks_count": 525,
+		"language": "TypeScript"
+	},
+	"open-webui/open-webui": {
+		"html_url": "https://github.com/open-webui/open-webui",
+		"full_name": "open-webui/open-webui",
+		"description": "User-friendly AI Interface (Supports Ollama, OpenAI API, ...)",
+		"stargazers_count": 150756,
+		"forks_count": 22029,
+		"language": "Python"
+	},
+	"openai/codex": {
+		"html_url": "https://github.com/openai/codex",
+		"full_name": "openai/codex",
+		"description": "Lightweight coding agent that runs in your terminal",
+		"stargazers_count": 121040,
+		"forks_count": 18546,
+		"language": "Rust"
+	},
+	"oxc-project/oxc": {
+		"html_url": "https://github.com/oxc-project/oxc",
+		"full_name": "oxc-project/oxc",
+		"description": "⚓ A collection of high-performance JavaScript tools.",
+		"stargazers_count": 22612,
+		"forks_count": 1262,
+		"language": "Rust"
+	},
+	"plouc/nivo": {
+		"html_url": "https://github.com/plouc/nivo",
+		"full_name": "plouc/nivo",
+		"description": "nivo provides a rich set of dataviz components, built on top of the awesome d3 and React libraries",
+		"stargazers_count": 14091,
+		"forks_count": 1081,
+		"language": "TypeScript"
+	},
+	"pmndrs/drei": {
+		"html_url": "https://github.com/pmndrs/drei",
+		"full_name": "pmndrs/drei",
+		"description": "🥉 useful helpers for react-three-fiber",
+		"stargazers_count": 9839,
+		"forks_count": 836,
+		"language": "JavaScript"
+	},
+	"pmndrs/react-three-fiber": {
+		"html_url": "https://github.com/pmndrs/react-three-fiber",
+		"full_name": "pmndrs/react-three-fiber",
+		"description": "🇨🇭 A React renderer for Three.js",
+		"stargazers_count": 31958,
+		"forks_count": 1941,
+		"language": "TypeScript"
+	},
+	"pmndrs/zustand": {
+		"html_url": "https://github.com/pmndrs/zustand",
+		"full_name": "pmndrs/zustand",
+		"description": "🐻 Bear necessities for state management in React",
+		"stargazers_count": 58639,
+		"forks_count": 2188,
+		"language": "TypeScript"
+	},
+	"radix-ui/primitives": {
+		"html_url": "https://github.com/radix-ui/primitives",
+		"full_name": "radix-ui/primitives",
+		"description": "Radix Primitives is an open-source UI component library for building high-quality, accessible design systems and web apps. Maintained by @workos.",
+		"stargazers_count": 19233,
+		"forks_count": 1239,
+		"language": "TypeScript"
+	},
+	"react-hook-form/react-hook-form": {
+		"html_url": "https://github.com/react-hook-form/react-hook-form",
+		"full_name": "react-hook-form/react-hook-form",
+		"description": "📋 React Hooks for form state management and validation (Web + React Native)",
+		"stargazers_count": 44846,
+		"forks_count": 2469,
+		"language": "TypeScript"
+	},
+	"recharts/recharts": {
+		"html_url": "https://github.com/recharts/recharts",
+		"full_name": "recharts/recharts",
+		"description": "Redefined chart library built with React and D3",
+		"stargazers_count": 27536,
+		"forks_count": 1981,
+		"language": "TypeScript"
+	},
+	"saadeghi/daisyui": {
+		"html_url": "https://github.com/saadeghi/daisyui",
+		"full_name": "saadeghi/daisyui",
+		"description": "🌼 🌼 🌼 🌼 🌼  The most popular, free and open-source Tailwind CSS component library",
+		"stargazers_count": 42272,
+		"forks_count": 1676,
+		"language": "JavaScript"
+	},
+	"shadcn-ui/ui": {
+		"html_url": "https://github.com/shadcn-ui/ui",
+		"full_name": "shadcn-ui/ui",
+		"description": "A set of beautifully-designed, accessible components and a code distribution platform. Works with your favorite frameworks. Open Source. Open Code.",
+		"stargazers_count": 122852,
+		"forks_count": 10073,
+		"language": "TypeScript"
+	},
+	"stackblitz/bolt.new": {
+		"html_url": "https://github.com/stackblitz/bolt.new",
+		"full_name": "stackblitz/bolt.new",
+		"description": "Prompt, run, edit, and deploy full-stack web applications. -- bolt.new -- Help Center: https://support.bolt.new/ -- Community Support: https://discord.com/invite/stackblitz",
+		"stargazers_count": 16534,
+		"forks_count": 14796,
+		"language": "TypeScript"
+	},
+	"storybookjs/storybook": {
+		"html_url": "https://github.com/storybookjs/storybook",
+		"full_name": "storybookjs/storybook",
+		"description": "Storybook is the industry standard workshop for building, documenting, and testing UI components in isolation",
+		"stargazers_count": 90987,
+		"forks_count": 10433,
+		"language": "TypeScript"
+	},
+	"swc-project/swc": {
+		"html_url": "https://github.com/swc-project/swc",
+		"full_name": "swc-project/swc",
+		"description": "Rust-based platform for the Web",
+		"stargazers_count": 34189,
+		"forks_count": 1551,
+		"language": "Rust"
+	},
+	"tailwindlabs/headlessui": {
+		"html_url": "https://github.com/tailwindlabs/headlessui",
+		"full_name": "tailwindlabs/headlessui",
+		"description": "Completely unstyled, fully accessible UI components, designed to integrate beautifully with Tailwind CSS.",
+		"stargazers_count": 28732,
+		"forks_count": 1203,
+		"language": "TypeScript"
+	},
+	"tailwindlabs/tailwindcss": {
+		"html_url": "https://github.com/tailwindlabs/tailwindcss",
+		"full_name": "tailwindlabs/tailwindcss",
+		"description": "A utility-first CSS framework for rapid UI development.",
+		"stargazers_count": 97442,
+		"forks_count": 5604,
+		"language": "TypeScript"
+	},
+	"thesysdev/openui": {
+		"html_url": "https://github.com/thesysdev/openui",
+		"full_name": "thesysdev/openui",
+		"description": "The Open Standard for Generative UI",
+		"stargazers_count": 8514,
+		"forks_count": 616,
+		"language": "TypeScript"
+	},
+	"tldraw/tldraw": {
+		"html_url": "https://github.com/tldraw/tldraw",
+		"full_name": "tldraw/tldraw",
+		"description": "Build infinite canvas apps in React with the tldraw SDK. World's best, top-most agent recommended #1 five star SDK.",
+		"stargazers_count": 50095,
+		"forks_count": 3494,
+		"language": "TypeScript"
+	},
+	"tremorlabs/tremor": {
+		"html_url": "https://github.com/tremorlabs/tremor",
+		"full_name": "tremorlabs/tremor",
+		"description": "Copy & Paste React components to build modern web applications. ",
+		"stargazers_count": 3596,
+		"forks_count": 182,
+		"language": "TypeScript"
+	},
+	"tusen-ai/naive-ui": {
+		"html_url": "https://github.com/tusen-ai/naive-ui",
+		"full_name": "tusen-ai/naive-ui",
+		"description": "A Vue 3 Component Library. Fairly Complete. Theme Customizable. Uses TypeScript. Fast.",
+		"stargazers_count": 18525,
+		"forks_count": 1855,
+		"language": "TypeScript"
+	},
+	"uiverse-io/galaxy": {
+		"html_url": "https://github.com/uiverse-io/galaxy",
+		"full_name": "uiverse-io/galaxy",
+		"description": "The largest Open-Source UI Library! Community-made and free to use. Made with either CSS or Tailwind.",
+		"stargazers_count": 12277,
+		"forks_count": 862,
+		"language": "HTML"
+	},
+	"unocss/unocss": {
+		"html_url": "https://github.com/unocss/unocss",
+		"full_name": "unocss/unocss",
+		"description": "The instant on-demand atomic CSS engine.",
+		"stargazers_count": 18946,
+		"forks_count": 987,
+		"language": "TypeScript"
+	},
+	"vercel/ai": {
+		"html_url": "https://github.com/vercel/ai",
+		"full_name": "vercel/ai",
+		"description": "The AI Toolkit for TypeScript. From the creators of Next.js, the AI SDK is a free open-source library for building AI-powered applications and agents ",
+		"stargazers_count": 26557,
+		"forks_count": 5069,
+		"language": "TypeScript"
+	},
+	"vercel/turborepo": {
+		"html_url": "https://github.com/vercel/turborepo",
+		"full_name": "vercel/turborepo",
+		"description": "Build system optimized for JavaScript and TypeScript, written in Rust",
+		"stargazers_count": 31044,
+		"forks_count": 2433,
+		"language": "Rust"
+	},
+	"vitejs/vite": {
+		"html_url": "https://github.com/vitejs/vite",
+		"full_name": "vitejs/vite",
+		"description": "Next generation frontend tooling. It's fast!",
+		"stargazers_count": 82660,
+		"forks_count": 8693,
+		"language": "TypeScript"
+	},
+	"vitest-dev/vitest": {
+		"html_url": "https://github.com/vitest-dev/vitest",
+		"full_name": "vitest-dev/vitest",
+		"description": "Next generation testing framework powered by Vite.",
+		"stargazers_count": 17040,
+		"forks_count": 1954,
+		"language": "TypeScript"
+	},
+	"wandb/openui": {
+		"html_url": "https://github.com/wandb/openui",
+		"full_name": "wandb/openui",
+		"description": "OpenUI let's you describe UI using your imagination, then see it rendered live.",
+		"stargazers_count": 22533,
+		"forks_count": 2062,
+		"language": "TypeScript"
+	},
+	"xiaojiaenen/liquid-glass": {
+		"html_url": "https://github.com/xiaojiaenen/liquid-glass",
+		"full_name": "xiaojiaenen/liquid-glass",
+		"description": "液态玻璃（Liquid Glass）—— Apple 设计语言的 React 组件库。 基于 SVG 滤镜实现实时物理折射（Snell 定律）和镜面高光， 36 个组件覆盖导航、表单、反馈、展示，黄金分割参数系统， 鼠标视差反光，自动降级 Safari/Firefox 为毛玻璃。 零运行时依赖，仅需 React 18+。",
+		"stargazers_count": 1,
+		"forks_count": 0,
+		"language": "TypeScript"
+	},
+	"youzan/vant": {
+		"html_url": "https://github.com/youzan/vant",
+		"full_name": "youzan/vant",
+		"description": "A lightweight, customizable Vue UI library for mobile web apps.",
+		"stargazers_count": 24383,
+		"forks_count": 9386,
+		"language": "TypeScript"
 	}
 }

@@ -20,6 +20,7 @@ import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
 import { remarkExtended } from "./src/plugins/remark-extended.mjs";
 import rehypeEmailProtection from "./src/plugins/rehype-email-protection.mjs";
 import rehypeExternalLinks from "./src/plugins/rehype-external-links.mjs";
+import rehypeTableWrapper from "./src/plugins/rehype-table-wrapper.mjs";
 
 // https://astro.build/config
 export default defineConfig({
@@ -117,6 +118,7 @@ export default defineConfig({
 			// 外链新窗口打开 + 邮箱地址防爬虫混淆（移植自 Firefly）
 			[rehypeExternalLinks, { siteUrl: siteConfig.siteURL }],
 			[rehypeEmailProtection, { method: "base64" }],
+			rehypeTableWrapper,
 			[
 				rehypeAutolinkHeadings,
 				{
