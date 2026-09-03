@@ -2627,18 +2627,28 @@ img:hover {
 }
 
 .pagenavi {
-  float: right;
-  margin: 0;
+  display: flex;
+  clear: both;
+  float: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  width: 100%;
+  margin: 10px 0 0;
+  gap: 5px;
   font-size: 13px;
   text-align: center;
 }
 
-.pagenavi a,
-.pagenavi span,
-.pagenavi em {
-  float: left;
+.pagenavi > a,
+.pagenavi > span {
+  display: inline-flex;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
   min-width: 19px;
-  margin-left: 5px;
+  min-height: 30px;
+  margin: 0;
   padding: 2px 6px;
   border: 1px solid var(--colorful-line);
   border-radius: 5px;
@@ -2647,15 +2657,114 @@ img:hover {
   line-height: 26px;
 }
 
-.pagenavi a,
-.pagenavi em {
+.pagenavi .pagenavi-control {
+  width: 30px;
+  min-width: 30px;
+  height: 30px;
+  padding: 0;
+}
+
+.pagenavi .pagenavi-page {
   background: #fff;
   color: #000;
 }
 
-.pagenavi a:hover {
+.pagenavi .pagenavi-page.is-current,
+.pagenavi .pagenavi-control.is-disabled {
   background: var(--colorful-green);
   color: #fff;
+}
+
+.pagenavi .pagenavi-control.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.pagenavi a:hover,
+.pagenavi a:focus-visible {
+  background: var(--colorful-green);
+  color: #fff;
+}
+
+.pagenavi .pagenavi-dots {
+  min-width: auto;
+  min-height: 30px;
+  padding: 2px 0;
+  border: 0;
+  background: transparent;
+  color: #777;
+  line-height: 26px;
+}
+
+.pagenavi-jump {
+  display: flex;
+  position: relative;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 0 5px;
+}
+
+.pagenavi-jump input {
+  box-sizing: border-box;
+  width: 64px;
+  height: 30px;
+  border: 1px solid var(--colorful-line);
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: #fff;
+  color: #000;
+  font: inherit;
+  text-align: center;
+}
+
+.pagenavi-jump-error {
+  position: absolute;
+  top: calc(100% + 3px);
+  right: 0;
+  width: max-content;
+  max-width: min(300px, 100vw);
+  margin: 0;
+  color: #b00020;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: right;
+}
+
+.pagenavi-sr-only {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  border: 0;
+  padding: 0;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 680px) {
+  .pagenavi {
+    justify-content: center;
+    gap: 4px;
+    overflow: hidden;
+  }
+
+  .pagenavi .pagenavi-page:not(.is-current),
+  .pagenavi .pagenavi-dots,
+  .pagenavi-jump,
+  .pagenavi-jump input,
+  .pagenavi-jump button {
+    display: none;
+  }
+
+  .pagenavi > a,
+  .pagenavi > span {
+    flex: 0 0 30px;
+    width: 30px;
+    min-width: 30px;
+    padding: 0;
+  }
 }
 
 .page {

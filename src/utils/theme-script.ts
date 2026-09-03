@@ -11,6 +11,9 @@ import { showSiteToast } from "./site-toast";
 
 declare global {
 	interface Window {
+		swup?: {
+			navigate: (url: string) => void;
+		};
 		Fancybox?: {
 			bind: (selector: string, opts?: unknown) => void;
 			unbind: (selector: string) => void;
@@ -59,6 +62,7 @@ let copyLinkBound = false;
 let skillsDonutTooltipBound = false;
 
 let newCommentShuffleBound = false;
+let paginationJumpBound = false;
 const NEW_COMMENT_DISPLAY_LIMIT = 5;
 const NEW_COMMENT_LOADING_MIN_MS = 220;
 
@@ -190,6 +194,66 @@ function initNewCommentShuffle() {
 				}, remainingLoadingMs);
 			}
 		}, 0);
+	});
+}
+
+/** 分页跳转（事件委托，Swup 切页后依然生效） */
+function initPaginationJump() {
+	if (paginationJumpBound) return;
+	paginationJumpBound = true;
+
+	document.addEventListener("submit", (event) => {
+		const target = event.target;
+		if (!(target instanceof HTMLFormElement)) return;
+		const form = target.closest<HTMLFormElement>("[data-pagination-jump]");
+		if (!form) return;
+
+		event.preventDefault();
+		const input = form.querySelector<HTMLInputElement>(
+			"[data-pagination-input]",
+		);
+		if (!input) return;
+
+		const value = input.value.trim();
+		const min = Number(input.min);
+		const max = Number(input.max);
+		const page = Number(value);
+		const valid =
+			/^\d+$/.test(value) &&
+			Number.isInteger(page) &&
+			Number.isInteger(min) &&
+			Number.isInteger(max) &&
+			page >= min &&
+			page <= max;
+		const error = form.querySelector<HTMLElement>(
+			"[data-pagination-error]",
+		);
+
+		if (!valid) {
+			input.setAttribute("aria-invalid", "true");
+			if (error) {
+				error.textContent = `请输入 ${min} 到 ${max} 之间的整数页码。`;
+				error.hidden = false;
+			}
+			input.focus();
+			return;
+		}
+
+		input.setAttribute("aria-invalid", "false");
+		if (error) {
+			error.textContent = "";
+			error.hidden = true;
+		}
+
+		const template = form.dataset.urlTemplate ?? "";
+		const firstPageUrl = form.dataset.firstPageUrl ?? "/";
+		const url =
+			page === 1 ? firstPageUrl : template.replace("{n}", String(page));
+		if (window.swup?.navigate) {
+			window.swup.navigate(url);
+		} else {
+			window.location.href = url;
+		}
 	});
 }
 
@@ -827,6 +891,7 @@ export function pagefindReady() {
 	initVisibilityTitle();
 	initCopyLink();
 	initNewCommentShuffle();
+	initPaginationJump();
 	initSkillsDonutTooltip();
 	initFancybox();
 	loadKatexCss();
