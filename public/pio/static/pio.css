@@ -20,7 +20,8 @@
 
 .pio-container .pio-show {
 	left: -1em;
-	bottom: 1em;
+	/* 上移至 myhkw 底部歌词框（高约 40px）之上并留出余量，避免再现按钮被歌词遮挡 */
+	bottom: 50px;
 	width: 3em;
 	height: 3em;
 	display: none;
@@ -37,6 +38,48 @@
 }
 .pio-container.hidden .pio-show:hover {
 	transform: translateX(0.5em);
+}
+/* 右侧停靠时 hover 向屏幕内（左）移动 */
+.pio-container.hidden.right .pio-show:hover {
+	transform: translateX(-0.5em);
+}
+
+/* 再现按钮 hover 提示 */
+.pio-container .pio-show::after {
+	content: "点击召唤Pio";
+	position: absolute;
+	left: calc(100% + 0.6em);
+	top: 50%;
+	transform: translateY(-50%);
+	padding: 0.45em 0.9em;
+	border: 1px solid #eee;
+	border-radius: 0.8em;
+	background: #fff;
+	color: #666;
+	font-size: 0.9em;
+	line-height: 1.4;
+	white-space: nowrap;
+	box-shadow: 0 2px 8px rgb(0 0 0 / 10%);
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition:
+		opacity 0.3s,
+		visibility 0.3s;
+}
+.pio-container.hidden .pio-show:hover::after {
+	opacity: 1;
+	visibility: visible;
+}
+/* 右侧停靠时提示翻到按钮左侧，避免溢出视口右缘 */
+.pio-container.right .pio-show::after {
+	left: auto;
+	right: calc(100% + 0.6em);
+}
+@media (prefers-reduced-motion: reduce) {
+	.pio-container .pio-show::after {
+		transition: none;
+	}
 }
 
 .pio-container.hidden #pio,
@@ -59,7 +102,9 @@
 }
 
 .pio-container .pio-action {
-	top: 3em;
+	/* 上移一个按钮尺寸（3em → 1em，含按钮 1.5em + 间距 0.5em 的占位）：
+	   避免按钮被 myhkw 播放器展开面板（视口底部 679px 起）遮挡；模型本体保持贴底 */
+	top: 1em;
 	opacity: 0;
 	position: absolute;
 	transition: opacity 0.3s;
@@ -102,6 +147,19 @@
 	background-image: url(data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTUxMiAyMDkuNDAzMjQxYy0yMDEuNzMxNTE0IDAtMzc0LjAwOTIwNiAxMjUuNDc2NzgzLTQ0My44MDg5MjIgMzAyLjU5Njc1OSA2OS43OTg2OTIgMTc3LjExOTk3NyAyNDIuMDc3NDA4IDMwMi41OTY3NTkgNDQzLjgwODkyMiAzMDIuNTk2NzU5IDIwMS45MzMxMDUgMCAzNzQuMDEwMjI5LTEyNS40NzY3ODMgNDQzLjgwODkyMi0zMDIuNTk2NzU5Qzg4Ni4wMDkyMDYgMzM0Ljg4MDAyMyA3MTMuOTMzMTA1IDIwOS40MDMyNDEgNTEyIDIwOS40MDMyNDF6TTUxMiA3MTMuNzMxNTE0Yy0xMTEuMzU1MTU3IDAtMjAxLjczMTUxNC05MC4zNzUzMzQtMjAxLjczMTUxNC0yMDEuNzMxNTE0czkwLjM3NTMzNC0yMDEuNzMxNTE0IDIwMS43MzE1MTQtMjAxLjczMTUxNCAyMDEuNzMxNTE0IDkwLjM3NTMzNCAyMDEuNzMxNTE0IDIwMS43MzE1MTRTNjIzLjM1NTE1NyA3MTMuNzMxNTE0IDUxMiA3MTMuNzMxNTE0ek01MTIgMzkwLjk2MTI5NmMtNjYuNzcyNzc2IDAtMTIxLjAzODcwNCA1NC4yNjU5MjgtMTIxLjAzODcwNCAxMjEuMDM4NzA0czU0LjI2NTkyOCAxMjEuMDM4NzA0IDEyMS4wMzg3MDQgMTIxLjAzODcwNCAxMjEuMDM4NzA0LTU0LjI2NTkyOCAxMjEuMDM4NzA0LTEyMS4wMzg3MDRTNTc4Ljc3Mjc3NiAzOTAuOTYxMjk2IDUxMiAzOTAuOTYxMjk2eiI+PC9wYXRoPjwvc3ZnPg==);
 }
 
+/* 停靠切换按钮：右向三角，右侧停靠时翻转向左 */
+.pio-action .pio-side {
+	background-image: url(data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik03MjMgNDczTDM5OSAxNDljLTE1LTE1LTQxLTQtNDEgMTd2NjQ4YzAgMjEgMjYgMzIgNDEgMTdsMzI0LTMyNGM5LTkgOS0yNCAwLTM0eiIvPjwvc3ZnPg==);
+}
+.pio-container.right .pio-side {
+	transform: scaleX(-1);
+}
+/* 右侧停靠时折叠按钮跟进到右缘 */
+.pio-container.right .pio-show {
+	left: auto;
+	right: -1em;
+}
+
 .pio-container .pio-dialog {
 	bottom: 90%;
 	bottom: calc(100% - 2em);
@@ -109,6 +167,10 @@
 	z-index: -1;
 	font-size: 0.8em;
 	min-width: 12em;
+	/* 限宽为容器宽：消息框居中于人物，过长时左缘自动贴容器左缘而不溢出视口；
+	   width: max-content 防止 shrink-to-fit 把长消息压窄到半容器宽 */
+	max-width: 100%;
+	width: max-content;
 	background: #fff;
 	padding: 0.75em 1em;
 	border-radius: 1em;
@@ -116,9 +178,31 @@
 	position: absolute;
 	word-break: break-all;
 	border: 1px solid #eee;
+	transform: translateX(-50%);
+	left: 50%;
 	transition:
 		opacity 0.3s,
 		visibility 0.3s;
+}
+/* 消息框底部中央的三角形尾巴，指向人物；
+   双层三角：外层与边框同色补出边框延续，内层白色上移 1px 盖住边框线 */
+.pio-container .pio-dialog::before {
+	content: "";
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	border: 0.6em solid transparent;
+	border-top-color: #eee;
+}
+.pio-container .pio-dialog::after {
+	content: "";
+	position: absolute;
+	top: calc(100% - 1px);
+	left: 50%;
+	transform: translateX(-50%);
+	border: 0.6em solid transparent;
+	border-top-color: #fff;
 }
 .pio-container .pio-dialog.active {
 	opacity: 1;
@@ -126,10 +210,11 @@
 }
 
 .pio-container.left .pio-dialog {
-	left: 1em;
+	left: 50%;
 }
 .pio-container.right .pio-dialog {
-	right: 1em;
+	right: auto;
+	left: 50%;
 }
 
 #pio {

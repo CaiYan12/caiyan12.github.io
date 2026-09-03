@@ -161,7 +161,7 @@ export const pioConfig = {
 		home: "点击这里返回首页！",
 		skin: ["想看看我的新衣服吗？", "新衣服很好看吧～"],
 		close: "QWQ 下次再见啦～",
-		link: "https://github.com/matsuzaka-yuki/Mizuki",
+		link: "https://github.com/Dreamer-Paul/Pio",
 	},
 };
 

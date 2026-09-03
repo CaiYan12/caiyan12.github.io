@@ -47,6 +47,7 @@ var Paul_Pio = function (prop) {
 		skin: tools.create("span", { class: "pio-skin" }),
 		info: tools.create("span", { class: "pio-info" }),
 		night: tools.create("span", { class: "pio-night" }),
+		side: tools.create("span", { class: "pio-side" }),
 		close: tools.create("span", { class: "pio-close" }),
 
 		dialog: tools.create("div", { class: "pio-dialog" }),
@@ -214,6 +215,32 @@ var Paul_Pio = function (prop) {
 				current.menu.appendChild(elements.night);
 			}
 
+			// 切换停靠（左 <-> 右），在关闭之上
+			elements.side.onclick = () => {
+				const body = current.body;
+				const toRight = body.classList.contains("left");
+
+				body.classList.toggle("left", !toRight);
+				body.classList.toggle("right", toRight);
+
+				// 清除拖拽可能留下的内联定位，让 CSS 的 left/right 类接管
+				body.style.left = "";
+				body.style.top = "";
+				body.style.bottom = "";
+
+				localStorage.setItem("pioSide", toRight ? "right" : "left");
+				modules.message(toRight ? "我到这里来啦~" : "我在这里呢~");
+			};
+			elements.side.onmouseover = () => {
+				modules.message(
+					current.body.classList.contains("left")
+						? "想去右边看看吗？"
+						: "想去左边看看吗？",
+				);
+			};
+			// 先于 close 追加，使 side 显示在关闭按钮之上
+			current.menu.appendChild(elements.side);
+
 			// 关闭看板娘
 			elements.close.onclick = () => {
 				modules.destroy();
@@ -346,7 +373,14 @@ var Paul_Pio = function (prop) {
 		};
 	};
 
-	localStorage.getItem("posterGirl") === "0" ? this.initHidden() : this.init();
+	// 默认折叠：仅当用户点过"召唤"（posterGirl = "1"）时展开，其余（含首次访问）折叠
+	localStorage.getItem("posterGirl") === "1" ? this.init() : this.initHidden();
+
+	// 恢复停靠偏好（左/右）
+	if (localStorage.getItem("pioSide") === "right") {
+		current.body.classList.remove("left");
+		current.body.classList.add("right");
+	}
 };
 
 // 请保留版权说明
