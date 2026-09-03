@@ -3271,6 +3271,7 @@ img:hover {
   display: -webkit-box;
   overflow: hidden;
   box-sizing: border-box;
+  width: 100%;
   min-height: 40px;
   margin-top: 5px;
   padding: 6px 7px;

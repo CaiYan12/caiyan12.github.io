@@ -20,6 +20,12 @@ const syncedGuestbookComments: GuestbookComment[] = Array.isArray(
 /** 开发环境预览数据：生产构建只读取构建期同步快照。 */
 const localPreviewComments: GuestbookComment[] = [
 	{
+		author: "CaiYan12",
+		avatar: "/images/avatar.webp",
+		content: "Hello, world!",
+		date: "2026-09-01T00:00:00+08:00",
+	},
+	{
 		author: "林木",
 		avatar: "/images/avatar.webp",
 		content: "欢迎来到这里，期待看到更多音乐和代码分享。",
