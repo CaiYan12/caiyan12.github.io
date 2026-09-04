@@ -148,6 +148,102 @@ public/
 
 ## TODO:
 
+### 待办（优化项排行，2026-09-04 与 Firefly AB 对比制定）
+
+排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。
+
+- [ ] **1. SEO 元数据与结构化数据补齐**
+
+  详细需求：`src/layouts/Layout.astro` 补 `og:url`（与 canonical 同值）、`og:site_name`、`twitter:card`（`summary_large_image`）与 `twitter:title` / `twitter:description` / `twitter:image`；同时修复 `og:image` 兜底值为相对路径 `/images/avatar.webp` 的问题（部分平台不识别相对 URL，应输出绝对地址）。文章页 `src/pages/posts/[...slug].astro` 注入 `BlogPosting` JSON-LD，字段复用现有变量：headline = title，datePublished / dateModified，description，image = `/og/<文章id>.png` 绝对地址，mainEntityOfPage = canonical。
+
+  验收结果：任意文章页查看源码，twitter 卡片 meta 齐全且存在合法 `application/ld+json`；Google Rich Results Test 校验 BlogPosting 无错误；非文章页（首页 / 相册 / 留言板）og 字段齐全无空值；`pnpm check` 与 `pnpm build` 通过。
+
+  预期：微信 / QQ / Twitter 等平台分享显示完整大图卡片；搜索引擎获得结构化文章元数据，利于收录与富摘要。
+
+- [ ] **2. 图片响应式与格式现代化（封面 / 幻灯片 / 相册 / 图片墙）**
+
+  详细需求：扩展 `scripts/generate-lqips.mjs`（已用 sharp 遍历站点图片）顺带产出 WebP 变体，变体文件加入 `.gitignore` 不入库、随构建进入 dist；渲染层为四类图片补 `srcset` / `sizes` 与 `width` / `height`（防 CLS）：文章封面（含 `public/images/random/` 随机封面）、首页幻灯片、相册图、图片墙卡片。LQIP 渐变占位行为与 `public/` 原图直出策略保持不变。
+
+  验收结果：`pnpm build && pnpm preview` 后 Network 面板确认实际加载 WebP；多断点复查图片墙 3:2 比例与日期栏对齐、相册 Fancybox 灯箱正常、幻灯片切换动画无回归；Lighthouse CLS 不劣于现状。
+
+  预期：图片流量较 JPEG 原图下降约 25–50%，移动端弱网首屏明显加快。
+
+- [ ] **3. Expressive Code 暗色代码块修复**
+
+  详细需求：`astro.config.mjs` 的 `expressiveCode` 显式加 `useDarkModeMediaQuery: false`。当前 `themes: ["github-light", "github-dark"]` 未设置该项（默认 true），产物 CSS 含 `prefers-color-scheme` 包裹的暗色规则，系统暗色访客会在纯白站点看到暗色代码块。构建前删除 `node_modules/.astro/`（content layer 缓存坑）。
+
+  验收结果：系统暗色偏好下打开含代码块文章，代码块仍为 github-light 亮色；构建产物 CSS 中无 `prefers-color-scheme` 包裹的 EC 暗色规则残留。
+
+  预期：消除“白底站点 + 暗色代码块”的视觉割裂，与 Colorful 纯白设计一致。
+
+- [ ] **4. 键盘可访问性：skip link**
+
+  详细需求：`src/layouts/Layout.astro` body 顶部加“跳到正文”链接（指向 `MainGridLayout.astro` 的 `<main>` 容器），`src/styles/global.css` 提供默认隐藏、`:focus-visible` 时显示的样式，动画遵守既有 `prefers-reduced-motion` 约定。
+
+  验收结果：Tab 首个焦点为该链接，Enter 后焦点落入正文；常规鼠标浏览不可见；Swup 切页后行为保持；`pnpm check` / `pnpm build` 通过。
+
+  预期：键盘与读屏用户可跳过导航直达内容，补齐基础可访问性。
+
+- [ ] **5. Font Awesome 4 冗余字体清理**
+
+  详细需求：`public/fonts/` 中 `fontawesome-webfont` 的 `.eot`（55KB）/ `.svg`（281KB）/ `.ttf`（110KB）仅服务古董浏览器；将 `src/styles/font-awesome.css` 的 `@font-face` src 收敛为 woff 后删除这三个文件。
+
+  验收结果：全站图标显示正常（重点复查导航社交图标、侧栏 widget、Pio 按钮、分页箭头）；`dist/fonts/` 仅剩 woff；`pnpm build` 通过。
+
+  预期：部署产物减重约 446KB。
+
+- [ ] **6. Mermaid 体积治理**
+
+  详细需求：现有 3 篇文章使用 mermaid（20231001000000、20260831000000、20240401000000），懒加载 chunk 合计超 2MB（mermaid.core 638KB、cynefin 672KB、cytoscape 433KB 等，对应已知问题“Vite 大 chunk 警告”）。评估按需注册实际用到的 diagram 类型，或构建期预渲染 SVG 替代客户端渲染。
+
+  验收结果：构建大 chunk 警告消除或显著减少；三篇文章图表渲染正常（含 Swup 切页后的重绑定）。
+
+  预期：含图表页面的按需 JS 体积大幅下降，构建警告清零。
+
+- [ ] **7. 构建卫生：生产 console 清理**
+
+  详细需求：`astro.config.mjs` 的 vite esbuild 配置加 `drop: ["debugger"]`、`pure: ["console.log", "console.debug"]`（warn / error 保留，生产出错可查）。
+
+  验收结果：`pnpm build` 通过；产物 JS 无 `console.log` 调用残留；线上功能无回归。
+
+  预期：生产日志干净，包体略有缩减。
+
+- [ ] **8. 评估：Astro 5 → 6 升级（观望项）**
+
+  详细需求：本站 Astro 5.16.4，Firefly 已用 6.4.6；升级需验证 content layer、@swup/astro、astro-expressive-code、@astrojs/react / svelte 兼容性，警惕 `node_modules/.astro` 缓存坑，`deploy.yml` 的 `cache: false` 约束不得回退。
+
+  验收结果：升级后 `pnpm check` / `pnpm build` / `pnpm preview` 全过；线上抽查首页 / 文章 / 相册 / 留言板 / ai-news 无回归。
+
+  预期：构建性能与新特性收益；非急需，待依赖生态完全就绪再评估。
+
+- [ ] **9. 评估：/ai-news/ React 岛屿瘦身（观望项）**
+
+  详细需求：React 19 + react-dom + zustand + lucide-react 仅服务 `/ai-news/` 单页；若长期访问量低，可用 Svelte 重写并移除 `@astrojs/react` 集成。
+
+  验收结果：重写后 /ai-news/ 功能与视觉对齐（列表、筛选、样式），构建产物无 React runtime 残留。
+
+  预期：依赖树与客户端 payload 显著缩减；属产品决策，先观测再定。
+
+### 待办（内容扩充，既有事项）
+
+- [ ] **原模板未移植页面评估**
+
+  详细需求：评估原模板 `../limh.me`（Emlog 原站）下未移植页面是否值得带入本站；严禁搬运 `module.php`（`/e` 修饰符 eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）。
+
+  验收结果：输出页面取舍清单，确定移植的转为具体 TODO。
+
+  预期：明确移植边界，避免范围无限扩散。
+
+- [ ] **纯 HTML 页面资源移植**
+
+  详细需求：将其他项目“文档\HTML5页面”下的纯 HTML 页面适配为本站资源页（静态路由或文章形式），样式融入 Colorful 视觉体系。
+
+  验收结果：移植页面站内样式协调、移动端无横向溢出、`pnpm build` 通过。
+
+  预期：充实站内资源内容。
+
+### 已完成
+
 - [x] 主页——最新评论使用构建期真实数据，最多展示 5 条并支持“换一批”（开发环境保留本地 mock）
 - [x] 主页右侧文章推荐去重：上方为“最新 / 手气不错”，下方保留唯一“热门推荐”，列表样式与排行旗帜标记按 Colorful 原主题语义区分
 - [x] 吐槽水军：单条展示留言板内容并支持“换一批”
@@ -160,5 +256,4 @@ public/
 - [x] 目前测试得到/category/技术架构/ 下分类标题距离第一篇文章的距离异常过远
 - [x] 文章卡片列表分页：首页、分类、标签和月归档统一固定每页 6 篇；根路径作为第 1 页规范地址，`/page/1/` 别名可访问并 canonical 到根路径，且从 sitemap 排除；分页按钮采用无圆角 40×40 方块，输入框为 120×40 并隐藏数字箭头
 - [x] 明月浩空播放器的歌词部分可能挡住pio的按钮，需要将pio的探头按钮向上移动一个按钮尺寸的距离，这样既不会被歌词挡住，也不会被未展开的播放器挡住。
-- [ ] 部分来自原模板../limh.me下未移植页面的考虑
-- [ ] 本站资源添加：部分来自其他项目"文档\HTML5页面"纯HTML页面的移植
+
