@@ -150,7 +150,7 @@ public/
 
 ### 待办（优化项排行，2026-09-04 与 Firefly AB 对比制定）
 
-排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1–5 项已于 2026-09-04 完成并移入下方“已完成”；编号保持与原排行一致。
+排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1–5、7 项已于 2026-09-04 完成并移入下方“已完成”；编号保持与原排行一致。
 
 - [ ] **6. Mermaid 体积治理**
 
@@ -159,14 +159,6 @@ public/
   验收结果：构建大 chunk 警告消除或显著减少；三篇文章图表渲染正常（含 Swup 切页后的重绑定）。
 
   预期：含图表页面的按需 JS 体积大幅下降，构建警告清零。
-
-- [ ] **7. 构建卫生：生产 console 清理**
-
-  详细需求：`astro.config.mjs` 的 vite esbuild 配置加 `drop: ["debugger"]`、`pure: ["console.log", "console.debug"]`（warn / error 保留，生产出错可查）。
-
-  验收结果：`pnpm build` 通过；产物 JS 无 `console.log` 调用残留；线上功能无回归。
-
-  预期：生产日志干净，包体略有缩减。
 
 - [ ] **8. 评估：Astro 5 → 6 升级（观望项）**
 
@@ -209,6 +201,7 @@ public/
 - [x] **3. Expressive Code 暗色代码块修复**（2026-09-04）：`astro.config.mjs` 的 `expressiveCode` 显式加 `useDarkModeMediaQuery: false`，消除产物 CSS 中 `prefers-color-scheme: dark` 包裹的整套暗色变量（旧产物实测含 `--ec-codeFg:#626466` 等暗色覆盖）。删除 `node_modules/.astro/` 后重建，新 CSS `prefers-color-scheme: dark` 为 0 处（文件 hash 变化确认非缓存）；Chrome DevTools 暗色模拟下代码块背景 `#f7f7f9`、文字 `#24292e` 保持亮色。
 - [x] **4. 键盘可访问性：skip link**（2026-09-04）：`Layout.astro` body 顶部加“跳到正文”链接（`href="#main"`，指向 `MainGridLayout` 的 `<main>` 容器）；`global.css` 新增 `.skip-link` 默认 `translateY(-200%)` 视觉隐藏（保持可聚焦）、`:focus-visible` 归位显示，品牌绿底白字，`z-index` 高于 myhkw 播放器，过渡用既有 `--ease-out` token。实测 Tab 首焦点即链接并显示、Enter 后焦点落入 `<main>` 且视口对齐、Swup 切页后行为保持（链接在 Swup 容器外）。
 - [x] **5. Font Awesome 4 冗余字体清理**（2026-09-04）：`font-awesome.css` 的 `@font-face` src 从四格式（eot/woff/ttf/svg）收敛为仅 woff，删除 `public/fonts/` 的 `.eot`(55KB)/`.svg`(281KB)/`.ttf`(110KB) 三个文件（全仓 `rg` 确认无其他引用）。实测 `document.fonts.check('14px FontAwesome')=true`、首页 83 个图标渲染真实字形宽度、字体请求仅 woff 一个；`dist/fonts/` 仅剩 woff、打包 CSS 中 eot/ttf/svg 引用 0 处。部署产物减重 446KB，现代浏览器访客零感知。
+- [x] **7. 构建卫生：生产 console 清理**（2026-09-04）：`astro.config.mjs` 的 vite 段加 `esbuild: { drop: ["debugger"], pure: ["console.log", "console.debug"] }`。产物 `console.log` 23 → 2（剩余 2 处均在 mermaid 的 cynefin 依赖 chunk 内部，压缩后调用形态未命中 pure 标注，划入 TODO 6 范围）；`debugger` 0 处；`console.warn/error` 58 处完整保留供线上排错；自有代码 console.log 清零。
 - [x] 主页——最新评论使用构建期真实数据，最多展示 5 条并支持“换一批”（开发环境保留本地 mock）
 - [x] 主页右侧文章推荐去重：上方为“最新 / 手气不错”，下方保留唯一“热门推荐”，列表样式与排行旗帜标记按 Colorful 原主题语义区分
 - [x] 吐槽水军：单条展示留言板内容并支持“换一批”

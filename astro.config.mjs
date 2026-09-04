@@ -144,5 +144,10 @@ export default defineConfig({
 		build: {
 			assetsInlineLimit: 4096,
 		},
+		esbuild: {
+			// 生产构建剔除 console.log/debug 与 debugger（warn/error 保留，线上排错用）
+			drop: ["debugger"],
+			pure: ["console.log", "console.debug"],
+		},
 	},
 });
