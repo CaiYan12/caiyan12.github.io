@@ -83,6 +83,8 @@ const myhkwScriptAttributes: Record<string, string> = {
 		<slot name="head" />
 	</head>
 	<body class="transition-swup-fade">
+		<!-- 键盘可访问性：Tab 首焦点跳过导航直达正文（样式见 global.css .skip-link） -->
+		<a class="skip-link" href="#main">跳到正文</a>
 		<!-- 背景层：随机背景图 + 花纹遮罩（对应 footer.php 的 bg-image） -->
 		<img
 			class="bg-image"

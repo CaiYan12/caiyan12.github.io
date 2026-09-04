@@ -5609,3 +5609,23 @@ body,
     }
   }
 }
+
+/* 键盘可访问性：跳到正文链接（Layout.astro body 顶部），默认视觉隐藏、聚焦时显示 */
+.skip-link {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 10000000001;
+  padding: 8px 16px;
+  border-radius: 6px;
+  background: #00c000;
+  color: #fff;
+  font-size: 14px;
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform 0.2s var(--ease-out, ease-out);
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}
