@@ -150,15 +150,7 @@ public/
 
 ### 待办（优化项排行，2026-09-04 与 Firefly AB 对比制定）
 
-排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1 项（SEO 元数据与结构化数据补齐）与第 2 项（图片响应式与格式现代化）已于 2026-09-04 完成，移入下方“已完成”；编号保持与原排行一致。
-
-- [ ] **3. Expressive Code 暗色代码块修复**
-
-  详细需求：`astro.config.mjs` 的 `expressiveCode` 显式加 `useDarkModeMediaQuery: false`。当前 `themes: ["github-light", "github-dark"]` 未设置该项（默认 true），产物 CSS 含 `prefers-color-scheme` 包裹的暗色规则，系统暗色访客会在纯白站点看到暗色代码块。构建前删除 `node_modules/.astro/`（content layer 缓存坑）。
-
-  验收结果：系统暗色偏好下打开含代码块文章，代码块仍为 github-light 亮色；构建产物 CSS 中无 `prefers-color-scheme` 包裹的 EC 暗色规则残留。
-
-  预期：消除“白底站点 + 暗色代码块”的视觉割裂，与 Colorful 纯白设计一致。
+排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1 项（SEO 元数据与结构化数据补齐）、第 2 项（图片响应式与格式现代化）、第 3 项（Expressive Code 暗色代码块修复）已于 2026-09-04 完成，移入下方“已完成”；编号保持与原排行一致。
 
 - [ ] **4. 键盘可访问性：skip link**
 
@@ -230,6 +222,7 @@ public/
 
 - [x] **1. SEO 元数据与结构化数据补齐**（2026-09-04）：`Layout.astro` 补 `og:url`（与 canonical 同值）、`og:site_name`、`twitter:card`（`summary_large_image`）及 `twitter:title/description/image`；修复 `og:image` 兜底相对路径，统一输出绝对地址；文章页 `og:type` 为 `article`（其余页 `website`）；文章页注入 `BlogPosting` JSON-LD（headline/datePublished/dateModified/description/image/mainEntityOfPage/author）。本地 Playwright 与 dist 产物均已验证 meta 齐全无空值。
 - [x] **2. 图片响应式与格式现代化**（2026-09-04）：`scripts/generate-lqips.mjs` 追加 WebP 变体生成（480/720/1080/1440 四档、q82、mtime 增量、孤儿清理），变体输出至 `public/images/_variants/`（`.gitignore` 排除、随构建进 dist）；新增 `image-variants.ts`（manifest 查询 + `existsSync` 兜底降级）与 `ResponsiveImage.astro`（`<picture>` + WebP source + 原图 srcset 兜底），文章封面 / 幻灯片 / 相册 / 图片墙四类图片补 `srcset`/`sizes` 与 `width`/`height` 防 CLS；`global.css` 幻灯片选择器改为后代选择器适配 picture 包裹。实测文章封面 1787KB→66KB（-96%），图片墙 3:2 多断点无回归，相册灯箱与幻灯片切换正常。
+- [x] **3. Expressive Code 暗色代码块修复**（2026-09-04）：`astro.config.mjs` 的 `expressiveCode` 显式加 `useDarkModeMediaQuery: false`，消除产物 CSS 中 `prefers-color-scheme: dark` 包裹的整套暗色变量（旧产物实测含 `--ec-codeFg:#626466` 等暗色覆盖）。删除 `node_modules/.astro/` 后重建，新 CSS `prefers-color-scheme: dark` 为 0 处（文件 hash 变化确认非缓存）；Chrome DevTools 暗色模拟下代码块背景 `#f7f7f9`、文字 `#24292e` 保持亮色。
 - [x] 主页——最新评论使用构建期真实数据，最多展示 5 条并支持“换一批”（开发环境保留本地 mock）
 - [x] 主页右侧文章推荐去重：上方为“最新 / 手气不错”，下方保留唯一“热门推荐”，列表样式与排行旗帜标记按 Colorful 原主题语义区分
 - [x] 吐槽水军：单条展示留言板内容并支持“换一批”

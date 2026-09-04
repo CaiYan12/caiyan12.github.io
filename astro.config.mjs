@@ -58,10 +58,9 @@ export default defineConfig({
 		}),
 		expressiveCode({
 			themes: ["github-light", "github-dark"],
-			plugins: [
-				pluginCollapsibleSections(),
-				pluginLineNumbers(),
-			],
+			// 站点为纯白设计，禁用系统暗色媒体查询，避免系统暗色访客看到暗色代码块
+			useDarkModeMediaQuery: false,
+			plugins: [pluginCollapsibleSections(), pluginLineNumbers()],
 			defaultProps: {
 				wrap: true,
 				overridesByLang: {
