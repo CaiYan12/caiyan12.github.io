@@ -150,15 +150,7 @@ public/
 
 ### 待办（优化项排行，2026-09-04 与 Firefly AB 对比制定）
 
-排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。
-
-- [ ] **1. SEO 元数据与结构化数据补齐**
-
-  详细需求：`src/layouts/Layout.astro` 补 `og:url`（与 canonical 同值）、`og:site_name`、`twitter:card`（`summary_large_image`）与 `twitter:title` / `twitter:description` / `twitter:image`；同时修复 `og:image` 兜底值为相对路径 `/images/avatar.webp` 的问题（部分平台不识别相对 URL，应输出绝对地址）。文章页 `src/pages/posts/[...slug].astro` 注入 `BlogPosting` JSON-LD，字段复用现有变量：headline = title，datePublished / dateModified，description，image = `/og/<文章id>.png` 绝对地址，mainEntityOfPage = canonical。
-
-  验收结果：任意文章页查看源码，twitter 卡片 meta 齐全且存在合法 `application/ld+json`；Google Rich Results Test 校验 BlogPosting 无错误；非文章页（首页 / 相册 / 留言板）og 字段齐全无空值；`pnpm check` 与 `pnpm build` 通过。
-
-  预期：微信 / QQ / Twitter 等平台分享显示完整大图卡片；搜索引擎获得结构化文章元数据，利于收录与富摘要。
+排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1 项（SEO 元数据与结构化数据补齐）已于 2026-09-04 完成，移入下方“已完成”；编号保持与原排行一致。
 
 - [ ] **2. 图片响应式与格式现代化（封面 / 幻灯片 / 相册 / 图片墙）**
 
@@ -244,6 +236,7 @@ public/
 
 ### 已完成
 
+- [x] **1. SEO 元数据与结构化数据补齐**（2026-09-04）：`Layout.astro` 补 `og:url`（与 canonical 同值）、`og:site_name`、`twitter:card`（`summary_large_image`）及 `twitter:title/description/image`；修复 `og:image` 兜底相对路径，统一输出绝对地址；文章页 `og:type` 为 `article`（其余页 `website`）；文章页注入 `BlogPosting` JSON-LD（headline/datePublished/dateModified/description/image/mainEntityOfPage/author）。本地 Playwright 与 dist 产物均已验证 meta 齐全无空值。
 - [x] 主页——最新评论使用构建期真实数据，最多展示 5 条并支持“换一批”（开发环境保留本地 mock）
 - [x] 主页右侧文章推荐去重：上方为“最新 / 手气不错”，下方保留唯一“热门推荐”，列表样式与排行旗帜标记按 Colorful 原主题语义区分
 - [x] 吐槽水军：单条展示留言板内容并支持“换一批”

@@ -13,6 +13,8 @@ interface Props {
 	canonicalUrl?: string;
 	prevUrl?: string;
 	nextUrl?: string;
+	/** og:type（文章页传 "article"） */
+	ogType?: string;
 	/** 是否显示侧栏 */
 	showSidebar?: boolean;
 	/** 是否将当前页面正文加入 Pagefind 索引 */
@@ -29,7 +31,10 @@ const { showSidebar = true, searchIndex = false } = Astro.props;
 	canonicalUrl={Astro.props.canonicalUrl}
 	prevUrl={Astro.props.prevUrl}
 	nextUrl={Astro.props.nextUrl}
+	ogType={Astro.props.ogType}
 >
+	<!-- 将页面级 head 内容（如结构化数据）透传给 Layout 的 head slot -->
+	<slot name="head" slot="head" />
 	<div id="lmhblog">
 		<Navbar />
 

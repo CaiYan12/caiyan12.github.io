@@ -23,9 +23,12 @@ interface Props {
 	canonicalUrl?: string;
 	prevUrl?: string;
 	nextUrl?: string;
+	/** og:type（文章页传 "article"，其余默认 "website"） */
+	ogType?: string;
 }
 
-const { title, description, image, canonicalUrl, prevUrl, nextUrl } = Astro.props;
+const { title, description, image, canonicalUrl, prevUrl, nextUrl, ogType } =
+	Astro.props;
 
 const siteTitle = title
 	? `${title} - ${siteConfig.title}`
@@ -34,6 +37,8 @@ const siteDescription = description ?? siteConfig.subtitle;
 const absoluteUrl = (relativeUrl: string) =>
 	new URL(relativeUrl, siteConfig.siteURL).toString();
 const canonicalHref = absoluteUrl(canonicalUrl ?? Astro.url.pathname);
+// og:image / twitter:image 必须输出绝对地址（部分平台不识别相对 URL）
+const ogImageUrl = absoluteUrl(image ?? "/images/avatar.webp");
 
 // myhkw 使用非标准的 `key` 脚本属性，使用字符串属性映射保留原始嵌入协议。
 const myhkwScriptAttributes: Record<string, string> = {
@@ -66,11 +71,14 @@ const myhkwScriptAttributes: Record<string, string> = {
 		<meta property="og:title" content={siteTitle} />
 		<meta data-pagefind-meta="title[content]" content={siteTitle} />
 		<meta property="og:description" content={siteDescription} />
-		<meta
-			property="og:image"
-			content={image ? new URL(image, siteConfig.siteURL) : "/images/avatar.webp"}
-		/>
-		<meta property="og:type" content="website" />
+		<meta property="og:image" content={ogImageUrl} />
+		<meta property="og:url" content={canonicalHref} />
+		<meta property="og:site_name" content={siteConfig.title} />
+		<meta property="og:type" content={ogType ?? "website"} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={siteTitle} />
+		<meta name="twitter:description" content={siteDescription} />
+		<meta name="twitter:image" content={ogImageUrl} />
 		<meta name="generator" content={Astro.generator} />
 		<slot name="head" />
 	</head>

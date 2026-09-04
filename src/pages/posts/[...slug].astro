@@ -40,6 +40,21 @@ const qrDataUrl = await QRCode.toDataURL(postUrl.toString(), {
 	margin: 1,
 });
 
+// BlogPosting 结构化数据（SEO）：字段复用页面既有变量
+const ogImageUrl = new URL(`/og/${post.id}.png`, siteConfig.siteURL).toString();
+const postDescription = post.data.description || post.data.excerpt;
+const blogPostingJsonLd = {
+	"@context": "https://schema.org",
+	"@type": "BlogPosting",
+	headline: title,
+	image: ogImageUrl,
+	datePublished: published.toISOString(),
+	dateModified: (updated ?? published).toISOString(),
+	mainEntityOfPage: postUrl.toString(),
+	author: { "@type": "Person", name: author },
+	...(postDescription ? { description: postDescription } : {}),
+};
+
 const starLevel = (comments: number) => {
 	if (comments > 70) return 5;
 	if (comments > 50) return 4;
@@ -53,8 +68,15 @@ const starLevel = (comments: number) => {
 	title={title}
 	description={post.data.description || post.data.excerpt}
 	image={`/og/${post.id}.png`}
+	ogType="article"
 	searchIndex={!post.data.private}
 >
+	<script
+		is:inline
+		type="application/ld+json"
+		set:html={JSON.stringify(blogPostingJsonLd)}
+		slot="head"
+	/>
 	<div class="page">
 		<figure class="post-cover lqip-wrap">
 			<div class="lqip-placeholder" style={getLqipProps(cover).style} aria-hidden="true"></div>
