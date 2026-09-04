@@ -30,6 +30,12 @@ pnpm format      # Prettier 格式化
 
 > ⚠️ **踩坑警告**：修改 Markdown 渲染插件（remark/rehype）后构建产物没变化？Astro 5 content layer 可能复用旧渲染结果——先删除 `node_modules/.astro/`，并在存在时删除 `.astro/data-store.json`，再构建；touch 文件无效。CI 侧 `deploy.yml` 已对 `withastro/action` 传 `cache: false` 关闭同类缓存，任何 workflow 改动勿恢复。
 
+## 测试与生产环境
+
+- **测试环境（本地）**：`http://localhost:4321`（`pnpm dev`；`pnpm preview` 验证构建产物，可 `--port` 指定端口）。交互、布局、Swup 切页的验证都在本地做。已知 dev 限制：Pio 看板娘因 Svelte hydration 报错不渲染，验证 Pio 必须 `pnpm build && pnpm preview`。
+- **生产环境（线上）**：`https://caiyan12.github.io/`（GitHub Actions 自动部署）。验证部署是否生效：看响应头 `Last-Modified` 是否晚于部署完成时间，或下载 Actions run 的 `github-pages` artifact；Fastly 边缘缓存 HTML `max-age=600` 且缓存键不含查询串（加 `?cb=` 破缓存无效），刚部署完可能最多等 10 分钟才看到新版本。
+- 两环境行为差异须留意：dev 下评论 mock 数据（`src/data/comments.ts` 等）与生产构建期同步的真实数据不同；Mermaid、OG 图等一切以生产实测为准。
+
 ## CI 构建与部署
 
 - Pull Request：`build.yml` 执行 `Astro Check` 和完整 `Astro Build`，`lint.yml` 执行 Prettier 检查。
@@ -64,7 +70,8 @@ scripts/                 ← 构建脚本（LQIP 生成、GitHub 仓库数据拉
 public/
   ai-news/snapshot/      ← AI 日报离线 RSS 快照
   images/albums/         ← 相册（每个文件夹一个相册）
-  fonts/                 ← Font Awesome 4 图标字体
+  images/_variants/      ← 构建生成的 WebP 图片变体（勿手动编辑，gitignore）
+  fonts/                 ← Font Awesome 4 图标字体（仅 woff）
   style/                 ← 自定义光标
 ```
 
@@ -129,6 +136,8 @@ public/
 ## 界面维护说明
 
 - 图片墙 `/images/` 的桌面端图片保持 `180×120` 与 `object-fit: cover`；移动断点改为流体宽度，但始终保持 `3:2` 比例，确保日期栏对齐且不产生横向溢出。
+- 响应式图片：文章封面、幻灯片、相册、图片墙经 `src/components/control/ResponsiveImage.astro`（`<picture>` + WebP 变体）渲染；变体由 `scripts/generate-lqips.mjs` 在构建时生成到 `public/images/_variants/`（480/720/1080/1440 四档）。Fancybox 灯箱仍打开原图（缩略图用变体省流量）。新增图片无需手动生成变体，构建自动处理。
+- 键盘 skip link（“跳到正文”）位于 `Layout.astro` body 首元素、Swup 容器之外——移动或包进 `main` 会导致切页后丢失；样式在 `global.css` 的 `.skip-link`（默认视觉隐藏，`:focus-visible` 归位显示）。
 - 顶部导航 QQ/微信的 hover 二维码弹层保持白色圆角卡片，四周 `10px` 内距，内部二维码裁切框统一为 `140×140`。两张现有源图的留白比例不同，裁切定位维护在 `src/styles/global.css`，更换二维码资源后需要重新检查实际码区尺寸。
 - 桌面头部标题（`#header h1`）与左侧 `100px` 浮动 logo 并排：其 `max-width` 必须为 `calc(100% - 100px)` 扣除 logo 占位。`#header` 固定 `height:180px; overflow:hidden`，若标题宽度超过 `.box` 内容宽减去浮动宽，会被挤到 logo 下方落入裁切区并与 `#head-nav` 重叠（681–1100px 区间实测触发，2026-09-04 修复）。调整头部布局或 `.box` 宽度规则后，须在 681/770/860/980/1100px 等断点复查标题位置。
 - 涉及上述界面的样式调整后，应在本地开发服务器中检查主要宽度、hover 状态、裁切效果、日期/弹层对齐和页面横向溢出，并补跑 `pnpm check` 与 `pnpm build`。
@@ -150,15 +159,7 @@ public/
 
 ### 待办（优化项排行，2026-09-04 与 Firefly AB 对比制定）
 
-排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1–5、7 项已于 2026-09-04 完成并移入下方“已完成”；编号保持与原排行一致。
-
-- [ ] **6. Mermaid 体积治理**
-
-  详细需求：现有 3 篇文章使用 mermaid（20231001000000、20260831000000、20240401000000），懒加载 chunk 合计超 2MB（mermaid.core 638KB、cynefin 672KB、cytoscape 433KB 等，对应已知问题“Vite 大 chunk 警告”）。评估按需注册实际用到的 diagram 类型，或构建期预渲染 SVG 替代客户端渲染。
-
-  验收结果：构建大 chunk 警告消除或显著减少；三篇文章图表渲染正常（含 Swup 切页后的重绑定）。
-
-  预期：含图表页面的按需 JS 体积大幅下降，构建警告清零。
+排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1–7 项已于 2026-09-04 完成（第 6 项为评估完成、暂不实施）并移入下方“已完成”；编号保持与原排行一致。
 
 - [ ] **8. 评估：Astro 5 → 6 升级（观望项）**
 
@@ -201,6 +202,7 @@ public/
 - [x] **3. Expressive Code 暗色代码块修复**（2026-09-04）：`astro.config.mjs` 的 `expressiveCode` 显式加 `useDarkModeMediaQuery: false`，消除产物 CSS 中 `prefers-color-scheme: dark` 包裹的整套暗色变量（旧产物实测含 `--ec-codeFg:#626466` 等暗色覆盖）。删除 `node_modules/.astro/` 后重建，新 CSS `prefers-color-scheme: dark` 为 0 处（文件 hash 变化确认非缓存）；Chrome DevTools 暗色模拟下代码块背景 `#f7f7f9`、文字 `#24292e` 保持亮色。
 - [x] **4. 键盘可访问性：skip link**（2026-09-04）：`Layout.astro` body 顶部加“跳到正文”链接（`href="#main"`，指向 `MainGridLayout` 的 `<main>` 容器）；`global.css` 新增 `.skip-link` 默认 `translateY(-200%)` 视觉隐藏（保持可聚焦）、`:focus-visible` 归位显示，品牌绿底白字，`z-index` 高于 myhkw 播放器，过渡用既有 `--ease-out` token。实测 Tab 首焦点即链接并显示、Enter 后焦点落入 `<main>` 且视口对齐、Swup 切页后行为保持（链接在 Swup 容器外）。
 - [x] **5. Font Awesome 4 冗余字体清理**（2026-09-04）：`font-awesome.css` 的 `@font-face` src 从四格式（eot/woff/ttf/svg）收敛为仅 woff，删除 `public/fonts/` 的 `.eot`(55KB)/`.svg`(281KB)/`.ttf`(110KB) 三个文件（全仓 `rg` 确认无其他引用）。实测 `document.fonts.check('14px FontAwesome')=true`、首页 83 个图标渲染真实字形宽度、字体请求仅 woff 一个；`dist/fonts/` 仅剩 woff、打包 CSS 中 eot/ttf/svg 引用 0 处。部署产物减重 446KB，现代浏览器访客零感知。
+- [x] **6. Mermaid 体积治理（评估完成，暂不实施）**（2026-09-04）：实测推翻原认知——mermaid 11.17.2 内部对全部 38 种 diagram 均为动态 import 懒加载，打开图表文章只下载实际用到的类型（实测 mindmap 文章 gzip 后 mermaid 相关约 450KB），cynefin 672KB / c4 / er 等未用 chunk 访客永不下载，仅是 dist 里的死产物；“按需注册”路线不可行（主入口 `mermaid.core.mjs` 硬编码全部动态 import，外部无法裁剪注册表）；cytoscape 433KB 为 mindmap 布局硬依赖无法省。两条改造路线均放弃：预渲染 SVG（rehype-mermaid + playwright）收益为图表页访客 JS 归零与 dist 减重，但需引入 Chromium 构建依赖、主题配置从运行时迁构建期、CI 时长 +1-2 分钟，性价比不足；仅调 chunkSizeWarningLimit 消警告无实际意义。维持现状，构建期 3 个大 chunk 警告（cynefin/core/cytoscape）作为已知问题保留。
 - [x] **7. 构建卫生：生产 console 清理**（2026-09-04）：`astro.config.mjs` 的 vite 段加 `esbuild: { drop: ["debugger"], pure: ["console.log", "console.debug"] }`。产物 `console.log` 23 → 2（剩余 2 处均在 mermaid 的 cynefin 依赖 chunk 内部，压缩后调用形态未命中 pure 标注，划入 TODO 6 范围）；`debugger` 0 处；`console.warn/error` 58 处完整保留供线上排错；自有代码 console.log 清零。
 - [x] 主页——最新评论使用构建期真实数据，最多展示 5 条并支持“换一批”（开发环境保留本地 mock）
 - [x] 主页右侧文章推荐去重：上方为“最新 / 手气不错”，下方保留唯一“热门推荐”，列表样式与排行旗帜标记按 Colorful 原主题语义区分
