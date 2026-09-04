@@ -290,6 +290,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - 自定义光标：`public/style/default.cur` / `link.cur`
 - 图片墙：`src/pages/images.astro` 的卡片图片桌面端保持 `180×120` 与 `object-fit: cover`；`max-width: 680px` 时图片宽度流体化，但必须通过 `height: auto` 与 `aspect-ratio: 3 / 2` 保持比例，避免日期栏错位或页面横向溢出。
 - 顶部二维码弹层：`src/components/layout/Navbar.astro` 中 QQ/微信共用 `.qrcode-frame`；`src/styles/global.css` 保持弹层四周 `10px` 内距、内部裁切框 `140×140`。由于 `public/images/qq-qrcode.jpg` 与 `public/images/wechat-qrcode.jpg` 的原图留白比例不同，两者使用独立的绝对定位裁切参数；更换资源后必须重新做真实 hover 视觉检查。
+- 桌面头部标题：`#header` 固定 `height:180px; overflow:hidden`，`#header h1` 与左侧 `100px` 浮动 logo 并排，其 `max-width` 必须为 `calc(100% - 100px)` 扣除 logo 占位；否则 `.box` 在 ≤1100px 收缩为 `calc(100% - 40px)` 时标题会被挤到 logo 下方落入裁切区并与 `#head-nav` 重叠（2026-09-04 实测修复）。改头部布局后须在 681–1100px 各断点复查标题位置。
 - 首页右侧文章推荐固定为“最新 / 手气不错”两栏：两者使用普通箭头＋日期列表；“手气不错”仅在构建期随机抽取。首页下方只保留一个“热门推荐”，按 `getHotPosts` 的既有排序输出旗帜形序号标记；禁止复制热门元件或在浏览器端请求评论/文章数据。
 
 ### 工具函数

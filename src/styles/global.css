@@ -4866,8 +4866,11 @@ body,
   overflow-wrap: anywhere;
 }
 
+/* 标题需与左侧 100px 浮动 logo 并排：max-width 必须扣除 logo 宽度，
+   否则在 .box 收缩为 calc(100% - 40px) 时标题无法容纳于浮动旁，
+   会被挤到 logo 下方并落入 #header(overflow:hidden) 裁切区，与 #head-nav 重叠 */
 #header h1 {
-  max-width: 100%;
+  max-width: calc(100% - 100px);
 }
 
 #header h1 a,
