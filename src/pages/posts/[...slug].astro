@@ -51,7 +51,11 @@ const blogPostingJsonLd = {
 	datePublished: published.toISOString(),
 	dateModified: (updated ?? published).toISOString(),
 	mainEntityOfPage: postUrl.toString(),
-	author: { "@type": "Person", name: author },
+	author: {
+		"@type": "Person",
+		name: author,
+		url: new URL("/about/", siteConfig.siteURL).toString(),
+	},
 	...(postDescription ? { description: postDescription } : {}),
 };
 
