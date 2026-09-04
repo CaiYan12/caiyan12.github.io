@@ -159,33 +159,15 @@ public/
 
 ### 待办（优化项排行，2026-09-04 与 Firefly AB 对比制定）
 
-排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1–7 项已于 2026-09-04 完成（第 6 项为评估完成、暂不实施）并移入下方“已完成”；编号保持与原排行一致。
-
-- [ ] **8. 评估：Astro 5 → 6 升级（观望项）**
-
-  详细需求：本站 Astro 5.16.4，Firefly 已用 6.4.6；升级需验证 content layer、@swup/astro、astro-expressive-code、@astrojs/react / svelte 兼容性，警惕 `node_modules/.astro` 缓存坑，`deploy.yml` 的 `cache: false` 约束不得回退。
-
-  验收结果：升级后 `pnpm check` / `pnpm build` / `pnpm preview` 全过；线上抽查首页 / 文章 / 相册 / 留言板 / ai-news 无回归。
-
-  预期：构建性能与新特性收益；非急需，待依赖生态完全就绪再评估。
-
-- [ ] **9. 评估：/ai-news/ React 岛屿瘦身（观望项）**
-
-  详细需求：React 19 + react-dom + zustand + lucide-react 仅服务 `/ai-news/` 单页；若长期访问量低，可用 Svelte 重写并移除 `@astrojs/react` 集成。
-
-  验收结果：重写后 /ai-news/ 功能与视觉对齐（列表、筛选、样式），构建产物无 React runtime 残留。
-
-  预期：依赖树与客户端 payload 显著缩减；属产品决策，先观测再定。
+排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1–7 项已于 2026-09-04 全部销项，完成记录已从本节清理，详见 git history 与 AGENTS.md 中的对应维护约束；第 8、9 项已完成评估并移入"远期规划"；第 10 项为 limh.me 移植评估（2026-09-04）产生的新待办，已于同日完成；编号保持与原排行一致。
 
 ### 待办（内容扩充，既有事项）
 
-- [ ] **原模板未移植页面评估**
+- [x] **10. 标签云集独立页**（2026-09-04 完成；limh.me 移植评估得分 13.75，唯一过 10 分项）
 
-  详细需求：评估原模板 `../limh.me`（Emlog 原站）下未移植页面是否值得带入本站；严禁搬运 `module.php`（`/e` 修饰符 eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）。
+  实现形态（grill 后定稿）：新增 `/tag/` 标签云集页（`src/pages/tag/index.astro`，骨架复刻 `archive.astro`：`.page` + `post-header` h2"标签云集" + `post-metaa` 面包屑；初版为 `/tags/`，2026-09-04 按路由层级逻辑改为 `/tag/` 索引 + `/tag/xxx/` 详情，与 `/archive/` 模式一致）；数据复用 `getTagList()` 按文章数降序，统计行"共 N 个标签 · 收录 M 篇文章"置于 `.post-context`（M=全部公开文章数，与归档页同口径），空标签数组渲染空态；标签列表复用 `#blogtags` 药丸（6 色轮换，DOM 与侧栏 WidgetTag 一致），药丸内全部追加 `×N` 数字（唯一新增样式 `#blogtags a .tag-count`，11px 白色，零动画）。导航"文章归档"平铺项改为下拉组 `navBarConfig.archiveSite`（全部文章 `/archive/` + 标签分类 `/tag/`），Navbar 桌面下拉与 MMenu 移动端菜单同步渲染，父项按既有 `some()` 模式高亮；顺带修复既有 bug：`theme-script.ts` 的 `syncNavHighlight()` 会因 `javascript:void(0)` 锚点把构建期写入的下拉父项 current 抹掉（影响全部下拉与移动端菜单），现跳过 void 锚点并按子链接统一计算父项高亮。侧栏 WidgetTag 未动。
 
-  验收结果：输出页面取舍清单，确定移植的转为具体 TODO。
-
-  预期：明确移植边界，避免范围无限扩散。
+  后续优化（同日）：`×N` 数字由灰色 `#999` 改白色；单标签页 `/tag/xxx/`（含 `page/[page]` 第 2+ 页）头部复刻 `/tag/` 标签云集页形态——h2"标签：xxx" + 面包屑"首页 » 标签云集 » 标签名"（补齐返回标签云集入口）+ `.post-context` 统计行 + 全量 `#blogtags` 药丸云，当前标签 `is-current` 品牌绿高亮（`--colorful-green`，含三角，`aria-current="page"`），文章列表与分页维持主页同款机制（`Pagination` 组件 + `tag/[tag]/page/[page]/` 路由）；新增 `siteConfig.tagPostsPerPage: 5`（标签页独立于主页的每页 6 篇；当前最大标签 3 篇暂无分页，阈值远期随标签增长调整）。路由改 `/tag/` 后单标签页命中前缀匹配，导航"文章归档"下拉及"标签分类"子项在 /tag/xxx/ 页呈 current（语义正确：当前处于标签栏目）。
 
 - [ ] **纯 HTML 页面资源移植**
 
@@ -195,25 +177,15 @@ public/
 
   预期：充实站内资源内容。
 
-### 已完成
+- [x] **原模板未移植页面评估**（2026-09-04 完成）：对 `../limh.me` 全部 12 个 page-*.php / t.php / reg.php / function/*.php 逐一核对，与 myblog 现有 14 个路由 + sidebarConfig 侧栏清单对齐。结论：已移植清单（log_list/echo_log/header/footer/side/options→config.ts/归档/微语/留言板/关于/友链/图片墙/相册/404/全部侧栏 widget/文章尾部表情/吐槽水军）无遗漏。未移植 9 项取舍：**标签云集页**转为 TODO 10（移植）；**读者墙**与**微语分页+[F*]表情码解析**移入远期规划（触发条件见该节）；分享组件（分享目标大半死链）、日历 widget（Emlog ajax 依赖，交互已被归档/时间线替代）、读者等级（Giscus 无访客邮箱数据源）不移植；前台注册（需后端写库+验证码）、评论 UA/IP 属地（Giscus 不提供该数据）、通用页面模板变体 page-test/page1/page-colorful（已被 `spec` collection 的 `[...slug]` 覆盖）为架构性/数据源排除项，永久排除。原 `module.php`（eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）维持严禁搬运。
 
-- [x] **1. SEO 元数据与结构化数据补齐**（2026-09-04）：`Layout.astro` 补 `og:url`（与 canonical 同值）、`og:site_name`、`twitter:card`（`summary_large_image`）及 `twitter:title/description/image`；修复 `og:image` 兜底相对路径，统一输出绝对地址；文章页 `og:type` 为 `article`（其余页 `website`）；文章页注入 `BlogPosting` JSON-LD（headline/datePublished/dateModified/description/image/mainEntityOfPage/author）。本地 Playwright 与 dist 产物均已验证 meta 齐全无空值。
-- [x] **2. 图片响应式与格式现代化**（2026-09-04）：`scripts/generate-lqips.mjs` 追加 WebP 变体生成（480/720/1080/1440 四档、q82、mtime 增量、孤儿清理），变体输出至 `public/images/_variants/`（`.gitignore` 排除、随构建进 dist）；新增 `image-variants.ts`（manifest 查询 + `existsSync` 兜底降级）与 `ResponsiveImage.astro`（`<picture>` + WebP source + 原图 srcset 兜底），文章封面 / 幻灯片 / 相册 / 图片墙四类图片补 `srcset`/`sizes` 与 `width`/`height` 防 CLS；`global.css` 幻灯片选择器改为后代选择器适配 picture 包裹。实测文章封面 1787KB→66KB（-96%），图片墙 3:2 多断点无回归，相册灯箱与幻灯片切换正常。
-- [x] **3. Expressive Code 暗色代码块修复**（2026-09-04）：`astro.config.mjs` 的 `expressiveCode` 显式加 `useDarkModeMediaQuery: false`，消除产物 CSS 中 `prefers-color-scheme: dark` 包裹的整套暗色变量（旧产物实测含 `--ec-codeFg:#626466` 等暗色覆盖）。删除 `node_modules/.astro/` 后重建，新 CSS `prefers-color-scheme: dark` 为 0 处（文件 hash 变化确认非缓存）；Chrome DevTools 暗色模拟下代码块背景 `#f7f7f9`、文字 `#24292e` 保持亮色。
-- [x] **4. 键盘可访问性：skip link**（2026-09-04）：`Layout.astro` body 顶部加“跳到正文”链接（`href="#main"`，指向 `MainGridLayout` 的 `<main>` 容器）；`global.css` 新增 `.skip-link` 默认 `translateY(-200%)` 视觉隐藏（保持可聚焦）、`:focus-visible` 归位显示，品牌绿底白字，`z-index` 高于 myhkw 播放器，过渡用既有 `--ease-out` token。实测 Tab 首焦点即链接并显示、Enter 后焦点落入 `<main>` 且视口对齐、Swup 切页后行为保持（链接在 Swup 容器外）。
-- [x] **5. Font Awesome 4 冗余字体清理**（2026-09-04）：`font-awesome.css` 的 `@font-face` src 从四格式（eot/woff/ttf/svg）收敛为仅 woff，删除 `public/fonts/` 的 `.eot`(55KB)/`.svg`(281KB)/`.ttf`(110KB) 三个文件（全仓 `rg` 确认无其他引用）。实测 `document.fonts.check('14px FontAwesome')=true`、首页 83 个图标渲染真实字形宽度、字体请求仅 woff 一个；`dist/fonts/` 仅剩 woff、打包 CSS 中 eot/ttf/svg 引用 0 处。部署产物减重 446KB，现代浏览器访客零感知。
-- [x] **6. Mermaid 体积治理（评估完成，暂不实施）**（2026-09-04）：实测推翻原认知——mermaid 11.17.2 内部对全部 38 种 diagram 均为动态 import 懒加载，打开图表文章只下载实际用到的类型（实测 mindmap 文章 gzip 后 mermaid 相关约 450KB），cynefin 672KB / c4 / er 等未用 chunk 访客永不下载，仅是 dist 里的死产物；“按需注册”路线不可行（主入口 `mermaid.core.mjs` 硬编码全部动态 import，外部无法裁剪注册表）；cytoscape 433KB 为 mindmap 布局硬依赖无法省。两条改造路线均放弃：预渲染 SVG（rehype-mermaid + playwright）收益为图表页访客 JS 归零与 dist 减重，但需引入 Chromium 构建依赖、主题配置从运行时迁构建期、CI 时长 +1-2 分钟，性价比不足；仅调 chunkSizeWarningLimit 消警告无实际意义。维持现状，构建期 3 个大 chunk 警告（cynefin/core/cytoscape）作为已知问题保留。
-- [x] **7. 构建卫生：生产 console 清理**（2026-09-04）：`astro.config.mjs` 的 vite 段加 `esbuild: { drop: ["debugger"], pure: ["console.log", "console.debug"] }`。产物 `console.log` 23 → 2（剩余 2 处均在 mermaid 的 cynefin 依赖 chunk 内部，压缩后调用形态未命中 pure 标注，划入 TODO 6 范围）；`debugger` 0 处；`console.warn/error` 58 处完整保留供线上排错；自有代码 console.log 清零。
-- [x] 主页——最新评论使用构建期真实数据，最多展示 5 条并支持“换一批”（开发环境保留本地 mock）
-- [x] 主页右侧文章推荐去重：上方为“最新 / 手气不错”，下方保留唯一“热门推荐”，列表样式与排行旗帜标记按 Colorful 原主题语义区分
-- [x] 吐槽水军：单条展示留言板内容并支持“换一批”
-- [x] nav订阅左侧新增同风格链接，并接入站长 QQ 与微信 hover 二维码
-- [x] 图片墙页面：桌面端统一 `180×120`，移动端保持 `3:2`，日期栏对齐且无横向溢出
-- [x] 顶部导航 QQ/微信 hover 二维码：圆角弹层内距统一为 `10px`，二维码视觉尺寸统一
-- [x] 相册图库：UI部分问题修复
-- [x] 宽屏模式当屏幕较窄时（平板模式？）标题会有部分文字掉到nav之下等其他UI问题
-- [x] 首页banner当标题过长时会换到第二行，需要智能"..."截断
-- [x] 目前测试得到/category/技术架构/ 下分类标题距离第一篇文章的距离异常过远
-- [x] 文章卡片列表分页：首页、分类、标签和月归档统一固定每页 6 篇；根路径作为第 1 页规范地址，`/page/1/` 别名可访问并 canonical 到根路径，且从 sitemap 排除；分页按钮采用无圆角 40×40 方块，输入框为 120×40 并隐藏数字箭头
-- [x] 明月浩空播放器的歌词部分可能挡住pio的按钮，需要将pio的探头按钮向上移动一个按钮尺寸的距离，这样既不会被歌词挡住，也不会被未展开的播放器挡住。
+### 远期规划（观望项，均已完成评估、明确触发条件，未触发不排期）
+
+- **8. Astro 5 → 6 升级**（2026-09-04 评估完成）：生态已就绪但有 1 个硬阻碍。npm 实测 latest 已是 Astro 7.3.1（"等生态就绪再升 6"的前提过时）。逐项核验：@swup/astro 1.8.0 / astro-expressive-code 0.43.1 / @astrojs/svelte 8.1.2 的 peer 均含 `^6.0.0-beta` 且 Firefly（astro 6.4.6）实用同款配置实证可行；本站代码对 Astro 6 移除项（`Astro.glob` / `emitESMImage` / `ViewTransitions` / legacy collections / `%25` 路由文件名）零命中，content.config.ts 已用 Content Layer + `astro/zod`，Node 本机 24 / CI 22 均满足 ≥22.12；schema 无 Zod 4 破坏的 `transform + default` 组合。**硬阻碍：@astrojs/tailwind 最新 6.0.2 的 peer 仅 `^3 || ^4 || ^5`，无 Astro 6 支持**，升级前必须先改 Tailwind 接入方式（方案 A：保留 TW3 + postcss.config 接入，改动小；方案 B：迁 TW4 + @tailwindcss/vite，global.css 深度依赖 v3 语义风险高，须独立立项，禁止与 Astro 升级捆绑）。未知项：@astrojs/react 的 Astro 6 兼容版本（无 peer 声明，Firefly 不用 React，需试装验证）。收益有限：18 篇文章的小型静态站构建提速收益小，新特性（Fonts API/CSP/Live Collections）需求匹配度低；且 6→7 还有 Sätteri 默认 Markdown 处理器更换（本站 5 个自有 remark/rehype 插件需走 `processor: unified()` 逃生舱）+ `compressHTML: 'jsx'` 空白处理变化，不是免费跳板。**触发条件：需要升级依赖链（安全修复 / 新功能）或 Tailwind 改造完成时**；届时走 5→6（Firefly 实证路线），本地先删 `node_modules/.astro/`，`deploy.yml` 的 `cache: false` 不得回退。验收（升级时适用）：`pnpm check` / `pnpm build` / `pnpm preview` 全过；线上抽查首页 / 文章 / 相册 / 留言板 / ai-news 无回归。
+
+- **9. /ai-news/ React 岛屿瘦身**（2026-09-04 评估完成）：技术可行但 ROI 为负。dist 实测该页客户端 JS 为 react-dom chunk（178KB）+ AiNewsApp chunk（57KB）≈ 235KB 未压缩（gzip 估 70–80KB），且经 Astro 岛屿架构隔离**仅此一页加载**，其他页面零成本；Svelte 重写估省 40–50KB gzip，对低频单访客的日报阅读页无感知收益。重写成本被低估：`src/ai-news/` 共 43 文件 / 约 135KB 源码（2 个 zustand store、5 套橘鸦视觉模板 × 亮暗双变体、RSS 解析 / 离线快照兜底 / 搜索 / hash 路由 / localStorage 持久化）。迁移难点集中在 `useAppStore.ts` 的 `transitionRoute`：列表↔详情交叉淡入淡出依赖 `document.startViewTransition` + React `flushSync` 在回调内同步提交 DOM，Svelte 无直接等价 API，行为保真是最大风险点；回归面为 5 套模板 × 亮暗 × 列表/详情 = 20 种视觉组合。有利因素：hooks 仅 useState/useEffect/useMemo/useRef，zustand store 为纯 TS 逻辑可平移 runes，lucide-react 有 lucide-svelte 对应。附带收益：移除 6 个依赖并连带消除 TODO 8 的 @astrojs/react 未知项。**触发条件：① Astro 升级受阻于 @astrojs/react 兼容性（重写从可选变被迫，届时正确时机）；② 该页出现真实访问量增长使 payload 成为可测量瓶颈**。实施时建议先降级橘鸦模板（保留 1–2 套风格）压缩回归面。验收（实施时适用）：功能与视觉对齐（列表、筛选、20 种模板组合、View Transitions 过渡），构建产物无 React runtime 残留。
+
+- **11. 读者墙**（limh.me 移植评估得分 10，条件观望）：原版 `function/page-guest.php` 为评论区活跃者头像墙（Gravatar + 评论次数 top200）。技术上可行——Giscus 走 GitHub Discussions，`sync-site-stats.mjs` 可扩展按 author 聚合，`author.avatar_url` 替代 Gravatar；但当前站评论量极小，移植即空页。**触发条件：留言板/文章评论参与者明显增长（>20 人）**。
+
+- **12. 微语分页 + [F*] 表情码解析**（limh.me 移植评估，数据层无当前需求）：原版 `t.php` 含 pagenavi 分页与 `[F1]`–`[F18]` 表情码 → gif 替换；本站 `diary.ts` 仅 3 条数据（无分页需求）、内容零 `[F*]` 码（rg 实测）、表情 gif 资源未迁移。**触发条件：说说条数增长到单页过长（>30 条）或迁移历史说说数据含表情码时**，一并补 `public/images/face/` 资源。
 

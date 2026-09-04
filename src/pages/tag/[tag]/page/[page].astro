@@ -12,18 +12,20 @@ export const getStaticPaths = (async ({ paginate }) => {
 	const allPosts = await getCollection("posts");
 	const publicPosts = allPosts.filter(isPublicPost);
 	const sortedPosts = getSortedPosts(publicPosts);
-	return getTagList(publicPosts).flatMap(({ name }) =>
+	const tags = getTagList(publicPosts);
+	return tags.flatMap(({ name }) =>
 		paginate(
 			sortedPosts.filter((post) => post.data.tags.includes(name)),
 			{
 				params: { tag: name },
-				pageSize: siteConfig.postsPerPage,
+				props: { tags },
+				pageSize: siteConfig.tagPostsPerPage,
 			},
 		),
 	);
 }) satisfies GetStaticPaths;
 
-const { page } = Astro.props;
+const { page, tags } = Astro.props;
 const name = Astro.params.tag;
 const rootUrl = `/tag/${encodeURIComponent(name)}/`;
 const current = page.currentPage;
@@ -37,16 +39,41 @@ const total = page.lastPage;
 	prevUrl={current > 1 ? getPaginationUrl(rootUrl, current - 1) : undefined}
 	nextUrl={current < total ? getPaginationUrl(rootUrl, current + 1) : undefined}
 >
-	<div class="page">
+	<div class="page tag-page">
 		<header class="post-header">
 			<h2>
 				<i class="fa fa-tags" aria-hidden="true"></i>
 				标签：{name}
-				<span class="ml-2 text-sm font-normal text-gray-500">
-					共 {page.total} 篇文章
-				</span>
 			</h2>
 		</header>
+		<address class="post-metaa">
+			<i class="fa fa-home" aria-hidden="true"></i>
+			<a href="/" title="返回首页">首页</a>
+			&raquo;
+			<a href="/tag/" title="返回标签云集">标签云集</a>
+			&raquo;
+			<i class="fa fa-tag" aria-hidden="true"></i>
+			{name}
+		</address>
+
+		<div class="post-context">
+			<p>共 {page.total} 篇文章</p>
+		</div>
+
+		<ul id="blogtags">
+			<li class="tag-cloud-items">
+				{tags.map((tag) => (
+					<a
+						href={`/tag/${encodeURIComponent(tag.name)}/`}
+						title={`${tag.count}篇文章`}
+						aria-current={tag.name === name ? "page" : undefined}
+						class:list={[{ "is-current": tag.name === name }]}
+					>
+						{tag.name}<span class="tag-count">&times;{tag.count}</span>
+					</a>
+				))}
+			</li>
+		</ul>
 	</div>
 
 	{page.data.map((post) => <PostCard post={post} />)}

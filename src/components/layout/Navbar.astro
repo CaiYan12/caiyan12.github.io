@@ -69,6 +69,26 @@ const isCurrent = (url: string) =>
 				</li>
 			))}
 
+			{navBarConfig.archiveSite.length > 0 && (
+				<li
+					class:list={[
+						"dropdown",
+						{
+							current: navBarConfig.archiveSite.some((item) => isCurrent(item.url)),
+						},
+					]}
+				>
+					<a class="catbtns" href="javascript:void(0)">
+						文章归档<i class="arrow"></i>
+					</a>
+					<ul>
+						{navBarConfig.archiveSite.map((item) => (
+							<li><a href={item.url}>{item.name}</a></li>
+						))}
+					</ul>
+				</li>
+			)}
+
 			{navBarConfig.aboutSite.length > 0 && (
 				<li
 					class:list={[

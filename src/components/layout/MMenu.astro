@@ -27,6 +27,22 @@ const isCurrent = (url: string) =>
 		<li
 			class:list={[
 				{
+					current: navBarConfig.archiveSite.some((item) => isCurrent(item.url)),
+				},
+			]}
+		>
+			<a href="javascript:void(0)">文章归档</a>
+			<ul class="submenu">
+				{navBarConfig.archiveSite.map((item) => (
+					<li class:list={[{ current: isCurrent(item.url) }]}>
+						<a href={item.url}>{item.name}</a>
+					</li>
+				))}
+			</ul>
+		</li>
+		<li
+			class:list={[
+				{
 					current: navBarConfig.aboutSite.some((item) => isCurrent(item.url)),
 				},
 			]}

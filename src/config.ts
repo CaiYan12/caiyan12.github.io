@@ -26,6 +26,8 @@ export const siteConfig = {
 	foundationTime: "2026-01-01",
 	/** 每页文章数 */
 	postsPerPage: 6,
+	/** 标签页每页文章数（单标签页头部含标签药丸云，初始 5，远期随标签增长调整） */
+	tagPostsPerPage: 5,
 	/** 首页摘要字数 */
 	excerptLength: 120,
 	/** 站点备案号（可留空） */
@@ -48,9 +50,13 @@ export const backgroundConfig = {
 export const navBarConfig = {
 	items: [
 		{ name: "首页", url: "/", type: "home" },
-		{ name: "文章归档", url: "/archive/", type: "archive" },
 		{ name: "微言碎语", url: "/diary/", type: "diary" },
 		{ name: "留言板", url: "/guestbook/", type: "guestbook" },
+	],
+	/** 文章归档下拉菜单 */
+	archiveSite: [
+		{ name: "全部文章", url: "/archive/" },
+		{ name: "标签分类", url: "/tag/" },
 	],
 	/** 关于本站下拉菜单 */
 	aboutSite: [

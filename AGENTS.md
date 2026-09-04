@@ -229,7 +229,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ### 配置驱动（改配置 = 改站点）
 `src/config.ts` 是所有站点行为的控制中心：
 - `siteConfig` — 标题、作者、URL、每页文章数、备案号等
-- `navBarConfig` — 导航项、"附加功能"下拉、文章分类下拉、社交图标
+- `navBarConfig` — 平铺导航项（首页/微言碎语/留言板）+ 四组下拉：`archiveSite`（文章归档：全部文章 `/archive/` + 标签分类 `/tag/`）、`aboutSite`、`extra`、`resourceSite`；`social`（B站/QQ/微信/RSS 图标）仍在 `Navbar.astro` 的 `.m-nav` 渲染；下拉渲染分列在 `Navbar.astro`（桌面 hover 下拉）与 `MMenu.astro`（移动端全屏菜单），**两处必须同步修改**，父项 current 由子链接 `some()` 判定
 - `sidebarConfig` — 侧栏小部件顺序
 - `commentConfig` — **Giscus 评论**，已开启并绑定 `CaiYan12/caiyan12.github.io` 的 `Announcements` 分类；文章评论区使用 `pathname`，留言板使用 `specific` + `data-term="guestbook"`；`reactionsEnabled: "1"`、`emitMetadata: "0"`；其余 `repoId`、`categoryId`、语言和主题 URL 在 `src/config.ts` 中维护
 - `slideshowConfig` — 首页幻灯片（图片在 `public/images/slide/`）
@@ -260,10 +260,12 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 | Markdown 表格 | Markdown 表格经 `rehype-table-wrapper.mjs` 包裹 `.table-scroll`，原生 HTML 表格由 `remark-extended.mjs` 包裹；`global.css` 统一提供满宽、居中、边框和单元格上下居中样式，过宽表格仅在自身容器内滚动 |
 | 代码高亮/公式 | Expressive Code + KaTeX（KaTeX CSS 按需动态导入；`expressiveCode` 必须保持 `useDarkModeMediaQuery: false`，否则系统暗色访客的代码块变暗色） |
 | Mermaid 图表 | 客户端懒加载渲染（`theme-script.ts` 的 `renderMermaid()`，仅页面存在 `pre.mermaid` 时 `import("mermaid")`）。**体积治理已评估关闭（2026-09-04）**：mermaid 11 对全部 38 种 diagram 均为动态 import，访客只下载实际用到的类型（实测约 450KB gzip），未用 chunk 是 dist 死产物但无访客成本；注册表硬编码在 `mermaid.core.mjs` 不可外部裁剪；预渲染（rehype-mermaid + playwright）需引入 Chromium 构建依赖性价比不足。构建期 3 个大 chunk 警告（cynefin/core/cytoscape）为已知问题保留，勿重新评估 |
+| 标签云集页 | `/tag/`（`src/pages/tag/index.astro`，原 `function/page-tags.php` 的 shuffle 随机云改为文章数降序）+ 单标签页 `/tag/xxx/`（`tag/[tag].astro` + `tag/[tag]/page/[page]/` 分页，每页 `siteConfig.tagPostsPerPage: 5`）。两类标签页头部同为 `/tag/` 形态：h2 + 面包屑（首页 » 标签云集 » 标签名）+ `.post-context` 统计行 + 全量 `#blogtags` 药丸云；单标签页当前标签 `a.is-current` 品牌绿高亮 + `aria-current="page"`。构建期静态渲染，数据复用 `getTagList()`，客户端零请求 |
 
 ### 客户端脚本与 Swup 生命周期
 - `src/utils/theme-script.ts` 是唯一的客户端逻辑中枢：导航高亮、返回顶部、双击回顶、移动端菜单、Fancybox/KaTeX 初始化
 - **Swup 切换页面时组件脚本不会重跑**，所以需要重绑定的东西（Fancybox、导航高亮）都注册在 `initSwupHooks()` 的 `content:replace`/`page:view` 里；新增交互若依赖新页面 DOM，必须加到这两个 hook 中
+- 导航高亮 `syncNavHighlight()`：逐锚点 toggle 时**跳过 `javascript:void(0)` 锚点**（下拉父项按钮，永不匹配），下拉父项与 MMenu 分组的 current 由其子链接 `some()` 统一计算——直接加载（`pagefindReady`）与 `astro:after-swap`（Swup 不替换 `main` 外的导航）都会重算；勿回退为逐锚点裸 toggle，否则构建期写入的下拉父项 current 每次加载都会被抹掉。路由前缀匹配连带效果：/tag/xxx/ 页上"文章归档"下拉及"标签分类"子项呈 current（语义正确，保留）
 - 键盘 skip link（"跳到正文"）必须是 `Layout.astro` body 的首元素且在 Swup 容器（`main`）之外，否则切页后丢失；`.skip-link` 默认 `translateY(-200%)` 视觉隐藏、`:focus-visible` 归位显示，目标 `href="#main"`
 - 生产 console 清理在 `astro.config.mjs` 的 vite `esbuild` 段（`drop: ["debugger"]`、`pure: ["console.log", "console.debug"]`）；`console.warn/error` 保留供线上排错，勿移除该配置；mermaid cynefin chunk 内 2 处残留为第三方压缩代码，已知且接受
 - 页面内 `<script>` 若含 `{...}` 模板插值必须加 `is:inline`（否则 Astro 当 TS 模块处理会解析失败）
@@ -300,6 +302,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - 图片墙：`src/pages/images.astro` 的卡片图片桌面端保持 `180×120` 与 `object-fit: cover`；`max-width: 680px` 时图片宽度流体化，但必须通过 `height: auto` 与 `aspect-ratio: 3 / 2` 保持比例，避免日期栏错位或页面横向溢出。
 - 顶部二维码弹层：`src/components/layout/Navbar.astro` 中 QQ/微信共用 `.qrcode-frame`；`src/styles/global.css` 保持弹层四周 `10px` 内距、内部裁切框 `140×140`。由于 `public/images/qq-qrcode.jpg` 与 `public/images/wechat-qrcode.jpg` 的原图留白比例不同，两者使用独立的绝对定位裁切参数；更换资源后必须重新做真实 hover 视觉检查。
 - 桌面头部标题：`#header` 固定 `height:180px; overflow:hidden`，`#header h1` 与左侧 `100px` 浮动 logo 并排，其 `max-width` 必须为 `calc(100% - 100px)` 扣除 logo 占位；否则 `.box` 在 ≤1100px 收缩为 `calc(100% - 40px)` 时标题会被挤到 logo 下方落入裁切区并与 `#head-nav` 重叠（2026-09-04 实测修复）。改头部布局后须在 681–1100px 各断点复查标题位置。
+- 标签药丸 `#blogtags`（global.css 约 3477 行起，源自原版 colorful-original.css）：6 色轮换 + `::before` 三角 + `::after` 圆点，`/tag/` 与单标签页、侧栏 WidgetTag 三处共用同一 DOM 结构，勿另写药丸样式；`.tag-count`（×N 数字，11px 白色）与 `a.is-current`（当前标签品牌绿 `--colorful-green` 底 + 三角同色）为仅有的两处新增规则，**必须保持在 nth-child 轮换规则之后**（同 specificity 靠源顺序覆盖），移动位置会丢失高亮。
 - 首页右侧文章推荐固定为“最新 / 手气不错”两栏：两者使用普通箭头＋日期列表；“手气不错”仅在构建期随机抽取。首页下方只保留一个“热门推荐”，按 `getHotPosts` 的既有排序输出旗帜形序号标记；禁止复制热门元件或在浏览器端请求评论/文章数据。
 
 ### 工具函数

@@ -765,24 +765,31 @@ function initVisibilityTitle() {
 /** 导航高亮：根据当前路径标记 current */
 function syncNavHighlight() {
 	const path = window.location.pathname;
+	const isMatch = (href: string) =>
+		path === href ||
+		(href !== "/" && path.startsWith(href.replace(/\/$/, "")));
 	document.querySelectorAll("#nav a").forEach((a) => {
 		const href = a.getAttribute("href") || "/";
+		// 下拉父项按钮（void href）不匹配任何路径，交由下方子链接统一计算
+		if (href === "javascript:void(0)") return;
 		const parent = a.closest("li");
 		if (!parent) return;
-		// 首页精确匹配；其他路径前缀匹配（含尾斜杠）
-		const match =
-			path === href ||
-			(href !== "/" && path.startsWith(href.replace(/\/$/, "")));
-		parent.classList.toggle("current", !!match);
+		parent.classList.toggle("current", isMatch(href));
+	});
+	// 下拉父项 current：任一子链接匹配即高亮（Swup 切页不替换导航，需在此重算）
+	document.querySelectorAll("#nav li.dropdown, #mmenu li").forEach((li) => {
+		if (!li.querySelector(':scope > a[href="javascript:void(0)"]')) return;
+		const match = [...li.querySelectorAll(":scope > ul a")].some((a) =>
+			isMatch(a.getAttribute("href") || "/"),
+		);
+		li.classList.toggle("current", match);
 	});
 	document.querySelectorAll("#mmenu a").forEach((a) => {
 		const href = a.getAttribute("href") || "/";
+		if (href === "javascript:void(0)") return;
 		const parent = a.closest("li");
 		if (!parent) return;
-		const match =
-			path === href ||
-			(href !== "/" && path.startsWith(href.replace(/\/$/, "")));
-		parent.classList.toggle("current", !!match);
+		parent.classList.toggle("current", isMatch(href));
 	});
 }
 

@@ -3552,6 +3552,22 @@ img:hover {
   border-right-color: #b37333;
 }
 
+/* 标签药丸内的 ×N 数字（/tag/ 标签云集页），白色小字 */
+#blogtags a .tag-count {
+  margin-left: 2px;
+  color: #fff;
+  font-size: 11px;
+}
+
+/* 单标签页药丸云中的当前标签：品牌绿高亮（源顺序覆盖 nth-child 轮换色） */
+#blogtags a.is-current {
+  background: var(--colorful-green);
+}
+
+#blogtags a.is-current::before {
+  border-right-color: var(--colorful-green);
+}
+
 #sidebar .tab_nav ul {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
