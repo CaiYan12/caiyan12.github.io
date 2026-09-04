@@ -2,6 +2,8 @@
 dist/
 # generated types
 .astro/
+# WebP 响应式变体（构建期由 scripts/generate-lqips.mjs 生成，随构建进 dist）
+public/images/_variants/
 
 # dependencies
 node_modules/

@@ -2,3 +2,5 @@
 src/styles/colorful-original.css
 # vendored 第三方库（Font Awesome 4）
 src/styles/font-awesome.css
+# 构建期生成产物（scripts/generate-lqips.mjs 输出，不参与格式检查）
+src/constants/image-manifest.json

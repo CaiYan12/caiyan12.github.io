@@ -3908,7 +3908,8 @@ img:hover {
   }
 }
 
-.carousel-inner > .item > a > img {
+/* 幻灯片图片：picture 包裹后 img 不再是 a 的直接子元素，改用后代选择器 */
+.carousel-inner > .item > a img {
   display: block;
   width: 100%;
   height: 280px;

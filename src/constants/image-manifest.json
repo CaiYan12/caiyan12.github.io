@@ -1,0 +1,222 @@
+{
+	"public:images/albums/日常随手拍/01.jpg": {
+		"width": 860,
+		"height": 320,
+		"variants": [
+			480
+		]
+	},
+	"public:images/albums/日常随手拍/02.jpg": {
+		"width": 860,
+		"height": 320,
+		"variants": [
+			480
+		]
+	},
+	"public:images/albums/日常随手拍/03.jpg": {
+		"width": 860,
+		"height": 320,
+		"variants": [
+			480
+		]
+	},
+	"public:images/albums/背景收藏/01.jpg": {
+		"width": 1000,
+		"height": 667,
+		"variants": [
+			480,
+			720
+		]
+	},
+	"public:images/albums/背景收藏/02.jpg": {
+		"width": 866,
+		"height": 595,
+		"variants": [
+			480,
+			720
+		]
+	},
+	"public:images/albums/背景收藏/03.jpg": {
+		"width": 670,
+		"height": 419,
+		"variants": [
+			480
+		]
+	},
+	"public:images/avatar.png": {
+		"width": 1080,
+		"height": 1080,
+		"variants": [
+			480,
+			720
+		]
+	},
+	"public:images/banner.jpg": {
+		"width": 780,
+		"height": 280,
+		"variants": [
+			480
+		]
+	},
+	"public:images/bgnew.png": {
+		"width": 588,
+		"height": 375,
+		"variants": [
+			480
+		]
+	},
+	"public:images/guide-cover.png": {
+		"width": 1920,
+		"height": 1080,
+		"variants": [
+			480,
+			720,
+			1080,
+			1440
+		]
+	},
+	"public:images/posts/202603181613.jpg": {
+		"width": 1193,
+		"height": 698,
+		"variants": [
+			480,
+			720
+		]
+	},
+	"public:images/posts/202603181619.jpg": {
+		"width": 1193,
+		"height": 698,
+		"variants": [
+			480,
+			720
+		]
+	},
+	"public:images/posts/202604021610.png": {
+		"width": 1132,
+		"height": 434,
+		"variants": [
+			480,
+			720
+		]
+	},
+	"public:images/posts/fee-depreciation-cover.jpg": {
+		"width": 1125,
+		"height": 750,
+		"variants": [
+			480,
+			720
+		]
+	},
+	"public:images/posts/front-end-ui-tool-index-cover.jpg": {
+		"width": 1920,
+		"height": 1280,
+		"variants": [
+			480,
+			720,
+			1080,
+			1440
+		]
+	},
+	"public:images/posts/PRO4.png": {
+		"width": 640,
+		"height": 480,
+		"variants": [
+			480
+		]
+	},
+	"public:images/posts/windy-project-manager/dashboard.jpg": {
+		"width": 802,
+		"height": 631,
+		"variants": [
+			480
+		]
+	},
+	"public:images/posts/windy-project-manager/detail-commits.jpg": {
+		"width": 802,
+		"height": 631,
+		"variants": [
+			480
+		]
+	},
+	"public:images/posts/windy-project-manager/detail-overview.jpg": {
+		"width": 802,
+		"height": 631,
+		"variants": [
+			480
+		]
+	},
+	"public:images/posts/windy-project-manager/detail-technology-git.jpg": {
+		"width": 802,
+		"height": 631,
+		"variants": [
+			480
+		]
+	},
+	"public:images/posts/windy-project-manager/settings-appearance.jpg": {
+		"width": 802,
+		"height": 631,
+		"variants": [
+			480
+		]
+	},
+	"public:images/posts/windy-project-manager-cover.jpg": {
+		"width": 1920,
+		"height": 1280,
+		"variants": [
+			480,
+			720,
+			1080,
+			1440
+		]
+	},
+	"public:images/qq-qrcode.jpg": {
+		"width": 940,
+		"height": 1705,
+		"variants": [
+			480,
+			720
+		]
+	},
+	"public:images/slide/slide-1.jpg": {
+		"width": 860,
+		"height": 320,
+		"variants": [
+			480
+		]
+	},
+	"public:images/slide/slide-2.jpg": {
+		"width": 860,
+		"height": 320,
+		"variants": [
+			480
+		]
+	},
+	"public:images/slide/slide-3.jpg": {
+		"width": 860,
+		"height": 320,
+		"variants": [
+			480
+		]
+	},
+	"public:images/slide/slide-4.jpg": {
+		"width": 860,
+		"height": 320,
+		"variants": [
+			480
+		]
+	},
+	"public:images/slide/slide-5.jpg": {
+		"width": 860,
+		"height": 320,
+		"variants": [
+			480
+		]
+	},
+	"public:images/wechat-qrcode.jpg": {
+		"width": 820,
+		"height": 1219,
+		"variants": [
+			480
+		]
+	}
+}

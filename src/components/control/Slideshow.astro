@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import { slideshowConfig } from "../../config";
 import { getSortedPosts } from "../../utils/content-utils";
+import ResponsiveImage from "./ResponsiveImage.astro";
 
 const allPosts = await getCollection("posts");
 const posts = getSortedPosts(allPosts)
@@ -26,7 +27,11 @@ const slides = posts.map((post, index) => ({
 			{slides.map((slide, index) => (
 				<div class:list={["item", index === 0 && "active"]}>
 					<a href={slide.url}>
-						<img src={slide.image} alt={slide.title} />
+						<ResponsiveImage
+							src={slide.image}
+							alt={slide.title}
+							sizes="(max-width: 680px) 100vw, (max-width: 1000px) calc(100vw - 40px), 660px"
+						/>
 						<span class="carousel-caption">{slide.title}</span>
 						<span class="carousel-bg"></span>
 					</a>

@@ -150,15 +150,7 @@ public/
 
 ### 待办（优化项排行，2026-09-04 与 Firefly AB 对比制定）
 
-排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1 项（SEO 元数据与结构化数据补齐）已于 2026-09-04 完成，移入下方“已完成”；编号保持与原排行一致。
-
-- [ ] **2. 图片响应式与格式现代化（封面 / 幻灯片 / 相册 / 图片墙）**
-
-  详细需求：扩展 `scripts/generate-lqips.mjs`（已用 sharp 遍历站点图片）顺带产出 WebP 变体，变体文件加入 `.gitignore` 不入库、随构建进入 dist；渲染层为四类图片补 `srcset` / `sizes` 与 `width` / `height`（防 CLS）：文章封面（含 `public/images/random/` 随机封面）、首页幻灯片、相册图、图片墙卡片。LQIP 渐变占位行为与 `public/` 原图直出策略保持不变。
-
-  验收结果：`pnpm build && pnpm preview` 后 Network 面板确认实际加载 WebP；多断点复查图片墙 3:2 比例与日期栏对齐、相册 Fancybox 灯箱正常、幻灯片切换动画无回归；Lighthouse CLS 不劣于现状。
-
-  预期：图片流量较 JPEG 原图下降约 25–50%，移动端弱网首屏明显加快。
+排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1 项（SEO 元数据与结构化数据补齐）与第 2 项（图片响应式与格式现代化）已于 2026-09-04 完成，移入下方“已完成”；编号保持与原排行一致。
 
 - [ ] **3. Expressive Code 暗色代码块修复**
 
@@ -237,6 +229,7 @@ public/
 ### 已完成
 
 - [x] **1. SEO 元数据与结构化数据补齐**（2026-09-04）：`Layout.astro` 补 `og:url`（与 canonical 同值）、`og:site_name`、`twitter:card`（`summary_large_image`）及 `twitter:title/description/image`；修复 `og:image` 兜底相对路径，统一输出绝对地址；文章页 `og:type` 为 `article`（其余页 `website`）；文章页注入 `BlogPosting` JSON-LD（headline/datePublished/dateModified/description/image/mainEntityOfPage/author）。本地 Playwright 与 dist 产物均已验证 meta 齐全无空值。
+- [x] **2. 图片响应式与格式现代化**（2026-09-04）：`scripts/generate-lqips.mjs` 追加 WebP 变体生成（480/720/1080/1440 四档、q82、mtime 增量、孤儿清理），变体输出至 `public/images/_variants/`（`.gitignore` 排除、随构建进 dist）；新增 `image-variants.ts`（manifest 查询 + `existsSync` 兜底降级）与 `ResponsiveImage.astro`（`<picture>` + WebP source + 原图 srcset 兜底），文章封面 / 幻灯片 / 相册 / 图片墙四类图片补 `srcset`/`sizes` 与 `width`/`height` 防 CLS；`global.css` 幻灯片选择器改为后代选择器适配 picture 包裹。实测文章封面 1787KB→66KB（-96%），图片墙 3:2 多断点无回归，相册灯箱与幻灯片切换正常。
 - [x] 主页——最新评论使用构建期真实数据，最多展示 5 条并支持“换一批”（开发环境保留本地 mock）
 - [x] 主页右侧文章推荐去重：上方为“最新 / 手气不错”，下方保留唯一“热门推荐”，列表样式与排行旗帜标记按 Colorful 原主题语义区分
 - [x] 吐槽水军：单条展示留言板内容并支持“换一批”

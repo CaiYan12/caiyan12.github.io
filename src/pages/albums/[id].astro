@@ -2,6 +2,7 @@
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import { scanAlbums } from "../../utils/album-scanner";
 import { getLqipProps } from "../../utils/lqip-utils";
+import ResponsiveImage from "../../components/control/ResponsiveImage.astro";
 
 export async function getStaticPaths() {
 	const albums = scanAlbums();
@@ -48,11 +49,12 @@ const { album } = Astro.props;
 						title={photo.name}
 					>
 						<span class="lqip-placeholder" style={getLqipProps(photo.url).style} aria-hidden="true"></span>
-						<img
-							src={photo.url}
-							alt={photo.name}
-							loading="lazy"
-						/>
+					<ResponsiveImage
+						src={photo.url}
+						alt={photo.name}
+						loading="lazy"
+						sizes="(max-width: 680px) 50vw, 330px"
+					/>
 					</a>
 				))}
 			</div>

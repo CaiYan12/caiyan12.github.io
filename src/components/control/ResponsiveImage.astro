@@ -1,0 +1,33 @@
+---
+// 响应式图片：<picture> + WebP source + 原图格式 srcset 兜底（TODO2）
+// 属性由 image-variants.ts 从构建期 manifest 查询；无变体的图片自动降级为裸 <img>。
+import { getResponsiveImage } from "../../utils/image-variants";
+
+interface Props
+	extends astroHTML.JSX.ImgHTMLAttributes,
+		astroHTML.JSX.AstroBuiltinAttributes {
+	/** 图片 URL（/images/... 形式） */
+	src: string;
+	/** sizes 提示（如 "(max-width: 680px) 100vw, 660px"） */
+	sizes: string;
+}
+
+const { src, sizes, ...imgProps } = Astro.props;
+const attrs = getResponsiveImage(src);
+---
+
+<picture>
+	{
+		attrs.webpSrcset && (
+			<source type="image/webp" srcset={attrs.webpSrcset} sizes={sizes} />
+		)
+	}
+	<img
+		src={attrs.src}
+		srcset={attrs.srcset}
+		sizes={attrs.srcset ? sizes : undefined}
+		width={attrs.width}
+		height={attrs.height}
+		{...imgProps}
+	/>
+</picture>

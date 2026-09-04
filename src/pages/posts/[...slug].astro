@@ -14,6 +14,7 @@ import QRCode from "qrcode";
 import PostToc from "../../components/control/PostToc.astro";
 import License from "../../components/misc/License.astro";
 import { getLqipProps } from "../../utils/lqip-utils";
+import ResponsiveImage from "../../components/control/ResponsiveImage.astro";
 
 export async function getStaticPaths() {
 	const posts = await getCollection("posts");
@@ -84,7 +85,13 @@ const starLevel = (comments: number) => {
 	<div class="page">
 		<figure class="post-cover lqip-wrap">
 			<div class="lqip-placeholder" style={getLqipProps(cover).style} aria-hidden="true"></div>
-			<img src={cover} alt={title} title={title} loading="eager" />
+			<ResponsiveImage
+				src={cover}
+				alt={title}
+				title={title}
+				loading="eager"
+				sizes="(max-width: 680px) 100vw, (max-width: 1000px) calc(100vw - 40px), 660px"
+			/>
 		</figure>
 
 		<article role="article">

@@ -2,6 +2,7 @@
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getCollection } from "astro:content";
 import { getCover, isPublicPost } from "../utils/content-utils";
+import ResponsiveImage from "../components/control/ResponsiveImage.astro";
 import dayjs from "dayjs";
 
 const allPosts = await getCollection("posts");
@@ -38,10 +39,11 @@ const wallImages = allPosts
 					{wallImages.map((item) => (
 						<a class="image-card" href={item.url} title={item.title}>
 							<span class="imgtext">{item.title}</span>
-							<img
+							<ResponsiveImage
 								src={item.image}
 								alt={item.title}
 								loading="lazy"
+								sizes="(max-width: 680px) 33vw, 240px"
 							/>
 							<span class="meta">
 								<i class="fa fa-calendar" aria-hidden="true"></i>
