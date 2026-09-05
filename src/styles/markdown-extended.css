@@ -332,7 +332,10 @@
 
 .gh-calendar-scroll {
   overflow-x: auto;
-  padding-bottom: 2px;
+  /* 预留格子 hover 放大（1.3×）的视觉溢出：最右/最下行放大后仍落在 padding
+     盒内，不会突然弹出滚动条（最左列溢出落在周几列内侧，本就无需处理）；
+     窄屏触底横滚时 padding 计入滚动内容，无副作用 */
+  padding: 0 3px 4px 0;
 }
 
 .gh-calendar-grid {
@@ -458,11 +461,13 @@
 }
 
 /* 入场：逐列 8ms 递进（构建期内联 animation-delay），约 660ms 铺开完毕；
-   reduced-motion 下保留渐显、去掉位移，悬停去掉缩放 */
+   从上方 -6px 落下而非从下方升起——向上溢出落在月份行内侧（网格盒内），
+   动画进行中不会瞬时报出纵向滚动条；reduced-motion 下保留渐显、去掉位移，
+   悬停去掉缩放 */
 @keyframes gh-calendar-col-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(-6px);
   }
 
   to {
