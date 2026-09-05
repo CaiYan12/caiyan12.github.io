@@ -114,7 +114,8 @@ export function remarkExtended() {
 		// 稿纸尾行签名由本分支固定输出（写在闭合标签前），不放进 Markdown。
 		visit(tree, "containerDirective", (node, index, parent) => {
 			if (!parent || index === undefined) return;
-			if (String(node.name || "").toLowerCase() !== "letter-paper") return;
+			if (String(node.name || "").toLowerCase() !== "letter-paper")
+				return;
 			parent.children.splice(
 				index,
 				1,

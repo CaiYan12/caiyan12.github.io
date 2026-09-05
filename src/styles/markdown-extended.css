@@ -305,9 +305,7 @@
   margin: 1.25em auto 1.5em;
   padding: 30px 34px 32px;
   border: 1.5px solid rgba(72, 72, 61, 0.54);
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.18)),
-    #fff4bd;
+  background: linear-gradient(rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.18)), #fff4bd;
   box-shadow: 5px 8px 0 rgba(48, 52, 44, 0.08);
   transform: rotate(0.45deg);
 }
@@ -424,15 +422,7 @@
   padding: 58px clamp(28px, 6vw, 82px) 50px 92px;
   overflow: hidden;
   border: 1px solid rgba(110, 94, 75, 0.13);
-  background:
-    linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.24),
-      transparent 18%,
-      transparent 82%,
-      rgba(110, 91, 70, 0.035)
-    ),
-    #fffdf7;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.24), transparent 18%, transparent 82%, rgba(110, 91, 70, 0.035)), #fffdf7;
   box-shadow: 0 10px 28px rgba(50, 42, 31, 0.12);
 }
 
@@ -679,13 +669,7 @@
 
 /* 正文区：横线网格画在这一层，锚定内容盒（首行盒顶），行高=周期 */
 .post-context .letter-paper-body {
-  background: repeating-linear-gradient(
-    to bottom,
-    transparent 0,
-    transparent calc(var(--lp-cycle) - 1px),
-    var(--lp-line) calc(var(--lp-cycle) - 1px),
-    var(--lp-line) var(--lp-cycle)
-  );
+  background: repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--lp-cycle) - 1px), var(--lp-line) calc(var(--lp-cycle) - 1px), var(--lp-line) var(--lp-cycle));
   background-origin: content-box;
   background-position: 0 var(--lp-shift);
 }

@@ -66,9 +66,11 @@ function assertValidData(data: ContributionsData): void {
 	if (data.days.length % 7 !== 0) throw invalid;
 	if (
 		!data.totals ||
-		![data.totals.total, data.totals.longestStreak, data.totals.currentStreak].every(
-			(n) => Number.isInteger(n) && n >= 0,
-		)
+		![
+			data.totals.total,
+			data.totals.longestStreak,
+			data.totals.currentStreak,
+		].every((n) => Number.isInteger(n) && n >= 0)
 	) {
 		throw invalid;
 	}
@@ -140,7 +142,9 @@ export function renderContributionsCalendar(data: ContributionsData): string {
 }
 
 /** 缓存缺失或损坏时的回退卡片 */
-export function renderContributionsFallback(profileUrl = "https://github.com/CaiYan12"): string {
+export function renderContributionsFallback(
+	profileUrl = "https://github.com/CaiYan12",
+): string {
 	const url = escapeHtml(profileUrl);
 	return `<section class="widget gh-calendar gh-calendar-fallback"><span class="icon"><i class="fa fa-github" aria-hidden="true"></i></span><h3>${CALENDAR_TITLE}</h3><div class="gh-calendar-body"><p class="gh-calendar-fallback-text">日历数据暂时不可用，可前往 <a href="${url}" target="_blank" rel="noopener noreferrer">GitHub 主页</a> 查看贡献记录。</p></div></section>`;
 }
