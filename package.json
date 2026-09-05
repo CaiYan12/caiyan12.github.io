@@ -8,7 +8,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "check": "astro check",
-    "build": "node scripts/validate-post-slugs.mjs && node scripts/generate-lqips.mjs && node scripts/fetch-github-repos.mjs && astro build && pagefind --site dist",
+    "build": "node scripts/validate-post-slugs.mjs && node scripts/generate-lqips.mjs && node scripts/fetch-github-repos.mjs && astro build && node scripts/inject-buddha-banner.mjs && pagefind --site dist",
     "smoke:ai-news": "node scripts/ai-news-smoke.mjs",
     "preview": "astro preview",
     "new-post": "node scripts/new-post.mjs",

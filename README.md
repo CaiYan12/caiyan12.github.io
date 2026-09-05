@@ -19,7 +19,7 @@
 ```bash
 pnpm install     # 安装依赖
 pnpm dev         # 本地开发（http://localhost:4321）
-pnpm build       # 构建到 dist/（LQIP 占位图 + GitHub 仓库数据 + Pagefind 已串联）
+pnpm build       # 构建到 dist/（LQIP 占位图 + GitHub 仓库数据 + 佛祖横幅注入 + Pagefind 已串联）
 pnpm new-post -- <yyyymmddhhmmss> [标题]  # 按规范创建文章目录
 pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存
 pnpm preview     # 预览构建产物
@@ -66,7 +66,7 @@ src/
   plugins/               ← Markdown 与构建期转换插件
   utils/                 ← 工具函数
   constants/             ← 构建期生成数据（LQIP 占位色、GitHub 仓库卡片元数据缓存）
-scripts/                 ← 构建脚本（LQIP 生成、GitHub 仓库数据拉取、新建文章）
+scripts/                 ← 构建脚本（LQIP 生成、GitHub 仓库数据拉取、新建文章、佛祖横幅注入）
 public/
   ai-news/snapshot/      ← AI 日报离线 RSS 快照
   images/albums/         ← 相册（每个文件夹一个相册）
