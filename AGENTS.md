@@ -209,11 +209,12 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 ```bash
 pnpm install     # 安装依赖（中国网络需先设 registry 为 https://registry.npmmirror.com）
 pnpm dev         # 本地开发 http://localhost:4321
-pnpm build       # 构建 dist/（LQIP 生成 + GitHub 仓库数据拉取 + astro build + Pagefind，已串联）
+pnpm build       # 构建 dist/（LQIP 生成 + GitHub 仓库/贡献数据拉取 + astro build + Pagefind，已串联）
 pnpm new-post -- <yyyymmddhhmmss> [标题]  # 按强制 URL 规范创建文章
 pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存（默认增量只拉缺失）
 pnpm preview     # 预览构建产物（需先 build）
 pnpm check       # astro check 类型检查
+pnpm test:contributions  # 贡献日历数据脚本离线单测（node --test，注入 fetchImpl 不访问真实网络）
 pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ```
 
@@ -263,6 +264,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 | 标签云集页 | `/tag/`（`src/pages/tag/index.astro`，原 `function/page-tags.php` 的 shuffle 随机云改为文章数降序）+ 单标签页 `/tag/xxx/`（`tag/[tag].astro` + `tag/[tag]/page/[page]/` 分页，每页 `siteConfig.tagPostsPerPage: 5`）。两类标签页头部同为 `/tag/` 形态：h2 + 面包屑（首页 » 标签云集 » 标签名）+ `.post-context` 统计行 + 全量 `#blogtags` 药丸云；单标签页当前标签 `a.is-current` 品牌绿高亮 + `aria-current="page"`。构建期静态渲染，数据复用 `getTagList()`，客户端零请求 |
 | 分类云集页 | `/category/`（`src/pages/category/index.astro`，2026-09-05 新增，与 `/tag/` 同模式）+ 单分类页 `/category/xxx/`（`category/[category].astro` + `category/[category]/page/[page]/` 分页，每页维持 `siteConfig.postsPerPage: 6` 不另设配置）。两类分类页头部同为 `/tag/` 形态：h2（`fa-folder-open-o`）+ 面包屑（首页 » 分类云集 » 分类名）+ `.post-context` 统计行 + 全量 `#blogtags` 药丸云（含 `.tag-count` ×N）；单分类页当前分类 `a.is-current` 品牌绿高亮 + `aria-current="page"`。构建期静态渲染，数据复用 `getCategoryList()`，客户端零请求；导航入口为 `archiveSite` 下拉的"文章分类" |
 | 热门页 | `/hot/`（`src/pages/hot/index.astro` + `hot/page/[page]/` 分页，2026-09-05 新增）：数据复用 `getHotPosts(allPosts, Infinity)` 取全量排序（侧栏部件用默认 `limit=6`），每页 `siteConfig.postsPerPage: 6`；头部对齐列表页形态（h2 `fa-fire` + 面包屑 + `.post-context` 统计行），正文用 `PostCard` 而非复制侧栏 `#hotlog` 排行元件；评论数来自构建期 `site-stats.json` 快照，客户端零请求。导航入口为 `archiveSite` 下拉的"热门推荐" |
+| About 页贡献日历 | `/about/` 正文前的 GitHub 贡献日历（2026-09-05 新增）：`scripts/fetch-github-contributions.mjs` 经 GraphQL `contributionsCollection` 拉取近 12 个月写入 `src/constants/github-contributions.json`（已接入 build 链，位于 fetch-github-repos 之后；拉取失败/无令牌 warn 不中断，复用旧缓存或由 about.astro 渲染回退卡），`about.astro` 构建期经 `src/utils/contributions-calendar.ts` 纯函数渲染 `.widget` 形态卡片（统计行+图例+中文月标/周几标签，规格见 GitHub Issue #7）；**客户端零请求零 JS**，动效仅列级入场 stagger（8ms×53 列）与格子 hover 缩放 1.3（120ms 仅精确指针），均随附 `prefers-reduced-motion` 变体；53 列随容器流式铺满，方形由整体 `aspect-ratio: 53/7` + wrapper `subgrid` 构造保证——**勿改回单格 aspect-ratio**（与 stretch 组合在 Chrome 下循环撑破轨道），窄屏触 `--gh-cell-min` 下限后局部横滚；about.astro 读缓存必须用 `process.cwd()` 相对路径（`import.meta.url` 打包后指向 dist/chunks，会静默走回退卡）；不引入 Bloggify/github-calendar 运行时库（第三方代理单点，违背客户端零请求原则），勿重新评估 |
 
 ### 客户端脚本与 Swup 生命周期
 - `src/utils/theme-script.ts` 是唯一的客户端逻辑中枢：导航高亮、返回顶部、双击回顶、移动端菜单、Fancybox/KaTeX 初始化

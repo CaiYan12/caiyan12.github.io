@@ -297,6 +297,216 @@
   color: var(--primary);
 }
 
+/* ---------- GitHub 贡献日历（About 页面，构建期静态渲染，零客户端 JS） ---------- */
+/* 卡片形态复用 .widget（白底、#eaeaea 细边框、方角、47px 图标头），
+   此处只追加日历自身布局；品牌绿档位梯度取自 --colorful-green（#00c000）。
+   列宽流式：53 列 1fr 等分容器宽度，格子 aspect-ratio 保持方形，宽屏铺满；
+   窄屏触及格子下限（--gh-cell-min）时外层网格 min-width 撑破容器，
+   由 .gh-calendar-scroll 局部横滚兜底。 */
+.widget.gh-calendar {
+  --gh-gap: 3px;
+  --gh-cell-min: 4px;
+  --gh-wd: 14px;
+  --gh-l0: #ebedf0;
+  --gh-l1: #b4e8bd;
+  --gh-l2: #6fdb85;
+  --gh-l3: #2bcb5b;
+  --gh-l4: #00b344;
+  margin: 1.25em 0 0;
+}
+
+.gh-calendar-body {
+  padding: 12px 15px 14px;
+}
+
+.gh-calendar-stats {
+  margin: 0 0 10px;
+  color: var(--colorful-muted);
+  font-size: 13px;
+}
+
+.gh-calendar-stats strong {
+  color: #000;
+  font-weight: 700;
+}
+
+.gh-calendar-scroll {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.gh-calendar-grid {
+  /* min-width = 周几列 + 53 列格子下限 + 53 份间距：低于它整体横滚而不是把格子压没 */
+  min-width: calc(14px + 53 * var(--gh-cell-min) + 53 * var(--gh-gap));
+}
+
+.gh-calendar-months {
+  display: grid;
+  /* 与 .gh-calendar-cols 完全同构的模板（周几列 + 53 日历列），月标与格子列
+     逐列对齐；minmax(0,1fr) 钳掉 fr 轨道的 auto 最小值，防止撑破容器 */
+  grid-template-columns: var(--gh-wd) repeat(var(--gh-cols), minmax(0, 1fr));
+  gap: var(--gh-gap);
+  margin-bottom: 4px;
+  /* 标签 nowrap 的可见溢出会计入祖先滚动区，裁在网格边缘避免 5px 级假横滚 */
+  overflow: hidden;
+  color: var(--colorful-muted);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.gh-calendar-months span {
+  grid-row: 1;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.gh-calendar-cols {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: var(--gh-wd) repeat(var(--gh-cols), minmax(0, 1fr));
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+  gap: var(--gh-gap);
+  /* 整体 53:7 固定比例：行高≈列宽由构造保证（周几列带来 <1px 误差），
+     规避 aspect-ratio 单元格在 stretch 下的循环尺寸问题 */
+  aspect-ratio: 53 / 7;
+}
+
+.gh-calendar-wd {
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  color: var(--colorful-muted);
+  font-size: 10px;
+}
+
+.gh-calendar-col {
+  display: grid;
+  grid-row: 1 / span 7;
+  grid-template-rows: subgrid;
+  animation: gh-calendar-col-in 240ms var(--ease-out) both;
+}
+
+.gh-calendar-col:first-of-type {
+  grid-column: 2;
+}
+
+.gh-calendar-cell {
+  display: block;
+  position: relative;
+  border-radius: 2px;
+  background: var(--gh-l0);
+}
+
+.gh-calendar-cell.l1 {
+  background: var(--gh-l1);
+}
+
+.gh-calendar-cell.l2 {
+  background: var(--gh-l2);
+}
+
+.gh-calendar-cell.l3 {
+  background: var(--gh-l3);
+}
+
+.gh-calendar-cell.l4 {
+  background: var(--gh-l4);
+}
+
+/* 悬停反馈：快而轻；仅在支持悬停的精确指针设备生效（触屏点击不弹缩放） */
+@media (hover: hover) and (pointer: fine) {
+  .gh-calendar-cols .gh-calendar-cell {
+    transition: transform 120ms ease;
+  }
+
+  .gh-calendar-cols .gh-calendar-cell:hover {
+    transform: scale(1.3);
+    z-index: 1;
+  }
+}
+
+.gh-calendar-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 8px;
+  gap: 3px;
+  color: var(--colorful-muted);
+  font-size: 11px;
+}
+
+.gh-calendar-legend span {
+  margin: 0 4px;
+}
+
+/* 图例色块不参与流式格子尺寸，固定小方块 */
+.gh-calendar-legend .gh-calendar-cell {
+  flex: none;
+  width: 11px;
+  height: 11px;
+}
+
+.gh-calendar-fallback-text {
+  margin: 0;
+  color: var(--colorful-muted);
+  font-size: 13px;
+}
+
+.gh-calendar-fallback-text a {
+  color: var(--colorful-green);
+}
+
+/* 入场：逐列 8ms 递进（构建期内联 animation-delay），约 660ms 铺开完毕；
+   reduced-motion 下保留渐显、去掉位移，悬停去掉缩放 */
+@keyframes gh-calendar-col-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes gh-calendar-col-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gh-calendar-col {
+    animation-name: gh-calendar-col-fade;
+    animation-duration: 200ms;
+  }
+
+  .gh-calendar-cols .gh-calendar-cell:hover {
+    transform: none;
+  }
+}
+
+/* 小屏收窄周几列与列间距；格子触到 --gh-cell-min 下限后由横滚兜底
+   （下限 6px：375px 手机横滚出约 6px 格子，好过压没） */
+@media screen and (max-width: 680px) {
+  .widget.gh-calendar {
+    --gh-gap: 2px;
+    --gh-cell-min: 6px;
+    --gh-wd: 12px;
+  }
+
+  .gh-calendar-months,
+  .gh-calendar-wd {
+    font-size: 9px;
+  }
+}
+
 /* ---------- 图片网格（[grid]...[/grid]，remark-image-grid 产生） ---------- */
 .post-context .image-grid {
   display: grid;

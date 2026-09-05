@@ -1,5 +1,14 @@
 # 更新日志
 
+## 2026-09-05：关于页新增 GitHub 贡献日历
+
+- `/about/` 面包屑之下、正文之前新增 GitHub 贡献日历卡片（近 12 个月，53 列），复用原版 Colorful 的 `.widget` 小部件形态：图标头 + 统计行（总贡献/最长连续/当前连续）+ 品牌绿梯度格子 + 少→多图例。
+- 构建期渲染：`scripts/fetch-github-contributions.mjs` 经 GitHub GraphQL `contributionsCollection` 拉取数据写入 `src/constants/github-contributions.json`（已接入 `pnpm build` 链），客户端零请求零 JS；不引入 Bloggify/github-calendar 运行时库（避免第三方代理单点，延续仓库卡片的构建期渲染策略）。
+- 拉取失败或无令牌时构建不中断：复用旧缓存，缺失时渲染指向 GitHub 主页的回退卡；令牌解析顺序与既有脚本一致（`GITHUB_TOKEN` → `GH_TOKEN` → `gh auth token`）。
+- 响应式：53 列随容器宽度流式伸缩铺满，格子方形由整体 `aspect-ratio: 53/7` + subgrid 构造保证；窄屏触到格子下限后由容器局部横滚兜底。
+- 克制动效（/animate 规格并随附 `prefers-reduced-motion` 变体）：53 列入场 8ms 递进 stagger（240ms ease-out）、格子 hover 1.3 倍缩放（120ms，仅精确指针设备）。
+- 新增 `pnpm test:contributions`（注入 fetchImpl 的离线单测 10 例）；spec 见 GitHub Issue #7，实施记录见 `docs/superpowers/plans/2026-09-05-about-github-contributions-calendar.md`。
+
 ## 2026-09-01：AI日报迁移
 
 - 从 `D:\pages\test\ai-news` 迁移完整 React 运行时到本站 `/ai-news/`，保留 RSS 实时抓取、离线快照、搜索、筛选、阅读状态、主题、布局和橘鸦阅读风格。

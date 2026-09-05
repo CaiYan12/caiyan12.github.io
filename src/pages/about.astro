@@ -1,11 +1,32 @@
 ---
+import fs from "node:fs";
+import path from "node:path";
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { siteConfig } from "../config";
 import { getCollection, render } from "astro:content";
+import {
+	renderContributionsCalendar,
+	renderContributionsFallback,
+} from "../utils/contributions-calendar";
 
 const specPages = await getCollection("spec");
 const aboutPage = specPages.find((p) => p.id === "about");
 const aboutContent = aboutPage ? await render(aboutPage) : null;
+
+// 缓存由 scripts/fetch-github-contributions.mjs 在构建期生成并入库；
+// 文件缺失或形状非法（首次构建前/无令牌/坏数据）时渲染回退卡而不是让构建失败。
+// 注意用 cwd 定位：import.meta.url 在 astro build 的打包产物里指向 dist/chunks，
+// 相对解析会扑空（dev 正常、build 走回退的隐性差异）。
+let calendarHtml: string;
+try {
+	const raw = fs.readFileSync(
+		path.resolve(process.cwd(), "src", "constants", "github-contributions.json"),
+		"utf-8",
+	);
+	calendarHtml = renderContributionsCalendar(JSON.parse(raw));
+} catch {
+	calendarHtml = renderContributionsFallback();
+}
 ---
 
 <MainGridLayout
@@ -25,9 +46,11 @@ const aboutContent = aboutPage ? await render(aboutPage) : null;
 				<i class="fa fa-home" aria-hidden="true"></i>
 				<a href="/" title="返回首页">首页</a>
 				&raquo;
-				<i class="fa fa-user" aria-hidden="true"></i>
-				关于我
+			<i class="fa fa-user" aria-hidden="true"></i>
+			关于我
 			</address>
+
+			<Fragment set:html={calendarHtml} />
 
 			{aboutContent ? (
 				<div class="post-context prose">

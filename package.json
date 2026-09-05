@@ -8,7 +8,7 @@
     "dev": "astro dev",
     "start": "astro dev",
     "check": "astro check",
-    "build": "node scripts/validate-post-slugs.mjs && node scripts/generate-lqips.mjs && node scripts/fetch-github-repos.mjs && astro build && node scripts/inject-buddha-banner.mjs && pagefind --site dist",
+    "build": "node scripts/validate-post-slugs.mjs && node scripts/generate-lqips.mjs && node scripts/fetch-github-repos.mjs && node scripts/fetch-github-contributions.mjs && astro build && node scripts/inject-buddha-banner.mjs && pagefind --site dist",
     "smoke:ai-news": "node scripts/ai-news-smoke.mjs",
     "preview": "astro preview",
     "new-post": "node scripts/new-post.mjs",
@@ -16,6 +16,7 @@
     "fetch-repos": "node scripts/fetch-github-repos.mjs",
     "sync-site-stats": "node scripts/sync-site-stats.mjs",
     "test:site-stats": "node --test scripts/sync-site-stats.test.mjs",
+    "test:contributions": "node --test scripts/fetch-github-contributions.test.mjs",
     "astro": "astro",
     "format": "prettier --write ./src",
     "lint": "eslint ./src --fix"
