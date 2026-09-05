@@ -1976,10 +1976,6 @@ img:hover {
   line-height: 24px;
 }
 
-#header .text ul {
-  animation: colorful-ticker 12s linear infinite;
-}
-
 /* 上下 4px 渐隐遮罩：滚动中间帧不再被硬裁一半 */
 #header .text {
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 4px, #000 20px, transparent 24px);
@@ -4470,24 +4466,6 @@ img:hover {
   }
 }
 
-@keyframes colorful-ticker {
-  0%,
-  26.666% {
-    transform: translateY(0);
-  }
-  33.333%,
-  60% {
-    transform: translateY(-24px);
-  }
-  66.666%,
-  93.333% {
-    transform: translateY(-48px);
-  }
-  100% {
-    transform: translateY(-72px);
-  }
-}
-
 @media screen and (max-width: 1100px) {
   #header .box,
   #head-nav {
@@ -4721,7 +4699,6 @@ img:hover {
   }
 
   #header .logo img,
-  #header .text ul,
   .post-list::after,
   #readerwall .avatar,
   #newcomment .avatar,

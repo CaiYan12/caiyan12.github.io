@@ -39,20 +39,13 @@ const isCurrent = (url: string) =>
 		{tickerItems.length > 0 && (
 			<div class="text" aria-label="最新微言">
 				<ul>
-					{tickerItems.map((item) => (
-						<li>
-							<a title="查看更多微言碎语" href="/diary/">
-								{dayjs(item.date).format("YYYY年M月D日")} - {item.content}
-							</a>
-						</li>
-					))}
-					{tickerItems[0] && (
-						<li aria-hidden="true">
-							<a title="" href="/diary/" tabindex="-1">
-								{dayjs(tickerItems[0].date).format("YYYY年M月D日")} - {tickerItems[0].content}
-							</a>
-						</li>
-					)}
+						{tickerItems.map((item) => (
+							<li>
+								<a title="查看更多微言碎语" href="/diary/">
+									{dayjs(item.date).format("YYYY年M月D日")} - {item.content}
+								</a>
+							</li>
+						))}
 				</ul>
 			</div>
 		)}

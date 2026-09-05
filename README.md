@@ -141,6 +141,7 @@ public/
 - 键盘 skip link（“跳到正文”）位于 `Layout.astro` body 首元素、Swup 容器之外——移动或包进 `main` 会导致切页后丢失；样式在 `global.css` 的 `.skip-link`（默认视觉隐藏，`:focus-visible` 归位显示）。
 - 顶部导航 QQ/微信的 hover 二维码弹层保持白色圆角卡片，四周 `10px` 内距，内部二维码裁切框统一为 `140×140`。两张现有源图的留白比例不同，裁切定位维护在 `src/styles/global.css`，更换二维码资源后需要重新检查实际码区尺寸。
 - 桌面头部标题（`#header h1`）与左侧 `100px` 浮动 logo 并排：其 `max-width` 必须为 `calc(100% - 100px)` 扣除 logo 占位。`#header` 固定 `height:180px; overflow:hidden`，若标题宽度超过 `.box` 内容宽减去浮动宽，会被挤到 logo 下方落入裁切区并与 `#head-nav` 重叠（681–1100px 区间实测触发，2026-09-04 修复）。调整头部布局或 `.box` 宽度规则后，须在 681/770/860/980/1100px 等断点复查标题位置。
+- 头部微言轮播（`#header .text`）由 `src/utils/theme-script.ts` 的 `initHeaderTicker()` 驱动：机制复刻原版 AutoScroll（每 4s 上滚一条 0.8s ease，滚完把首条 li 移到末尾无限轮转，无克隆条、任意条数无缝；hover 暂停、移出恢复；`prefers-reduced-motion` 下不启动）。条数取 `src/data/diary.ts` 前 4 条（`Navbar.astro` 的 `slice(0, 4)`）。**节奏对齐迁移前 CSS 关键帧版（勿改回原版 300ms）**；步长 `-24px` 与 `global.css` 的 `#header .text li` 行高耦合，改行高须同步；头部在 Swup 容器外，脚本随 `pagefindReady()` 初始化一次，勿加进 after-swap hook。
 - 涉及上述界面的样式调整后，应在本地开发服务器中检查主要宽度、hover 状态、裁切效果、日期/弹层对齐和页面横向溢出，并补跑 `pnpm check` 与 `pnpm build`。
 - 首页右侧文章推荐上方固定为“最新 / 手气不错”两栏，使用普通箭头＋日期列表；下方只保留一个“热门推荐”，按既有热度排序显示旗帜形序号。随机文章在构建期生成，浏览器不新增 GitHub 请求。
 - Pio 看板娘（`public/pio/static/`，vendored 但随本项目自维护）：

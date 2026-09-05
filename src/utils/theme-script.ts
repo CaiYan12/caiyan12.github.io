@@ -863,7 +863,8 @@ function initPaperHandwriting() {
 	for (const textNode of textNodes) {
 		const fragment = document.createDocumentFragment();
 		// 西文/数字整段成组（防单词内换行），CJK 与全角标点逐字成 span
-		const segments = textNode.data.match(/[\x20-\x7e]+|[^\x00-\x7f]/g) ?? [];
+		const segments =
+			textNode.data.match(/[\x20-\x7e]+|[^\x00-\x7f]/g) ?? [];
 		for (const segment of segments) {
 			if (/^[\x20-\x7e]+$/.test(segment)) {
 				fragment.appendChild(document.createTextNode(segment));
@@ -880,6 +881,42 @@ function initPaperHandwriting() {
 		}
 		textNode.replaceWith(fragment);
 	}
+}
+
+/** 头部微言轮播：机制复刻原版 AutoScroll（limh.me global-pjax.js）——滚完把首条 li
+ * 移到末尾实现无限轮转，hover 暂停、移出恢复；节奏（4s/条 = 停留 3.2s + 滑动 0.8s）
+ * 对齐迁移前 CSS 关键帧版的手感，比原版 300ms 更缓。头部在 Swup 容器之外，
+ * 随 pagefindReady 初始化一次即可 */
+function initHeaderTicker() {
+	const ticker = document.querySelector("#header .text");
+	const list = ticker?.querySelector("ul");
+	if (!ticker || !list || list.children.length < 2) return;
+	if (list.dataset.tickerReady === "true") return;
+	list.dataset.tickerReady = "true";
+	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+	list.addEventListener("transitionend", (event) => {
+		if (event.target !== list || event.propertyName !== "margin-top")
+			return;
+		list.style.transition = "none";
+		list.style.marginTop = "0px";
+		list.appendChild(list.firstElementChild as HTMLElement);
+	});
+
+	let timer = 0;
+	const start = () => {
+		if (timer) return;
+		timer = window.setInterval(() => {
+			list.style.transition = "margin-top 0.8s ease";
+			list.style.marginTop = "-24px"; // 与 global.css 的 #header .text li 行高一致
+		}, 4000);
+	};
+	ticker.addEventListener("mouseenter", () => {
+		window.clearInterval(timer);
+		timer = 0;
+	});
+	ticker.addEventListener("mouseleave", start);
+	start();
 }
 
 /** @swup/astro 生命周期 hooks（页面切换后重初始化） */
@@ -930,6 +967,7 @@ export function pagefindReady() {
 	initBackToTop();
 	initDblClickScroll();
 	initMMenu();
+	initHeaderTicker();
 	initSpoiler();
 	initLqipFade();
 	initClickEffect();

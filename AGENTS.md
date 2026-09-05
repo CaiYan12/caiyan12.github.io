@@ -270,6 +270,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - `src/utils/theme-script.ts` 是唯一的客户端逻辑中枢：导航高亮、返回顶部、双击回顶、移动端菜单、Fancybox/KaTeX 初始化
 - **Swup 切换页面时组件脚本不会重跑**，所以需要重绑定的东西（Fancybox、导航高亮）都注册在 `initSwupHooks()` 的 `content:replace`/`page:view` 里；新增交互若依赖新页面 DOM，必须加到这两个 hook 中
 - 导航高亮 `syncNavHighlight()`：逐锚点 toggle 时**跳过 `javascript:void(0)` 锚点**（下拉父项按钮，永不匹配），下拉父项与 MMenu 分组的 current 由其子链接 `some()` 统一计算——直接加载（`pagefindReady`）与 `astro:after-swap`（Swup 不替换 `main` 外的导航）都会重算；勿回退为逐锚点裸 toggle，否则构建期写入的下拉父项 current 每次加载都会被抹掉。路由前缀匹配连带效果：/tag/xxx/ 与 /category/xxx/ 页上"文章归档"下拉及"标签分类"/"文章分类"子项呈 current（语义正确，保留）
+- 头部微言轮播（`#header .text`，2026-09-05 重写）：机制复刻原版 AutoScroll（limh.me `global-pjax.js`）——`theme-script.ts` 的 `initHeaderTicker()` 每 4s 将 ul 上滚一条（0.8s ease），`transitionend` 后把首条 li 移到末尾实现无限轮转（无克隆条，任意条数无缝，条数取 `diary.slice(0, 4)`），hover 暂停、移出恢复，`prefers-reduced-motion` 不启动，dataset 守卫防定时器叠加（原版 pjax 重复加载会叠加，勿学）。**节奏 4s/条 = 停留 3.2s + 滑动 0.8s 对齐迁移前 CSS 关键帧版手感，勿改回原版 300ms**（2026-09-05 用户确认）；步长 `-24px` 与 global.css `#header .text li` 行高耦合，改行高须同步。头部在 Swup 容器外，随 `pagefindReady()` 初始化一次即可，勿加进 after-swap hook
 - 键盘 skip link（"跳到正文"）必须是 `Layout.astro` body 的首元素且在 Swup 容器（`main`）之外，否则切页后丢失；`.skip-link` 默认 `translateY(-200%)` 视觉隐藏、`:focus-visible` 归位显示，目标 `href="#main"`
 - 生产 console 清理在 `astro.config.mjs` 的 vite `esbuild` 段（`drop: ["debugger"]`、`pure: ["console.log", "console.debug"]`）；`console.warn/error` 保留供线上排错，勿移除该配置；mermaid cynefin chunk 内 2 处残留为第三方压缩代码，已知且接受
 - 页面内 `<script>` 若含 `{...}` 模板插值必须加 `is:inline`（否则 Astro 当 TS 模块处理会解析失败）
