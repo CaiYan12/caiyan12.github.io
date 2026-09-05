@@ -1,0 +1,61 @@
+---
+import MainGridLayout from "../../../layouts/MainGridLayout.astro";
+import PostCard from "../../../components/layout/PostCard.astro";
+import Pagination from "../../../components/layout/Pagination.astro";
+import { getCollection } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import { getHotPosts } from "../../../utils/content-utils";
+import { getPaginationUrl } from "../../../utils/pagination";
+import { siteConfig } from "../../../config";
+
+export const getStaticPaths = (async ({ paginate }) => {
+	const allPosts = await getCollection("posts");
+	const hotPosts = getHotPosts(allPosts, Infinity);
+	return paginate(hotPosts, {
+		params: {},
+		pageSize: siteConfig.postsPerPage,
+	});
+}) satisfies GetStaticPaths;
+
+const { page } = Astro.props;
+const rootUrl = "/hot/";
+const current = page.currentPage;
+const total = page.lastPage;
+---
+
+<MainGridLayout
+	title="热门推荐"
+	description="全站热门文章推荐，按热度排序"
+	canonicalUrl={getPaginationUrl(rootUrl, current)}
+	prevUrl={current > 1 ? getPaginationUrl(rootUrl, current - 1) : undefined}
+	nextUrl={current < total ? getPaginationUrl(rootUrl, current + 1) : undefined}
+>
+	<div class="page hot-page">
+		<header class="post-header">
+			<h2>
+				<i class="fa fa-fire" aria-hidden="true"></i>
+				热门推荐
+			</h2>
+		</header>
+		<address class="post-metaa">
+			<i class="fa fa-home" aria-hidden="true"></i>
+			<a href="/" title="返回首页">首页</a>
+			&raquo;
+			<i class="fa fa-fire" aria-hidden="true"></i>
+			热门推荐
+		</address>
+
+		<div class="post-context">
+			<p>共 {page.total} 篇文章</p>
+		</div>
+	</div>
+
+	{page.data.map((post) => <PostCard post={post} />)}
+
+	<Pagination
+		current={current}
+		total={total}
+		urlTemplate={getPaginationUrl(rootUrl, "{n}")}
+		firstPageUrl={rootUrl}
+	/>
+</MainGridLayout>

@@ -1,0 +1,55 @@
+---
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import PostCard from "../../components/layout/PostCard.astro";
+import Pagination from "../../components/layout/Pagination.astro";
+import { getCollection } from "astro:content";
+import { getHotPosts } from "../../utils/content-utils";
+import { getPaginationUrl } from "../../utils/pagination";
+import { siteConfig } from "../../config";
+
+const allPosts = await getCollection("posts");
+const hotPosts = getHotPosts(allPosts, Infinity);
+const rootUrl = "/hot/";
+const pages = Math.max(
+	1,
+	Math.ceil(hotPosts.length / siteConfig.postsPerPage),
+);
+const pagePosts = hotPosts.slice(0, siteConfig.postsPerPage);
+---
+
+<MainGridLayout
+	title="热门推荐"
+	description="全站热门文章推荐，按热度排序"
+	canonicalUrl={rootUrl}
+	nextUrl={pages > 1 ? getPaginationUrl(rootUrl, 2) : undefined}
+>
+	<div class="page hot-page">
+		<header class="post-header">
+			<h2>
+				<i class="fa fa-fire" aria-hidden="true"></i>
+				热门推荐
+			</h2>
+		</header>
+		<address class="post-metaa">
+			<i class="fa fa-home" aria-hidden="true"></i>
+			<a href="/" title="返回首页">首页</a>
+			&raquo;
+			<i class="fa fa-fire" aria-hidden="true"></i>
+			热门推荐
+		</address>
+
+		<div class="post-context">
+			<p>共 {hotPosts.length} 篇文章</p>
+			{hotPosts.length === 0 && <p>暂无文章。</p>}
+		</div>
+	</div>
+
+	{pagePosts.map((post) => <PostCard post={post} />)}
+
+	<Pagination
+		current={1}
+		total={pages}
+		urlTemplate={getPaginationUrl(rootUrl, "{n}")}
+		firstPageUrl={rootUrl}
+	/>
+</MainGridLayout>

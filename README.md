@@ -173,6 +173,10 @@ public/
 
   实现形态：新增 `/category/` 分类云集页（`src/pages/category/index.astro`，逐行镜像 `tag/index.astro`：h2"分类云集"（`fa-folder-open-o`）+ 面包屑 + `.post-context` 统计行"共 N 个分类 · 收录 M 篇文章" + 空态"暂无分类。"）；单分类页 `/category/xxx/`（含 `page/[page]` 第 2+ 页）头部同步复刻 `/tag/xxx/` 形态——去掉旧式 h2 内嵌计数，补面包屑"首页 » 分类云集 » 分类名"（补齐返回分类云集入口）+ `.post-context` 统计行 + 全量分类药丸云，当前分类 `is-current` 品牌绿高亮 + `aria-current="page"`。药丸复用 `#blogtags` 共享样式（含 `.tag-count` ×N），零新增 CSS；每页条数维持 `siteConfig.postsPerPage: 6` 不另设配置。导航 `archiveSite` 下拉追加"文章分类 `/category/`"（Navbar/MMenu 均遍历 config 渲染，仅改 config 一处即两端同步）；`syncNavHighlight()` 前缀匹配自动覆盖 /category/xxx/，无客户端脚本改动。侧栏 WidgetSort 未动。
 
+- [x] **12. 热门文章页**（2026-09-05 完成）
+
+  实现形态：新增 `/hot/` 热门推荐页（`src/pages/hot/index.astro` + `hot/page/[page]/` 分页，双文件模式与 tag/category 一致）；数据复用 `getHotPosts(allPosts, Infinity)` 取全量排序（hotness×100 + 有效评论数，同分按发布时间倒序；评论数来自构建期 `site-stats.json` 快照，客户端零请求），每页维持 `siteConfig.postsPerPage: 6`。头部对齐列表页形态：h2"热门推荐"（`fa-fire`，与侧栏热门部件同图标）+ 面包屑 + `.post-context` 统计行"共 N 篇文章"；正文用 `PostCard` 标准卡片而非复制侧栏 `#hotlog` 排行元件（侧栏部件不动、仍仅首页显示）。导航 `archiveSite` 下拉追加"热门推荐 `/hot/`"（第 4 项，config 一处改 Navbar/MMenu 两端同步）；`syncNavHighlight()` 前缀匹配自动覆盖 `/hot/` 与 `/hot/page/N/`，无客户端脚本改动、零新增 CSS。
+
 - [ ] **纯 HTML 页面资源移植**
 
   详细需求：将其他项目“文档\HTML5页面”下的纯 HTML 页面适配为本站资源页（静态路由或文章形式），样式融入 Colorful 视觉体系。
