@@ -1,5 +1,11 @@
 # 更新日志
 
+## 2026-09-05：关于页手写信纸化与全站字体革新
+
+- `/about/` 正文区整体信纸化（参考用户 about.html 设计稿 1:1）：巨型"关于我"头部（topbar/眉题/手绘线）、黄色便签贴纸（胶带/折角/红勾，承载原"写在前面"内容）、"✎ 碎碎念"小节标题、横线稿纸信纸（`:::letter-paper` 容器指令 + 裸 div 横线区，行高与 32px 横线周期严格对齐、逐字符静态微随机）、"✦ NOW / NEXT" 时间线、页尾签名行；另新增 GitHub 贡献日历卡与蓝红双笔手绘涂鸦层（星形/箭头/波浪/边注，仅装订边距区不遮正文）。
+- **全站字体策略落地**（README TODO 13）：`:root` 四 token 收敛全站字体——`--font-body` 思源黑体（`@fontsource-variable/noto-sans-sc` 可变字重自托管分包，**微软雅黑从所有主栈退场**消除版权风险）、`--font-mono` JetBrains（6 处散落声明统一）、`--font-serif` 方正书宋（jsDelivr CDN 优先 + `public/fonts/方正书宋-简体.ttf` 本地回退，暂无主用场景）、`--font-hand` 平方时光体（ZeoSeven FontsAPI，src 含 `local()` 本机优先，仅 /about/ 引入）。稿纸内文字容器显式重声明手写体以绕过元素级 reset 的继承切断。
+- 逐字符微随机与横线对齐偏移 `--lp-shift` 随字体度量实测校准；spec 见 GitHub Issue #8。
+
 ## 2026-09-05：关于页新增 GitHub 贡献日历
 
 - `/about/` 面包屑之下、正文之前新增 GitHub 贡献日历卡片（近 12 个月，53 列），复用原版 Colorful 的 `.widget` 小部件形态：图标头 + 统计行（总贡献/最长连续/当前连续）+ 品牌绿梯度格子 + 少→多图例。

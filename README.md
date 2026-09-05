@@ -177,6 +177,12 @@ public/
 
   实现形态：新增 `/hot/` 热门推荐页（`src/pages/hot/index.astro` + `hot/page/[page]/` 分页，双文件模式与 tag/category 一致）；数据复用 `getHotPosts(allPosts, Infinity)` 取全量排序（hotness×100 + 有效评论数，同分按发布时间倒序；评论数来自构建期 `site-stats.json` 快照，客户端零请求），每页维持 `siteConfig.postsPerPage: 6`。头部对齐列表页形态：h2"热门推荐"（`fa-fire`，与侧栏热门部件同图标）+ 面包屑 + `.post-context` 统计行"共 N 篇文章"；正文用 `PostCard` 标准卡片而非复制侧栏 `#hotlog` 排行元件（侧栏部件不动、仍仅首页显示）。导航 `archiveSite` 下拉追加"热门推荐 `/hot/`"（第 4 项，config 一处改 Navbar/MMenu 两端同步）；`syncNavHighlight()` 前缀匹配自动覆盖 `/hot/` 与 `/hot/page/N/`，无客户端脚本改动、零新增 CSS。
 
+- [x] **13. 全站字体策略**（2026-09-05 完成；速度优先、多方案并存、全免费许可）
+
+  实现形态：`:root` 四 token 收敛全站字体——`--font-body` 思源黑体（`@fontsource-variable/noto-sans-sc` 可变字重 100–900 自托管分包，Layout 全站引入，**微软雅黑从所有主栈退场**消除版权风险，兜底苹方/文泉驿）、`--font-mono`（JetBrains Variable 栈，统一 `.prose code`/`.friend-domain`/稿纸小标签等 6 处散落声明）、`--font-serif`（方正书宋，token 就位暂无主用场景）、`--font-hand`（/about/ 稿纸手写体）。三方交付按可用性定制：思源黑体与霞鹜文楷系走 fontsource/cn-fontsource 自托管分包；方正书宋走 jsDelivr CDN（`cn-fontsource-fz-shu-song-z-01-regular/font.css`）+ 本地 `public/fonts/方正书宋-简体.ttf` 回退；平方时光体走 ZeoSeven FontsAPI CDN（`fontsapi.zeoseven.com/156/main/result.css`，src 含 `local()` 本机优先）。稿纸手写体决策链：霞鹜文楷 → 智勇手书体 → 平方乔木体 → **平方时光体**（用户定稿；方正书宋交付后无现成 CDN 的行楷字体，最终在 ZeoSeven 目录选定）。逐字符微随机由 `theme-script.ts` 的 `initPaperHandwriting()` 补齐（信纸正文切 span 施加静态微变换，无动画）。
+  
+  实施要点：global.css 的元素级 reset（`p/div { font-family: var(--font-body) }`）会切断稿纸继承，稿纸内文字容器必须显式重声明 `var(--font-hand)`；字体切换后横线对齐偏移 `--lp-shift` 已实测无需调整；思源黑体首访分包下载数百 KB～1MB（swap 不阻塞），dist 增量约 11MB（noto 分包 98 文件 + 书宋回退 TTF）。spec 见 GitHub Issue #8。**遗留**：稿纸横线贯穿整纸（含头部区，此前确认的配套需求）仍未实施——头部高度随视口浮动，容器级网格锚定需与头部尺寸确定化一并设计。
+
 - [ ] **纯 HTML 页面资源移植**
 
   详细需求：将其他项目“文档\HTML5页面”下的纯 HTML 页面适配为本站资源页（静态路由或文章形式），样式融入 Colorful 视觉体系。

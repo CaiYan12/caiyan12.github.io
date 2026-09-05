@@ -844,6 +844,44 @@ function initMMenu() {
 	});
 }
 
+/**
+ * /about/ 稿纸手写感：信纸正文逐字符静态微随机。
+ * transform-only（rotate ±1.5° / translate ±1px）、无动画、无布局位移；
+ * 连续西文/数字片段保持整段不切分，避免单词内换行；
+ * dataset 守卫防重复处理，Swup 切页后新 DOM 重新施加。
+ */
+function initPaperHandwriting() {
+	const paperBody = document.querySelector<HTMLElement>(".letter-paper-body");
+	if (!paperBody || paperBody.dataset.handwriting === "true") return;
+	paperBody.dataset.handwriting = "true";
+	const walker = document.createTreeWalker(paperBody, NodeFilter.SHOW_TEXT);
+	const textNodes: Text[] = [];
+	for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+		const text = node as Text;
+		if (text.data.trim()) textNodes.push(text);
+	}
+	for (const textNode of textNodes) {
+		const fragment = document.createDocumentFragment();
+		// 西文/数字整段成组（防单词内换行），CJK 与全角标点逐字成 span
+		const segments = textNode.data.match(/[\x20-\x7e]+|[^\x00-\x7f]/g) ?? [];
+		for (const segment of segments) {
+			if (/^[\x20-\x7e]+$/.test(segment)) {
+				fragment.appendChild(document.createTextNode(segment));
+				continue;
+			}
+			const span = document.createElement("span");
+			span.className = "paper-hand-char";
+			const rotate = (Math.random() * 3 - 1.5).toFixed(2);
+			const dx = (Math.random() * 2 - 1).toFixed(2);
+			const dy = (Math.random() * 2 - 1).toFixed(2);
+			span.style.transform = `translate(${dx}px, ${dy}px) rotate(${rotate}deg)`;
+			span.textContent = segment;
+			fragment.appendChild(span);
+		}
+		textNode.replaceWith(fragment);
+	}
+}
+
 /** @swup/astro 生命周期 hooks（页面切换后重初始化） */
 function initSwupHooks() {
 	document.addEventListener("astro:before-swap", () => {
@@ -855,6 +893,7 @@ function initSwupHooks() {
 		initLqipFade();
 		loadKatexCss();
 		renderMermaid();
+		initPaperHandwriting();
 	});
 	document.addEventListener("astro:page-load", () => {
 		window.scrollTo({ top: 0 });
@@ -903,5 +942,6 @@ export function pagefindReady() {
 	initFancybox();
 	loadKatexCss();
 	renderMermaid();
+	initPaperHandwriting();
 	initSwupHooks();
 }

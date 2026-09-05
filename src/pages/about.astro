@@ -35,6 +35,17 @@ try {
 	showSidebar={false}
 	searchIndex
 >
+	{/* 稿纸字体：平方时光体（ZeoSeven FontsAPI，src 含 local() 本机优先）+ 方正书宋（jsDelivr 分包，回退字体） */}
+	<head slot="head">
+		<link
+			rel="stylesheet"
+			href="https://fontsapi.zeoseven.com/156/main/result.css"
+		/>
+		<link
+			rel="stylesheet"
+			href="https://cdn.jsdelivr.net/npm/cn-fontsource-fz-shu-song-z-01-regular/font.css"
+		/>
+	</head>
 	<div class="page">
 		<article role="article">
 			<header class="post-header">

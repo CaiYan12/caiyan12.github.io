@@ -108,6 +108,25 @@ export function remarkExtended() {
 			);
 		});
 
+		// 1.5 容器指令（letter-paper：/about/ 手写信纸稿纸面板，样式见 markdown-extended.css）。
+		// 注意：micromark 容器指令的一个 ::: 会关闭整层嵌套栈，故内部横线区
+		// （.letter-paper-body）改由 Markdown 中裸 <div> 包裹，勿改回嵌套容器。
+		// 稿纸尾行签名由本分支固定输出（写在闭合标签前），不放进 Markdown。
+		visit(tree, "containerDirective", (node, index, parent) => {
+			if (!parent || index === undefined) return;
+			if (String(node.name || "").toLowerCase() !== "letter-paper") return;
+			parent.children.splice(
+				index,
+				1,
+				{ type: "html", value: '<div class="letter-paper">' },
+				...node.children,
+				{
+					type: "html",
+					value: '<div class="paper-footer"><span>— written by WindowsIt</span><span>⌁ ✦ ⌁</span></div></div>',
+				},
+			);
+		});
+
 		// 2. 叶子指令（GitHub 卡片）
 		visit(tree, "leafDirective", (node, index, parent) => {
 			if (

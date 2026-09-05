@@ -34,7 +34,7 @@
     background-attachment: fixed;
     color: var(--text);
     word-wrap: break-word;
-    font-family: "Classic Grotesque W01", "Hiragino Sans GB", "STHeiti", "Microsoft YaHei", "WenQuanYi Micro Hei", Arial, SimSun, sans-serif;
+    font-family: var(--font-body);
     cursor: url(/style/default.cur), default;
   }
 
@@ -1579,7 +1579,7 @@
     border: 1px solid #d6d6d6;
     background-color: #f7f7f9;
     color: #d14;
-    font-family: "JetBrains Mono Variable", Consolas, "Courier New", monospace;
+    font-family: var(--font-mono);
     font-size: 13px;
   }
   .prose pre {
@@ -1767,7 +1767,7 @@ body {
   background-size: cover;
   color: #000;
   font-size: 13px;
-  font-family: "Microsoft YaHei", "微软雅黑", "Trebuchet MS", Arial, Verdana, Tahoma, sans-serif;
+  font-family: var(--font-body);
   cursor: url(/style/default.cur), default;
 }
 
@@ -1806,7 +1806,7 @@ section {
   margin: 0;
   padding: 0;
   list-style: none;
-  font-family: "Microsoft YaHei", "微软雅黑", "Trebuchet MS", Arial, Verdana, Tahoma, sans-serif;
+  font-family: var(--font-body);
 }
 
 a {
@@ -4169,7 +4169,7 @@ img:hover {
   overflow: hidden;
   margin-top: 4px;
   color: #888;
-  font-family: "JetBrains Mono", "Microsoft YaHei", sans-serif;
+  font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.4;
   text-overflow: ellipsis;
@@ -4817,6 +4817,12 @@ img:hover {
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  /* 字体策略 token（README TODO 13：思源黑体/方正书宋/平方时光体，全免费许可、速度优先） */
+  --font-body: "Noto Sans SC Variable", "Source Han Sans SC", "思源黑体", "PingFang SC", "Hiragino Sans GB", "WenQuanYi Micro Hei", sans-serif;
+  --font-mono: "JetBrains Mono Variable", Consolas, "Courier New", monospace;
+  --font-serif: "FZShuSong-Z01S", "方正书宋", "FangZheng ShuSong", "Noto Serif SC", "Source Han Serif SC", serif;
+  --font-hand: "平方时光体", "KaiTi", "STKaiti", "楷体", "FZShuSong-Z01S", "方正书宋", serif;
 }
 
 html,
