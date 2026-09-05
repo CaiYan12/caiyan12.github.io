@@ -207,7 +207,10 @@ var Paul_Pio = function (prop) {
 			// 夜间模式
 			if (prop.night) {
 				elements.night.onclick = () => {
-					typeof prop.night === "function" ? prop.night() : eval(prop.night);
+					// night 仅支持函数形态；字符串动态执行（eval）已移除
+				typeof prop.night === "function"
+					? prop.night()
+					: console.warn("Pio: night 配置仅支持函数形态");
 				};
 				elements.night.onmouseover = () => {
 					modules.message("夜间点击这里可以保护眼睛呢");

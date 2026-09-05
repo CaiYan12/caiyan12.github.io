@@ -169,6 +169,10 @@ public/
 
   后续优化（同日）：`×N` 数字由灰色 `#999` 改白色；单标签页 `/tag/xxx/`（含 `page/[page]` 第 2+ 页）头部复刻 `/tag/` 标签云集页形态——h2"标签：xxx" + 面包屑"首页 » 标签云集 » 标签名"（补齐返回标签云集入口）+ `.post-context` 统计行 + 全量 `#blogtags` 药丸云，当前标签 `is-current` 品牌绿高亮（`--colorful-green`，含三角，`aria-current="page"`），文章列表与分页维持主页同款机制（`Pagination` 组件 + `tag/[tag]/page/[page]/` 路由）；新增 `siteConfig.tagPostsPerPage: 5`（标签页独立于主页的每页 6 篇；当前最大标签 3 篇暂无分页，阈值远期随标签增长调整）。路由改 `/tag/` 后单标签页命中前缀匹配，导航"文章归档"下拉及"标签分类"子项在 /tag/xxx/ 页呈 current（语义正确：当前处于标签栏目）。
 
+- [x] **11. 分类云集页**（2026-09-05 完成；与 TODO 10 配套，分类侧对齐标签体系）
+
+  实现形态：新增 `/category/` 分类云集页（`src/pages/category/index.astro`，逐行镜像 `tag/index.astro`：h2"分类云集"（`fa-folder-open-o`）+ 面包屑 + `.post-context` 统计行"共 N 个分类 · 收录 M 篇文章" + 空态"暂无分类。"）；单分类页 `/category/xxx/`（含 `page/[page]` 第 2+ 页）头部同步复刻 `/tag/xxx/` 形态——去掉旧式 h2 内嵌计数，补面包屑"首页 » 分类云集 » 分类名"（补齐返回分类云集入口）+ `.post-context` 统计行 + 全量分类药丸云，当前分类 `is-current` 品牌绿高亮 + `aria-current="page"`。药丸复用 `#blogtags` 共享样式（含 `.tag-count` ×N），零新增 CSS；每页条数维持 `siteConfig.postsPerPage: 6` 不另设配置。导航 `archiveSite` 下拉追加"文章分类 `/category/`"（Navbar/MMenu 均遍历 config 渲染，仅改 config 一处即两端同步）；`syncNavHighlight()` 前缀匹配自动覆盖 /category/xxx/，无客户端脚本改动。侧栏 WidgetSort 未动。
+
 - [ ] **纯 HTML 页面资源移植**
 
   详细需求：将其他项目“文档\HTML5页面”下的纯 HTML 页面适配为本站资源页（静态路由或文章形式），样式融入 Colorful 视觉体系。

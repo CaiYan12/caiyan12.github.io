@@ -11,16 +11,17 @@ export async function getStaticPaths() {
 	const allPosts = await getCollection("posts");
 	const publicPosts = allPosts.filter(isPublicPost);
 	const sortedPosts = getSortedPosts(publicPosts);
-	return getCategoryList(publicPosts).map(({ name }) => {
+	const categories = getCategoryList(publicPosts);
+	return categories.map(({ name }) => {
 		const posts = sortedPosts.filter((post) => post.data.category === name);
 		return {
 			params: { category: name },
-			props: { name, posts },
+			props: { name, posts, categories },
 		};
 	});
 }
 
-const { name, posts } = Astro.props;
+const { name, posts, categories } = Astro.props;
 const rootUrl = `/category/${encodeURIComponent(name)}/`;
 const pages = Math.max(1, Math.ceil(posts.length / siteConfig.postsPerPage));
 const pagePosts = posts.slice(0, siteConfig.postsPerPage);
@@ -32,16 +33,41 @@ const pagePosts = posts.slice(0, siteConfig.postsPerPage);
 	canonicalUrl={rootUrl}
 	nextUrl={pages > 1 ? getPaginationUrl(rootUrl, 2) : undefined}
 >
-	<div class="page">
+	<div class="page category-page">
 		<header class="post-header">
 			<h2>
 				<i class="fa fa-folder-open-o" aria-hidden="true"></i>
 				分类：{name}
-				<span class="ml-2 text-sm font-normal text-gray-500">
-					共 {posts.length} 篇文章
-				</span>
 			</h2>
 		</header>
+		<address class="post-metaa">
+			<i class="fa fa-home" aria-hidden="true"></i>
+			<a href="/" title="返回首页">首页</a>
+			&raquo;
+			<a href="/category/" title="返回分类云集">分类云集</a>
+			&raquo;
+			<i class="fa fa-folder-open-o" aria-hidden="true"></i>
+			{name}
+		</address>
+
+		<div class="post-context">
+			<p>共 {posts.length} 篇文章</p>
+		</div>
+
+		<ul id="blogtags">
+			<li class="tag-cloud-items">
+				{categories.map((cat) => (
+					<a
+						href={`/category/${encodeURIComponent(cat.name)}/`}
+						title={`${cat.count}篇文章`}
+						aria-current={cat.name === name ? "page" : undefined}
+						class:list={[{ "is-current": cat.name === name }]}
+					>
+						{cat.name}<span class="tag-count">&times;{cat.count}</span>
+					</a>
+				))}
+			</li>
+		</ul>
 	</div>
 
 	{pagePosts.map((post) => <PostCard post={post} />)}
