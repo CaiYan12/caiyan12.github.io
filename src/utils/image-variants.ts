@@ -35,6 +35,24 @@ function toUrlPath(relPath: string): string {
 	return relPath.split("/").map(encodeURIComponent).join("/");
 }
 
+// 构建进程内缓存 existsSync 结果：同一图片常被多页面/组件引用，避免重复 stat
+const existingVariantCache = new Set<string>();
+
+function variantExists(rel: string, width: number): boolean {
+	const variantKey = `${rel}.${width}w`;
+	if (existingVariantCache.has(variantKey)) return true;
+	const exists = existsSync(
+		join(process.cwd(), "public/images/_variants", `${variantKey}.webp`),
+	);
+	if (exists) existingVariantCache.add(variantKey);
+	return exists;
+}
+
+/** 清空变体存在性缓存（供测试或多次构建复用同一进程时重置） */
+export function resetVariantCache(): void {
+	existingVariantCache.clear();
+}
+
 /**
  * 查询图片的响应式属性。
  * @param src 图片 URL（/images/... 形式；encodeURIComponent 过的 URL 亦可）
@@ -56,11 +74,7 @@ export function getResponsiveImage(src: string): ResponsiveImageAttrs {
 
 	// 过滤出磁盘上真实存在的变体（manifest 入库但变体不入库，需兜底）
 	const rel = decoded.slice("/images/".length);
-	const widths = entry.variants.filter((w) =>
-		existsSync(
-			join(process.cwd(), "public/images/_variants", `${rel}.${w}w.webp`),
-		),
-	);
+	const widths = entry.variants.filter((w) => variantExists(rel, w));
 	if (widths.length === 0) return { src };
 
 	const webpCandidates = widths.map(

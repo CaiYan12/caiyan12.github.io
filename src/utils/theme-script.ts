@@ -31,6 +31,9 @@ async function initFancybox() {
 	if (imgs.length === 0) return;
 	try {
 		const { Fancybox } = await import("@fancyapps/ui/dist/fancybox/");
+		// 异步 import 期间可能已发生 Swup 切页（初始调用与 after-swap 重入竞态），
+		// 先解绑旧委托再绑定，保证最终只存在一份监听
+		Fancybox.unbind("[data-fancybox]");
 		window.Fancybox = Fancybox;
 		// 正文图片（排除已绑定的）
 		const contentImgs = document.querySelectorAll(
@@ -46,8 +49,9 @@ async function initFancybox() {
 			}
 		});
 		Fancybox.bind("[data-fancybox]", {});
-	} catch {
-		// 灯箱加载失败不阻塞页面
+	} catch (error) {
+		// 灯箱加载失败不阻塞页面；生产保留 warn 供线上排错（esbuild pure 清理不涉及 warn）
+		console.warn("[fancybox] load failed:", error);
 	}
 }
 
@@ -444,7 +448,10 @@ function initCopyLink() {
 /** 页面存在 KaTeX 公式时按需加载其样式 */
 function loadKatexCss() {
 	if (document.querySelector(".katex")) {
-		import("katex/dist/katex.css").catch(() => {});
+		import("katex/dist/katex.css").catch((error) => {
+			// 样式加载失败不阻塞页面；公式仍以原始文本可读
+			console.warn("[katex] css load failed:", error);
+		});
 	}
 }
 
@@ -537,8 +544,9 @@ async function renderMermaid() {
 		});
 		await mermaid.run({ nodes: pending });
 		pending.forEach((n) => (n.dataset.mermaidRendered = "true"));
-	} catch {
-		// mermaid 渲染失败不阻塞页面
+	} catch (error) {
+		// 渲染失败不阻塞页面，原始代码块仍可阅读；warn 供线上排错
+		console.warn("[mermaid] render failed:", error);
 	}
 }
 
@@ -666,15 +674,18 @@ function initCanvasBoomEffect() {
 			}
 		}
 		move() {
-			this.circles.forEach((circle, index) => {
+			// 倒序遍历移除越界粒子：正序 forEach 中 splice 会使后续元素左移被跳过
+			for (let index = this.circles.length - 1; index >= 0; index -= 1) {
+				const circle = this.circles[index];
 				if (
 					circle.position.x > this.area.width ||
 					circle.position.y > this.area.height
 				) {
 					this.circles.splice(index, 1);
+					continue;
 				}
 				circle.move();
-			});
+			}
 			if (this.circles.length === 0) {
 				this.stop = true;
 			}
@@ -710,14 +721,16 @@ function initCanvasBoomEffect() {
 		}
 		requestAnimationFrame(run);
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		booms.forEach((boom, index) => {
+		// 倒序遍历移除已停止的爆炸，避免正序 splice 跳过元素
+		for (let index = booms.length - 1; index >= 0; index -= 1) {
+			const boom = booms[index];
 			if (boom.stop) {
 				booms.splice(index, 1);
-				return;
+				continue;
 			}
 			boom.move();
 			boom.draw();
-		});
+		}
 	};
 	window.addEventListener("mousedown", (e) => {
 		const boom = new Boom({ x: e.clientX, y: e.clientY }, ctx);
@@ -751,15 +764,24 @@ function initLqipFade() {
 
 /** 动态标题：切走时换告别语；切回先显示"算了，你走吧！"，2 秒后恢复原标题 */
 function initVisibilityTitle() {
+	const HIDDEN_TITLE = "别走啊...(っ°Д°;)っ";
+	const GOODBYE_TITLE = "算了，你走吧！";
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let originalTitle = "";
 	document.addEventListener("visibilitychange", () => {
 		if (document.visibilityState === "hidden") {
 			clearTimeout(timer);
-			originalTitle = document.title;
-			document.title = "别走啊...(っ°Д°;)っ";
+			// 快速 hide→show→hide 时当前标题可能还是告别语，此时不能捕获，
+			// 否则真实标题被替代语永久覆盖；只在标题为真实内容时更新
+			if (
+				document.title !== HIDDEN_TITLE &&
+				document.title !== GOODBYE_TITLE
+			) {
+				originalTitle = document.title;
+			}
+			document.title = HIDDEN_TITLE;
 		} else {
-			document.title = "算了，你走吧！";
+			document.title = GOODBYE_TITLE;
 			timer = setTimeout(() => {
 				document.title = originalTitle;
 			}, 2000);
@@ -770,9 +792,12 @@ function initVisibilityTitle() {
 /** 导航高亮：根据当前路径标记 current */
 function syncNavHighlight() {
 	const path = window.location.pathname;
-	const isMatch = (href: string) =>
-		path === href ||
-		(href !== "/" && path.startsWith(href.replace(/\/$/, "")));
+	// 前缀匹配必须落在路径段边界上：/link/ 不应命中 /link-survey/
+	const isMatch = (href: string) => {
+		if (href === "/") return path === "/";
+		const base = href.endsWith("/") ? href : `${href}/`;
+		return path === href || path === base || path.startsWith(base);
+	};
 	document.querySelectorAll("#nav a").forEach((a) => {
 		const href = a.getAttribute("href") || "/";
 		// 下拉父项按钮（void href）不匹配任何路径，交由下方子链接统一计算
@@ -801,10 +826,14 @@ function syncNavHighlight() {
 /** 返回顶部 */
 function initBackToTop() {
 	const backtop = document.getElementById("backtop");
-	if (!backtop) return;
+	// backtop 在 Swup 容器外且只初始化一次；dataset 守卫防止未来重入时监听器翻倍
+	if (!backtop || backtop.dataset.bound === "true") return;
+	backtop.dataset.bound = "true";
 	const toggle = () => {
-		const y = window.scrollY;
-		backtop.style.display = y > 200 ? "block" : "none";
+		const visible = window.scrollY > 200;
+		// 同值短路：scroll 高频触发，避免无谓的样式写入
+		if (visible === (backtop.style.display === "block")) return;
+		backtop.style.display = visible ? "block" : "none";
 	};
 	window.addEventListener("scroll", toggle, { passive: true });
 	backtop.addEventListener("click", () => {
@@ -835,6 +864,9 @@ function initMMenu() {
 	const closeButton = document.getElementById("close-nav");
 	const backdrop = document.getElementById("mmenu-backdrop");
 	if (!openBtn || !menu || !close) return;
+	// 菜单节点在 Swup 容器外且只初始化一次；dataset 守卫防止重入时监听器叠加
+	if (openBtn.dataset.mmenuBound === "true") return;
+	openBtn.dataset.mmenuBound = "true";
 	openBtn.addEventListener("click", () => {
 		menu.classList.add("open");
 		close.classList.add("open");
@@ -967,8 +999,9 @@ function initRandomBackground() {
 		const index = Math.floor(Math.random() * images.length);
 		background.src = images[index];
 		background.dataset.selected = "true";
-	} catch {
-		// 背景配置解析失败时保留纯色页面背景
+	} catch (error) {
+		// 背景配置解析失败时保留纯色页面背景；warn 供排错
+		console.warn("[background] config parse failed:", error);
 	}
 }
 

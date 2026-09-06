@@ -33,16 +33,16 @@
 
 ## 阶段 3：客户端逻辑 bug 批次（清单 #8 及逻辑轴小项）
 
-- [ ] 3.1 `theme-script.ts:748-763` 动态标题：只在标题非两段替代语时捕获 originalTitle
-- [ ] 3.2 四处静默 catch → console.warn（:49-51/:441-445/:536-538/:953-961）
-- [ ] 3.3 :27-52 Fancybox import 竞态：模块级 pending 旗帜 + bind 前先 unbind
-- [ ] 3.4 :768-770 导航前缀匹配加路径段边界
-- [ ] 3.5 :797-845 initBackToTop/initMMenu 补 bound 守卫旗帜 + scroll 回调同值短路
-- [ ] 3.6 :664-672/:708-715 forEach 中 splice 改倒序 for
-- [ ] 3.7 `contributions-calendar.ts:53-56` formatDateZh 补日期格式校验防 NaN
-- [ ] 3.8 `image-variants.ts:57-64` existsSync 模块级 Set 记忆化
-- [ ] 验证：Playwright 多次 Swup 切页回归（导航高亮/轮播/灯箱/标题切换）
-- [ ] commit 3
+- [x] 3.1 动态标题：hidden 分支只在标题非两段替代语时捕获 originalTitle（快速 hide→show→hide 不再永久丢失真实标题）
+- [x] 3.2 四处静默 catch → console.warn（fancybox import / katex css / mermaid / 背景配置；copyText 的 catch 属正常回退链保持原样）
+- [x] 3.3 Fancybox 竞态：import resolve 后先 `unbind("[data-fancybox]")` 再标记+绑定，保证并发重入只留一份委托监听
+- [x] 3.4 导航前缀匹配加路径段边界（/link/ 不再命中 /link-survey/）
+- [x] 3.5 initBackToTop/initMMenu 补 dataset 守卫 + scroll 回调同值短路
+- [x] 3.6 点击特效两处 forEach+splice 改倒序 for（circles 越界回收 / booms 停止回收）
+- [x] 3.7 contributions-calendar assertValidData 补逐日 /^\d{4}-\d{2}-\d{2}$/ 校验（防 NaN 年月日）
+- [x] 3.8 image-variants existsSync 模块级 Set 记忆化 + resetVariantCache 导出
+- [x] 验证：astro check 0 错、build 成功（LQIP bytes 检测 0 重复处理）；Playwright 模拟 visibilitychange 快速序列标题恢复真实值（pass=true）；Swup 多页导航高亮正确（/tag/ 呈父项+子项 current，首页 / 唯一 current，300ms 内稳定）；无新增 page error（myhkw 播放器"禁止重复添加"抛错为既有第三方问题，记录备查不属本次范围）
+- [x] commit 3
 
 ## 阶段 4：a11y 结构项（清单 #9，无视觉争议）
 

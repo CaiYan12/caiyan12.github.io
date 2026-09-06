@@ -64,6 +64,17 @@ function assertValidData(data: ContributionsData): void {
 	if (!Array.isArray(data.days) || data.days.length === 0) throw invalid;
 	// 周日起新列；GitHub 恒定每周 7 天，破例即视为坏数据走回退卡
 	if (data.days.length % 7 !== 0) throw invalid;
+	// 逐日日期必须是 YYYY-MM-DD，否则格子 title 会渲染出 "NaN年NaN月NaN日"
+	if (
+		!data.days.every(
+			(day) =>
+				day &&
+				typeof day.date === "string" &&
+				/^\d{4}-\d{2}-\d{2}$/.test(day.date),
+		)
+	) {
+		throw invalid;
+	}
 	if (
 		!data.totals ||
 		![
