@@ -2,13 +2,14 @@
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { scanAlbums } from "../utils/album-scanner";
 import { getLqipProps } from "../utils/lqip-utils";
+import { siteConfig } from "../config";
 
 const albums = scanAlbums();
 ---
 
 <MainGridLayout
 	title="相册图库"
-	description="WindowsIt 的相册图库"
+	description={`${siteConfig.author} 的相册图库`}
 	showSidebar={false}
 >
 	<div class="page">

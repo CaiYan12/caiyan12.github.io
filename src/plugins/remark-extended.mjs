@@ -38,6 +38,9 @@ const ALERT_MAP = {
 	caution: "危险",
 };
 
+// 注意：与 src/utils/contributions-calendar.ts 各有一份同实现 escapeHtml——
+// 本文件是 node 直跑的 .mjs，对方是 TS（tsconfig allowJs=false 无法反向引用），
+// 改动任一份必须同步另一份。
 function escapeHtml(str) {
 	return String(str)
 		.replace(/&/g, "&amp;")

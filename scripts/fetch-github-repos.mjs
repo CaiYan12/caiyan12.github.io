@@ -5,33 +5,19 @@
 // 规避访客 IP 匿名 API 60 次/小时的限流问题）。
 //
 // 令牌解析顺序：GITHUB_TOKEN / GH_TOKEN 环境变量 → `gh auth token`（本机已登录
-// gh CLI 时）→ 匿名。拉取失败只告警不中断构建，缺失仓库渲染为回退链接。
+// gh CLI 时）→ 匿名。共享契约见 scripts/lib/github-token.mjs。
+// 拉取失败只告警不中断构建，缺失仓库渲染为回退链接。
 // 增量执行：默认只拉取缓存中缺失的仓库；--refresh 全量刷新；
 // 内容中已不再引用的仓库条目会被清理。
 
 import fs from "fs/promises";
 import path from "path";
-import { execSync } from "child_process";
+import { resolveGitHubToken } from "./lib/github-token.mjs";
 
 const CONTENT_DIR = "src/content";
 const OUTPUT_FILE = "src/constants/github-repos.json";
 // ::github{repo="owner/name"}（兼容单双引号）
 const DIRECTIVE_RE = /::github\{repo=(?:"([^"]+)"|'([^']+)')\}/g;
-
-function resolveToken() {
-	if (process.env.GITHUB_TOKEN) return process.env.GITHUB_TOKEN;
-	if (process.env.GH_TOKEN) return process.env.GH_TOKEN;
-	try {
-		return (
-			execSync("gh auth token", {
-				encoding: "utf-8",
-				stdio: ["ignore", "pipe", "ignore"],
-			}).trim() || null
-		);
-	} catch {
-		return null;
-	}
-}
 
 async function fetchRepo(repo, token) {
 	const headers = {
@@ -130,7 +116,7 @@ async function main() {
 	if (targets.length === 0) {
 		console.log("All repos cached, nothing to fetch.");
 	} else {
-		const token = resolveToken();
+		const token = resolveGitHubToken();
 		console.log(
 			`Fetching ${targets.length} repo(s) with ${token ? "authenticated" : "unauthenticated"} request...`,
 		);

@@ -5,7 +5,9 @@ module.exports = {
 	theme: {
 		extend: {
 			colors: {
-				primary: "#00c000", // Colorful 主色（海洋绿）
+				// 海洋绿主色：与 global.css --colorful-green 保持人工同步
+				// （bg-primary/N 透明度修饰符要求静态色值，不能引用 var）
+				primary: "#00c000",
 				primarydark: "#0a0",
 				hot: "#ffba00", // 热门标签
 				new: "#00c700", // 近期更新
@@ -48,7 +50,7 @@ module.exports = {
 				body: "var(--t-font-body)",
 			},
 			boxShadow: {
-				wrapper: "0 2px 6px rgba(100,100,100,0.3)",
+				wrapper: "var(--shadow-wrapper)",
 			},
 			borderRadius: {
 				box: "5px",

@@ -15,8 +15,8 @@
 
 import fs from "node:fs/promises";
 import path from "node:path";
-import { execSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { resolveGitHubToken } from "./lib/github-token.mjs";
 
 const SLUG_RE = /^\d{14}$/;
 const DISCUSSION_TITLE_RE = /^posts\/(\d{14})\/$/;
@@ -334,23 +334,6 @@ function validateSnapshot(snapshot) {
 	return snapshot;
 }
 
-function resolveToken(env) {
-	const fromEnv = env.GITHUB_TOKEN || env.GH_TOKEN;
-	if (fromEnv) return fromEnv;
-	try {
-		const out = execSync("gh auth token", {
-			encoding: "utf-8",
-			stdio: ["ignore", "pipe", "ignore"],
-		}).trim();
-		if (out) return out;
-	} catch {
-		// gh CLI 不可用时继续走报错分支
-	}
-	throw new Error(
-		"No GitHub token available: set GITHUB_TOKEN (or GH_TOKEN), or authenticate the gh CLI",
-	);
-}
-
 function splitRepo(repo) {
 	const parts = typeof repo === "string" ? repo.split("/") : [];
 	if (parts.length !== 2 || !parts[0] || !parts[1]) {
@@ -572,7 +555,14 @@ export async function syncSiteStats({
 	if (typeof giscus.categoryId !== "string" || !giscus.categoryId) {
 		throw new Error("Invalid giscus-sync.json: missing categoryId");
 	}
-	const token = resolveToken(env);
+	// 令牌解析共享自 scripts/lib/github-token.mjs；本脚本为 fail-closed：
+	// 无令牌直接抛错中止同步，防止线上保留陈旧评论数（部署层依赖此语义）
+	const token = resolveGitHubToken({ env });
+	if (!token) {
+		throw new Error(
+			"No GitHub token available: set GITHUB_TOKEN (or GH_TOKEN), or authenticate the gh CLI",
+		);
+	}
 
 	// 文章 slug 枚举（14 位目录名，字典序）
 	const entries = await fs.readdir(POSTS_DIR, { withFileTypes: true });

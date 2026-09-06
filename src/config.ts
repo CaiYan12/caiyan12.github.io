@@ -10,6 +10,8 @@ export const siteConfig = {
 	subtitle: "音乐、代码与生活 —— WindowsIt 的个人博客",
 	/** 站点 URL（GitHub Pages 用户站点） */
 	siteURL: "https://caiyan12.github.io",
+	/** GitHub 用户名（构建期统计、项目统计卡等处引用，避免散落硬编码） */
+	githubUser: "CaiYan12",
 	/** 站点关键词 */
 	keywords: "博客,音乐,WindowsIt,技术,生活",
 	/** 作者名 */
@@ -49,9 +51,9 @@ export const backgroundConfig = {
 /** 导航栏配置（对应 Emlog 后台自定义导航 + Colorful 附加功能菜单） */
 export const navBarConfig = {
 	items: [
-		{ name: "首页", url: "/", type: "home" },
-		{ name: "微言碎语", url: "/diary/", type: "diary" },
-		{ name: "留言板", url: "/guestbook/", type: "guestbook" },
+		{ name: "首页", url: "/" },
+		{ name: "微言碎语", url: "/diary/" },
+		{ name: "留言板", url: "/guestbook/" },
 	],
 	/** 文章归档下拉菜单 */
 	archiveSite: [
@@ -62,10 +64,10 @@ export const navBarConfig = {
 	],
 	/** 关于本站下拉菜单 */
 	aboutSite: [
-		{ name: "关于站长", url: "/about/", type: "about" },
-		{ name: "我的技能", url: "/skills/", type: "skills" },
-		{ name: "时间线", url: "/timeline/", type: "timeline" },
-		{ name: "友情链接", url: "/friends/", type: "friends" },
+		{ name: "关于站长", url: "/about/" },
+		{ name: "我的技能", url: "/skills/" },
+		{ name: "时间线", url: "/timeline/" },
+		{ name: "友情链接", url: "/friends/" },
 	],
 	/** 附加功能下拉菜单（对应原主题"附加功能"，仅收与主菜单不重复的项） */
 	extra: [
@@ -159,7 +161,8 @@ export const pioConfig = {
 	/** 旧项目以 1280px 为移动端隐藏断点 */
 	hiddenOnMobile: true,
 	dialog: {
-		welcome: "欢迎来到 WindowsIt's Music Club！",
+		// 站名引用 siteConfig.title，避免第二副本漂移
+		welcome: `欢迎来到 ${siteConfig.title}！`,
 		touch: [
 			"你在做什么呀？",
 			"不要一直戳我啦！",

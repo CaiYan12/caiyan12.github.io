@@ -52,11 +52,10 @@ export function getCategoryList(
 		.sort((a, b) => b.count - a.count);
 }
 
-/** 按年月归档（对应 Emlog record 缓存） */
+/** 按年月归档（对应 Emlog record 缓存）。输入直接复用 getSortedPosts 的过滤与排序 */
 export function getArchiveList(posts: Post[]) {
 	const map = new Map<string, Post[]>();
 	for (const post of getSortedPosts(posts)) {
-		if (post.data.draft) continue;
 		const key = dayjs(post.data.published).format("YYYY年M月");
 		if (!map.has(key)) map.set(key, []);
 		map.get(key)!.push(post);
@@ -80,11 +79,9 @@ export function getHotPosts(posts: Post[], limit = 6): Post[] {
 		.slice(0, limit);
 }
 
-/** 获取最新文章 */
+/** 获取最新文章（getSortedPosts 已过滤草稿/私密帖） */
 export function getNewPosts(posts: Post[], limit = 8): Post[] {
-	return getSortedPosts(posts)
-		.filter((p) => !p.data.draft)
-		.slice(0, limit);
+	return getSortedPosts(posts).slice(0, limit);
 }
 
 /** 获取相邻文章（对应 Emlog neighborLog） */
@@ -92,7 +89,7 @@ export function getNeighbors(
 	posts: Post[],
 	slug: string,
 ): { prev: Post | null; next: Post | null } {
-	const sorted = getSortedPosts(posts).filter((p) => !p.data.draft);
+	const sorted = getSortedPosts(posts);
 	const idx = sorted.findIndex((p) => p.id === slug);
 	if (idx === -1) return { prev: null, next: null };
 	return {

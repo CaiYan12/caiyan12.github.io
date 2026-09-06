@@ -5,7 +5,6 @@ export interface Project {
 	id: string;
 	title: string;
 	description: string;
-	image: string;
 	category: "web" | "mobile" | "desktop" | "other";
 	techStack: string[];
 	status: "completed" | "in-progress" | "planned";
@@ -24,7 +23,6 @@ export const projectsData: Project[] = [
 		title: "Windy Project Manager",
 		description:
 			"Windows 本地优先的项目管理与信息聚合工具：卡片式展示项目、技术栈与 Git 状态，支持 Open / Run / Build 操作，MVP 已完成验收。",
-		image: "",
 		category: "desktop",
 		techStack: ["Tauri", "Rust", "React", "TypeScript"],
 		status: "completed",
@@ -37,7 +35,6 @@ export const projectsData: Project[] = [
 		title: "Opia RSS Reader",
 		description:
 			"Windows 桌面 AI 新闻 RSS 阅读器，默认订阅橘鸦AI早报；支持多源标签页、主题编辑器、Mini 挂件模式与插件扩展。",
-		image: "",
 		category: "desktop",
 		techStack: ["Electron", "React", "TypeScript", "Tailwind CSS"],
 		status: "in-progress",
@@ -50,7 +47,6 @@ export const projectsData: Project[] = [
 		title: "飞捷管理后台",
 		description:
 			"基于 Vue 3、TypeScript、Vite、Element Plus 和 Pinia 构建的运营管理网站（私有仓库）。",
-		image: "",
 		category: "web",
 		techStack: ["Vue 3", "TypeScript", "Element Plus", "Pinia", "Vite"],
 		status: "completed",
@@ -61,7 +57,6 @@ export const projectsData: Project[] = [
 		id: "windypics",
 		title: "WindyPics",
 		description: "一个轻量的本地图片查看器，基于 Qt 6.8 + C++17。",
-		image: "",
 		category: "desktop",
 		techStack: ["Qt 6", "C++17"],
 		status: "completed",
@@ -73,7 +68,6 @@ export const projectsData: Project[] = [
 		id: "windycolourpicker",
 		title: "WindyColourPicker",
 		description: "轻量的 Windows Fluent 风格取色器，基于 Qt 6。",
-		image: "",
 		category: "desktop",
 		techStack: ["Qt 6", "C++"],
 		status: "completed",
@@ -86,7 +80,6 @@ export const projectsData: Project[] = [
 		title: "WindyNotePad",
 		description:
 			"一款基于 Qt 的轻量级文本编辑器，采用暗色主题，专注于简洁与实用。",
-		image: "",
 		category: "desktop",
 		techStack: ["Qt", "C++"],
 		status: "completed",
@@ -99,7 +92,6 @@ export const projectsData: Project[] = [
 		title: "StudentMsgMgr",
 		description:
 			"学生信息管理桌面应用，支持增删改查与 CSV 导入导出（Excel 兼容）。",
-		image: "",
 		category: "desktop",
 		techStack: ["Qt 6", "C++17", "MSVC"],
 		status: "completed",
@@ -111,7 +103,6 @@ export const projectsData: Project[] = [
 		id: "windyqtmediaplayer",
 		title: "WindyQtMediaPlayer",
 		description: "一个简单的使用 Qt6 编写的媒体播放器。",
-		image: "",
 		category: "desktop",
 		techStack: ["Qt 6", "C++"],
 		status: "completed",
@@ -123,7 +114,6 @@ export const projectsData: Project[] = [
 		id: "my-astro-blog",
 		title: "My Astro Blog",
 		description: "基于 Mizuki 主题的 Astro 个人博客。",
-		image: "",
 		category: "web",
 		techStack: ["Astro"],
 		status: "completed",
@@ -135,7 +125,6 @@ export const projectsData: Project[] = [
 		id: "linear-sheet",
 		title: "linear_sheet",
 		description: "C++ 数据结构练习：整型线性表的实现。",
-		image: "",
 		category: "other",
 		techStack: ["C++"],
 		status: "completed",

@@ -47,3 +47,5 @@ output/
 .playwright-mcp/
 .zcode/
 .codex/
+.learnings/
+.superpowers/

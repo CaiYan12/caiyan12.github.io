@@ -6,6 +6,8 @@
 // 动效契约（样式在 markdown-extended.css）：逐列 8ms 递进入场、格子 hover 缩放，
 // 两者均带 prefers-reduced-motion 变体，此处只负责内联列延迟。
 
+import { siteConfig } from "../config";
+
 export interface ContributionDay {
 	date: string;
 	count: number;
@@ -33,6 +35,8 @@ const CELL_MS = 8;
 const WEEKDAY_LABELS =
 	'<span class="gh-calendar-wd" style="grid-row:2">一</span><span class="gh-calendar-wd" style="grid-row:4">三</span><span class="gh-calendar-wd" style="grid-row:6">五</span>';
 
+// 与 src/plugins/remark-extended.mjs 各有一份同实现 escapeHtml（跨 mjs/ts 语言，
+// tsconfig allowJs=false 无法共享模块），改动任一份必须同步另一份。
 function escapeHtml(value: string): string {
 	return value
 		.replace(/&/g, "&amp;")
@@ -154,7 +158,7 @@ export function renderContributionsCalendar(data: ContributionsData): string {
 
 /** 缓存缺失或损坏时的回退卡片 */
 export function renderContributionsFallback(
-	profileUrl = "https://github.com/CaiYan12",
+	profileUrl = `https://github.com/${siteConfig.githubUser}`,
 ): string {
 	const url = escapeHtml(profileUrl);
 	return `<section class="widget gh-calendar gh-calendar-fallback"><span class="icon"><i class="fa fa-github" aria-hidden="true"></i></span><h3>${CALENDAR_TITLE}</h3><div class="gh-calendar-body"><p class="gh-calendar-fallback-text">日历数据暂时不可用，可前往 <a href="${url}" target="_blank" rel="noopener noreferrer">GitHub 主页</a> 查看贡献记录。</p></div></section>`;

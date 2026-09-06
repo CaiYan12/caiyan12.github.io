@@ -78,14 +78,15 @@
 
 ## 阶段 7：卫生收尾与文档（清单 #11-#16 剩余）
 
-- [ ] 7.1 样式 token 5 项收敛（品牌绿三源/tint/药丸色盘/768 vs 770/阴影）
-- [ ] 7.2 死代码/死数据与共享化（skills 悬空 ID、#totop、type 字段、令牌解析 lib、shuffle、githubUser 入 config、站名副本等）
-- [ ] 7.3 .gitignore 补 .learnings/（git rm -r --cached）与 .superpowers/
-- [ ] 7.4 deploy/build/lint.yml 第三方 action 钉 commit SHA
-- [ ] 7.5 Swup 重初始化协议规则写入 AGENTS.md（拆分列为远期独立一期）
-- [ ] 7.6 README TODO 8 补记 audit 触发记录（维持不实施）
-- [ ] 7.7 README/CHANGELOG 记录本批次；确认 lint.yml 对 .astro/.svelte 真正生效
-- [ ] commit 7
+- [x] 7.1 样式 token 5 项：`--primary` 别名指向 `--colorful-green`（Tailwind primary 保留 hex——`bg-primary/15` 透明度修饰符要求静态色值，加同步注释）、药丸 6 色盘 `--tag-c1..c6`（12 处字面量收敛）、绿 tint 3 处 color-mix 化（giscus 契约内 8 处豁免）、770→768 断点统一、`--shadow-wrapper`（global.css 2 处 + Tailwind 引用）
+- [x] 7.2 死代码/死数据与共享化：skills.ts 悬空 projects 字段整体移除（含接口，约 30 处）、projects.ts 死 image 字段移除、`#totop` 节点删除、content-utils 三处恒假 draft 过滤删除、navBarConfig.type 移除、Search.svelte `any`→Pagefind 最小接口、Pio.svelte 轮询加 100ms/100 次上限、令牌解析抽 scripts/lib/github-token.mjs（三脚本共用，fail-open/fail-closed 语义由调用方决定）、洗牌抽 src/utils/shuffle.ts（theme-script + WidgetNewLog 共用；sync-site-stats 带注入实现职责不同保留）、escapeHtml 双份保留互加同步注释（tsconfig allowJs=false 无法跨语言共享）、githubUser 入 siteConfig（projects.astro / contributions-calendar 改引）、站名副本消除（pioConfig welcome、ai-news meta）、5 页 description 改引用 siteConfig.author
+- [x] 7.3 .gitignore 补 .learnings/（git rm -r --cached 移出 3 文件）与 .superpowers/
+- [x] 7.4 三 workflow 共 12 处第三方 action 钉 commit SHA（checkout/setup-node/pnpm-action-setup/withastro-action/deploy-pages，tag→SHA 经 git ls-remote 解析）
+- [x] 7.5 Swup 重初始化协议规则写入 AGENTS.md（容器内 colorful:page:loaded + dataset 守卫；容器外仅 pagefindReady 一次 + *Bound 守卫；astro:* 仅限容器外 before-swap 清理；theme-script 拆分为远期独立一期）
+- [x] 7.6 README TODO 8 补记 pnpm audit 触发（维持不实施，前置 Tailwind 改造）
+- [x] 7.7 README 常用命令补 test:utils 与 format 说明；CHANGELOG 新增 2026-09-06 批次记录
+- [x] 验证：format/check/build 全绿、38 例单测全过（utils 9 + sync 15 + contributions 10 + fixture 4）；preview 抽查 /tag/ /category/ /hot/ /tag/GitHub/ 均正常渲染
+- [x] commit 7
 
 ## 收尾
 

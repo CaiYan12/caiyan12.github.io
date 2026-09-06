@@ -1,5 +1,15 @@
 # 更新日志
 
+## 2026-09-06：全仓库深度审查修复（七阶段 16 项，详见 docs/plans/2026-09-06-review-fixes.md）
+
+- **速胜**：canvas 粒子爆炸/轮播自动播放/平滑滚动补 `prefers-reduced-motion` 守卫（此前 canvas 特效无任何降级）；Prettier 补装 astro/svelte 插件修复 `.astro/.svelte` 被 `--check` 静默跳过的格式化盲区（全量格式化 67 文件）；`image-variants` 非 WebP `srcset` 撤除混入的 webp 候选（无格式协商会导致旧浏览器裂图）。
+- **构建脚本容错**：`fetch-github-repos` 缓存损坏备份重建（防限流时静默清空）；`generate-lqips` LQIP 变更检测改源图字节数（CI 友好）+ 逐图容错；`sync-site-stats` 空白内容评论/留言降级跳过不再阻塞部署（网络失败维持 fail-closed）；`fetch-github-contributions` IO 失败对齐"只告警不中断"。
+- **客户端 bug**：动态标题快速切换不再永久丢失真实标题；Fancybox/KaTeX/Mermaid/背景配置四处静默降级补 `console.warn`；Fancybox 异步导入与 Swup 竞态去重；导航高亮前缀匹配加路径段边界；返回顶部/移动菜单补重入守卫；点击特效倒序回收。
+- **a11y**：移动菜单 Escape/焦点管理/`aria-expanded`；轮播指示点按钮化（键盘可达）；导航 `aria-current="page"`（SSR+客户端双侧）；返回顶部改原生 button；消除 main 嵌套地标；搜索状态 `aria-live`；JSON-LD 转义 `<`；邮箱保护去内联 onclick 改事件委托（CSP 兼容）。
+- **视觉敏感（克制版）**：Giscus 加载失败超时检测 + Colorful 风格提示卡与重试（懒加载先确认用户看过评论区）；20 个页面主标题 h2→h1（站名 h1 保留，文章标题去掉 50 字无声截断）；正文级灰字对比度达 WCAG AA（`--text-light` #999→#767676 等，装饰色不动）。
+- **架构**：新增 `TagPillCloud` / `ListingHeader` / `TaxonomyListing` 组件收敛 tag/category/hot 家族 9 处复制；`src/utils` 纯函数测试面（content-utils/pagination，`pnpm test:utils` 9 例）+ 构建脚本容错单测（累计 38 例全过）；GitHub 令牌解析/客户端洗牌抽共享模块。
+- **卫生**：样式 token 收敛（品牌绿单一真源、药丸 6 色盘变量化、768/770 断点统一、`--shadow-wrapper`、绿 tint color-mix 化）；清理死代码死数据（skills 悬空项目 ID、projects 死字段、`#totop`、`navBarConfig.type`、双重 draft 过滤）；Search/Pio 类型化与轮询上限；`.learnings/` 移出版本库并随 `.superpowers/` 补 gitignore；CI workflow 三方 action 全部钉 commit SHA；`githubUser` 入 config（消除组件硬编码）、站名/描述副本引用 siteConfig。
+
 ## 2026-09-05：关于页手写信纸化与全站字体革新
 
 - `/about/` 正文区整体信纸化（参考用户 about.html 设计稿 1:1）：巨型"关于我"头部（topbar/眉题/手绘线）、黄色便签贴纸（胶带/折角/红勾，承载原"写在前面"内容）、"✎ 碎碎念"小节标题、横线稿纸信纸（`:::letter-paper` 容器指令 + 裸 div 横线区，行高与 32px 横线周期严格对齐、逐字符静态微随机）、"✦ NOW / NEXT" 时间线、页尾签名行；另新增 GitHub 贡献日历卡与蓝红双笔手绘涂鸦层（星形/箭头/波浪/边注，仅装订边距区不遮正文）。

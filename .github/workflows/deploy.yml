@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout your repository using git
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # 构建前同步 Giscus 评论数到 src/data/site-stats.json；
       # 同步失败以非零码退出并跳过本次部署，线上保留上一个成功版本（fail-closed）
       - name: Sync Giscus comments
@@ -32,7 +32,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Install, build, and upload your site
-        uses: withastro/action@v6
+        uses: withastro/action@e84f40bd8d2caa9e768ec82ad30dd81f0b280853 # v6
         with:
           # 该 action 默认缓存 node_modules/.astro（Astro content layer 数据存储），
           # remark 插件逻辑变更时会复用旧渲染结果导致产物陈旧，故关闭（正确性优先）
@@ -52,4 +52,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5

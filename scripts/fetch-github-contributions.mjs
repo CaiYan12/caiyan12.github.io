@@ -12,6 +12,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { execSync } from "node:child_process";
+import { resolveGitHubToken } from "./lib/github-token.mjs";
 import { pathToFileURL } from "node:url";
 
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
@@ -40,21 +41,6 @@ const CALENDAR_QUERY = `query($login: String!) {
     }
   }
 }`;
-
-function resolveToken(env, execImpl) {
-	if (env.GITHUB_TOKEN) return env.GITHUB_TOKEN;
-	if (env.GH_TOKEN) return env.GH_TOKEN;
-	try {
-		return (
-			execImpl("gh auth token", {
-				encoding: "utf-8",
-				stdio: ["ignore", "pipe", "ignore"],
-			}).trim() || null
-		);
-	} catch {
-		return null;
-	}
-}
 
 /** weeks[] → 按日期升序的 days[]，校验形状与取值，非法即抛错 */
 export function normalizeCalendar(contributionCalendar) {
@@ -131,7 +117,7 @@ export async function fetchContributions(options = {}) {
 		now = new Date(),
 	} = options;
 
-	const token = resolveToken(env, execImpl);
+	const token = resolveGitHubToken({ env, execImpl });
 	if (!token) {
 		return { status: "no-token" };
 	}

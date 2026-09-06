@@ -2,6 +2,7 @@
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import SkillsOverview from "../components/skills/SkillsOverview.astro";
 import { skillsData } from "../data/skills";
+import { siteConfig } from "../config";
 
 const categoryLabels = {
 	frontend: "前端",
@@ -28,7 +29,7 @@ const experience = (years: number, months: number) =>
 
 <MainGridLayout
 	title="技能图谱"
-	description="WindowsIt 的技能与工具"
+	description={`${siteConfig.author} 的技能与工具`}
 	showSidebar={false}
 	searchIndex
 >

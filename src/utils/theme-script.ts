@@ -8,6 +8,7 @@
 
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
 import { showSiteToast } from "./site-toast";
+import { shuffleArray } from "./shuffle";
 
 declare global {
 	interface Window {
@@ -71,14 +72,6 @@ let newCommentShuffleBound = false;
 let paginationJumpBound = false;
 const NEW_COMMENT_DISPLAY_LIMIT = 5;
 const NEW_COMMENT_LOADING_MIN_MS = 220;
-
-function shuffleArray<T>(items: T[]) {
-	for (let index = items.length - 1; index > 0; index -= 1) {
-		const randomIndex = Math.floor(Math.random() * (index + 1));
-		[items[index], items[randomIndex]] = [items[randomIndex], items[index]];
-	}
-	return items;
-}
 
 /** 用户偏好减少动效（与 CSS 侧 prefers-reduced-motion 降级约定对齐，JS 驱动的动效必须同样短路） */
 const prefersReducedMotion = () =>

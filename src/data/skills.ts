@@ -12,7 +12,6 @@ export interface Skill {
 		years: number;
 		months: number;
 	};
-	projects?: string[]; // Related project IDs
 	certifications?: string[];
 	color?: string; // Skill card theme color
 }
@@ -27,7 +26,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 2, months: 2 },
-		projects: ["inspira-ui"],
 		color: "#F7DF1E",
 	},
 	{
@@ -39,7 +37,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 1, months: 4 },
-		projects: ["inspira-ui"],
 		color: "#DEA310",
 	},
 	{
@@ -50,7 +47,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 2, months: 6 },
-		projects: ["inspira-ui"],
 		color: "#DB5E16",
 	},
 	{
@@ -61,7 +57,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 2, months: 6 },
-		projects: ["inspira-ui"],
 		color: "#1572B6",
 	},
 	{
@@ -72,7 +67,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "beginner",
 		experience: { years: 0, months: 1 },
-		projects: ["inspira-ui"],
 		color: "#563D7C",
 	},
 	{
@@ -84,7 +78,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "advanced",
 		experience: { years: 0, months: 8 },
-		projects: ["my-astro-blog"],
 		color: "#FF5D01",
 	},
 	{
@@ -95,12 +88,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 0, months: 8 },
-		projects: [
-			"opia-rss-reader",
-			"windy-project-mgr",
-			"feijiemgr",
-			"my-astro-blog",
-		],
 		color: "#3178C6",
 	},
 	{
@@ -111,7 +98,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 0, months: 2 },
-		projects: ["opia-rss-reader", "windy-project-mgr", "feijiemgr"],
 		color: "#646CFF",
 	},
 	{
@@ -123,7 +109,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 0, months: 1 },
-		projects: ["opia-rss-reader", "windy-project-mgr"],
 		color: "#61DAFB",
 	},
 	{
@@ -134,7 +119,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 0, months: 2 },
-		projects: ["feijiemgr"],
 		color: "#42B883",
 	},
 	{
@@ -146,7 +130,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 0, months: 8 },
-		projects: ["opia-rss-reader", "my-astro-blog"],
 		color: "#06B6D4",
 	},
 	{
@@ -157,7 +140,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "beginner",
 		experience: { years: 0, months: 8 },
-		projects: ["my-astro-blog"],
 		color: "#FF3E00",
 	},
 	{
@@ -168,7 +150,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 0, months: 2 },
-		projects: ["feijiemgr"],
 		color: "#FFD859",
 	},
 	{
@@ -179,7 +160,6 @@ export const skillsData: Skill[] = [
 		category: "frontend",
 		level: "intermediate",
 		experience: { years: 0, months: 2 },
-		projects: ["feijiemgr"],
 		color: "#409EFF",
 	},
 	{
@@ -202,7 +182,6 @@ export const skillsData: Skill[] = [
 		category: "backend",
 		level: "beginner",
 		experience: { years: 1, months: 8 },
-		projects: [],
 		color: "#00599C",
 	},
 	{
@@ -213,7 +192,6 @@ export const skillsData: Skill[] = [
 		category: "backend",
 		level: "beginner",
 		experience: { years: 0, months: 3 },
-		projects: [],
 		color: "#E2231A",
 	},
 	{
@@ -224,7 +202,6 @@ export const skillsData: Skill[] = [
 		category: "backend",
 		level: "beginner",
 		experience: { years: 0, months: 6 },
-		projects: [],
 		color: "#3776AB",
 	},
 	{
@@ -236,7 +213,6 @@ export const skillsData: Skill[] = [
 		category: "backend",
 		level: "intermediate",
 		experience: { years: 0, months: 1 },
-		projects: ["windy-project-mgr"],
 		color: "#DEA584",
 	},
 	{
@@ -259,7 +235,6 @@ export const skillsData: Skill[] = [
 		category: "database",
 		level: "advanced",
 		experience: { years: 0, months: 6 },
-		projects: ["e-commerce-platform", "blog-system"],
 		color: "#4479A1",
 	},
 	{
@@ -304,7 +279,6 @@ export const skillsData: Skill[] = [
 		category: "tools",
 		level: "beginner",
 		experience: { years: 0, months: 4 },
-		projects: ["python-web-app", "data-analysis"],
 		color: "#21D789",
 	},
 	{
@@ -315,7 +289,6 @@ export const skillsData: Skill[] = [
 		category: "tools",
 		level: "beginner",
 		experience: { years: 0, months: 6 },
-		projects: [],
 		color: "#4C05F7",
 	},
 	{
@@ -326,7 +299,6 @@ export const skillsData: Skill[] = [
 		category: "tools",
 		level: "beginner",
 		experience: { years: 1, months: 2 },
-		projects: ["server-management", "shell-scripting"],
 		color: "#FCC624",
 	},
 	{
@@ -337,7 +309,6 @@ export const skillsData: Skill[] = [
 		category: "tools",
 		level: "expert",
 		experience: { years: 4, months: 5 },
-		projects: ["ui-design", "image-processing"],
 		color: "#31A8FF",
 	},
 	{
@@ -349,7 +320,6 @@ export const skillsData: Skill[] = [
 		category: "tools",
 		level: "advanced",
 		experience: { years: 0, months: 1 },
-		projects: ["opia-rss-reader"],
 		color: "#47848F",
 	},
 	{
@@ -361,7 +331,6 @@ export const skillsData: Skill[] = [
 		category: "tools",
 		level: "intermediate",
 		experience: { years: 0, months: 1 },
-		projects: ["windy-project-mgr"],
 		color: "#FFC131",
 	},
 	{
@@ -373,13 +342,6 @@ export const skillsData: Skill[] = [
 		category: "tools",
 		level: "advanced",
 		experience: { years: 0, months: 6 },
-		projects: [
-			"windypics",
-			"windycolourpicker",
-			"windynotepad",
-			"studentmsgmgr",
-			"windyqtmediaplayer",
-		],
 		color: "#41CD52",
 	},
 	{
@@ -391,7 +353,6 @@ export const skillsData: Skill[] = [
 		category: "tools",
 		level: "intermediate",
 		experience: { years: 0, months: 6 },
-		projects: ["windypics", "windycolourpicker", "windyqtmediaplayer"],
 		color: "#064F8C",
 	},
 
@@ -404,7 +365,6 @@ export const skillsData: Skill[] = [
 		category: "other",
 		level: "expert",
 		experience: { years: 6, months: 11 },
-		projects: ["modern-api"],
 		color: "#E10098",
 	},
 	{

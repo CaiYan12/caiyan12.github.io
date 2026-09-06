@@ -15,7 +15,18 @@
 	let error = "";
 	let loaded = false;
 
-	let pagefind: any = null;
+	// Pagefind 无官方类型，这里声明实际用到的最小接口面
+	interface PagefindResult {
+		data: () => Promise<{
+			url: string;
+			meta?: { title?: string };
+			excerpt?: string;
+		}>;
+	}
+	type PagefindApi = {
+		search: (keyword: string) => Promise<{ results: PagefindResult[] }>;
+	};
+	let pagefind: PagefindApi | null = null;
 
 	async function loadPagefind() {
 		if (loaded || pagefind) return;
@@ -48,9 +59,9 @@
 			const search = await pagefind.search(kw);
 			const raw = search?.results ?? [];
 			const items = await Promise.all(
-				raw.slice(0, 12).map((r: any) => r.data()),
+				raw.slice(0, 12).map((r) => r.data()),
 			);
-			results = items.map((d: any) => ({
+			results = items.map((d) => ({
 				url: d.url,
 				title: d.meta?.title ?? "",
 				excerpt: d.excerpt ?? "",

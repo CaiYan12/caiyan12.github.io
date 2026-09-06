@@ -1,18 +1,12 @@
 ---
 import { getCollection } from "astro:content";
 import { getNewPosts, isPublicPost } from "../../utils/content-utils";
+import { shuffleArray } from "../../utils/shuffle";
 import dayjs from "dayjs";
 
 const allPosts = (await getCollection("posts")).filter(isPublicPost);
 const newPosts = getNewPosts(allPosts, 8);
-const surprisePosts = [...allPosts];
-for (let index = surprisePosts.length - 1; index > 0; index -= 1) {
-	const randomIndex = Math.floor(Math.random() * (index + 1));
-	[surprisePosts[index], surprisePosts[randomIndex]] = [
-		surprisePosts[randomIndex],
-		surprisePosts[index],
-	];
-}
+const surprisePosts = shuffleArray(allPosts).slice(0, 8);
 const panels = [
 	{ id: "newlog", posts: newPosts },
 	{ id: "randlog", posts: surprisePosts.slice(0, 8) },

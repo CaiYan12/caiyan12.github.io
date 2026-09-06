@@ -12,10 +12,20 @@
 	let pioContainer;
 	let pioCanvas;
 	let pioInitialized = false;
+	// 脚本加载轮询：100ms 间隔，最多 PIO_POLL_MAX_ATTEMPTS 次（约 10s），
+	// 超限放弃并告警——避免 pio.js 加载失败时无限轮询
+	const PIO_POLL_INTERVAL_MS = 100;
+	const PIO_POLL_MAX_ATTEMPTS = 100;
+	let pioPollAttempts = 0;
 
 	function initPio() {
 		if (typeof window.Paul_Pio === "undefined") {
-			setTimeout(initPio, 100);
+			pioPollAttempts += 1;
+			if (pioPollAttempts > PIO_POLL_MAX_ATTEMPTS) {
+				console.warn("[pio] script failed to load, giving up");
+				return;
+			}
+			setTimeout(initPio, PIO_POLL_INTERVAL_MS);
 			return;
 		}
 

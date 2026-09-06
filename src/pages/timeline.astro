@@ -1,6 +1,7 @@
 ---
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { timelineData } from "../data/timeline";
+import { siteConfig } from "../config";
 
 const typeLabels = {
 	education: "学习",
@@ -15,7 +16,7 @@ const items = [...timelineData].sort((a, b) =>
 
 <MainGridLayout
 	title="时间线"
-	description="WindowsIt 的学习与成长记录"
+	description={`${siteConfig.author} 的学习与成长记录`}
 	showSidebar={false}
 	searchIndex
 >

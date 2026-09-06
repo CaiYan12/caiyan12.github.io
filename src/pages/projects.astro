@@ -1,6 +1,7 @@
 ---
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { projectsData } from "../data/projects";
+import { siteConfig } from "../config";
 
 const statusLabels = {
 	completed: "已完成",
@@ -11,7 +12,7 @@ const statusLabels = {
 
 <MainGridLayout
 	title="我的项目"
-	description="WindowsIt 的项目与作品"
+	description={`${siteConfig.author} 的项目与作品`}
 	showSidebar={false}
 	searchIndex
 >
@@ -29,7 +30,7 @@ const statusLabels = {
 		<div class="github-profile-wrap">
 			<iframe
 				class="github-profile-summary"
-				src="https://profile-summary-for-github.com/user/CaiYan12"
+				src={`https://profile-summary-for-github.com/user/${siteConfig.githubUser}`}
 				title="GitHub 个人统计概览"
 				loading="lazy"></iframe>
 		</div>

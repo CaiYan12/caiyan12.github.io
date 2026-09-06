@@ -9,7 +9,9 @@
 
 @layer base {
   :root {
-    --primary: #00c000;
+    /* 品牌绿单一真源是 --colorful-green（本文件后段）；Tailwind config 的 primary
+       hex 需与其人工同步——bg-primary/N 透明度修饰符要求静态色值，不能用 var */
+    --primary: var(--colorful-green);
     --primary-dark: #0a0;
     --hot: #ffba00;
     --new: #00c700;
@@ -23,6 +25,7 @@
     /* #767676：正文级灰字达 WCAG AA（4.54:1）；装饰/边框不走此 token */
     --text-light: #767676;
     --text-gray: #505050;
+    --shadow-wrapper: 0 2px 6px rgba(100, 100, 100, 0.3);
   }
 
   html {
@@ -82,7 +85,7 @@
     max-width: 1060px;
     background-color: #fff;
     border-radius: 5px;
-    box-shadow: 0 2px 6px rgba(100, 100, 100, 0.3);
+    box-shadow: var(--shadow-wrapper);
   }
   /* 右上角折角 */
   .wrapper-box::before {
@@ -954,7 +957,7 @@
   }
   .link-content a:hover {
     border-color: var(--primary);
-    box-shadow: 0 2px 8px rgba(0, 192, 0, 0.2);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--colorful-green) 20%, transparent);
     color: var(--primary);
   }
   .link-content .fname {
@@ -1069,7 +1072,7 @@
     display: none;
     width: 44px;
     height: 44px;
-    background: rgba(0, 192, 0, 0.85) url(/images/backtop.png) no-repeat center;
+    background: color-mix(in srgb, var(--colorful-green) 85%, transparent) url(/images/backtop.png) no-repeat center;
     border-radius: 5px;
     cursor: pointer;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
@@ -2360,7 +2363,7 @@ img:hover {
   padding: 20px;
   border-radius: 5px;
   background: var(--content-surface);
-  box-shadow: 0 2px 6px rgba(100, 100, 100, 0.3);
+  box-shadow: var(--shadow-wrapper);
 }
 
 #wrapper::before {
@@ -3475,13 +3478,24 @@ img:hover {
   color: var(--primary-dark) !important;
 }
 
+/* 药丸 6 色轮换盘：背景与 ::before 三角共用同一变量（原版每色写两遍，现收敛于此） */
+#blogtags,
+.post-tags {
+  --tag-c1: #ff002b;
+  --tag-c2: #ffa900;
+  --tag-c3: #00a753;
+  --tag-c4: #b433ff;
+  --tag-c5: #b37333;
+  --tag-c6: #0089fa;
+}
+
 #blogtags a,
 .post-tags a {
   position: relative;
   display: inline-block;
   margin: 4px 5px 0 8px;
   padding: 3px 7px;
-  background: #0089fa;
+  background: var(--tag-c6);
   color: #fff !important;
   font-size: 11px;
   line-height: 14px;
@@ -3495,7 +3509,7 @@ img:hover {
   width: 0;
   height: 0;
   border-top: 10px solid transparent;
-  border-right: 8px solid #0089fa;
+  border-right: 8px solid var(--tag-c6);
   border-bottom: 10px solid transparent;
   content: "";
 }
@@ -3514,43 +3528,43 @@ img:hover {
 
 #blogtags a:nth-child(6n + 1),
 .post-tags a:nth-child(6n + 1) {
-  background: #ff002b;
+  background: var(--tag-c1);
 }
 #blogtags a:nth-child(6n + 2),
 .post-tags a:nth-child(6n + 2) {
-  background: #ffa900;
+  background: var(--tag-c2);
 }
 #blogtags a:nth-child(6n + 3),
 .post-tags a:nth-child(6n + 3) {
-  background: #00a753;
+  background: var(--tag-c3);
 }
 #blogtags a:nth-child(6n + 4),
 .post-tags a:nth-child(6n + 4) {
-  background: #b433ff;
+  background: var(--tag-c4);
 }
 #blogtags a:nth-child(6n + 5),
 .post-tags a:nth-child(6n + 5) {
-  background: #b37333;
+  background: var(--tag-c5);
 }
 #blogtags a:nth-child(6n + 1)::before,
 .post-tags a:nth-child(6n + 1)::before {
-  border-right-color: #ff002b;
+  border-right-color: var(--tag-c1);
 }
 #blogtags a:nth-child(6n + 2)::before,
 .post-tags a:nth-child(6n + 2)::before {
-  border-right-color: #ffa900;
+  border-right-color: var(--tag-c2);
 }
 #blogtags a:nth-child(6n + 3)::before,
 .post-tags a:nth-child(6n + 3)::before {
-  border-right-color: #00a753;
+  border-right-color: var(--tag-c3);
 }
 #blogtags a:nth-child(6n + 4)::before,
 .post-tags a:nth-child(6n + 4)::before {
-  border-right-color: #b433ff;
+  border-right-color: var(--tag-c4);
 }
 #blogtags a:nth-child(6n + 5)::before,
 .post-tags a:nth-child(6n + 5)::before {
-  border-right-color: #b37333;
+  border-right-color: var(--tag-c5);
 }
 
 /* 标签药丸内的 ×N 数字（/tag/ 标签云集页），白色小字 */
@@ -4218,7 +4232,7 @@ img:hover {
 .link-content a:hover .friend-card-tag,
 .link-content a:focus-visible .friend-card-tag {
   border-color: var(--colorful-green);
-  background: rgba(0, 192, 0, 0.06);
+  background: color-mix(in srgb, var(--colorful-green) 6%, transparent);
   color: var(--colorful-green);
 }
 
@@ -4523,7 +4537,7 @@ img:hover {
   }
 }
 
-@media screen and (max-width: 770px) {
+@media screen and (max-width: 768px) {
   #sidebar,
   #head-nav .m-nav {
     display: none !important;

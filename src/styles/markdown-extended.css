@@ -243,7 +243,7 @@
 }
 
 .post-context .site-card-link:hover {
-  background: rgba(0, 192, 0, 0.06);
+  background: color-mix(in srgb, var(--colorful-green) 6%, transparent);
   text-decoration: none;
 }
 
