@@ -31,6 +31,9 @@
 	--nb-font-serif: "FZShuSong-Z01S", "方正书宋", "FangZheng ShuSong", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
 	--nb-font-sans: "Noto Sans SC Variable", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB", "WenQuanYi Micro Hei", sans-serif;
 	--nb-font-kai: "KaiTi", "STKaiti", "楷体", "Noto Serif SC", serif;
+	/* 手写字体（精选摘抄贴纸卡）：平方时光体经 ZeoSeven FontsAPI 按页引入（仅详情页 head），
+	 * 本地已装用户零下载（result.css src 含 local()），未装/CDN 失败时回退楷体 */
+	--nb-font-hand: "平方时光体", "KaiTi", "STKaiti", "楷体", serif;
 	--nb-font-mono: "JetBrains Mono Variable", "JetBrains Mono", Consolas, "Courier New", monospace;
 
 	/* 硬边纸张投影（handoff §8：禁止大模糊软阴影） */
@@ -245,7 +248,7 @@
 	}
 	.nb-excerpt-card p {
 		margin: 0;
-		font-family: var(--nb-font-kai);
+		font-family: var(--nb-font-hand);
 		font-size: 15.5px;
 		line-height: 2;
 		color: #4a3f2c;
