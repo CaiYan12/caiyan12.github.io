@@ -98,6 +98,13 @@
 
 **全部 16 项审查发现已实施完毕**（Astro 升级按既定决策仅评估补记，未实施）。执行 2026-09-06 当日完成，7 阶段 8 commit，Mimosa 深度扫描 0 findings，38 例单测全过，线上部署验证通过。实施过程中的关键陷阱已记录于各阶段条目与组件注释（compressHTML 空白规则、prettier-plugin-astro 表达式容器内联脚本限制、git ls-files 中文路径八进制转义、CI checkout 不保留 mtime 故 LQIP 用字节检测）。
 
+## 事后修复（2026-09-06 晚，commit e540a5b）：/about/ 贡献日历周期性回退
+
+- 线上反馈：/about/ 渲染回退卡（"日历数据暂时不可用"）。根因**不是**修复批次引入的代码错误，而是引爆了 Issue #7（2026-09-05）实现时就存在的周期性炸弹：GitHub `contributionsCollection.contributionCalendar` 只返回到今天为止、不含未来日期——**部署日为周日时尾周仅 1 天，总天数 365 不满足消费端 assertValidData 的整周断言（%7===0）**；周六部署恰好凑满 371 天而侥幸正常。修复批次中重跑 fetch 重写缓存（旧缓存恰好是周六窗口写的 371 天）引爆了它。
+- 修复：fetch 写入端 `padToFullWeeks` 补齐首尾完整周（尾部补 count=0 对齐官方 UI 浅色空格），渲染端 53 列契约零改动；连带修掉统计口径 bug（computeStats 必须在补零前运行，否则尾部补零把 currentStreak 截为 0）；about.astro 静默 catch 补 console.warn；新增 padToFullWeeks 单测 4 组场景。
+- 验证：11/11 单测过；线上 deploy run 34010749943 后 /about/ 恢复 gh-calendar-grid（fallback 0）。
+- **教训**：对"每天重算的构建期数据"做形状断言时，必须考虑数据源随"今天是周几"变化的窗口语义；依赖旧缓存侥幸通过的校验，在缓存被重写当天必然暴露。
+
 ## 边界约束
 
 全程不碰 colorful-original.css；不改 deploy.yml cache:false；不重开 AGENTS.md 已否决事项（mermaid 体积/日历库等）；触碰 remark-extended.mjs 前先删 node_modules/.astro/（content layer 缓存坑）。
