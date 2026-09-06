@@ -171,6 +171,95 @@
 		border-radius: 0 2px 2px 0;
 	}
 
+	/* ---------- 精选摘抄贴纸卡（参考 about 便签语言：实线边框+硬投影+微旋转+胶带+折角） ---------- */
+	.nb-excerpt-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 30px 26px;
+	}
+	@media (max-width: 640px) {
+		.nb-excerpt-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+	.nb-excerpt-card {
+		/* 卡色轮盘（6 色循环，nth-child 驱动；低饱和纸色系，与 handoff 色板协调） */
+		--ex-bg: #f8efcf;
+		--ex-border: #e0cfa0;
+		position: relative;
+		margin: 0;
+		padding: 24px 22px 14px;
+		border: 1px solid var(--ex-border);
+		background: var(--ex-bg);
+		box-shadow: 2px 3px 0 rgba(74, 63, 46, 0.08);
+		transform: rotate(var(--ex-rot, 0deg));
+		transition: transform 0.2s ease;
+	}
+	.nb-excerpt-card:hover {
+		transform: rotate(0deg) translateY(-2px);
+	}
+	.nb-excerpt-card:nth-child(4n + 1) {
+		--ex-rot: -0.8deg;
+	}
+	.nb-excerpt-card:nth-child(4n + 2) {
+		--ex-rot: 0.7deg;
+	}
+	.nb-excerpt-card:nth-child(4n + 3) {
+		--ex-rot: -0.5deg;
+	}
+	.nb-excerpt-card:nth-child(4n) {
+		--ex-rot: 0.9deg;
+	}
+	/* 6 色轮盘：便签黄 / 抹茶绿 / 雾蓝 / 陶粉 / 米麻 / 薄荷青 */
+	.nb-excerpt-card:nth-child(6n + 2) {
+		--ex-bg: #e9efdc;
+		--ex-border: #ccd6b4;
+	}
+	.nb-excerpt-card:nth-child(6n + 3) {
+		--ex-bg: #e7edf2;
+		--ex-border: #c5d2dc;
+	}
+	.nb-excerpt-card:nth-child(6n + 4) {
+		--ex-bg: #f4e6dd;
+		--ex-border: #dcc3b4;
+	}
+	.nb-excerpt-card:nth-child(6n + 5) {
+		--ex-bg: #efe9d9;
+		--ex-border: #d6ccb2;
+	}
+	.nb-excerpt-card:nth-child(6n) {
+		--ex-bg: #e3efea;
+		--ex-border: #bcd6cd;
+	}
+	/* 右下折角（about 便签同款手法） */
+	.nb-excerpt-card::after {
+		content: "";
+		position: absolute;
+		right: -8px;
+		bottom: -7px;
+		width: 26px;
+		height: 21px;
+		border-right: 1.5px solid rgba(72, 72, 61, 0.4);
+		border-bottom: 1.5px solid rgba(72, 72, 61, 0.4);
+		transform: rotate(8deg) skew(-12deg, -12deg);
+	}
+	.nb-excerpt-card p {
+		margin: 0;
+		font-family: var(--nb-font-kai);
+		font-size: 15.5px;
+		line-height: 2;
+		color: #4a3f2c;
+	}
+	.nb-excerpt-card cite {
+		display: block;
+		margin-top: 8px;
+		font-family: var(--nb-font-sans);
+		font-size: 12px;
+		font-style: normal;
+		color: rgba(74, 63, 46, 0.55);
+		text-align: right;
+	}
+
 	/* Hero 换书两段式编排（handoff §11：出 170ms / 入 240ms） */
 	.nb-hero-swap {
 		transition:

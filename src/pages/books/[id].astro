@@ -7,7 +7,12 @@
  */
 import { books, getSameShelf } from "../../nice-books/data/books";
 import type { Book } from "../../nice-books/types";
-import { coverHTML, noteHTML, tagPillHTML, bookCardHTML } from "../../nice-books/lib/render";
+import {
+	coverHTML,
+	noteHTML,
+	tagPillHTML,
+	bookCardHTML,
+} from "../../nice-books/lib/render";
 import { formatAuthors } from "../../nice-books/lib/format";
 import SiteHead from "../../nice-books/components/SiteHead.astro";
 import SiteHeader from "../../nice-books/components/SiteHeader.astro";
@@ -26,7 +31,9 @@ interface Props {
 }
 const { book, sameShelf } = Astro.props;
 const metaDescription =
-	book.description.length > 90 ? `${book.description.slice(0, 89)}…` : book.description;
+	book.description.length > 90
+		? `${book.description.slice(0, 89)}…`
+		: book.description;
 ---
 
 <!doctype html>
@@ -38,9 +45,14 @@ const metaDescription =
 			canonicalPath={`/books/${book.id}/`}
 		/>
 	</head>
-	<body class="nb-page transition-swup-fade font-nb-body text-[15.5px] leading-[1.85] text-nb-ink">
+	<body
+		class="nb-page transition-swup-fade font-nb-body text-[15.5px] leading-[1.85] text-nb-ink"
+	>
 		<SiteHeader active="archive" />
-		<main class="mx-auto max-w-[1080px] px-6 max-[540px]:px-4" data-pagefind-ignore="all">
+		<main
+			class="mx-auto max-w-[1080px] px-6 max-[540px]:px-4"
+			data-pagefind-ignore="all"
+		>
 			<p class="pb-5 pt-8 text-[13.5px]">
 				<a
 					class="border-b border-dashed border-nb-border-strong pb-px text-nb-ink-soft no-underline hover:border-nb-blue hover:text-nb-blue"
@@ -48,68 +60,161 @@ const metaDescription =
 				>
 			</p>
 
-			<article class="relative border border-nb-border-strong bg-nb-surface px-12 py-11 shadow-[var(--nb-shadow-lift)] max-[820px]:px-7 max-[820px]:py-8 max-[540px]:px-[18px] max-[540px]:py-[26px]">
+			<article
+				class="relative border border-nb-border-strong bg-nb-surface px-12 py-11 shadow-[var(--nb-shadow-lift)] max-[820px]:px-7 max-[820px]:py-8 max-[540px]:px-[18px] max-[540px]:py-[26px]"
+			>
 				<span
 					class="absolute -top-px right-12 h-[58px] w-6 bg-nb-seal shadow-[1px_2px_0_rgba(74,63,46,0.15)] [clip-path:polygon(0_0,100%_0,100%_100%,50%_72%,0_100%)] max-[640px]:right-5"
 					aria-hidden="true"></span>
-				<div class="grid grid-cols-[240px_1fr] gap-11 max-[960px]:grid-cols-[210px_1fr] max-[960px]:gap-8 max-[820px]:grid-cols-1">
-					<div class="self-start max-w-[230px] max-[820px]:max-w-[230px]">
+				<div
+					class="grid grid-cols-[240px_1fr] gap-11 max-[960px]:grid-cols-[210px_1fr] max-[960px]:gap-8 max-[820px]:grid-cols-1"
+				>
+					<div
+						class="self-start max-w-[230px] max-[820px]:max-w-[230px]"
+					>
 						<Fragment set:html={coverHTML(book, { tape: true })} />
 						{
 							book.coverUrl === null && (
 								<p class="mt-3 text-[11.5px] leading-[1.8] text-nb-muted">
-									※ 因版权原因，未使用实体书封面<br />程序生成的书封外壳仅作示意
+									※ 因版权原因，未使用实体书封面
+									<br />
+									程序生成的书封外壳仅作示意
 								</p>
 							)
 						}
 					</div>
 					<div>
-						<h1 class="font-nb-serif text-[30px] leading-[1.4] tracking-[1px] max-[540px]:text-2xl">{book.title}</h1>
-						<p class="mt-2 text-[15px] text-nb-ink-soft">{formatAuthors(book)}</p>
+						<h1
+							class="font-nb-serif text-[30px] leading-[1.4] tracking-[1px] max-[540px]:text-2xl"
+						>
+							{book.title}
+						</h1>
+						<p class="mt-2 text-[15px] text-nb-ink-soft">
+							{formatAuthors(book)}
+						</p>
 						<dl class="mt-[22px]">
-							<div class="grid grid-cols-[76px_1fr] items-baseline gap-3 border-b border-dashed border-nb-border py-[9px]">
-								<dt class="text-[13px] text-nb-muted">出版社</dt>
+							<div
+								class="grid grid-cols-[76px_1fr] items-baseline gap-3 border-b border-dashed border-nb-border py-[9px]"
+							>
+								<dt class="text-[13px] text-nb-muted">
+									出版社
+								</dt>
 								<dd class="text-[14.5px]">{book.publisher}</dd>
 							</div>
-							<div class="grid grid-cols-[76px_1fr] items-baseline gap-3 border-b border-dashed border-nb-border py-[9px]">
+							<div
+								class="grid grid-cols-[76px_1fr] items-baseline gap-3 border-b border-dashed border-nb-border py-[9px]"
+							>
 								<dt class="text-[13px] text-nb-muted">版次</dt>
-								<dd class="text-[14.5px]">{book.firstEdition.edition} · {book.firstEdition.year} 年</dd>
+								<dd class="text-[14.5px]">
+									{book.firstEdition.edition} · {
+										book.firstEdition.year
+									} 年
+								</dd>
 							</div>
-							<div class="grid grid-cols-[76px_1fr] items-baseline gap-3 border-b border-dashed border-nb-border py-[9px]">
+							<div
+								class="grid grid-cols-[76px_1fr] items-baseline gap-3 border-b border-dashed border-nb-border py-[9px]"
+							>
 								<dt class="text-[13px] text-nb-muted">标签</dt>
 								<dd class="flex flex-wrap gap-2">
-									{book.tags.map((t) => <Fragment set:html={tagPillHTML(t, { variant: "link" })} />)}
+									{
+										book.tags.map((t) => (
+											<Fragment
+												set:html={tagPillHTML(t, {
+													variant: "link",
+												})}
+											/>
+										))
+									}
 								</dd>
 							</div>
 						</dl>
 						<section class="mt-[34px]">
-							<h2 class="mb-3 flex items-center gap-2.5 font-nb-serif text-lg tracking-[1px]">
-								<span class="h-2 w-2 rotate-45 bg-nb-seal" aria-hidden="true"></span>内容简介
+							<h2
+								class="mb-3 flex items-center gap-2.5 font-nb-serif text-lg tracking-[1px]"
+							>
+								<span
+									class="h-2 w-2 rotate-45 bg-nb-seal"
+									aria-hidden="true"></span>内容简介
 							</h2>
-							<p class="max-w-[42em] text-[15.5px] leading-[2.05] text-nb-ink-soft">{book.description}</p>
+							<p
+								class="max-w-[42em] text-[15.5px] leading-[2.05] text-nb-ink-soft"
+							>
+								{book.description}
+							</p>
 						</section>
 						<section class="mt-[34px]">
-							<h2 class="mb-3 flex items-center gap-2.5 font-nb-serif text-lg tracking-[1px]">
-								<span class="h-2 w-2 rotate-45 bg-nb-seal" aria-hidden="true"></span>站长荐语
+							<h2
+								class="mb-3 flex items-center gap-2.5 font-nb-serif text-lg tracking-[1px]"
+							>
+								<span
+									class="h-2 w-2 rotate-45 bg-nb-seal"
+									aria-hidden="true"></span>站长荐语
 							</h2>
-							<Fragment set:html={noteHTML(book, { stamp: true, extraClass: "mt-1" })} />
+							<Fragment
+								set:html={noteHTML(book, {
+									stamp: true,
+									extraClass: "mt-1",
+								})}
+							/>
 						</section>
+						{
+							book.excerpts && book.excerpts.length > 0 && (
+								<section
+									class="mt-[34px]"
+									aria-labelledby="nb-excerpts-title"
+								>
+									<h2
+										id="nb-excerpts-title"
+										class="mb-5 flex items-center gap-2.5 font-nb-serif text-lg tracking-[1px]"
+									>
+										<span
+											class="h-2 w-2 rotate-45 bg-nb-seal"
+											aria-hidden="true"
+										/>
+										精选摘抄
+									</h2>
+									<div class="nb-excerpt-grid">
+										{book.excerpts.map((text) => (
+											<blockquote class="nb-excerpt-card nb-tape">
+												<p>{text}</p>
+												<cite>—— 《{book.title}》</cite>
+											</blockquote>
+										))}
+									</div>
+								</section>
+							)
+						}
 					</div>
 				</div>
 			</article>
 
 			{
 				sameShelf.length > 0 && (
-					<section class="mt-[72px]" aria-labelledby="nb-related-title">
-						<h2 id="nb-related-title" class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px]">
-							<span class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal" aria-hidden="true">
+					<section
+						class="mt-[72px]"
+						aria-labelledby="nb-related-title"
+					>
+						<h2
+							id="nb-related-title"
+							class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px]"
+						>
+							<span
+								class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal"
+								aria-hidden="true"
+							>
 								+
 							</span>
 							同架图书
 						</h2>
-						<p class="mb-5 mt-1.5 text-[13px] text-nb-muted">架子上标签相近的书，顺手也翻翻。</p>
+						<p class="mb-5 mt-1.5 text-[13px] text-nb-muted">
+							架子上标签相近的书，顺手也翻翻。
+						</p>
 						<ul class="grid grid-cols-4 gap-[22px] max-[960px]:gap-4 max-[540px]:grid-cols-2 max-[540px]:gap-3">
-							<Fragment set:html={sameShelf.map((b) => bookCardHTML(b)).join("")} />
+							<Fragment
+								set:html={sameShelf
+									.map((b) => bookCardHTML(b))
+									.join("")}
+							/>
 						</ul>
 					</section>
 				)

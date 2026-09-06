@@ -23,6 +23,10 @@ const BOOKS: Book[] = [
 			"布恩迪亚家族七代人的传奇，马孔多小镇百余年的兴衰。魔幻与现实在此交织，孤独如宿命一般笼罩着每一个人。",
 		recommendationReason:
 			"第一次读完是在大学宿舍，合上书那天窗外正好下大雨。此后每年都会重读一遍，每次都会在新的地方停下来。",
+		excerpts: [
+			"多年以后，面对行刑队，奥雷里亚诺·布恩迪亚上校将会回想起父亲带他去见识冰块的那个遥远的下午。",
+			"过去都是假的，回忆是一条没有归途的路。",
+		],
 		tags: ["文学", "小说", "外国文学", "经典"],
 		featured: true,
 	},
@@ -35,7 +39,8 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"钱锺书唯一的长篇小说。围在城里的人想逃出来，城外的人想冲进去——婚姻也罢，职业也罢，人生的愿望大都如此。",
-		recommendationReason: "隔几页就忍不住划一句的奇书。讽刺得刻薄，又刻薄得让人发笑。",
+		recommendationReason:
+			"隔几页就忍不住划一句的奇书。讽刺得刻薄，又刻薄得让人发笑。",
 		tags: ["文学", "小说", "经典"],
 		featured: true,
 	},
@@ -48,7 +53,9 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"一次绝密军事项目，让地球文明与三体文明有了第一次接触。一部硬朗、宏大而冷酷的中国科幻史诗。",
-		recommendationReason: "读完抬头看夜空的心情很难描述。国产科幻天花板，没有之一。",
+		recommendationReason:
+			"读完抬头看夜空的心情很难描述。国产科幻天花板，没有之一。",
+		excerpts: ["弱小和无知不是生存的障碍，傲慢才是。"],
 		tags: ["科幻", "小说"],
 		featured: true,
 	},
@@ -61,7 +68,11 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"地主少爷福贵嗜赌成性，终于赌光了家业。此后内战、饥荒、动荡接踵而至，身边的亲人一个个离去，而他依旧活着。",
-		recommendationReason: "薄薄一本，两小时就能读完，但接下来两天会一直想着它。",
+		recommendationReason:
+			"薄薄一本，两小时就能读完，但接下来两天会一直想着它。",
+		excerpts: [
+			"人是为活着本身而活着的，而不是为了活着之外的任何事物所活着。",
+		],
 		tags: ["文学", "小说"],
 		featured: true,
 	},
@@ -74,7 +85,11 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"飞行员在撒哈拉沙漠遇见了来自 B-612 星球的小王子。一本写给大人的童话，关于玫瑰、狐狸，和眼睛看不见的东西。",
-		recommendationReason: "周克希的译本味道最对。不同年纪读，是三本不同的书。",
+		recommendationReason:
+			"周克希的译本味道最对。不同年纪读，是三本不同的书。",
+		excerpts: [
+			"如果你说你在下午四点来，从三点钟开始，我就开始感觉很快乐。时间越临近，我就越感到快乐。",
+		],
 		tags: ["文学", "外国文学", "经典"],
 		featured: true,
 	},
@@ -87,7 +102,8 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"以万历十五年这个看似平淡的年份为切口，剖析大明王朝乃至整个传统中国的制度困局。「大历史观」的开山之作。",
-		recommendationReason: "把历史写得像推理小说。读完再看任何古装剧都会走神去想制度问题。",
+		recommendationReason:
+			"把历史写得像推理小说。读完再看任何古装剧都会走神去想制度问题。",
 		tags: ["历史", "人文", "经典"],
 		featured: true,
 	},
@@ -101,6 +117,7 @@ const BOOKS: Book[] = [
 		description:
 			"《狂人日记》《孔乙己》《阿Q正传》……新文学的第一声呐喊。一百年过去，书里的人仍然住在我们周围。",
 		recommendationReason: "小时候背课文觉得他凶，长大重读才发现他最温柔。",
+		excerpts: ["其实地上本没有路，走的人多了，也便成了路。"],
 		tags: ["文学", "经典", "中国文学"],
 		featured: true,
 	},
@@ -114,6 +131,7 @@ const BOOKS: Book[] = [
 		description:
 			"湘西茶峒的渡船上，翠翠和爷爷安静地生活着。一个关于等待的故事——这个人也许永远不回来了，也许明天回来。",
 		recommendationReason: "适合夏天的傍晚读。文字干净得像溪水。",
+		excerpts: ["这个人也许永远不回来了，也许明天回来。"],
 		tags: ["文学", "小说", "中国文学"],
 		featured: false,
 	},
@@ -126,7 +144,8 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"1845 年春天，梭罗带着一把斧头走进瓦尔登湖畔的森林，独自生活了两年零两个月。一本关于「如何生活」的实验记录。",
-		recommendationReason: "焦虑的年头，随便翻开一页都能安静下来。徐迟译本依然是最好的。",
+		recommendationReason:
+			"焦虑的年头，随便翻开一页都能安静下来。徐迟译本依然是最好的。",
 		tags: ["散文", "外国文学", "自然"],
 		featured: true,
 	},
@@ -139,7 +158,9 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"默尔索在母亲的葬礼上没有流泪，后来因此被判处死刑。存在主义文学最锋利的一把刀。",
-		recommendationReason: "很短，一个下午读完。但之后很长一段时间，你会被它盯着看。",
+		recommendationReason:
+			"很短，一个下午读完。但之后很长一段时间，你会被它盯着看。",
+		excerpts: ["今天，妈妈死了。也许是昨天，我不知道。"],
 		tags: ["文学", "小说", "外国文学"],
 		featured: false,
 	},
@@ -165,7 +186,9 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"一块顽石、一株绛草，和一整个家族的盛衰。中国小说的绝对巅峰，也是一座读一辈子也读不完的园子。",
-		recommendationReason: "不必多说。只提醒一句：别从第一回的神话开始较真，先读下去再说。",
+		recommendationReason:
+			"不必多说。只提醒一句：别从第一回的神话开始较真，先读下去再说。",
+		excerpts: ["满纸荒唐言，一把辛酸泪。都云作者痴，谁解其中味？"],
 		tags: ["经典", "中国文学", "小说"],
 		featured: true,
 	},
@@ -178,7 +201,8 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"二十世纪二十年代的北京城南，小英子眼中的骆驼队、惠安馆，和爸爸的花儿落了。旧照片一样的童年。",
-		recommendationReason: "冬天读会想喝一碗热豆汁儿。告别写得克制，反而最催泪。",
+		recommendationReason:
+			"冬天读会想喝一碗热豆汁儿。告别写得克制，反而最催泪。",
 		tags: ["文学", "中国文学", "童年"],
 		featured: false,
 	},
@@ -191,7 +215,8 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"黄土高原上，孙少安与孙少平兄弟在时代变迁中各自挣扎、各自生长。一部厚重的中国当代生活全景。",
-		recommendationReason: "三册很厚，但你会舍不得读完。写给每一个不肯认输的普通人。",
+		recommendationReason:
+			"三册很厚，但你会舍不得读完。写给每一个不肯认输的普通人。",
 		tags: ["小说", "中国文学", "经典"],
 		featured: true,
 	},
@@ -256,7 +281,8 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"一家可以穿越时空回信的杂货店，几个互相咬合的人生故事。东野圭吾难得的温柔之作。",
-		recommendationReason: "结构精巧得像钟表。适合心情低落时读，治愈但不说教。",
+		recommendationReason:
+			"结构精巧得像钟表。适合心情低落时读，治愈但不说教。",
 		tags: ["小说", "外国文学", "治愈"],
 		featured: false,
 	},
@@ -269,7 +295,8 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"一段跨越半个多世纪的爱情，在战争与霍乱之间等待了五十三年七个月零十一天。",
-		recommendationReason: "如果说《百年孤独》是宿命，这本就是耐心。爱情的所有形态都在里面了。",
+		recommendationReason:
+			"如果说《百年孤独》是宿命，这本就是耐心。爱情的所有形态都在里面了。",
 		tags: ["文学", "小说", "外国文学"],
 		featured: false,
 	},
@@ -282,7 +309,8 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"1989 至 1994 年，木心在纽约为陈丹青等一群画家讲授世界文学史，五年讲课的完整笔记。一部私人的文学宇宙。",
-		recommendationReason: "像跟着一位毒舌又深情的老先生，把文学史重新走了一遍。",
+		recommendationReason:
+			"像跟着一位毒舌又深情的老先生，把文学史重新走了一遍。",
 		tags: ["文学", "随笔", "讲稿"],
 		featured: true,
 	},
@@ -295,7 +323,8 @@ const BOOKS: Book[] = [
 		coverUrl: null,
 		description:
 			"知青岁月里的三个故事：痴迷下棋的王一生、守着巨树的李三明、教学生认字的待业青年。汉语白描写作的范本。",
-		recommendationReason: "白描功夫登峰造极。火车上吃的那碗饭，读一次饿一次。",
+		recommendationReason:
+			"白描功夫登峰造极。火车上吃的那碗饭，读一次饿一次。",
 		tags: ["小说", "中国文学", "经典"],
 		featured: false,
 	},
@@ -307,28 +336,52 @@ function assertBooksValid(data: Book[]): void {
 	const seen = new Set<string>();
 	for (const b of data) {
 		const where = `books[id=${b?.id ?? "?"}]`;
-		if (!/^\d{2}$/.test(b.id)) throw new Error(`${where}: id 必须是两位数字字符串`);
+		if (!/^\d{2}$/.test(b.id))
+			throw new Error(`${where}: id 必须是两位数字字符串`);
 		if (seen.has(b.id)) throw new Error(`${where}: id 重复`);
 		seen.add(b.id);
-		if (!Array.isArray(b.author) || b.author.length === 0 || b.author.some((a) => typeof a !== "string" || a.trim() === "")) {
+		if (
+			!Array.isArray(b.author) ||
+			b.author.length === 0 ||
+			b.author.some((a) => typeof a !== "string" || a.trim() === "")
+		) {
 			throw new Error(`${where}: author 必须为非空 string[]`);
 		}
-		for (const field of ["title", "publisher", "description", "recommendationReason"] as const) {
+		for (const field of [
+			"title",
+			"publisher",
+			"description",
+			"recommendationReason",
+		] as const) {
 			if (typeof b[field] !== "string" || b[field].trim() === "") {
 				throw new Error(`${where}: ${field} 必须为非空字符串`);
 			}
 		}
-		if (!Number.isInteger(b.firstEdition?.year)) throw new Error(`${where}: firstEdition.year 必须为整数`);
-		if (typeof b.firstEdition?.edition !== "string" || b.firstEdition.edition === "") {
+		if (!Number.isInteger(b.firstEdition?.year))
+			throw new Error(`${where}: firstEdition.year 必须为整数`);
+		if (
+			typeof b.firstEdition?.edition !== "string" ||
+			b.firstEdition.edition === ""
+		) {
 			throw new Error(`${where}: firstEdition.edition 必须为非空字符串`);
 		}
-		if (b.coverUrl !== null && !(typeof b.coverUrl === "string" && b.coverUrl.startsWith("/"))) {
-			throw new Error(`${where}: coverUrl 必须为 null 或以 / 开头的本地路径`);
+		if (
+			b.coverUrl !== null &&
+			!(typeof b.coverUrl === "string" && b.coverUrl.startsWith("/"))
+		) {
+			throw new Error(
+				`${where}: coverUrl 必须为 null 或以 / 开头的本地路径`,
+			);
 		}
-		if (!Array.isArray(b.tags) || b.tags.length === 0 || b.tags.some((t) => typeof t !== "string" || t.trim() === "")) {
+		if (
+			!Array.isArray(b.tags) ||
+			b.tags.length === 0 ||
+			b.tags.some((t) => typeof t !== "string" || t.trim() === "")
+		) {
 			throw new Error(`${where}: tags 必须为非空 string[]`);
 		}
-		if (typeof b.featured !== "boolean") throw new Error(`${where}: featured 必须为 boolean`);
+		if (typeof b.featured !== "boolean")
+			throw new Error(`${where}: featured 必须为 boolean`);
 	}
 }
 
@@ -339,7 +392,9 @@ assertBooksValid(BOOKS);
 const FEATURED_POOL_MIN = 12;
 const featuredCount = BOOKS.filter((b) => b.featured).length;
 if (featuredCount < FEATURED_POOL_MIN) {
-	throw new Error(`books: featured 池仅 ${featuredCount} 本，少于整组换所需的 ${FEATURED_POOL_MIN} 本下限`);
+	throw new Error(
+		`books: featured 池仅 ${featuredCount} 本，少于整组换所需的 ${FEATURED_POOL_MIN} 本下限`,
+	);
 }
 
 /* ---------- 查询工具 ---------- */
@@ -357,7 +412,10 @@ export function getBookById(id: string): Book | null {
 /** 同架图书：按共享标签数降序取前 n 本（排除自身，仅保留至少共享 1 个标签者） */
 export function getSameShelf(book: Book, n = 4): Book[] {
 	return BOOKS.filter((b) => b.id !== book.id)
-		.map((b) => ({ b, overlap: b.tags.filter((t) => book.tags.includes(t)).length }))
+		.map((b) => ({
+			b,
+			overlap: b.tags.filter((t) => book.tags.includes(t)).length,
+		}))
 		.filter((x) => x.overlap > 0)
 		.sort((a, z) => z.overlap - a.overlap)
 		.slice(0, n)

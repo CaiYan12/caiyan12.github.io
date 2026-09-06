@@ -19,6 +19,8 @@ export interface Book {
 	description: string;
 	/** 站长荐语（第一人称短句，非评论/评分） */
 	recommendationReason: string;
+	/** 精选摘抄（可选；书籍原文短句，详情页贴纸卡展示，无则不渲染该版块） */
+	excerpts?: string[];
 	tags: string[];
 	/** true → 进入「站长推荐」池 */
 	featured: boolean;

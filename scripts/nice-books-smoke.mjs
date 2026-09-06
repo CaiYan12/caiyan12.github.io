@@ -246,7 +246,7 @@ try {
 	await page.goto(new URL("/books/01/", baseUrl).href, { waitUntil: "domcontentloaded" });
 	await page.waitForSelector("article .detail-title, article h1", { timeout: 15000 });
 	check("详情页 title 格式", (await page.title()) === "《百年孤独》 · Nice Books 每日好书", await page.title());
-	check("详情页 h1 渲染书名", (await page.textContent("article h1")) === "百年孤独");
+	check("详情页 h1 渲染书名", ((await page.textContent("article h1")) ?? "").trim() === "百年孤独");
 	const bodyText = await page.evaluate(() => document.querySelector("main")?.textContent ?? "");
 	check(
 		"详情页全字段渲染（作者/出版社/版次/简介/荐语）",
