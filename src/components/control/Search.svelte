@@ -39,8 +39,9 @@
 		try {
 			await loadPagefind();
 			if (!pagefind) {
-				error =
-					"搜索索引未就绪（请先执行 pnpm build 生成 pagefind 索引）";
+				// 面向访客的文案；开发/索引缺失细节走 console 排错
+				error = "搜索暂时不可用，请稍后再试。";
+				console.warn("[search] pagefind index not available");
 				searching = false;
 				return;
 			}
@@ -55,7 +56,8 @@
 				excerpt: d.excerpt ?? "",
 			}));
 		} catch (e) {
-			error = String(e);
+			error = "搜索暂时不可用，请稍后再试。";
+			console.warn("[search] failed:", e);
 		}
 		searching = false;
 	}
@@ -106,6 +108,17 @@
 			没有找到与「{keyword}」相关的内容，换个关键词试试？
 		</p>
 	{/if}
+
+	<!-- 持久 aria-live 区域：状态变化（搜索中/结果数/出错）对读屏用户可感知 -->
+	<div class="sr-only" aria-live="polite">
+		{#if searching}
+			正在搜索…
+		{:else if error}
+			{error}
+		{:else if results.length > 0}
+			找到 {results.length} 条结果
+		{/if}
+	</div>
 
 	<ul class="mt-4 space-y-4">
 		{#each results as r}

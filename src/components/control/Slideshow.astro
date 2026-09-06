@@ -28,8 +28,13 @@ const slides = posts.map((post, index) => ({
 					<li
 						class:list={[index === 0 && "active"]}
 						data-slide-to={index}
-						title={slide.title}
-					/>
+					>
+						<button
+							type="button"
+							title={slide.title}
+							aria-label={`第 ${index + 1} 张：${slide.title}`}
+						/>
+					</li>
 				))}
 			</ol>
 			<div class="carousel-inner">

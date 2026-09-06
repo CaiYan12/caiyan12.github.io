@@ -7,8 +7,10 @@
 import lqipData from "@constants/lqips.json";
 
 // 值为 { g: 18 字符紧凑渐变, bytes: 源图字节数（generate-lqips 变更检测用） }
-const lqips: Record<string, { g: string; bytes: number }> =
-	lqipData as Record<string, { g: string; bytes: number }>;
+const lqips: Record<string, { g: string; bytes: number }> = lqipData as Record<
+	string,
+	{ g: string; bytes: number }
+>;
 
 const DEFAULT_GRADIENT =
 	"linear-gradient(135deg, #d6d3d1 0%, #a8a29e 50%, #d6d3d1 100%)";

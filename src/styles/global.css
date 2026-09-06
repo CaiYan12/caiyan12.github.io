@@ -3979,16 +3979,22 @@ img:hover {
 
 .carousel-indicators li {
   display: inline-block;
+  margin: 15px 5px 0 0;
+}
+
+/* 指示点改为 li 内原生 button（键盘可达）；圆点样式随之移到 button 上 */
+.carousel-indicators li button {
+  display: block;
   width: 10px;
   height: 10px;
-  margin: 15px 5px 0 0;
+  padding: 0;
   border: 1px solid #fff;
   border-radius: 10px;
   background: transparent;
   text-indent: -999px;
 }
 
-.carousel-indicators li.active {
+.carousel-indicators li.active button {
   background: #fff;
 }
 

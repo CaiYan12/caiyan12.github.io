@@ -46,17 +46,17 @@
 
 ## 阶段 4：a11y 结构项（清单 #9，无视觉争议）
 
-- [ ] 4.1 MMenu：Escape 关闭、焦点管理、#open-nav aria-expanded+aria-controls、nav 可访问名称
-- [ ] 4.2 `Slideshow.astro:21-24` 指示点 li→button + aria-label
-- [ ] 4.3 导航 aria-current="page"：Navbar SSR 与 syncNavHighlight 双侧同步
-- [ ] 4.4 `MMenu.astro:17`、`404.astro:18` 搜索框补 aria-label
-- [ ] 4.5 `BackToTop.astro` div→button + hidden 切换
-- [ ] 4.6 `MainGridLayout.astro:50-53` #content 去重复 role="main"
-- [ ] 4.7 `Search.svelte` 结果容器 aria-live + 错误文案改访客友好
-- [ ] 4.8 `posts/[...slug].astro:79-84` JSON-LD `<` 转义
-- [ ] 4.9 `rehype-email-protection.mjs:73-96` onclick → data-* + 事件委托
-- [ ] 验证：Playwright 键盘实测（Tab/Escape/焦点归还）
-- [ ] commit 4
+- [x] 4.1 MMenu：Escape 关闭并把焦点归还 #open-nav、打开时焦点移入菜单（首个 input/a/button）、#open-nav aria-expanded（JS 双向同步）+aria-controls、nav 去冗余 role 加 aria-label
+- [x] 4.2 Slideshow 指示点 li 内原生 button（aria-label="第 N 张：标题"）；圆点样式迁移到 `.carousel-indicators li button`，实测渲染与改前一致
+- [x] 4.3 aria-current="page"：Navbar/MMenu SSR 按 isCurrent 输出；syncNavHighlight 首循环扩到 `#nav a, #mmenu a` 并同步维护 aria-current（顺带修复 MMenu 子项 current 切页后不重算的隐性陈旧问题）
+- [x] 4.4 MMenu 与 404 搜索框补 aria-label="搜索关键词"
+- [x] 4.5 BackToTop div→button（type/aria-label/title）；display 切换逻辑保持（效果与 hidden 等价）
+- [x] 4.6 MainGridLayout #content 去重复 role="main"（main 地标回归唯一）
+- [x] 4.7 Search.svelte 持久化 aria-live="polite" 状态区（搜索中/结果数/出错可感知）；访客错误文案"搜索暂时不可用，请稍后再试"，技术细节转 console.warn
+- [x] 4.8 （JSON-LD `<` 转义→移至阶段 5 与文章页 h1 改动同文件执行，见阶段 5 备注）
+- [x] 4.9 rehype-email-protection：移除内联 onclick，改 data-email-method 标注 + theme-script initProtectedEmail 事件委托（CSP script-src 兼容，Swup 后仍生效）
+- [x] 验证：format/check/build 全绿；Playwright 实测——aria-current 首页唯一、移动视口菜单开→焦点入菜单→Escape 关→焦点归还 open-nav→aria-expanded 复位、指示点 5 个 button 带正确 aria-label、backtop 为 BUTTON、main 地标数=1、无 page error
+- [x] commit 4
 
 ## 阶段 5：视觉敏感三项（克制版，清单 #6/#10/#15）
 

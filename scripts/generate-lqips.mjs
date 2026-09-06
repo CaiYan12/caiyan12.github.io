@@ -287,7 +287,9 @@ async function generateVariants() {
 			srcMtime = (await fs.stat(srcPath)).mtimeMs;
 		} catch (error) {
 			// 单图损坏或读取中消失：warn 跳过，不让一张坏图中断整个变体阶段
-			console.warn(`\nWarn: skip variant source ${srcPath}: ${error?.message}`);
+			console.warn(
+				`\nWarn: skip variant source ${srcPath}: ${error?.message}`,
+			);
 			continue;
 		}
 		const srcWidth = metadata.width ?? 0;

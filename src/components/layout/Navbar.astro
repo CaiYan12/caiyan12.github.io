@@ -18,6 +18,8 @@ const isCurrent = (url: string) =>
 		class="open-nav"
 		type="button"
 		aria-label="打开导航菜单"
+		aria-expanded="false"
+		aria-controls="mmenu"
 	>
 		<i class="fa fa-list-ul" aria-hidden="true"></i>
 	</button>
@@ -72,7 +74,14 @@ const isCurrent = (url: string) =>
 							{ current: isCurrent(item.url) },
 						]}
 					>
-						<a href={item.url}>{item.name}</a>
+						<a
+							href={item.url}
+							aria-current={
+								isCurrent(item.url) ? "page" : undefined
+							}
+						>
+							{item.name}
+						</a>
 					</li>
 				))
 			}

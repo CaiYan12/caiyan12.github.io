@@ -63,6 +63,8 @@ function destroyFancybox() {
 
 let copyLinkBound = false;
 
+let protectedEmailBound = false;
+
 let skillsDonutTooltipBound = false;
 
 let newCommentShuffleBound = false;
@@ -798,13 +800,18 @@ function syncNavHighlight() {
 		const base = href.endsWith("/") ? href : `${href}/`;
 		return path === href || path === base || path.startsWith(base);
 	};
-	document.querySelectorAll("#nav a").forEach((a) => {
+	// 逐锚点 toggle（导航与移动菜单都在 Swup 容器外，切页后需在此重算），
+	// class 与 aria-current 同步维护，读屏用户也能感知当前页
+	document.querySelectorAll("#nav a, #mmenu a").forEach((a) => {
 		const href = a.getAttribute("href") || "/";
 		// 下拉父项按钮（void href）不匹配任何路径，交由下方子链接统一计算
 		if (href === "javascript:void(0)") return;
 		const parent = a.closest("li");
 		if (!parent) return;
-		parent.classList.toggle("current", isMatch(href));
+		const match = isMatch(href);
+		parent.classList.toggle("current", match);
+		if (match) a.setAttribute("aria-current", "page");
+		else a.removeAttribute("aria-current");
 	});
 	// 下拉父项 current：任一子链接匹配即高亮（Swup 切页不替换导航，需在此重算）
 	document.querySelectorAll("#nav li.dropdown, #mmenu li").forEach((li) => {
@@ -856,6 +863,41 @@ function initDblClickScroll() {
 	});
 }
 
+/**
+ * 邮箱保护链接（rehype-email-protection 配套）：点击时按 data-email-method 解码
+ * data-encoded-email 并唤起邮件客户端。事件委托，Swup 切页后依然生效；
+ * 取代原内联 onclick（与 CSP script-src 兼容）。
+ */
+function initProtectedEmail() {
+	if (protectedEmailBound) return;
+	protectedEmailBound = true;
+	document.addEventListener("click", (e) => {
+		const target = e.target as HTMLElement | null;
+		const link = target?.closest?.("a[data-encoded-email]");
+		if (!link) return;
+		e.preventDefault();
+		const encoded = link.getAttribute("data-encoded-email") || "";
+		const method = link.getAttribute("data-email-method") || "base64";
+		let email = "";
+		if (method === "rot13") {
+			email = encoded.replace(/[a-zA-Z]/g, (ch) => {
+				const start = ch <= "Z" ? 65 : 97;
+				return String.fromCharCode(
+					((ch.charCodeAt(0) - start + 13) % 26) + start,
+				);
+			});
+		} else {
+			try {
+				email = atob(encoded);
+			} catch {
+				console.warn("[email] invalid encoded payload");
+				return;
+			}
+		}
+		window.location.href = `mailto:${email}`;
+	});
+}
+
 /** 移动端全屏菜单 */
 function initMMenu() {
 	const openBtn = document.getElementById("open-nav");
@@ -867,23 +909,37 @@ function initMMenu() {
 	// 菜单节点在 Swup 容器外且只初始化一次；dataset 守卫防止重入时监听器叠加
 	if (openBtn.dataset.mmenuBound === "true") return;
 	openBtn.dataset.mmenuBound = "true";
-	openBtn.addEventListener("click", () => {
+	const syncExpanded = (expanded: boolean) =>
+		openBtn.setAttribute("aria-expanded", String(expanded));
+	const openMenu = () => {
 		menu.classList.add("open");
 		close.classList.add("open");
 		backdrop?.classList.add("open");
 		document.body.style.overflow = "hidden";
-	});
+		syncExpanded(true);
+		// 焦点移入菜单，键盘/读屏用户打开后可直接在菜单内 Tab
+		menu.querySelector<HTMLElement>("input, a, button")?.focus();
+	};
 	const closeMenu = () => {
 		menu.classList.remove("open");
 		close.classList.remove("open");
 		backdrop?.classList.remove("open");
 		document.body.style.overflow = "";
+		syncExpanded(false);
 	};
+	openBtn.addEventListener("click", openMenu);
 	close.addEventListener("click", closeMenu);
 	closeButton?.addEventListener("click", closeMenu);
 	backdrop?.addEventListener("click", closeMenu);
 	menu.addEventListener("click", (e) => {
 		if ((e.target as HTMLElement).closest("a")) closeMenu();
+	});
+	// Escape 关闭并把焦点归还触发按钮
+	document.addEventListener("keydown", (e) => {
+		if (e.key !== "Escape") return;
+		if (!menu.classList.contains("open")) return;
+		closeMenu();
+		openBtn.focus();
 	});
 }
 
@@ -1018,6 +1074,7 @@ export function pagefindReady() {
 	initCanvasBoomEffect();
 	initVisibilityTitle();
 	initCopyLink();
+	initProtectedEmail();
 	initNewCommentShuffle();
 	initPaginationJump();
 	initSkillsDonutTooltip();

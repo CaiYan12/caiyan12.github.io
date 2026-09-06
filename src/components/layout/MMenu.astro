@@ -10,7 +10,7 @@ const isCurrent = (url: string) =>
 <!-- 移动端全屏菜单（对应 #mmenu） -->
 <div id="mmenu-backdrop" aria-hidden="true"></div>
 <div id="mmenu-close" class="mmenu-close"></div>
-<nav id="mmenu" class="mmenu" role="navigation">
+<nav id="mmenu" class="mmenu" aria-label="移动端导航菜单">
 	<ul>
 		<li>
 			<div class="msearch">
@@ -19,6 +19,7 @@ const isCurrent = (url: string) =>
 						type="text"
 						name="keyword"
 						placeholder="搜搜更健康"
+						aria-label="搜索关键词"
 					/>
 					<input type="submit" name="submit" value="搜索" />
 				</form>
@@ -27,7 +28,12 @@ const isCurrent = (url: string) =>
 		{
 			navBarConfig.items.map((item) => (
 				<li class:list={[{ current: isCurrent(item.url) }]}>
-					<a href={item.url}>{item.name}</a>
+					<a
+						href={item.url}
+						aria-current={isCurrent(item.url) ? "page" : undefined}
+					>
+						{item.name}
+					</a>
 				</li>
 			))
 		}
@@ -45,7 +51,14 @@ const isCurrent = (url: string) =>
 				{
 					navBarConfig.archiveSite.map((item) => (
 						<li class:list={[{ current: isCurrent(item.url) }]}>
-							<a href={item.url}>{item.name}</a>
+							<a
+								href={item.url}
+								aria-current={
+									isCurrent(item.url) ? "page" : undefined
+								}
+							>
+								{item.name}
+							</a>
 						</li>
 					))
 				}
@@ -65,7 +78,14 @@ const isCurrent = (url: string) =>
 				{
 					navBarConfig.aboutSite.map((item) => (
 						<li class:list={[{ current: isCurrent(item.url) }]}>
-							<a href={item.url}>{item.name}</a>
+							<a
+								href={item.url}
+								aria-current={
+									isCurrent(item.url) ? "page" : undefined
+								}
+							>
+								{item.name}
+							</a>
 						</li>
 					))
 				}
@@ -100,6 +120,9 @@ const isCurrent = (url: string) =>
 							<a
 								href={item.url}
 								data-no-swup={item.noSwup ? "" : undefined}
+								aria-current={
+									isCurrent(item.url) ? "page" : undefined
+								}
 							>
 								{item.name}
 							</a>

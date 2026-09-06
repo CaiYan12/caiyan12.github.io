@@ -37,24 +37,6 @@ export default function rehypeEmailProtection(options = {}) {
 		return method === "rot13" ? rot13Encode(str) : base64Encode(str);
 	};
 
-	// 生成解码 JavaScript 代码
-	const generateDecodeScript = () => {
-		if (method === "rot13") {
-			return `
-        function decodeRot13(str) {
-          return str.replace(/[a-zA-Z]/g, function(char) {
-            const start = char <= 'Z' ? 65 : 97;
-            return String.fromCharCode(((char.charCodeAt(0) - start + 13) % 26) + start);
-          });
-        }
-        const decodedEmail = decodeRot13(encodedEmail);
-      `;
-		}
-		return `
-      const decodedEmail = atob(encodedEmail);
-    `;
-	};
-
 	return (tree) => {
 		visit(tree, "element", (node, index, parent) => {
 			// 只处理 a 元素
@@ -72,7 +54,9 @@ export default function rehypeEmailProtection(options = {}) {
 			const email = href.replace("mailto:", "");
 			const encodedEmail = encode(email);
 
-			// 创建加密的链接元素（移除原始的 href 属性，避免重复定义）
+			// 创建加密的链接元素（移除原始 href；解码由 theme-script.ts 的
+			// initProtectedEmail 事件委托在点击时完成，按 data-email-method 区分
+			// base64/rot13，不再注入内联 onclick 以兼容 CSP script-src）
 			const otherProperties = { ...node.properties };
 			delete otherProperties.href;
 			const protectedLink = h(
@@ -81,19 +65,7 @@ export default function rehypeEmailProtection(options = {}) {
 					...otherProperties,
 					href: "#",
 					"data-encoded-email": encodedEmail,
-					onclick: `
-          (function() {
-            const encodedEmail = this.getAttribute('data-encoded-email');
-            ${generateDecodeScript()}
-            this.href = 'mailto:' + decodedEmail;
-            this.removeAttribute('data-encoded-email');
-            this.removeAttribute('onclick');
-            this.click();
-            return false;
-          }).call(this);
-        `
-						.replace(/\s+/g, " ")
-						.trim(),
+					"data-email-method": method,
 				},
 				node.children,
 			);
