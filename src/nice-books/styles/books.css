@@ -75,25 +75,23 @@
 	}
 
 	/* Swup 切页编排（作用于 main 容器：页眉/页脚静止，内容切换才需要过渡）
-	 * 两段式：离场 opacity→0 + Y-8px（170ms ease-in）
-	 * → 替换 → 入场 delay 50ms 后 opacity→1 + Y 8px→0（240ms ease-out 上浮落定）
+	 * 官方 fade 模式：is-animating 贯穿离场+替换+入场等待期（元素保持隐藏上移态）；
+	 * swup 完成导航移除全部动画类的瞬间，元素经基础 240ms ease-out 过渡回落
+	 * ——即「新页面自下方 8px 上浮淡入」。离场用更快 170ms ease-in（类覆盖）。
 	 * 节奏与 hero 换书动效（handoff §11 出170/入240）同族；reduced-motion 全局归零。
-	 * is-animating 覆盖离场段；is-rendering 覆盖入场段（delay 期间保持离场末态）。 */
+	 * 勿加 is-rendering 终态规则：swup 加 is-rendering 先于容器替换，新元素插入即
+	 * 终态会导致入场过渡无从发生（2026-09-06 实测）。 */
 	.transition-swup-fade {
 		transition:
-			opacity 0.17s ease-in,
-			transform 0.17s ease-in;
+			opacity 0.24s ease-out,
+			transform 0.24s ease-out;
 	}
 	html.is-animating .transition-swup-fade {
 		opacity: 0;
 		transform: translateY(-8px);
-	}
-	html.is-rendering .transition-swup-fade {
-		opacity: 1;
-		transform: translateY(0);
 		transition:
-			opacity 0.24s ease-out 0.05s,
-			transform 0.24s ease-out 0.05s;
+			opacity 0.17s ease-in,
+			transform 0.17s ease-in;
 	}
 }
 
