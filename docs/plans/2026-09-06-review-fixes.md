@@ -69,11 +69,12 @@
 
 ## 阶段 6：测试面 + 列表页家族收敛（清单 #7→#5）
 
-- [ ] 6.1 content-utils.test.ts + pagination.test.ts（node --test）
-- [ ] 6.2 抽公共件：Breadcrumb.astro、TagPillCloud.astro、分页纯函数 pageOf
-- [ ] 6.3 迁移 8 页：tag/category/hot 家族（archive 同构则一并）
-- [ ] 6.4 HTML diff 验收：迁移前后 dist 结构一致 = 视觉零回归
-- [ ] commit 6
+- [x] 6.1 新增 scripts/test-hooks.mjs（node:module registerHooks：astro:content 虚拟模块桩化 + 无扩展名相对导入补 .ts，使 src/utils 纯函数可在裸 node --test 下导入）；content-utils.test.ts（6 用例：排序置顶/热评评分同分时间倒序/标签分类计数/邻篇边界/封面 hash 稳定/摘要剥离）+ pagination.test.ts（3 用例 canonical 契约）；package.json 增 test:utils
+- [x] 6.2 抽公共件：TagPillCloud.astro（药丸云 5 处共用，base/current/showCount 参数化，WidgetTag 以 showCount=false 复用）、ListingHeader.astro（post-header h1 + post-metaa 面包屑）、TaxonomyListing.astro（单标签/单分类列表体，KIND_CONFIG 参数化图标/文案/前缀）
+- [x] 6.3 迁移 9 页：tag/index、category/index、tag/[tag]、category/[category]、tag/[tag]/page/[page]、category/[category]/page/[page]、hot/index、hot/page/[page] + WidgetTag；**archive 家族经核实头部结构不同（无面包屑、计数内嵌 h1）按零回归原则保留原样**
+- [x] 6.4 HTML diff 验收（构建产物逐页对比，剔除"手气不错"构建期随机面板后渲染等价归一化）：45 页 = 3 页逐字一致 + 22 页仅计划内 h2→h1（阶段 5 补齐分页变体）+ 20 页仅面包屑链接内空白（跨行内边界折叠、渲染等价）；首页侧栏（剔除随机面板）逐字一致；零结构性差异
+- 实施记录（compressHTML 空白陷阱，已写入组件注释）：相邻表达式之间空白被剥除（{" "} 显式输出）；元素与表达式之间保留；字符串表达式内的实体被转义（&times; 必须留在标记文本中）；"手气不错"面板每次构建随机 → dist 对比须剔除
+- [x] commit 6
 
 ## 阶段 7：卫生收尾与文档（清单 #11-#16 剩余）
 

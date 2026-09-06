@@ -1,0 +1,54 @@
+---
+/**
+ * 列表页头：post-header（图标 + 标题）与 post-metaa 面包屑。
+ * 面包屑首项固定为"首页"，crumbs 依次给出中间层级与当前页（末项不带 href）。
+ * 样式沿用 global.css 的 .post-header/.post-metaa 规则，此处零样式。
+ * 注意空白结构：图标与标题之间保留一个空格，链接内不留首尾空白（与原页面逐字对齐）。
+ */
+interface Crumb {
+	label: string;
+	href?: string;
+	icon?: string;
+}
+
+interface Props {
+	icon: string;
+	title: string;
+	crumbs?: Crumb[];
+}
+
+const { icon, title, crumbs = [] } = Astro.props;
+---
+
+<header class="post-header">
+	<h1>
+		<i class={`fa ${icon}`} aria-hidden="true"></i>
+		{title}
+	</h1>
+</header>
+<address class="post-metaa">
+	<i class="fa fa-home" aria-hidden="true"></i>
+	<a href="/" title="返回首页">首页</a>
+	{
+		crumbs.map((crumb) => (
+			<>
+				&raquo;
+				{crumb.href ? (
+					// prettier-ignore：链接内不得引入首尾空白（与原页面逐字对齐）
+					<a href={crumb.href} title={crumb.label}>
+						{crumb.label}
+					</a>
+				) : (
+					<>
+						{crumb.icon && (
+							<i class={`fa ${crumb.icon}`} aria-hidden="true" />
+						)}
+						{/* 相邻表达式之间的空白会被 Astro compressHTML 剥除，图标与
+						    文字间的空格必须显式输出（元素与表达式之间则不受影响） */}{" "}
+						{crumb.label}
+					</>
+				)}
+			</>
+		))
+	}
+</address>

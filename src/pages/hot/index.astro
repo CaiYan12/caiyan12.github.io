@@ -1,5 +1,6 @@
 ---
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import ListingHeader from "../../components/layout/ListingHeader.astro";
 import PostCard from "../../components/layout/PostCard.astro";
 import Pagination from "../../components/layout/Pagination.astro";
 import { getCollection } from "astro:content";
@@ -21,19 +22,11 @@ const pagePosts = hotPosts.slice(0, siteConfig.postsPerPage);
 	nextUrl={pages > 1 ? getPaginationUrl(rootUrl, 2) : undefined}
 >
 	<div class="page hot-page">
-		<header class="post-header">
-			<h1>
-				<i class="fa fa-fire" aria-hidden="true"></i>
-				热门推荐
-			</h1>
-		</header>
-		<address class="post-metaa">
-			<i class="fa fa-home" aria-hidden="true"></i>
-			<a href="/" title="返回首页">首页</a>
-			&raquo;
-			<i class="fa fa-fire" aria-hidden="true"></i>
-			热门推荐
-		</address>
+		<ListingHeader
+			icon="fa-fire"
+			title="热门推荐"
+			crumbs={[{ label: "热门推荐", icon: "fa-fire" }]}
+		/>
 
 		<div class="post-context">
 			<p>共 {hotPosts.length} 篇文章</p>

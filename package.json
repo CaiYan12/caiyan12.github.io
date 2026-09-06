@@ -17,6 +17,7 @@
     "sync-site-stats": "node scripts/sync-site-stats.mjs",
     "test:site-stats": "node --test scripts/sync-site-stats.test.mjs",
     "test:contributions": "node --test scripts/fetch-github-contributions.test.mjs",
+    "test:utils": "node --import ./scripts/test-hooks.mjs --test \"src/utils/*.test.ts\"",
     "astro": "astro",
     "format": "prettier --write ./src ./scripts tailwind.config.cjs"
   },

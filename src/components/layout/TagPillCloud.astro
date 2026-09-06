@@ -1,0 +1,49 @@
+---
+/**
+ * #blogtags 标签/分类药丸云：标签云集、分类云集、单标签页、单分类页与侧栏
+ * WidgetTag 五处共用的同一 DOM 结构。药丸 6 色轮换/is-current/×N 样式全部
+ * 收敛在 global.css（含 .tag-count 与 is-current 的源顺序约束），此处零样式。
+ *
+ * 空白陷阱：Astro compressHTML 会剥除相邻表达式之间的空白，×N 前后的空格
+ * 必须用 {" "} 字符串表达式显式输出（保持与原版一致的药丸宽度）；
+ * &times; 实体必须留在标记文本中——写入字符串表达式会被转义为 &amp;times;。
+ */
+interface PillItem {
+	name: string;
+	count: number;
+}
+
+interface Props {
+	items: PillItem[];
+	/** 药丸链接前缀：tag → /tag/<name>/，category → /category/<name>/ */
+	base: "tag" | "category";
+	/** 当前标签/分类名：命中项加 is-current 品牌绿高亮 + aria-current */
+	current?: string;
+	/** 侧栏 WidgetTag 不展示 ×N 计数 */
+	showCount?: boolean;
+}
+
+const { items, base, current, showCount = true } = Astro.props;
+
+const hrefFor = (name: string) => `/${base}/${encodeURIComponent(name)}/`;
+---
+
+<ul id="blogtags">
+	<li class="tag-cloud-items">
+		{
+			items.map((item) => (
+				<a
+					href={hrefFor(item.name)}
+					title={`${item.count}篇文章`}
+					aria-current={current === item.name ? "page" : undefined}
+					class:list={[{ "is-current": current === item.name }]}
+				>
+					{item.name}
+					{showCount && (
+						<span class="tag-count"> &times;{item.count} </span>
+					)}
+				</a>
+			))
+		}
+	</li>
+</ul>

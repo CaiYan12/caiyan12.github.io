@@ -1,5 +1,7 @@
 ---
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import ListingHeader from "../../components/layout/ListingHeader.astro";
+import TagPillCloud from "../../components/layout/TagPillCloud.astro";
 import { getCollection } from "astro:content";
 import { getCategoryList, isPublicPost } from "../../utils/content-utils";
 
@@ -10,18 +12,11 @@ const categories = getCategoryList(allPosts);
 
 <MainGridLayout title="分类云集" description="全站分类总览，按文章数排序">
 	<div class="page categories-page">
-		<header class="post-header">
-			<h1>
-				<i class="fa fa-folder-open-o" aria-hidden="true"></i> 分类云集
-			</h1>
-		</header>
-		<address class="post-metaa">
-			<i class="fa fa-home" aria-hidden="true"></i>
-			<a href="/" title="返回首页">首页</a>
-			&raquo;
-			<i class="fa fa-folder-open-o" aria-hidden="true"></i>
-			分类云集
-		</address>
+		<ListingHeader
+			icon="fa-folder-open-o"
+			title="分类云集"
+			crumbs={[{ label: "分类云集", icon: "fa-folder-open-o" }]}
+		/>
 
 		<div class="post-context">
 			<p>
@@ -32,21 +27,7 @@ const categories = getCategoryList(allPosts);
 
 		{
 			categories.length > 0 && (
-				<ul id="blogtags">
-					<li class="tag-cloud-items">
-						{categories.map((cat) => (
-							<a
-								href={`/category/${encodeURIComponent(cat.name)}/`}
-								title={`${cat.count}篇文章`}
-							>
-								{cat.name}
-								<span class="tag-count">
-									&times;{cat.count}
-								</span>
-							</a>
-						))}
-					</li>
-				</ul>
+				<TagPillCloud items={categories} base="category" />
 			)
 		}
 	</div>

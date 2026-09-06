@@ -1,0 +1,86 @@
+---
+/**
+ * 单标签页 / 单分类页共用列表体（第 1 页与 page/N 分页变体共用同一渲染）。
+ * 标签与分类仅在图标、文案、链接前缀与 page 样式类上不同，见 KIND_CONFIG；
+ * 数据获取（getStaticPaths / paginate）仍由各页面文件负责。
+ */
+import PostCard from "./PostCard.astro";
+import Pagination from "./Pagination.astro";
+import TagPillCloud from "./TagPillCloud.astro";
+import type { Post } from "../../utils/content-utils";
+import { getPaginationUrl } from "../../utils/pagination";
+
+type Kind = "tag" | "category";
+
+const KIND_CONFIG = {
+	tag: {
+		pageClass: "tag-page",
+		icon: "fa-tags",
+		crumbIcon: "fa-tag",
+		indexLabel: "标签云集",
+		indexTitle: "返回标签云集",
+		prefix: "标签",
+	},
+	category: {
+		pageClass: "category-page",
+		icon: "fa-folder-open-o",
+		crumbIcon: "fa-folder-open-o",
+		indexLabel: "分类云集",
+		indexTitle: "返回分类云集",
+		prefix: "分类",
+	},
+} as const;
+
+interface Props {
+	kind: Kind;
+	name: string;
+	/** 全量药丸云数据（getTagList / getCategoryList 结果） */
+	list: { name: string; count: number }[];
+	/** 当前标签/分类下的文章总数（post-context 统计行口径） */
+	totalCount: number;
+	/** 当前页文章（第 1 页为手写切片，分页变体来自 Astro paginate） */
+	posts: Post[];
+	current: number;
+	total: number;
+	rootUrl: string;
+}
+
+const { kind, name, list, totalCount, posts, current, total, rootUrl } =
+	Astro.props;
+const config = KIND_CONFIG[kind];
+---
+
+<div class={`page ${config.pageClass}`}>
+	<header class="post-header">
+		<h1>
+			<i class={`fa ${config.icon}`} aria-hidden="true"></i>
+			{config.prefix}：{name}
+		</h1>
+	</header>
+	<address class="post-metaa">
+		<i class="fa fa-home" aria-hidden="true"></i>
+		<a href="/" title="返回首页">首页</a>
+		&raquo;
+		<a href={`/${kind}/`} title={config.indexTitle}>
+			{config.indexLabel}
+		</a>
+		&raquo;
+		<i class={`fa ${config.crumbIcon}`} aria-hidden="true"></i>
+		{name}
+	</address>
+
+	<div class="post-context">
+		<p>共 {totalCount} 篇文章</p>
+	</div>
+
+	<TagPillCloud items={list} base={kind} current={name} />
+</div>
+
+{posts.map((post) => <PostCard post={post} />)}
+
+<Pagination
+	current={current}
+	total={total}
+	urlTemplate={getPaginationUrl(rootUrl, "{n}")}
+	firstPageUrl={rootUrl}
+/>

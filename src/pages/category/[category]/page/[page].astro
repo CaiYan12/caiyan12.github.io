@@ -1,7 +1,6 @@
 ---
 import MainGridLayout from "../../../../layouts/MainGridLayout.astro";
-import PostCard from "../../../../components/layout/PostCard.astro";
-import Pagination from "../../../../components/layout/Pagination.astro";
+import TaxonomyListing from "../../../../components/layout/TaxonomyListing.astro";
 import { getCollection } from "astro:content";
 import type { GetStaticPaths } from "astro";
 import {
@@ -32,67 +31,27 @@ export const getStaticPaths = (async ({ paginate }) => {
 const { page, categories } = Astro.props;
 const name = Astro.params.category;
 const rootUrl = `/category/${encodeURIComponent(name)}/`;
-const current = page.currentPage;
-const total = page.lastPage;
 ---
 
 <MainGridLayout
 	title={`分类：${name}`}
 	description={`分类 ${name} 下的全部文章`}
-	canonicalUrl={getPaginationUrl(rootUrl, current)}
-	prevUrl={current > 1 ? getPaginationUrl(rootUrl, current - 1) : undefined}
-	nextUrl={current < total
-		? getPaginationUrl(rootUrl, current + 1)
+	canonicalUrl={getPaginationUrl(rootUrl, page.currentPage)}
+	prevUrl={page.currentPage > 1
+		? getPaginationUrl(rootUrl, page.currentPage - 1)
+		: undefined}
+	nextUrl={page.currentPage < page.lastPage
+		? getPaginationUrl(rootUrl, page.currentPage + 1)
 		: undefined}
 >
-	<div class="page category-page">
-		<header class="post-header">
-			<h2>
-				<i class="fa fa-folder-open-o" aria-hidden="true"></i>
-				分类：{name}
-			</h2>
-		</header>
-		<address class="post-metaa">
-			<i class="fa fa-home" aria-hidden="true"></i>
-			<a href="/" title="返回首页">首页</a>
-			&raquo;
-			<a href="/category/" title="返回分类云集">分类云集</a>
-			&raquo;
-			<i class="fa fa-folder-open-o" aria-hidden="true"></i>
-			{name}
-		</address>
-
-		<div class="post-context">
-			<p>共 {page.total} 篇文章</p>
-		</div>
-
-		<ul id="blogtags">
-			<li class="tag-cloud-items">
-				{
-					categories.map((cat) => (
-						<a
-							href={`/category/${encodeURIComponent(cat.name)}/`}
-							title={`${cat.count}篇文章`}
-							aria-current={
-								cat.name === name ? "page" : undefined
-							}
-							class:list={[{ "is-current": cat.name === name }]}
-						>
-							{cat.name}
-							<span class="tag-count">&times;{cat.count}</span>
-						</a>
-					))
-				}
-			</li>
-		</ul>
-	</div>
-
-	{page.data.map((post) => <PostCard post={post} />)}
-
-	<Pagination
-		current={current}
-		total={total}
-		urlTemplate={getPaginationUrl(rootUrl, "{n}")}
-		firstPageUrl={rootUrl}
+	<TaxonomyListing
+		kind="category"
+		name={name}
+		list={categories}
+		totalCount={page.total}
+		posts={page.data}
+		current={page.currentPage}
+		total={page.lastPage}
+		rootUrl={rootUrl}
 	/>
 </MainGridLayout>
