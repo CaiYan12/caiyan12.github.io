@@ -123,48 +123,51 @@
 /* ---------- 装饰组件类（伪元素/复杂背景，utility 不宜表达）---------- */
 @layer components {
 	/* ---------- 立体书本外壳 ----------
-	 * 三层结构（z 低→高）：背板书壳（深色，右下偏移最大）
-	 * → 书页纸张层（右/下露出的页纹条纹）→ 前封面（SVG/img）
-	 * 全部纯 CSS 实色+细条纹，延续「硬边纸张」哲学（无模糊阴影/无渐变装饰）。
+	 * 传统书本正视结构（书脊在左、书口朝右）：
+	 * 封面是最大的硬壳，包住纸张的上/下/左三侧；内页比封面小
+	 * （上下各内缩），页纹只从右侧书口露出；背板书壳居中包夹。
+	 * 层级尺寸（外→内）：封面(齐平) > 背板(内缩 --back-inset) > 纸张(内缩 --page-inset)。
 	 * --p: 页纹露出宽度；--e: 背板在页纹外再露出的深色边宽度。
 	 * mini 场景（列表 48px 行）用 .nb-book3d-thin 收窄。 */
 	.nb-book3d {
 		--p: 9px;
 		--e: 2px;
+		--page-inset: 6px;
+		--back-inset: 3px;
 		position: relative;
 	}
 	.nb-book3d-thin {
 		--p: 3px;
 		--e: 1px;
+		--page-inset: 2px;
+		--back-inset: 1px;
 	}
 	.nb-book3d .nb-cover {
 		position: relative;
 		z-index: 3;
 	}
-	/* 层1：背板书壳（第二层封面，深色硬壳） */
+	/* 层1：背板书壳（第二层封面，深色硬壳，比封面小一号、右移最多） */
 	.nb-book3d .nb-book3d-back {
 		position: absolute;
 		z-index: 1;
-		top: 0;
+		top: var(--back-inset);
+		bottom: var(--back-inset);
 		left: 0;
 		width: 100%;
-		height: 100%;
-		transform: translate(calc(var(--p) + var(--e)), calc(var(--p) + var(--e)));
+		transform: translateX(calc(var(--p) + var(--e)));
 		background: #453c31;
 		border-radius: 2px;
 	}
-	/* 层2：书页纸张（右侧 = 水平页线；底部 = 纵向页线，模拟纸叠） */
+	/* 层2：书页纸张（比背板更小，页纹为水平细线=逐页纸叠，从书口露出） */
 	.nb-book3d .nb-book3d-pages {
 		position: absolute;
 		z-index: 2;
-		top: 0;
+		top: var(--page-inset);
+		bottom: var(--page-inset);
 		left: 0;
 		width: 100%;
-		height: 100%;
-		transform: translate(var(--p), var(--p));
-		background:
-			repeating-linear-gradient(to bottom, #f6f0e0 0 2px, #e2d8c0 2px 3px) right top / var(--p) 100% no-repeat,
-			repeating-linear-gradient(to right, #f6f0e0 0 2px, #e2d8c0 2px 3px) left bottom / 100% var(--p) no-repeat;
+		transform: translateX(var(--p));
+		background: repeating-linear-gradient(to bottom, #f6f0e0 0 2px, #e2d8c0 2px 3px) right top / var(--p) 100% no-repeat;
 		border-radius: 0 2px 2px 0;
 	}
 
