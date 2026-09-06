@@ -25,7 +25,9 @@ pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存
 pnpm preview     # 预览构建产物
 pnpm check       # 类型检查
 pnpm smoke:ai-news  # AI 日报入口、详情、返回与离线快照 Smoke（需先启动 pnpm dev）
+pnpm smoke:nice-books  # Nice Books 三页全链路 Smoke（随机/换一换/书库/详情/swup，需先启动 pnpm dev）
 pnpm test:utils  # src/utils 纯函数单测（content-utils 排序/评分/邻篇 + pagination canonical）
+pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/六字段搜索/SVG 封面，node --test）
 pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scripts/tailwind.config）
 ```
 

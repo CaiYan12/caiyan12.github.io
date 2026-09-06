@@ -1,5 +1,15 @@
 # 更新日志
 
+## 2026-09-06：Nice Books 每日好书 V1 移植上线
+
+- 从 `D:\pages\test\nice-books\prototype`（Design Agent 交付的 V1 参考原型 + design-handoff.md）正式移植为 `/books/` 生产模块：「今日好书」访问级随机单本 + 换一换（新 ≠ 当前）、「站长推荐」featured 池随机 6 本整组替换（新组排除旧组、组内无重复）、探索更多、书库（六字段即时搜索 × 标签叠加 × 书架/列表双视图 × 每页 12 载入更多 × `?q=`/`?tag=` URL 直达）、书籍详情（22 本 getStaticPaths 静态页 + 同架图书 top4 + 无效 id 站级 404）。
+- **独立壳**架构（仿 `/ai-news/` 先例）：`src/nice-books/`（数据/查询/渲染构造器/交互脚本/样式）+ `src/pages/books/` 三路由；不加载博客 Layout/global.css，自带「纸墨书架」页眉页脚；全部页面 `data-pagefind-ignore="all"`（决策：博客全局搜索只搜正式文章）。
+- **零框架交互岛**：换一换/书库过滤为 vanilla TS module script（SSR 标记与客户端渲染由 `src/nice-books/lib/render.ts` 字符串构造器单源保证）；swup 协议 =「顶层 init + `astro:page-load` 重跑 + main 内 dataset 守卫 + 元素缺失早退」，books 内部切页由全局注入的 @swup/astro 接管。
+- **视觉 token 锁定 design-handoff §5–§8**：`--nb-*` 变量（paper/surface/note/ink/blue/seal 等）+ Tailwind `nb.` 命名色彩板（避免与 ai-news `--t-*` 映射键冲突）；封面为按 id 确定性的程序化 SVG 书封（handoff §12.3 兜底外壳，`coverUrl` 填入本地路径后自动切换真图）；字体复用仓库策略（方正书宋 CDN/思源黑体 VF/JetBrains VF/本地楷体），零新依赖。
+- 「本站资源」下拉在 AI日报 后新增「每日好书」（`navBarConfig.resourceSite` 数据驱动，`noSwup: true`）。
+- 新增 `pnpm test:nice-books`（node --test 27 例：数据契约/可注入 RNG 随机去重/六字段搜索/SVG 确定性）并接入 `pnpm build` 链头部；新增 `pnpm smoke:nice-books`（Playwright 43 项实机检查：随机契约/loading/去重/视图/搜索/直达/404/swup 切页与后退/重复初始化防护，三连跑稳定）。
+- 已知边界：荐语/标签进入书库搜索范围（比原型多两字段，按主提示词 §18 裁决）；jsDelivr 字体 CDN 在部分网络下可能加载失败（与 `/about/` 同渠道，降级系统宋体，不影响功能）。
+
 ## 2026-09-06：全仓库深度审查修复（七阶段 16 项，详见 docs/plans/2026-09-06-review-fixes.md）
 
 - **速胜**：canvas 粒子爆炸/轮播自动播放/平滑滚动补 `prefers-reduced-motion` 守卫（此前 canvas 特效无任何降级）；Prettier 补装 astro/svelte 插件修复 `.astro/.svelte` 被 `--check` 静默跳过的格式化盲区（全量格式化 67 文件）；`image-variants` 非 WebP `srcset` 撤除混入的 webp 候选（无格式协商会导致旧浏览器裂图）。

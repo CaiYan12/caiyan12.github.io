@@ -239,6 +239,8 @@ pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存（
 pnpm preview     # 预览构建产物（需先 build）
 pnpm check       # astro check 类型检查
 pnpm test:contributions  # 贡献日历数据脚本离线单测（node --test，注入 fetchImpl 不访问真实网络）
+pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/搜索/封面，node --test，已串入 build 链头部）
+pnpm smoke:nice-books  # Nice Books 三页实机 Smoke（Playwright 43 项，需先启动 pnpm dev）
 pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ```
 
@@ -312,6 +314,14 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - 右侧停靠时所有元素必须对称适配：按钮列（`.pio-action`）、折叠按钮（`.pio-show`，含 hover 方向与“点击召唤Pio”提示方向）、消息框（`.pio-dialog`）。消息框居中 + 底部三角，`max-width: 100%` + `width: max-content` 防止长消息溢出视口。
 - pio 定位样式在 `pio.css`（`public/` 静态文件，不走构建管线），改动后需同步 `dist/` 才能在 preview 验证；**`pnpm dev` 下 Pio 因 Svelte hydration 报错不渲染（仅 dev），验证 pio 必须用 `pnpm build && pnpm preview`**。
 - myhkw 播放器以 `z-index` 压制 Pio（Layout.astro 内联样式）；Pio 的按钮/消息框位置调整需同时考虑播放器展开面板与底部歌词框的遮挡。
+
+### Nice Books 每日好书（src/nice-books/ + src/pages/books/，2026-09-06 移植）
+- **独立壳**模块（仿 ai-news 先例）：`/books/`（今日好书随机 + 换一换 + 站长推荐 + 探索更多）、`/books/archive/`（书库：六字段搜索 × 标签叠加 × 双视图 × 载入更多 × `?q=`/`?tag=` 直达）、`/books/:id/`（getStaticPaths 22 静态页 + 同架 top4；无效 id 自然落站级 404）。不加载博客 Layout/global.css/Pio/播放器；产品契约=访问级随机（禁日期映射）、无评论/评分/购买。
+- 数据单一真相源 `src/nice-books/data/books.ts`（22 本 V1 fixture + 顶层运行时断言 fail-fast，build 链头部 `pnpm test:nice-books` 把关）；查询函数纯函数化（`lib/random.ts` RNG 可注入、`lib/search.ts` 六字段、`lib/cover.ts` 确定性 SVG 书封兜底——`coverUrl` 非空走 `<img>`、onerror 由 shared 的捕获监听重建 SVG）。
+- **SSR/客户端标记单源**：凡会被客户端 innerHTML 重渲染的片段（hero 卡/网格卡/便签/标签药丸/列表行）一律由 `lib/render.ts` 字符串构造器输出（.astro 侧 `set:html` 引用同一函数），禁止在 .astro 里另写一份标记。
+- 样式：`styles/books.css` 是 books 页面唯一样式源（含 `@tailwind` 三指令 → 有 preflight）；token 锁定 design-handoff §5–§8（`--nb-*` 变量，勿改值）；Tailwind 色板走 `nb.` 命名空间（tailwind.config，勿与 ai-news 的 `bg/surface/border/text/accent` 键混淆）；handoff 断点 540/640/760/820/960 用任意值变体 `min-[540px]:` 表达。**坑：Tailwind utility 的 display 会覆盖 `[hidden]` 属性**，books.css @layer base 的 `[hidden]{display:none!important}` 勿删。
+- swup 协议（模块脚本）：顶层直接 init（首次整页加载）+ `document.addEventListener("astro:page-load", init)`（swup 导航进入时重跑）+ main 内 `dataset.nbInit` 守卫 + 目标元素缺失早退；document 级监听（archive 的「/」快捷键、封面 onerror）只在模块顶层注册一次。注意 `@swup/astro` 默认 `loadOnIdle`——swup 实例在页面空闲后才存在（`window.swup` 需等待），未就绪窗口内点击链接无害降级为整页加载。
+- books 全部页面 main 带 `data-pagefind-ignore="all"`（决策：博客全局搜索只搜正式文章，详情页也不进索引）；导航入口在 `navBarConfig.resourceSite`「每日好书」（`noSwup: true`，Navbar/MMenu 数据驱动自动渲染）；`pnpm smoke:nice-books` 为三页 Playwright 实机验收（43 项，含 swup 切页/后退/重复初始化防护；jsDelivr 字体 CDN 的网络层失败单独统计不计 FAIL）。
 
 ### 统计与表情边界
 - 独立浏览量与 GoatCounter 已移除；frontmatter 的 `views` 仅作迁移兼容字段，不参与页面渲染。
