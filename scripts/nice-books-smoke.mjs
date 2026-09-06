@@ -186,6 +186,19 @@ try {
 	await page.waitForSelector("#nb-archive-grid li", { timeout: 15000 });
 	const tagCount = await page.locator("#nb-archive-grid li").count();
 	check("?tag= 直达筛选", tagCount === 1, `科幻=${tagCount} 本`);
+	// 选中药丸必须是墨底反白（bg-transparent 与 bg-nb-ink 同存会被 Tailwind 源顺序覆盖 → 视觉空白）
+	const selectedPill = await page.evaluate(() => {
+		const b = Array.from(document.querySelectorAll("#nb-tag-filter button")).find(
+			(x) => x.getAttribute("data-tag") === "科幻",
+		);
+		const s = b ? getComputedStyle(b) : null;
+		return s ? { color: s.color, bg: s.backgroundColor } : null;
+	});
+	check(
+		"选中药丸墨底反白",
+		selectedPill?.bg === "rgb(45, 40, 32)" && selectedPill?.color === "rgb(245, 240, 228)",
+		JSON.stringify(selectedPill),
+	);
 	await page.goto(`${archiveUrl}?tag=${encodeURIComponent("文学")}`, { waitUntil: "domcontentloaded" });
 	await page.waitForSelector("#nb-archive-grid li", { timeout: 15000 });
 	await page.fill("#nb-search-input", "马尔克斯");

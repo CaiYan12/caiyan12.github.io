@@ -47,10 +47,12 @@ export function tagPillHTML(
 ): string {
 	const variant = opts?.variant ?? "static";
 	const size = opts?.small ? "px-[7px] py-px text-[11px]" : "px-[9px] py-[2px] text-xs";
+	// 同组 utility（bg/text/border 色）互斥拼接：Tailwind 冲突类的胜负由产物 CSS
+	// 源顺序决定而非标记书写顺序，bg-transparent 与 bg-nb-ink 同存会随机覆盖
 	const state = opts?.on
 		? "border-nb-ink bg-nb-ink text-nb-paper"
-		: "border-nb-border-strong text-nb-ink-soft hover:border-nb-ink hover:text-nb-ink";
-	const base = `inline-flex items-center whitespace-nowrap rounded-[2px] border bg-transparent no-underline transition-colors duration-150 ${size} ${state}`;
+		: "border-nb-border-strong bg-transparent text-nb-ink-soft hover:border-nb-ink hover:text-nb-ink";
+	const base = `inline-flex items-center whitespace-nowrap rounded-[2px] border no-underline transition-colors duration-150 ${size} ${state}`;
 	if (variant === "link") {
 		return `<a class="${base}" href="${esc(tagHref(tag))}"># ${esc(tag)}</a>`;
 	}
