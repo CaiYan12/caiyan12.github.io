@@ -74,15 +74,26 @@
 		font-family: var(--nb-font-sans);
 	}
 
-	/* Swup 页面过渡（与博客 global.css:1503-1511 同款约定，色值无关） */
+	/* Swup 切页编排（作用于 main 容器：页眉/页脚静止，内容切换才需要过渡）
+	 * 两段式：离场 opacity→0 + Y-8px（170ms ease-in）
+	 * → 替换 → 入场 delay 50ms 后 opacity→1 + Y 8px→0（240ms ease-out 上浮落定）
+	 * 节奏与 hero 换书动效（handoff §11 出170/入240）同族；reduced-motion 全局归零。
+	 * is-animating 覆盖离场段；is-rendering 覆盖入场段（delay 期间保持离场末态）。 */
 	.transition-swup-fade {
-		transition: opacity 0.3s ease;
+		transition:
+			opacity 0.17s ease-in,
+			transform 0.17s ease-in;
 	}
 	html.is-animating .transition-swup-fade {
 		opacity: 0;
+		transform: translateY(-8px);
 	}
-	html.is-leaving .transition-swup-fade {
-		opacity: 0;
+	html.is-rendering .transition-swup-fade {
+		opacity: 1;
+		transform: translateY(0);
+		transition:
+			opacity 0.24s ease-out 0.05s,
+			transform 0.24s ease-out 0.05s;
 	}
 }
 
