@@ -47,6 +47,9 @@ test("不含 <defs>/<id>（多内联实例互不冲突）", () => {
 });
 
 test("不同 id 允许不同配色，但同 id 配色恒定（palette 由 id 决定）", () => {
-	const bgOf = (svg: string) => svg.match(/<rect x="0" y="0" width="300" height="450" fill="(#[0-9a-f]+)"/)?.[1];
+	const bgOf = (svg: string) =>
+		svg.match(
+			/<rect x="0" y="0" width="300" height="450" fill="(#[0-9a-f]+)"/,
+		)?.[1];
 	assert.equal(bgOf(generateCoverSvg(围城)), bgOf(generateCoverSvg(围城)));
 });

@@ -66,11 +66,7 @@ test("sampleUnique：同种子结果确定", () => {
 });
 
 test("sampleUnique：池不足时放宽排除并返回池规模上限（原型兜底语义）", () => {
-	const tinyPool = [
-		{ id: "01" },
-		{ id: "02" },
-		{ id: "03" },
-	];
+	const tinyPool = [{ id: "01" }, { id: "02" }, { id: "03" }];
 	const got = sampleUnique(tinyPool, 6, ["01", "02", "03"], mulberry32(1));
 	assert.equal(got.length, 3); // 放宽排除后取 min(pool, n)
 });

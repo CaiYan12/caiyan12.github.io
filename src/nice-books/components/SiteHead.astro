@@ -19,7 +19,10 @@ interface Props {
 	canonicalPath?: string;
 }
 const { title, description, canonicalPath } = Astro.props;
-const canonicalHref = new URL(canonicalPath ?? Astro.url.pathname, siteConfig.siteURL).toString();
+const canonicalHref = new URL(
+	canonicalPath ?? Astro.url.pathname,
+	siteConfig.siteURL,
+).toString();
 ---
 
 <meta charset="utf-8" />
@@ -34,4 +37,7 @@ const canonicalHref = new URL(canonicalPath ?? Astro.url.pathname, siteConfig.si
 <meta property="og:url" content={canonicalHref} />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="Nice Books" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cn-fontsource-fz-shu-song-z-01-regular/font.css" />
+<link
+	rel="stylesheet"
+	href="https://cdn.jsdelivr.net/npm/cn-fontsource-fz-shu-song-z-01-regular/font.css"
+/>

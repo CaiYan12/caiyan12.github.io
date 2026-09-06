@@ -16,7 +16,7 @@ const COVER_PALETTES = [
 	{ bg: "#474038", fg: "#efe7d3", accent: "#c99b5f" }, // 深褐
 	{ bg: "#31555f", fg: "#eceadb", accent: "#cfd8a4" }, // 黛青
 	{ bg: "#5b4a68", fg: "#f0e9da", accent: "#cbb3c9" }, // 黯紫调暗·灰紫（实色，非蓝紫渐变）
-	{ bg: "#a06a3c", fg: "#3a2c1e", accent: "#f0e2c4" } // 芥末·深字反白
+	{ bg: "#a06a3c", fg: "#3a2c1e", accent: "#f0e2c4" }, // 芥末·深字反白
 ] as const;
 
 function escapeXml(s: string): string {
@@ -58,11 +58,15 @@ export function generateCoverSvg(book: Book): string {
 	);
 
 	// 顶部装饰：✦ + 左右短线
-	parts.push(`<line x1="100" y1="58" x2="134" y2="58" stroke="${p.accent}" stroke-width="1" opacity="0.9"/>`);
+	parts.push(
+		`<line x1="100" y1="58" x2="134" y2="58" stroke="${p.accent}" stroke-width="1" opacity="0.9"/>`,
+	);
 	parts.push(
 		`<text x="150" y="63" class="cv-orn" font-size="13" fill="${p.accent}" text-anchor="middle">\u2726</text>`,
 	);
-	parts.push(`<line x1="166" y1="58" x2="200" y2="58" stroke="${p.accent}" stroke-width="1" opacity="0.9"/>`);
+	parts.push(
+		`<line x1="166" y1="58" x2="200" y2="58" stroke="${p.accent}" stroke-width="1" opacity="0.9"/>`,
+	);
 
 	const titleChars = Array.from(title);
 	let titleMarkup = "";
@@ -96,7 +100,9 @@ export function generateCoverSvg(book: Book): string {
 			.join("");
 		// 标题下短线
 		const ruleY = ys[ys.length - 1]! + 30;
-		parts.push(`<line x1="127" y1="${ruleY}" x2="173" y2="${ruleY}" stroke="${p.accent}" stroke-width="2"/>`);
+		parts.push(
+			`<line x1="127" y1="${ruleY}" x2="173" y2="${ruleY}" stroke="${p.accent}" stroke-width="2"/>`,
+		);
 		parts.push(titleMarkup);
 	}
 	if (titleChars.length <= 4) parts.push(titleMarkup);
@@ -109,7 +115,9 @@ export function generateCoverSvg(book: Book): string {
 	);
 	// 作者行上方细线（竖排标题时作为视觉锚）
 	if (titleChars.length <= 4) {
-		parts.push(`<line x1="127" y1="344" x2="173" y2="344" stroke="${p.accent}" stroke-width="2"/>`);
+		parts.push(
+			`<line x1="127" y1="344" x2="173" y2="344" stroke="${p.accent}" stroke-width="2"/>`,
+		);
 	}
 
 	// 底部：出版社 · 年份
@@ -123,7 +131,13 @@ export function generateCoverSvg(book: Book): string {
 }
 
 /** 从封面 <img> 的 data-* 兜底属性重建 SVG（onerror 替换用；authorLine 为「 · 」连接串） */
-export function coverFromParts(id: string, title: string, authorLine: string, publisher: string, year: number): string {
+export function coverFromParts(
+	id: string,
+	title: string,
+	authorLine: string,
+	publisher: string,
+	year: number,
+): string {
 	return generateCoverSvg({
 		id,
 		title,

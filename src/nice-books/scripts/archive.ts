@@ -44,7 +44,12 @@ export async function initArchive(): Promise<void> {
 		return;
 	}
 
-	const state: ArchiveState = { q: "", tag: null, view: "grid", shown: PAGE_SIZE };
+	const state: ArchiveState = {
+		q: "",
+		tag: null,
+		view: "grid",
+		shown: PAGE_SIZE,
+	};
 
 	/* ---------- URL query ---------- */
 
@@ -54,7 +59,11 @@ export async function initArchive(): Promise<void> {
 		if (state.q) params.set("q", state.q);
 		const qsStr = params.toString();
 		// 保留 history.state：swup 依赖自己写入的 state 处理 popstate，置 null 会断裂后退链
-		history.replaceState(history.state, "", qsStr ? `?${qsStr}` : location.pathname);
+		history.replaceState(
+			history.state,
+			"",
+			qsStr ? `?${qsStr}` : location.pathname,
+		);
 	}
 
 	/* ---------- 渲染 ---------- */
@@ -63,11 +72,22 @@ export async function initArchive(): Promise<void> {
 		const wrap = qs<HTMLElement>("#nb-tag-filter");
 		if (!wrap) return;
 		const tagCounts = new Map<string, number>();
-		for (const b of all) for (const t of b.tags) tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
-		const tags = Array.from(tagCounts.entries()).sort((a, z) => z[1] - a[1]).map(([t]) => t);
+		for (const b of all)
+			for (const t of b.tags)
+				tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
+		const tags = Array.from(tagCounts.entries())
+			.sort((a, z) => z[1] - a[1])
+			.map(([t]) => t);
 		wrap.innerHTML =
-			tagPillHTML("全部", { variant: "button", on: state.tag === null }).replace('data-tag="全部"', 'data-tag=""') +
-			tags.map((t) => tagPillHTML(t, { variant: "button", on: state.tag === t })).join("");
+			tagPillHTML("全部", {
+				variant: "button",
+				on: state.tag === null,
+			}).replace('data-tag="全部"', 'data-tag=""') +
+			tags
+				.map((t) =>
+					tagPillHTML(t, { variant: "button", on: state.tag === t }),
+				)
+				.join("");
 	}
 
 	function render(): void {
@@ -75,8 +95,10 @@ export async function initArchive(): Promise<void> {
 		const visible = filtered.slice(0, state.shown);
 
 		let line = `共 ${all.length} 本藏书`;
-		if (filtered.length < all.length) line += ` · 符合条件 ${filtered.length} 本`;
-		if (filtered.length > state.shown) line += `（显示前 ${state.shown} 本）`;
+		if (filtered.length < all.length)
+			line += ` · 符合条件 ${filtered.length} 本`;
+		if (filtered.length > state.shown)
+			line += `（显示前 ${state.shown} 本）`;
 		const resultLine = qs<HTMLElement>("#nb-result-line");
 		if (resultLine) resultLine.textContent = line;
 
@@ -87,7 +109,11 @@ export async function initArchive(): Promise<void> {
 		list!.hidden = isEmpty || state.view !== "list";
 
 		if (!isEmpty) {
-			const html = visible.map((b) => (state.view === "grid" ? bookCardHTML(b) : listRowHTML(b))).join("");
+			const html = visible
+				.map((b) =>
+					state.view === "grid" ? bookCardHTML(b) : listRowHTML(b),
+				)
+				.join("");
 			if (state.view === "grid") {
 				grid!.innerHTML = html;
 				list!.innerHTML = "";
@@ -164,9 +190,12 @@ export async function initArchive(): Promise<void> {
 		applyChange();
 	});
 
-	const VT_BASE = "cursor-pointer border-0 px-3.5 py-[9px] text-[13px] transition-colors duration-150";
+	const VT_BASE =
+		"cursor-pointer border-0 px-3.5 py-[9px] text-[13px] transition-colors duration-150";
 	const vtClass = (on: boolean) =>
-		on ? `${VT_BASE} bg-nb-ink text-nb-paper` : `${VT_BASE} bg-nb-surface text-nb-ink-soft hover:text-nb-ink`;
+		on
+			? `${VT_BASE} bg-nb-ink text-nb-paper`
+			: `${VT_BASE} bg-nb-surface text-nb-ink-soft hover:text-nb-ink`;
 
 	function setView(view: "grid" | "list"): void {
 		state.view = view;
@@ -212,7 +241,12 @@ document.addEventListener("keydown", (e) => {
 	const input = document.querySelector<HTMLInputElement>("#nb-search-input");
 	if (!input) return; // 非 archive 页
 	const target = e.target as HTMLElement;
-	if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target.isContentEditable) return;
+	if (
+		target instanceof HTMLInputElement ||
+		target instanceof HTMLTextAreaElement ||
+		target.isContentEditable
+	)
+		return;
 	e.preventDefault();
 	input.focus();
 });

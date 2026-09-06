@@ -8,8 +8,13 @@
 
 export type Rng = () => number;
 
-export function pickOne<T extends { id: string }>(pool: readonly T[], excludeId?: string | null, rng: Rng = Math.random): T {
-	const candidates = excludeId == null ? pool : pool.filter((b) => b.id !== excludeId);
+export function pickOne<T extends { id: string }>(
+	pool: readonly T[],
+	excludeId?: string | null,
+	rng: Rng = Math.random,
+): T {
+	const candidates =
+		excludeId == null ? pool : pool.filter((b) => b.id !== excludeId);
 	if (candidates.length === 0) {
 		throw new Error("pickOne：排除后候选池为空");
 	}
@@ -21,7 +26,12 @@ export function pickOne<T extends { id: string }>(pool: readonly T[], excludeId?
  * 池不足时放宽排除范围（与原型 sampleUniqueBooks 兜底逻辑一致）。
  * Fisher-Yates 洗牌后取前 n：结果唯一、顺序随机、可注入 RNG 复现。
  */
-export function sampleUnique<T extends { id: string }>(pool: readonly T[], n: number, excludeIds: readonly string[] = [], rng: Rng = Math.random): T[] {
+export function sampleUnique<T extends { id: string }>(
+	pool: readonly T[],
+	n: number,
+	excludeIds: readonly string[] = [],
+	rng: Rng = Math.random,
+): T[] {
 	const excluded = new Set(excludeIds);
 	let candidates = pool.filter((b) => !excluded.has(b.id));
 	if (candidates.length < n) {

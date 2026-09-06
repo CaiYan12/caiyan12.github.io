@@ -21,14 +21,18 @@ export function esc(s: string): string {
 }
 
 /** 书封外壳：立体书本三层（背板书壳 + 书页纸张 + 前封面）；thin 用于列表 48px 行 */
-export function coverHTML(book: Book, opts?: { tape?: boolean; thin?: boolean }): string {
-	const shellCls = ["nb-cover", opts?.tape ? "nb-tape" : ""].filter(Boolean).join(" ");
-	const inner =
-		book.coverUrl
-			? `<img src="${esc(book.coverUrl)}" alt="《${esc(book.title)}》封面" width="300" height="450" loading="lazy" decoding="async" class="h-full w-full object-cover"` +
-				` data-nb-cover data-nb-id="${esc(book.id)}" data-nb-title="${esc(book.title)}"` +
-				` data-nb-author="${esc(book.author.join(" · "))}" data-nb-publisher="${esc(book.publisher)}" data-nb-year="${book.firstEdition.year}">`
-			: generateCoverSvg(book);
+export function coverHTML(
+	book: Book,
+	opts?: { tape?: boolean; thin?: boolean },
+): string {
+	const shellCls = ["nb-cover", opts?.tape ? "nb-tape" : ""]
+		.filter(Boolean)
+		.join(" ");
+	const inner = book.coverUrl
+		? `<img src="${esc(book.coverUrl)}" alt="《${esc(book.title)}》封面" width="300" height="450" loading="lazy" decoding="async" class="h-full w-full object-cover"` +
+			` data-nb-cover data-nb-id="${esc(book.id)}" data-nb-title="${esc(book.title)}"` +
+			` data-nb-author="${esc(book.author.join(" · "))}" data-nb-publisher="${esc(book.publisher)}" data-nb-year="${book.firstEdition.year}">`
+		: generateCoverSvg(book);
 	return (
 		`<div class="nb-book3d${opts?.thin ? " nb-book3d-thin" : ""}">` +
 		`<i class="nb-book3d-back" aria-hidden="true"></i>` +
@@ -46,7 +50,9 @@ export function tagPillHTML(
 	opts?: { variant?: TagPillVariant; small?: boolean; on?: boolean },
 ): string {
 	const variant = opts?.variant ?? "static";
-	const size = opts?.small ? "px-[7px] py-px text-[11px]" : "px-[9px] py-[2px] text-xs";
+	const size = opts?.small
+		? "px-[7px] py-px text-[11px]"
+		: "px-[9px] py-[2px] text-xs";
 	// 同组 utility（bg/text/border 色）互斥拼接：Tailwind 冲突类的胜负由产物 CSS
 	// 源顺序决定而非标记书写顺序，bg-transparent 与 bg-nb-ink 同存会随机覆盖
 	const state = opts?.on
@@ -63,7 +69,10 @@ export function tagPillHTML(
 }
 
 /** 站长荐语便签（黄底 + 楷体 + 红圈「荐」章；UX 规则：与简介一眼区分） */
-export function noteHTML(book: Book, opts?: { stamp?: boolean; extraClass?: string }): string {
+export function noteHTML(
+	book: Book,
+	opts?: { stamp?: boolean; extraClass?: string },
+): string {
 	const stamp = opts?.stamp
 		? `<span class="absolute -top-3.5 right-[18px] h-[42px] w-[42px] rotate-[10deg] rounded-full border-[2.5px] border-[rgba(168,67,60,0.65)] bg-[rgba(248,239,207,0.92)] text-center font-nb-kai text-[20px] leading-[38px] text-[rgba(168,67,60,0.85)]" aria-hidden="true">荐</span>`
 		: "";
@@ -81,7 +90,8 @@ const CARD_BASE =
 
 /** 书架网格卡片（真 <a> 整卡可点；delayMs 传入时附带级联入场） */
 export function bookCardHTML(book: Book, delayMs?: number): string {
-	const stagger = delayMs != null ? ` nb-stagger" style="--d:${delayMs}ms` : "";
+	const stagger =
+		delayMs != null ? ` nb-stagger" style="--d:${delayMs}ms` : "";
 	return (
 		`<li class="${CARD_BASE}${stagger}">` +
 		`<a class="group block p-[13px] pb-4 no-underline" href="${esc(bookHref(book))}">` +
@@ -99,7 +109,9 @@ export function bookCardHTML(book: Book, delayMs?: number): string {
 /** 今日好书 Hero 卡（首页视觉核心；swapCount > 0 时显示换书计数） */
 export function heroCardHTML(book: Book, swapCount = 0): string {
 	const countNote =
-		swapCount > 0 ? ` <span class="opacity-80">· 本次已换 ${swapCount} 次</span>` : "";
+		swapCount > 0
+			? ` <span class="opacity-80">· 本次已换 ${swapCount} 次</span>`
+			: "";
 	return (
 		`<article class="grid grid-cols-[236px_1fr] gap-9 border border-nb-border-strong bg-nb-surface p-8 shadow-[var(--nb-shadow-lift)] max-[960px]:grid-cols-[200px_1fr] max-[960px]:gap-7 max-[960px]:p-[26px] max-[820px]:grid-cols-1">` +
 		`<a class="block w-full max-w-[236px] rotate-[-1.4deg] self-start justify-self-center no-underline transition-transform duration-200 hover:-translate-y-[3px] hover:rotate-0 max-[820px]:max-w-[210px]" href="${esc(bookHref(book))}" aria-label="查看《${esc(book.title)}》详情">` +

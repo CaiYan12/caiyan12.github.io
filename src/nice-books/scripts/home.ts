@@ -21,7 +21,9 @@ export function initHome(): void {
 	main.dataset.nbInit = "1";
 
 	const ssrBookId = heroWrap.dataset.ssrBookId ?? null;
-	const ssrGroupIds = (grid.dataset.ssrGroupIds ?? "").split(",").filter(Boolean);
+	const ssrGroupIds = (grid.dataset.ssrGroupIds ?? "")
+		.split(",")
+		.filter(Boolean);
 	let currentId: string | null = ssrBookId;
 	let swapCount = 0;
 	let group: string[] = ssrGroupIds;
@@ -81,7 +83,9 @@ export function initHome(): void {
 	const first = pickOne(books, ssrBookId);
 	renderHero(first.id);
 	renderGroup(
-		sampleUnique(featuredBooks, FEATURED_COUNT, ssrGroupIds).map((b) => b.id),
+		sampleUnique(featuredBooks, FEATURED_COUNT, ssrGroupIds).map(
+			(b) => b.id,
+		),
 		true,
 	);
 

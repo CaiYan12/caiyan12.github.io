@@ -6,7 +6,11 @@
  * 今日好书为访问级随机（非日期映射，契约 §6）。
  */
 import { books, featuredBooks, allTags } from "../../nice-books/data/books";
-import { heroCardHTML, bookCardHTML, tagPillHTML } from "../../nice-books/lib/render";
+import {
+	heroCardHTML,
+	bookCardHTML,
+	tagPillHTML,
+} from "../../nice-books/lib/render";
 import SiteHead from "../../nice-books/components/SiteHead.astro";
 import SiteHeader from "../../nice-books/components/SiteHeader.astro";
 import SiteFooter from "../../nice-books/components/SiteFooter.astro";
@@ -29,12 +33,21 @@ const shuffleBtnClass =
 	</head>
 	<body class="nb-page font-nb-body text-[15.5px] leading-[1.85] text-nb-ink">
 		<SiteHeader active="home" />
-		<main id="nb-books-main" class="transition-swup-fade mx-auto max-w-[1080px] px-6 max-[540px]:px-4" data-pagefind-ignore="all">
+		<main
+			id="nb-books-main"
+			class="transition-swup-fade mx-auto max-w-[1080px] px-6 max-[540px]:px-4"
+			data-pagefind-ignore="all"
+		>
 			<h1 class="sr-only">Nice Books · 每日好书</h1>
 
 			<section class="mb-1 mt-11 max-[540px]:mt-8" aria-label="关于本站">
-				<p class="max-w-[38em] font-nb-serif text-[17.5px] leading-[2.2] max-[540px]:text-base">
-					这里是一座不卖书的私人书架。<span class="text-[0.85em] text-nb-seal" aria-hidden="true">✦</span>
+				<p
+					class="max-w-[38em] font-nb-serif text-[17.5px] leading-[2.2] max-[540px]:text-base"
+				>
+					这里是一座不卖书的私人书架。<span
+						class="text-[0.85em] text-nb-seal"
+						aria-hidden="true">✦</span
+					>
 					每次打开，随机遇见一本书；不喜欢，就<button
 						id="nb-intro-shuffle"
 						type="button"
@@ -45,33 +58,80 @@ const shuffleBtnClass =
 			</section>
 
 			<!-- 01 今日好书 -->
-			<section class="mt-16 max-[640px]:mt-12" aria-labelledby="nb-today-title">
-				<div class="mb-[22px] flex flex-wrap items-end justify-between gap-4">
-					<h2 id="nb-today-title" class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px] max-[540px]:text-[19px]">
-						<span class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal" aria-hidden="true">01</span>今日好书
+			<section
+				class="mt-16 max-[640px]:mt-12"
+				aria-labelledby="nb-today-title"
+			>
+				<div
+					class="mb-[22px] flex flex-wrap items-end justify-between gap-4"
+				>
+					<h2
+						id="nb-today-title"
+						class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px] max-[540px]:text-[19px]"
+					>
+						<span
+							class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal"
+							aria-hidden="true">01</span
+						>今日好书
 					</h2>
 					<div>
-						<button class={shuffleBtnClass} id="nb-today-shuffle" type="button">
-							<span class="nb-shuffle-icon inline-block text-[15px] leading-none" aria-hidden="true">↻</span>换一换
+						<button
+							class={shuffleBtnClass}
+							id="nb-today-shuffle"
+							type="button"
+						>
+							<span
+								class="nb-shuffle-icon inline-block text-[15px] leading-none"
+								aria-hidden="true">↻</span
+							>换一换
 						</button>
 					</div>
 				</div>
-				<div id="nb-hero" class="nb-hero-swap" aria-live="polite" data-ssr-book-id={ssrBook.id}>
+				<div
+					id="nb-hero"
+					class="nb-hero-swap"
+					aria-live="polite"
+					data-ssr-book-id={ssrBook.id}
+				>
 					<Fragment set:html={heroCardHTML(ssrBook)} />
 				</div>
 				<p class="mt-3.5 font-nb-kai text-sm text-nb-muted">
-					今天是随机遇到的一本 —— 有眼缘就点开看看，没有，就再摇一次。<span class="text-[0.85em] text-nb-seal" aria-hidden="true">*</span>
+					今天是随机遇到的一本 —— 有眼缘就点开看看，没有，就再摇一次。<span
+						class="text-[0.85em] text-nb-seal"
+						aria-hidden="true">*</span
+					>
 				</p>
 			</section>
 
 			<!-- 02 站长推荐 -->
-			<section class="mt-16 max-[640px]:mt-12" aria-labelledby="nb-featured-title">
-				<div class="mb-[22px] flex flex-wrap items-end justify-between gap-4">
-					<h2 id="nb-featured-title" class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px] max-[540px]:text-[19px]">
-						<span class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal" aria-hidden="true">02</span>站长推荐<span class="ml-3.5 font-nb-mono text-[11px] font-normal tracking-[2px] text-nb-muted max-[540px]:mb-0 max-[540px]:ml-[34px] max-[540px]:mt-0.5 max-[540px]:block">EDITOR'S PICKS</span>
+			<section
+				class="mt-16 max-[640px]:mt-12"
+				aria-labelledby="nb-featured-title"
+			>
+				<div
+					class="mb-[22px] flex flex-wrap items-end justify-between gap-4"
+				>
+					<h2
+						id="nb-featured-title"
+						class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px] max-[540px]:text-[19px]"
+					>
+						<span
+							class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal"
+							aria-hidden="true">02</span
+						>站长推荐<span
+							class="ml-3.5 font-nb-mono text-[11px] font-normal tracking-[2px] text-nb-muted max-[540px]:mb-0 max-[540px]:ml-[34px] max-[540px]:mt-0.5 max-[540px]:block"
+							>EDITOR'S PICKS</span
+						>
 					</h2>
-					<button class={shuffleBtnClass} id="nb-featured-shuffle" type="button">
-						<span class="nb-shuffle-icon inline-block text-[15px] leading-none" aria-hidden="true">↻</span>换一换
+					<button
+						class={shuffleBtnClass}
+						id="nb-featured-shuffle"
+						type="button"
+					>
+						<span
+							class="nb-shuffle-icon inline-block text-[15px] leading-none"
+							aria-hidden="true">↻</span
+						>换一换
 					</button>
 				</div>
 				<ul
@@ -79,25 +139,54 @@ const shuffleBtnClass =
 					class="grid grid-cols-3 gap-[22px] max-[960px]:gap-4 max-[540px]:grid-cols-2 max-[540px]:gap-3"
 					data-ssr-group-ids={ssrGroup.map((b) => b.id).join(",")}
 				>
-					<Fragment set:html={ssrGroup.map((b, i) => bookCardHTML(b, i * 45)).join("")} />
+					<Fragment
+						set:html={ssrGroup
+							.map((b, i) => bookCardHTML(b, i * 45))
+							.join("")}
+					/>
 				</ul>
 			</section>
 
 			<!-- 03 探索更多 -->
-			<section class="mt-16 max-[640px]:mt-12" aria-labelledby="nb-explore-title">
-				<h2 id="nb-explore-title" class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px] max-[540px]:text-[19px]">
-					<span class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal" aria-hidden="true">03</span>探索更多
+			<section
+				class="mt-16 max-[640px]:mt-12"
+				aria-labelledby="nb-explore-title"
+			>
+				<h2
+					id="nb-explore-title"
+					class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px] max-[540px]:text-[19px]"
+				>
+					<span
+						class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal"
+						aria-hidden="true">03</span
+					>探索更多
 				</h2>
-				<div class="mt-[22px] flex flex-wrap items-center justify-between gap-[22px] border border-dashed border-nb-border-strong px-9 py-[34px] max-[640px]:p-6">
+				<div
+					class="mt-[22px] flex flex-wrap items-center justify-between gap-[22px] border border-dashed border-nb-border-strong px-9 py-[34px] max-[640px]:p-6"
+				>
 					<div class="basis-[320px] grow">
-						<p class="font-nb-serif text-[17px]">书库里一共躺着 <strong class="px-0.5 font-nb-mono text-[22px] text-nb-seal">{books.length}</strong> 本书，随时可以慢慢翻。</p>
+						<p class="font-nb-serif text-[17px]">
+							书库里一共躺着 <strong
+								class="px-0.5 font-nb-mono text-[22px] text-nb-seal"
+								>{books.length}</strong
+							> 本书，随时可以慢慢翻。
+						</p>
 						<div class="mb-1 mt-3.5 flex flex-wrap gap-2">
-							{topTags.map((t) => <Fragment set:html={tagPillHTML(t, { variant: "link" })} />)}
+							{
+								topTags.map((t) => (
+									<Fragment
+										set:html={tagPillHTML(t, {
+											variant: "link",
+										})}
+									/>
+								))
+							}
 						</div>
 					</div>
 					<a
 						class="inline-flex items-center gap-[7px] rounded-[3px] border border-nb-ink bg-nb-ink px-4 py-2 text-[13.5px] text-nb-paper no-underline transition-[border-color,background,transform] duration-[160ms] hover:-translate-y-px hover:border-[#443c2f] hover:bg-[#443c2f] active:translate-y-0"
-						href="/books/archive/">进入书库 <span aria-hidden="true">→</span></a
+						href="/books/archive/"
+						>进入书库 <span aria-hidden="true">→</span></a
 					>
 				</div>
 			</section>

@@ -8,7 +8,8 @@ import SiteHead from "../../nice-books/components/SiteHead.astro";
 import SiteHeader from "../../nice-books/components/SiteHeader.astro";
 import SiteFooter from "../../nice-books/components/SiteFooter.astro";
 
-const VT_BASE = "cursor-pointer border-0 px-3.5 py-[9px] text-[13px] transition-colors duration-150";
+const VT_BASE =
+	"cursor-pointer border-0 px-3.5 py-[9px] text-[13px] transition-colors duration-150";
 const btnBase =
 	"inline-flex cursor-pointer items-center gap-[7px] rounded-[3px] border border-nb-border-strong bg-nb-surface px-4 py-2 text-[13.5px] text-nb-ink transition-[border-color,background,transform,color] duration-[160ms] hover:-translate-y-px hover:border-nb-ink active:translate-y-0";
 ---
@@ -24,16 +25,44 @@ const btnBase =
 	</head>
 	<body class="nb-page font-nb-body text-[15.5px] leading-[1.85] text-nb-ink">
 		<SiteHeader active="archive" />
-		<main id="nb-books-main" class="transition-swup-fade mx-auto max-w-[1080px] px-6 max-[540px]:px-4" data-pagefind-ignore="all">
+		<main
+			id="nb-books-main"
+			class="transition-swup-fade mx-auto max-w-[1080px] px-6 max-[540px]:px-4"
+			data-pagefind-ignore="all"
+		>
 			<section class="pt-12">
-				<h1 class="font-nb-serif text-[30px] tracking-[2px] max-[540px]:text-[25px]">书库</h1>
-				<p class="mt-1.5 text-[13.5px] text-nb-muted">全部藏书 · 可按关键词与标签检索</p>
+				<h1
+					class="font-nb-serif text-[30px] tracking-[2px] max-[540px]:text-[25px]"
+				>
+					书库
+				</h1>
+				<p class="mt-1.5 text-[13.5px] text-nb-muted">
+					全部藏书 · 可按关键词与标签检索
+				</p>
 			</section>
 
-			<div class="mb-3.5 mt-[26px] flex flex-wrap items-center gap-3.5 max-[540px]:mt-5">
-				<div class="flex flex-1 basis-[260px] items-center gap-2 rounded-[3px] border border-nb-border-strong bg-nb-surface px-3 transition-colors duration-150 focus-within:border-nb-blue focus-within:shadow-[0_0_0_3px_rgba(58,110,165,0.13)]">
+			<div
+				class="mb-3.5 mt-[26px] flex flex-wrap items-center gap-3.5 max-[540px]:mt-5"
+			>
+				<div
+					class="flex flex-1 basis-[260px] items-center gap-2 rounded-[3px] border border-nb-border-strong bg-nb-surface px-3 transition-colors duration-150 focus-within:border-nb-blue focus-within:shadow-[0_0_0_3px_rgba(58,110,165,0.13)]"
+				>
 					<span class="inline-flex text-nb-muted" aria-hidden="true">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><circle cx="11" cy="11" r="7"></circle><line
+								x1="21"
+								y1="21"
+								x2="16.5"
+								y2="16.5"></line></svg
+						>
 					</span>
 					<input
 						id="nb-search-input"
@@ -50,36 +79,100 @@ const btnBase =
 						title="搜索"
 						class="inline-flex cursor-pointer items-center border-0 bg-transparent p-1.5 text-nb-muted transition-colors duration-150 hover:text-nb-ink"
 					>
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
+						<svg
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							aria-hidden="true"
+							><circle cx="11" cy="11" r="7"></circle><line
+								x1="21"
+								y1="21"
+								x2="16.5"
+								y2="16.5"></line></svg
+						>
 					</button>
-					<kbd class="rounded-[3px] border border-nb-border-strong bg-nb-paper px-[7px] font-nb-mono text-[11px] text-nb-muted" title="按斜杠键快速聚焦">/</kbd>
+					<kbd
+						class="rounded-[3px] border border-nb-border-strong bg-nb-paper px-[7px] font-nb-mono text-[11px] text-nb-muted"
+						title="按斜杠键快速聚焦">/</kbd
+					>
 				</div>
-				<div class="flex overflow-hidden rounded-[3px] border border-nb-border-strong" role="group" aria-label="切换浏览视图">
-					<button id="nb-view-grid" class={`${VT_BASE} bg-nb-ink text-nb-paper`} type="button" aria-pressed="true">书架</button>
-					<span class="w-px self-stretch bg-nb-border-strong" aria-hidden="true"></span>
-					<button id="nb-view-list" class={`${VT_BASE} bg-nb-surface text-nb-ink-soft hover:text-nb-ink`} type="button" aria-pressed="false">列表</button>
+				<div
+					class="flex overflow-hidden rounded-[3px] border border-nb-border-strong"
+					role="group"
+					aria-label="切换浏览视图"
+				>
+					<button
+						id="nb-view-grid"
+						class={`${VT_BASE} bg-nb-ink text-nb-paper`}
+						type="button"
+						aria-pressed="true">书架</button
+					>
+					<span
+						class="w-px self-stretch bg-nb-border-strong"
+						aria-hidden="true"></span>
+					<button
+						id="nb-view-list"
+						class={`${VT_BASE} bg-nb-surface text-nb-ink-soft hover:text-nb-ink`}
+						type="button"
+						aria-pressed="false">列表</button
+					>
 				</div>
 			</div>
 
-			<div id="nb-tag-filter" class="mb-3.5 flex flex-wrap gap-2" role="group" aria-label="按标签筛选"><!-- 渲染于 archive.ts --></div>
+			<div
+				id="nb-tag-filter"
+				class="mb-3.5 flex flex-wrap gap-2"
+				role="group"
+				aria-label="按标签筛选"
+			>
+				<!-- 渲染于 archive.ts -->
+			</div>
 
-			<p id="nb-result-line" class="mb-[18px] font-nb-mono text-xs text-nb-muted" role="status"></p>
+			<p
+				id="nb-result-line"
+				class="mb-[18px] font-nb-mono text-xs text-nb-muted"
+				role="status"
+			>
+			</p>
 
 			<div id="nb-results">
-				<ul id="nb-archive-grid" class="grid grid-cols-3 gap-[22px] max-[960px]:gap-4 max-[540px]:grid-cols-2 max-[540px]:gap-3"><!-- 渲染于 archive.ts --></ul>
-				<ol id="nb-archive-list" class="flex flex-col" hidden><!-- 渲染于 archive.ts --></ol>
+				<ul
+					id="nb-archive-grid"
+					class="grid grid-cols-3 gap-[22px] max-[960px]:gap-4 max-[540px]:grid-cols-2 max-[540px]:gap-3"
+				>
+					<!-- 渲染于 archive.ts -->
+				</ul>
+				<ol id="nb-archive-list" class="flex flex-col" hidden>
+					<!-- 渲染于 archive.ts -->
+				</ol>
 			</div>
 
 			<div class="mb-2 mt-9 text-center">
-				<button id="nb-btn-more" class={btnBase} type="button" hidden>载入更多</button>
-				<p id="nb-the-end" class="mt-2.5 font-nb-kai text-[13.5px] text-nb-muted" hidden></p>
+				<button id="nb-btn-more" class={btnBase} type="button" hidden
+					>载入更多</button
+				>
+				<p
+					id="nb-the-end"
+					class="mt-2.5 font-nb-kai text-[13.5px] text-nb-muted"
+					hidden
+				>
+				</p>
 			</div>
 
 			<div id="nb-empty-state" class="pb-20 pt-[72px] text-center" hidden>
 				<div class="nb-empty-glyph" aria-hidden="true"></div>
 				<p class="font-nb-serif text-[17px]">没有找到相关书籍。</p>
-				<p class="mb-[22px] mt-2 font-nb-kai text-sm text-nb-muted">换个关键词，或者清除筛选再试试。</p>
-				<button id="nb-btn-clear" class={btnBase} type="button">清除搜索与筛选</button>
+				<p class="mb-[22px] mt-2 font-nb-kai text-sm text-nb-muted">
+					换个关键词，或者清除筛选再试试。
+				</p>
+				<button id="nb-btn-clear" class={btnBase} type="button"
+					>清除搜索与筛选</button
+				>
 			</div>
 		</main>
 		<SiteFooter />
