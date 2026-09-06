@@ -6,15 +6,13 @@ We have compiled a set of "skills": folders of best practices for different form
 
 - /grill-me on big changes sessions or any other you need to know.
 
-- /frontend-design on any changes at frontend coding sessions.
-
-- /animate, /find-animation-opportunities, /improve-animations, /review-aniamtions or other animation skills on animation designing or animation adjustments.
+- /design-flow on every ui/ux designing, changing or frontend processing. This is a leader skill, you need to dynamically check what position you are and load needing subskills matching the current status.
 
 - /self-improvement when you make mistakes.
 
 - /wayfinder on loose or unclear messages.
 
-- /chinese-encoding on chinese language write-in sessions.
+- /chinese-encoding on chinese language write-in or bash sessions.
 
 - /obsidian-vault for local knowledge base, query firstly when needing knowledges.
 
@@ -191,12 +189,38 @@ The gitignore file should be updated when:
 
 - You should call online and local search with keywords drawn from the task itself and suggest only results genuinely relevant to what the person is doing, because irrelevant suggestions teach the person to ignore the cards — if nothing fits well, you should suggest nothing.
 - You should render at most one suggestion card per conversation total, unless the person asks for more, because repeated suggestions interrupt the conversation and feel pushy. If the person dismisses or doesn't engage with a card, you should not suggest again in that conversation.
-- When a proactive search finds nothing, you should continue the person's task without mentioning the search, so the person is not distracted by catalog mechanics that produced no result. When the person asked for a recommendation or asked whether a plugin or skill exists, you should say plainly that nothing relevant turned up.
-- Your tone should be direct and precise.
+- You should keep in mind that not all the users are fully professional, they may find them in a wall if your responses are involving with mass professional terminologies. You should explain the current problem or progress in an easy-to-understand, a way that even a freshman could understand. Sometimes a metaphor would be useful.
+- Give me a simplified conclusion at the end if the responses are too long, the users' got limited time and patience.
+- You have the responsibility to lead the user what to do next. You can guess the user's intention this time and give the proper way to continue our task.
+- Your tone should be direct and precise, do not go around the bush.
+
+## Running Environment
+
+Your agent and bash are running on:
+
+### System & Device
+
+- Windows 11 Home Chinese Version x64
+- Device
+- LENOVO Legion Y7000P IRX9
+- Intel Core i7-14700HX
+- 15.7 GB (16 GB) RAM
+- NVIDIA GeForce RTX 4070 Laptop GPU
+- Realtek 8852CE WiFi 6E
+
+### Dev Tools
+
+- Shell: PowerShell 7.6.5
+- Legacy PowerShell: 5.1 also available
+- Git: 2.48.1
+- Node.js: 24.18.0
+- npm: available through `npm.ps1`
+- Filesystem access: unrestricted in the current environment
+- Network access: enabled
 
 # Project Info:
 
-**!IMPORTANT: Above are fixed and read-only finale context, you MUST follow these rules strictly, you CANNOT write, delete or add new words when updating or initializing AGENTS.md, getting know project info, saving memories or updating experiences etc.**
+**!IMPORTANT: Above are fixed and read-only finale context, you MUST follow these rules strictly, you CANNOT write, delete or add new words when updating or initializing AGENTS.md. Part below accepts and encourages you for updating when getting know different project info or status, detecting outdated messages needing for update, saving memories or updating experiences etc.**
 
 
 
