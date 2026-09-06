@@ -22,7 +22,13 @@ const panels = [
 <div class="widget tab-widget" data-tab-widget>
 	<div class="tab_nav">
 		<ul role="tablist" aria-label="文章推荐">
-			<li class="hover" role="tab" tabindex="0" aria-selected="true" data-tab="0">
+			<li
+				class="hover"
+				role="tab"
+				tabindex="0"
+				aria-selected="true"
+				data-tab="0"
+			>
 				<i class="fa fa-paint-brush" aria-hidden="true"></i>最新
 			</li>
 			<li role="tab" tabindex="0" aria-selected="false" data-tab="1">
@@ -32,44 +38,73 @@ const panels = [
 		<div class="clear"></div>
 	</div>
 	<div class="tab_box">
-		{panels.map((panel, panelIndex) => (
-			<div class:list={[panelIndex !== 0 && "tab-panel-hidden"]} data-panel={panelIndex}>
-				<ul id={panel.id}>
-					{panel.posts.map((post) => (
-						<li>
-							<i class="fa fa-angle-right" aria-hidden="true"></i>
-							<a href={`/posts/${post.id}/`} title={post.data.title}>{post.data.title}</a>
-							<span>{dayjs(post.data.published).format("MM-DD")}</span>
-						</li>
-					))}
-				</ul>
-			</div>
-		))}
+		{
+			panels.map((panel, panelIndex) => (
+				<div
+					class:list={[panelIndex !== 0 && "tab-panel-hidden"]}
+					data-panel={panelIndex}
+				>
+					<ul id={panel.id}>
+						{panel.posts.map((post) => (
+							<li>
+								<i
+									class="fa fa-angle-right"
+									aria-hidden="true"
+								/>
+								<a
+									href={`/posts/${post.id}/`}
+									title={post.data.title}
+								>
+									{post.data.title}
+								</a>
+								<span>
+									{dayjs(post.data.published).format("MM-DD")}
+								</span>
+							</li>
+						))}
+					</ul>
+				</div>
+			))
+		}
 	</div>
 </div>
 
 <script>
 	function initSidebarTabs() {
-		document.querySelectorAll<HTMLElement>("[data-tab-widget]").forEach((widget) => {
-			if (widget.dataset.initialized === "true") return;
-			widget.dataset.initialized = "true";
-			const tabs = [...widget.querySelectorAll<HTMLElement>("[data-tab]")];
-			const panels = [...widget.querySelectorAll<HTMLElement>("[data-panel]")];
-			const activate = (index: number) => {
-				tabs.forEach((tab, tabIndex) => {
-					tab.classList.toggle("hover", tabIndex === index);
-					tab.setAttribute("aria-selected", String(tabIndex === index));
-				});
-				panels.forEach((panel, panelIndex) => panel.classList.toggle("tab-panel-hidden", panelIndex !== index));
-			};
-			tabs.forEach((tab) => {
-				const open = () => activate(Number(tab.dataset.tab));
-				tab.addEventListener("click", open);
-				tab.addEventListener("keydown", (event) => {
-					if (event.key === "Enter" || event.key === " ") open();
+		document
+			.querySelectorAll<HTMLElement>("[data-tab-widget]")
+			.forEach((widget) => {
+				if (widget.dataset.initialized === "true") return;
+				widget.dataset.initialized = "true";
+				const tabs = [
+					...widget.querySelectorAll<HTMLElement>("[data-tab]"),
+				];
+				const panels = [
+					...widget.querySelectorAll<HTMLElement>("[data-panel]"),
+				];
+				const activate = (index: number) => {
+					tabs.forEach((tab, tabIndex) => {
+						tab.classList.toggle("hover", tabIndex === index);
+						tab.setAttribute(
+							"aria-selected",
+							String(tabIndex === index),
+						);
+					});
+					panels.forEach((panel, panelIndex) =>
+						panel.classList.toggle(
+							"tab-panel-hidden",
+							panelIndex !== index,
+						),
+					);
+				};
+				tabs.forEach((tab) => {
+					const open = () => activate(Number(tab.dataset.tab));
+					tab.addEventListener("click", open);
+					tab.addEventListener("keydown", (event) => {
+						if (event.key === "Enter" || event.key === " ") open();
+					});
 				});
 			});
-		});
 	}
 	initSidebarTabs();
 	document.addEventListener("colorful:page:loaded", initSidebarTabs);

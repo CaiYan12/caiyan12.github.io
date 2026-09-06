@@ -146,7 +146,10 @@ export async function fetchContributions(options = {}) {
 				Authorization: `Bearer ${token}`,
 				"Content-Type": "application/json",
 			},
-			body: JSON.stringify({ query: CALENDAR_QUERY, variables: { login } }),
+			body: JSON.stringify({
+				query: CALENDAR_QUERY,
+				variables: { login },
+			}),
 		});
 		if (!res.ok) {
 			return { status: "fetch-failed", message: `HTTP ${res.status}` };

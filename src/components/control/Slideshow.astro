@@ -16,46 +16,73 @@ const slides = posts.map((post, index) => ({
 }));
 ---
 
-{slideshowConfig.enable && slides.length > 0 && (
-	<div id="slider" class="carousel slide" data-interval={slideshowConfig.interval}>
-		<ol class="carousel-indicators" aria-label="幻灯片导航">
-			{slides.map((slide, index) => (
-				<li class:list={[index === 0 && "active"]} data-slide-to={index} title={slide.title}></li>
-			))}
-		</ol>
-		<div class="carousel-inner">
-			{slides.map((slide, index) => (
-				<div class:list={["item", index === 0 && "active"]}>
-					<a href={slide.url}>
-						<ResponsiveImage
-							src={slide.image}
-							alt={slide.title}
-							sizes="(max-width: 680px) 100vw, (max-width: 1000px) calc(100vw - 40px), 660px"
-						/>
-						<span class="carousel-caption">{slide.title}</span>
-						<span class="carousel-bg"></span>
-					</a>
-				</div>
-			))}
+{
+	slideshowConfig.enable && slides.length > 0 && (
+		<div
+			id="slider"
+			class="carousel slide"
+			data-interval={slideshowConfig.interval}
+		>
+			<ol class="carousel-indicators" aria-label="幻灯片导航">
+				{slides.map((slide, index) => (
+					<li
+						class:list={[index === 0 && "active"]}
+						data-slide-to={index}
+						title={slide.title}
+					/>
+				))}
+			</ol>
+			<div class="carousel-inner">
+				{slides.map((slide, index) => (
+					<div class:list={["item", index === 0 && "active"]}>
+						<a href={slide.url}>
+							<ResponsiveImage
+								src={slide.image}
+								alt={slide.title}
+								sizes="(max-width: 680px) 100vw, (max-width: 1000px) calc(100vw - 40px), 660px"
+							/>
+							<span class="carousel-caption">{slide.title}</span>
+							<span class="carousel-bg" />
+						</a>
+					</div>
+				))}
+			</div>
+			<button
+				class="left carousel-control"
+				type="button"
+				data-slide="prev"
+				aria-label="上一张"
+			>
+				<span class="fa fa-angle-left" aria-hidden="true" />
+			</button>
+			<button
+				class="right carousel-control"
+				type="button"
+				data-slide="next"
+				aria-label="下一张"
+			>
+				<span class="fa fa-angle-right" aria-hidden="true" />
+			</button>
 		</div>
-		<button class="left carousel-control" type="button" data-slide="prev" aria-label="上一张">
-			<span class="fa fa-angle-left" aria-hidden="true"></span>
-		</button>
-		<button class="right carousel-control" type="button" data-slide="next" aria-label="下一张">
-			<span class="fa fa-angle-right" aria-hidden="true"></span>
-		</button>
-	</div>
-)}
+	)
+}
 
 <script>
 	function initColorfulCarousel() {
 		const el = document.getElementById("slider") as HTMLElement | null;
 		if (!el || el.dataset.initialized === "true") return;
 		el.dataset.initialized = "true";
-		const items = [...el.querySelectorAll<HTMLElement>(".carousel-inner > .item")];
-		const indicators = [...el.querySelectorAll<HTMLElement>(".carousel-indicators > li")];
+		const items = [
+			...el.querySelectorAll<HTMLElement>(".carousel-inner > .item"),
+		];
+		const indicators = [
+			...el.querySelectorAll<HTMLElement>(".carousel-indicators > li"),
+		];
 		if (items.length < 2) return;
-		let current = Math.max(0, items.findIndex((item) => item.classList.contains("active")));
+		let current = Math.max(
+			0,
+			items.findIndex((item) => item.classList.contains("active")),
+		);
 		let timer: number | undefined;
 		let leaveTimer: number | undefined;
 
@@ -69,25 +96,50 @@ const slides = posts.map((post, index) => ({
 			// 清理上一次过渡的残留类，防止快速连点时叠加
 			window.clearTimeout(leaveTimer);
 			items.forEach((item) =>
-				item.classList.remove("leaving", "leaving-left", "leaving-right", "enter-right", "enter-left"),
+				item.classList.remove(
+					"leaving",
+					"leaving-left",
+					"leaving-right",
+					"enter-right",
+					"enter-left",
+				),
 			);
 
 			oldItem.classList.remove("active");
-			oldItem.classList.add("leaving", dir === 1 ? "leaving-left" : "leaving-right");
-			newItem.classList.add("active", dir === 1 ? "enter-right" : "enter-left");
+			oldItem.classList.add(
+				"leaving",
+				dir === 1 ? "leaving-left" : "leaving-right",
+			);
+			newItem.classList.add(
+				"active",
+				dir === 1 ? "enter-right" : "enter-left",
+			);
 			current = nextIndex;
 			indicators.forEach((indicator, indicatorIndex) =>
-				indicator.classList.toggle("active", indicatorIndex === current),
+				indicator.classList.toggle(
+					"active",
+					indicatorIndex === current,
+				),
 			);
 			// 动画（500ms）结束后摘除退场类，旧页回到 display:none
 			leaveTimer = window.setTimeout(() => {
-				oldItem.classList.remove("leaving", "leaving-left", "leaving-right");
+				oldItem.classList.remove(
+					"leaving",
+					"leaving-left",
+					"leaving-right",
+				);
 			}, 550);
 		};
 		const stop = () => window.clearInterval(timer);
 		const start = () => {
+			// 自动轮播属持续动效，用户偏好减少动效时不启动（手动切换仍可用，CSS 侧已降级为无过渡）
+			if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+				return;
 			stop();
-			timer = window.setInterval(() => show(current + 1, 1), Number(el.dataset.interval) || 4000);
+			timer = window.setInterval(
+				() => show(current + 1, 1),
+				Number(el.dataset.interval) || 4000,
+			);
 		};
 
 		el.querySelectorAll<HTMLElement>("[data-slide]").forEach((control) => {

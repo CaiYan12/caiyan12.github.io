@@ -18,8 +18,7 @@
     "test:site-stats": "node --test scripts/sync-site-stats.test.mjs",
     "test:contributions": "node --test scripts/fetch-github-contributions.test.mjs",
     "astro": "astro",
-    "format": "prettier --write ./src",
-    "lint": "eslint ./src --fix"
+    "format": "prettier --write ./src ./scripts tailwind.config.cjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.6",
@@ -69,7 +68,9 @@
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.4",
     "playwright": "1.62.1",
-    "prettier": "^3.7.4"
+    "prettier": "^3.7.4",
+    "prettier-plugin-astro": "^0.14.1",
+    "prettier-plugin-svelte": "^4.1.1"
   },
   "packageManager": "pnpm@10.26.2"
 }

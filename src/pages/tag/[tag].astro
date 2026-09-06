@@ -3,7 +3,11 @@ import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import PostCard from "../../components/layout/PostCard.astro";
 import Pagination from "../../components/layout/Pagination.astro";
 import { getCollection } from "astro:content";
-import { getSortedPosts, getTagList, isPublicPost } from "../../utils/content-utils";
+import {
+	getSortedPosts,
+	getTagList,
+	isPublicPost,
+} from "../../utils/content-utils";
 import { getPaginationUrl } from "../../utils/pagination";
 import { siteConfig } from "../../config";
 
@@ -13,7 +17,9 @@ export async function getStaticPaths() {
 	const sortedPosts = getSortedPosts(publicPosts);
 	const tags = getTagList(publicPosts);
 	return tags.map(({ name }) => {
-		const posts = sortedPosts.filter((post) => post.data.tags.includes(name));
+		const posts = sortedPosts.filter((post) =>
+			post.data.tags.includes(name),
+		);
 		return {
 			params: { tag: name },
 			props: { name, posts, tags },
@@ -57,16 +63,21 @@ const pagePosts = posts.slice(0, pageSize);
 
 		<ul id="blogtags">
 			<li class="tag-cloud-items">
-				{tags.map((tag) => (
-					<a
-						href={`/tag/${encodeURIComponent(tag.name)}/`}
-						title={`${tag.count}篇文章`}
-						aria-current={tag.name === name ? "page" : undefined}
-						class:list={[{ "is-current": tag.name === name }]}
-					>
-						{tag.name}<span class="tag-count">&times;{tag.count}</span>
-					</a>
-				))}
+				{
+					tags.map((tag) => (
+						<a
+							href={`/tag/${encodeURIComponent(tag.name)}/`}
+							title={`${tag.count}篇文章`}
+							aria-current={
+								tag.name === name ? "page" : undefined
+							}
+							class:list={[{ "is-current": tag.name === name }]}
+						>
+							{tag.name}
+							<span class="tag-count">&times;{tag.count}</span>
+						</a>
+					))
+				}
 			</li>
 		</ul>
 	</div>

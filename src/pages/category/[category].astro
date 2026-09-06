@@ -3,7 +3,11 @@ import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import PostCard from "../../components/layout/PostCard.astro";
 import Pagination from "../../components/layout/Pagination.astro";
 import { getCollection } from "astro:content";
-import { getCategoryList, getSortedPosts, isPublicPost } from "../../utils/content-utils";
+import {
+	getCategoryList,
+	getSortedPosts,
+	isPublicPost,
+} from "../../utils/content-utils";
 import { getPaginationUrl } from "../../utils/pagination";
 import { siteConfig } from "../../config";
 
@@ -56,16 +60,21 @@ const pagePosts = posts.slice(0, siteConfig.postsPerPage);
 
 		<ul id="blogtags">
 			<li class="tag-cloud-items">
-				{categories.map((cat) => (
-					<a
-						href={`/category/${encodeURIComponent(cat.name)}/`}
-						title={`${cat.count}篇文章`}
-						aria-current={cat.name === name ? "page" : undefined}
-						class:list={[{ "is-current": cat.name === name }]}
-					>
-						{cat.name}<span class="tag-count">&times;{cat.count}</span>
-					</a>
-				))}
+				{
+					categories.map((cat) => (
+						<a
+							href={`/category/${encodeURIComponent(cat.name)}/`}
+							title={`${cat.count}篇文章`}
+							aria-current={
+								cat.name === name ? "page" : undefined
+							}
+							class:list={[{ "is-current": cat.name === name }]}
+						>
+							{cat.name}
+							<span class="tag-count">&times;{cat.count}</span>
+						</a>
+					))
+				}
 			</li>
 		</ul>
 	</div>

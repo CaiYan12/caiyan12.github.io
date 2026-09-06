@@ -14,22 +14,23 @@ const headings = Astro.props.headings.filter(
 );
 ---
 
-{headings.length > 0 && (
-	<details class="post-toc" open>
-		<summary>
-			<i class="fa fa-list-ul" aria-hidden="true"></i>
-			文章目录
-			<span>{headings.length} 节</span>
-		</summary>
-		<nav aria-label="文章目录">
-			<ol>
-				{headings.map((heading) => (
-					<li style={`--toc-depth: ${heading.depth}`}>
-						<a href={`#${heading.slug}`}>{heading.text}</a>
-					</li>
-				))}
-			</ol>
-		</nav>
-	</details>
-)}
-
+{
+	headings.length > 0 && (
+		<details class="post-toc" open>
+			<summary>
+				<i class="fa fa-list-ul" aria-hidden="true" />
+				文章目录
+				<span>{headings.length} 节</span>
+			</summary>
+			<nav aria-label="文章目录">
+				<ol>
+					{headings.map((heading) => (
+						<li style={`--toc-depth: ${heading.depth}`}>
+							<a href={`#${heading.slug}`}>{heading.text}</a>
+						</li>
+					))}
+				</ol>
+			</nav>
+		</details>
+	)
+}

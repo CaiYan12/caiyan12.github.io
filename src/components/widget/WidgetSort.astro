@@ -9,14 +9,16 @@ const categories = getCategoryList(allPosts);
 
 <WidgetLayout title="文章分类" icon="fa-folder-open-o">
 	<ul id="blogsort">
-		{categories.map((cat) => (
-			<li>
-				<i class="fa fa-angle-right" aria-hidden="true"></i>
-				<a href={`/category/${encodeURIComponent(cat.name)}/`}>
-					{cat.name}
-				</a>
-				<span>{cat.count}</span>
-			</li>
-		))}
+		{
+			categories.map((cat) => (
+				<li>
+					<i class="fa fa-angle-right" aria-hidden="true" />
+					<a href={`/category/${encodeURIComponent(cat.name)}/`}>
+						{cat.name}
+					</a>
+					<span>{cat.count}</span>
+				</li>
+			))
+		}
 	</ul>
 </WidgetLayout>

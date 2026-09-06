@@ -4,7 +4,10 @@ import PostCard from "../../../../../components/layout/PostCard.astro";
 import Pagination from "../../../../../components/layout/Pagination.astro";
 import { getCollection } from "astro:content";
 import type { GetStaticPaths } from "astro";
-import { getSortedPosts, isPublicPost } from "../../../../../utils/content-utils";
+import {
+	getSortedPosts,
+	isPublicPost,
+} from "../../../../../utils/content-utils";
 import { getPaginationUrl } from "../../../../../utils/pagination";
 import dayjs from "dayjs";
 import { siteConfig } from "../../../../../config";
@@ -13,7 +16,11 @@ export const getStaticPaths = (async ({ paginate }) => {
 	const allPosts = await getCollection("posts");
 	const sortedPosts = getSortedPosts(allPosts.filter(isPublicPost));
 	const months = [
-		...new Set(sortedPosts.map((post) => dayjs(post.data.published).format("YYYY-M"))),
+		...new Set(
+			sortedPosts.map((post) =>
+				dayjs(post.data.published).format("YYYY-M"),
+			),
+		),
 	];
 	return months.flatMap((month) => {
 		const [year, monthNumber] = month.split("-");
@@ -41,7 +48,9 @@ const total = page.lastPage;
 	description={`${label} 的文章归档`}
 	canonicalUrl={getPaginationUrl(rootUrl, current)}
 	prevUrl={current > 1 ? getPaginationUrl(rootUrl, current - 1) : undefined}
-	nextUrl={current < total ? getPaginationUrl(rootUrl, current + 1) : undefined}
+	nextUrl={current < total
+		? getPaginationUrl(rootUrl, current + 1)
+		: undefined}
 >
 	<div class="page">
 		<header class="post-header">

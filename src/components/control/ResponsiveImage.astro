@@ -4,7 +4,8 @@
 import { getResponsiveImage } from "../../utils/image-variants";
 
 interface Props
-	extends astroHTML.JSX.ImgHTMLAttributes,
+	extends
+		astroHTML.JSX.ImgHTMLAttributes,
 		astroHTML.JSX.AstroBuiltinAttributes {
 	/** 图片 URL（/images/... 形式） */
 	src: string;

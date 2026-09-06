@@ -26,27 +26,34 @@ const total = page.lastPage;
 	description={siteConfig.subtitle}
 	canonicalUrl={getPaginationUrl(rootUrl, current)}
 	prevUrl={current > 1 ? getPaginationUrl(rootUrl, current - 1) : undefined}
-	nextUrl={current < total ? getPaginationUrl(rootUrl, current + 1) : undefined}
+	nextUrl={current < total
+		? getPaginationUrl(rootUrl, current + 1)
+		: undefined}
 >
 	{current === 1 && <Slideshow />}
 
-	{page.data.length > 0 ? (
-		page.data.map((post) => <PostCard post={post} />)
-	) : (
-		<div class="page">
-			<article role="article">
-				<header class="post-header">
-					<h2>
-						<i class="fa fa-question-circle" aria-hidden="true"></i>
-						Nothing Found!
-					</h2>
-				</header>
-				<div class="post-context">
-					对不起，你要搜索的内容在本站搜不到任何结果，请尝试其他关键词！
-				</div>
-			</article>
-		</div>
-	)}
+	{
+		page.data.length > 0 ? (
+			page.data.map((post) => <PostCard post={post} />)
+		) : (
+			<div class="page">
+				<article role="article">
+					<header class="post-header">
+						<h2>
+							<i
+								class="fa fa-question-circle"
+								aria-hidden="true"
+							/>
+							Nothing Found!
+						</h2>
+					</header>
+					<div class="post-context">
+						对不起，你要搜索的内容在本站搜不到任何结果，请尝试其他关键词！
+					</div>
+				</article>
+			</div>
+		)
+	}
 
 	<Pagination
 		current={current}

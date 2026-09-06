@@ -8,11 +8,13 @@ const { title, icon } = Astro.props;
 ---
 
 <section class="widget">
-	{icon && (
-		<span class="icon">
-			<i class={`fa ${icon}`} aria-hidden="true"></i>
-		</span>
-	)}
+	{
+		icon && (
+			<span class="icon">
+				<i class={`fa ${icon}`} aria-hidden="true" />
+			</span>
+		)
+	}
 	<h3>
 		{title}
 		<slot name="actions" />

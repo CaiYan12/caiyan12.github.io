@@ -25,37 +25,41 @@ import dayjs from "dayjs";
 				<div class="plus"></div>
 				<div class="plus2"></div>
 				<ul class="archives-monthlisting">
-					{diary.map((item) => (
-						<li>
-							<em1></em1>
-							<div class="avatar">
-								{dayjs(item.date).format("M月D日")}
-								<br />
-								{dayjs(item.date).format("HH:mm")}
-							</div>
-							<div class="tw-content">
-								<em></em>
-								{item.content}
-								{item.image && (
+					{
+						diary.map((item) => (
+							<li>
+								<em1 />
+								<div class="avatar">
+									{dayjs(item.date).format("M月D日")}
 									<br />
-									<a
-										title="查看图片"
-										href={item.image}
-										target="_blank"
-									>
-										<img
-											class="timg"
-											src={item.image}
-											alt="说说配图"
-										/>
-									</a>
-								)}
-								<div class="status-wall-meta">
-									<span>{item.date}</span>
+									{dayjs(item.date).format("HH:mm")}
 								</div>
-							</div>
-						</li>
-					))}
+								<div class="tw-content">
+									<em />
+									{item.content}
+									{item.image && (
+										<Fragment>
+											<br />
+											<a
+												title="查看图片"
+												href={item.image}
+												target="_blank"
+											>
+												<img
+													class="timg"
+													src={item.image}
+													alt="说说配图"
+												/>
+											</a>
+										</Fragment>
+									)}
+									<div class="status-wall-meta">
+										<span>{item.date}</span>
+									</div>
+								</div>
+							</li>
+						))
+					}
 				</ul>
 			</div>
 		</article>

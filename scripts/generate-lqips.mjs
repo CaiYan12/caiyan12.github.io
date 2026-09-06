@@ -92,7 +92,11 @@ async function collectImages(dir, out) {
 	for (const entry of entries) {
 		const full = path.join(dir, entry.name);
 		if (entry.isDirectory()) {
-			if (IGNORE_DIRS.some((ig) => full.replace(/\\/g, "/").startsWith(ig)))
+			if (
+				IGNORE_DIRS.some((ig) =>
+					full.replace(/\\/g, "/").startsWith(ig),
+				)
+			)
 				continue;
 			await collectImages(full, out);
 		} else if (IMAGE_EXTS.has(path.extname(entry.name).toLowerCase())) {
@@ -141,14 +145,18 @@ async function main() {
 		return !(key in existingLqips);
 	});
 
-	console.log(`Found ${files.length} images, ${newFiles.length} new to process.`);
+	console.log(
+		`Found ${files.length} images, ${newFiles.length} new to process.`,
+	);
 
 	const lqips = { ...existingLqips };
 	let processed = 0;
 
 	for (const file of newFiles) {
 		const filePath = path.resolve(file);
-		process.stdout.write(`\rProcessing ${processed + 1}/${newFiles.length}...`);
+		process.stdout.write(
+			`\rProcessing ${processed + 1}/${newFiles.length}...`,
+		);
 		const compact = await processImage(filePath);
 		if (compact !== null) {
 			lqips[filePathToKey(file)] = compact;
@@ -183,9 +191,12 @@ async function collectVariantSources(dir, out) {
 		const full = path.join(dir, entry.name);
 		const normalized = full.replace(/\\/g, "/");
 		if (entry.isDirectory()) {
-			if (VARIANT_SKIP_DIRS.some((skip) => normalized.startsWith(skip))) continue;
+			if (VARIANT_SKIP_DIRS.some((skip) => normalized.startsWith(skip)))
+				continue;
 			await collectVariantSources(full, out);
-		} else if (VARIANT_SRC_EXTS.has(path.extname(entry.name).toLowerCase())) {
+		} else if (
+			VARIANT_SRC_EXTS.has(path.extname(entry.name).toLowerCase())
+		) {
 			out.push(path.relative(IMAGES_ROOT, full).replace(/\\/g, "/"));
 		}
 	}
@@ -207,12 +218,17 @@ async function cleanStaleVariants(validSources) {
 				await walk(full);
 			} else {
 				// 变体命名：<原图相对路径>.<W>w.webp，其中原图相对路径可能自带扩展名
-				const rel = path.relative(VARIANTS_ROOT, full).replace(/\\/g, "/");
+				const rel = path
+					.relative(VARIANTS_ROOT, full)
+					.replace(/\\/g, "/");
 				const match = rel.match(/^(.+)\.(\d+)w\.webp$/);
 				if (!match) continue;
 				const sourceRel = match[1];
 				const width = Number(match[2]);
-				if (!validSources.has(sourceRel) || !VARIANT_WIDTHS.includes(width)) {
+				if (
+					!validSources.has(sourceRel) ||
+					!VARIANT_WIDTHS.includes(width)
+				) {
 					await fs.rm(full, { force: true });
 					removed++;
 				}
@@ -251,7 +267,9 @@ async function generateVariants() {
 		if (!srcWidth || !srcHeight) continue;
 
 		// 原图宽度需大于档位 × 1.2 才生成（保证缩放收益，小图直接跳过）
-		const widths = VARIANT_WIDTHS.filter((w) => srcWidth > w * VARIANT_SCALE_RATIO);
+		const widths = VARIANT_WIDTHS.filter(
+			(w) => srcWidth > w * VARIANT_SCALE_RATIO,
+		);
 		if (widths.length > 0) {
 			manifest[`public:images/${rel}`] = {
 				width: srcWidth,
@@ -274,7 +292,10 @@ async function generateVariants() {
 			} catch {
 				/* 不存在则生成 */
 			}
-			await sharp(srcPath).resize({ width: w }).webp({ quality: 82 }).toFile(variantPath);
+			await sharp(srcPath)
+				.resize({ width: w })
+				.webp({ quality: 82 })
+				.toFile(variantPath);
 			generated++;
 		}
 	}

@@ -74,6 +74,10 @@ function shuffleArray<T>(items: T[]) {
 	return items;
 }
 
+/** 用户偏好减少动效（与 CSS 侧 prefers-reduced-motion 降级约定对齐，JS 驱动的动效必须同样短路） */
+const prefersReducedMotion = () =>
+	window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
 function setNewCommentShuffleLoading(
 	button: HTMLButtonElement,
 	loading: boolean,
@@ -584,6 +588,7 @@ function initClickEffect() {
 
 /** 点击特效 2：Canvas 粒子爆炸（移植自 https://eco.krt.moe/posts/effect-click/ 的 cursor-effects.js） */
 function initCanvasBoomEffect() {
+	if (prefersReducedMotion()) return;
 	if (document.getElementById("click-boom-canvas")) return;
 
 	class BoomCircle {
@@ -803,7 +808,10 @@ function initBackToTop() {
 	};
 	window.addEventListener("scroll", toggle, { passive: true });
 	backtop.addEventListener("click", () => {
-		window.scrollTo({ top: 0, behavior: "smooth" });
+		window.scrollTo({
+			top: 0,
+			behavior: prefersReducedMotion() ? "auto" : "smooth",
+		});
 	});
 	toggle();
 }
@@ -812,7 +820,10 @@ function initBackToTop() {
 function initDblClickScroll() {
 	document.addEventListener("dblclick", (e) => {
 		if ((e.target as HTMLElement).closest("a, button, input")) return;
-		window.scrollTo({ top: 0, behavior: "smooth" });
+		window.scrollTo({
+			top: 0,
+			behavior: prefersReducedMotion() ? "auto" : "smooth",
+		});
 	});
 }
 

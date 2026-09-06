@@ -38,151 +38,175 @@ const jumpId = `pagination-jump-${current}`;
 const jumpErrorId = `${jumpId}-error`;
 ---
 
-{total > 1 && (
-	<nav class="pagenavi" aria-label="分页">
-		{current > 1 ? (
-			<a
-				class="pagenavi-control pagenavi-first"
-				href={firstPageUrl}
-				title="第一页"
-				aria-label="第一页"
-			>
-				<span class="pagenavi-icon" aria-hidden="true">&lt;&lt;</span>
-			</a>
-		) : (
-			<span
-				class="pagenavi-control pagenavi-first is-disabled"
-				aria-disabled="true"
-				title="第一页"
-				aria-label="第一页"
-			>
-				<span class="pagenavi-icon" aria-hidden="true">&lt;&lt;</span>
-			</span>
-		)}
-
-		{current > 1 ? (
-			<a
-				class="pagenavi-control pagenavi-previous"
-				href={pageUrl(current - 1)}
-				title="上一页"
-				aria-label="上一页"
-			>
-				<span class="pagenavi-icon" aria-hidden="true">&lt;</span>
-			</a>
-		) : (
-			<span
-				class="pagenavi-control pagenavi-previous is-disabled"
-				aria-disabled="true"
-				title="上一页"
-				aria-label="上一页"
-			>
-				<span class="pagenavi-icon" aria-hidden="true">&lt;</span>
-			</span>
-		)}
-
-		{pageList().map((page) =>
-			page === "…" ? (
-				<span class="pagenavi-dots" aria-hidden="true">…</span>
-			) : page === current ? (
-				<span
-					class="pagenavi-page is-current"
-					aria-current="page"
-					title={`第 ${page} 页`}
-				>
-					{page}
-				</span>
-			) : (
+{
+	total > 1 && (
+		<nav class="pagenavi" aria-label="分页">
+			{current > 1 ? (
 				<a
-					class="pagenavi-page"
-					href={pageUrl(page)}
-					title={`第 ${page} 页`}
-					aria-label={`第 ${page} 页`}
+					class="pagenavi-control pagenavi-first"
+					href={firstPageUrl}
+					title="第一页"
+					aria-label="第一页"
 				>
-					{page}
+					<span class="pagenavi-icon" aria-hidden="true">
+						&lt;&lt;
+					</span>
 				</a>
-			),
-		)}
+			) : (
+				<span
+					class="pagenavi-control pagenavi-first is-disabled"
+					aria-disabled="true"
+					title="第一页"
+					aria-label="第一页"
+				>
+					<span class="pagenavi-icon" aria-hidden="true">
+						&lt;&lt;
+					</span>
+				</span>
+			)}
 
-		{current < total ? (
-			<a
-				class="pagenavi-control pagenavi-next"
-				href={pageUrl(current + 1)}
-				title="下一页"
-				aria-label="下一页"
-			>
-				<span class="pagenavi-icon" aria-hidden="true">&gt;</span>
-			</a>
-		) : (
-			<span
-				class="pagenavi-control pagenavi-next is-disabled"
-				aria-disabled="true"
-				title="下一页"
-				aria-label="下一页"
-			>
-				<span class="pagenavi-icon" aria-hidden="true">&gt;</span>
-			</span>
-		)}
+			{current > 1 ? (
+				<a
+					class="pagenavi-control pagenavi-previous"
+					href={pageUrl(current - 1)}
+					title="上一页"
+					aria-label="上一页"
+				>
+					<span class="pagenavi-icon" aria-hidden="true">
+						&lt;
+					</span>
+				</a>
+			) : (
+				<span
+					class="pagenavi-control pagenavi-previous is-disabled"
+					aria-disabled="true"
+					title="上一页"
+					aria-label="上一页"
+				>
+					<span class="pagenavi-icon" aria-hidden="true">
+						&lt;
+					</span>
+				</span>
+			)}
 
-		{current < total ? (
-			<a
-				class="pagenavi-control pagenavi-last"
-				href={pageUrl(total)}
-				title="最后一页"
-				aria-label="最后一页"
-			>
-				<span class="pagenavi-icon" aria-hidden="true">&gt;&gt;</span>
-			</a>
-		) : (
-			<span
-				class="pagenavi-control pagenavi-last is-disabled"
-				aria-disabled="true"
-				title="最后一页"
-				aria-label="最后一页"
-			>
-				<span class="pagenavi-icon" aria-hidden="true">&gt;&gt;</span>
-			</span>
-		)}
+			{pageList().map((page) =>
+				page === "…" ? (
+					<span class="pagenavi-dots" aria-hidden="true">
+						…
+					</span>
+				) : page === current ? (
+					<span
+						class="pagenavi-page is-current"
+						aria-current="page"
+						title={`第 ${page} 页`}
+					>
+						{page}
+					</span>
+				) : (
+					<a
+						class="pagenavi-page"
+						href={pageUrl(page)}
+						title={`第 ${page} 页`}
+						aria-label={`第 ${page} 页`}
+					>
+						{page}
+					</a>
+				),
+			)}
 
-		<form
-			class="pagenavi-jump"
-			aria-label="跳转到指定页"
-			novalidate
-			data-pagination-jump
-			data-url-template={urlTemplate}
-			data-first-page-url={firstPageUrl}
-		>
-			<label class="pagenavi-sr-only" for={jumpId}>跳转到第几页</label>
-			<input
-				id={jumpId}
-				name="page"
-				type="number"
-				min="1"
-				max={String(total)}
-				step="1"
-				inputmode="numeric"
-				placeholder="页码"
-				title={`输入 1 到 ${total} 之间的页码`}
-				aria-describedby={jumpErrorId}
-				aria-invalid="false"
-				data-pagination-input
-			/>
-			<button
-				type="submit"
-				class="pagenavi-control pagenavi-jump-submit"
-				title="跳转到指定页"
+			{current < total ? (
+				<a
+					class="pagenavi-control pagenavi-next"
+					href={pageUrl(current + 1)}
+					title="下一页"
+					aria-label="下一页"
+				>
+					<span class="pagenavi-icon" aria-hidden="true">
+						&gt;
+					</span>
+				</a>
+			) : (
+				<span
+					class="pagenavi-control pagenavi-next is-disabled"
+					aria-disabled="true"
+					title="下一页"
+					aria-label="下一页"
+				>
+					<span class="pagenavi-icon" aria-hidden="true">
+						&gt;
+					</span>
+				</span>
+			)}
+
+			{current < total ? (
+				<a
+					class="pagenavi-control pagenavi-last"
+					href={pageUrl(total)}
+					title="最后一页"
+					aria-label="最后一页"
+				>
+					<span class="pagenavi-icon" aria-hidden="true">
+						&gt;&gt;
+					</span>
+				</a>
+			) : (
+				<span
+					class="pagenavi-control pagenavi-last is-disabled"
+					aria-disabled="true"
+					title="最后一页"
+					aria-label="最后一页"
+				>
+					<span class="pagenavi-icon" aria-hidden="true">
+						&gt;&gt;
+					</span>
+				</span>
+			)}
+
+			<form
+				class="pagenavi-jump"
 				aria-label="跳转到指定页"
-				data-pagination-submit
+				novalidate
+				data-pagination-jump
+				data-url-template={urlTemplate}
+				data-first-page-url={firstPageUrl}
 			>
-				<span class="pagenavi-icon" aria-hidden="true">→</span>
-			</button>
-			<p
-				id={jumpErrorId}
-				class="pagenavi-jump-error"
-				role="alert"
-				aria-live="assertive"
-				data-pagination-error
-				hidden
-			></p>
-		</form>
-	</nav>
-)}
+				<label class="pagenavi-sr-only" for={jumpId}>
+					跳转到第几页
+				</label>
+				<input
+					id={jumpId}
+					name="page"
+					type="number"
+					min="1"
+					max={String(total)}
+					step="1"
+					inputmode="numeric"
+					placeholder="页码"
+					title={`输入 1 到 ${total} 之间的页码`}
+					aria-describedby={jumpErrorId}
+					aria-invalid="false"
+					data-pagination-input
+				/>
+				<button
+					type="submit"
+					class="pagenavi-control pagenavi-jump-submit"
+					title="跳转到指定页"
+					aria-label="跳转到指定页"
+					data-pagination-submit
+				>
+					<span class="pagenavi-icon" aria-hidden="true">
+						→
+					</span>
+				</button>
+				<p
+					id={jumpErrorId}
+					class="pagenavi-jump-error"
+					role="alert"
+					aria-live="assertive"
+					data-pagination-error
+					hidden
+				/>
+			</form>
+		</nav>
+	)
+}

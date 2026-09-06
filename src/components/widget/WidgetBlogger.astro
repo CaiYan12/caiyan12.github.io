@@ -15,78 +15,86 @@ const truncateComment = (content: string) => {
 ---
 
 <WidgetLayout title="吐槽水军" icon="fa-user">
-	{guestbookComments.length > DISPLAY_LIMIT && (
-		<button
-			slot="actions"
-			class="newcomment-refresh"
-			type="button"
-			aria-controls="guestbook-comments"
-			aria-label="换一批留言"
-			aria-busy="false"
-			title="换一批留言"
-			data-newcomment-refresh
-			data-newcomment-limit={DISPLAY_LIMIT}
-			data-shuffle-subject="留言"
-		>
-			<i
-				class="fa fa-random"
-				aria-hidden="true"
-				data-newcomment-icon
-			></i>
-			<span data-newcomment-label>换一批</span>
-		</button>
-	)}
-	{guestbookComments.length > 0 ? (
-		<>
-			<ul
-				id="guestbook-comments"
-				class="guestbook-comment-list"
-				aria-live="polite"
+	{
+		guestbookComments.length > DISPLAY_LIMIT && (
+			<button
+				slot="actions"
+				class="newcomment-refresh"
+				type="button"
+				aria-controls="guestbook-comments"
+				aria-label="换一批留言"
+				aria-busy="false"
+				title="换一批留言"
+				data-newcomment-refresh
+				data-newcomment-limit={DISPLAY_LIMIT}
+				data-shuffle-subject="留言"
 			>
-				{guestbookComments.map((comment, index) => (
-					<li
-						data-newcomment-item
-						data-comment-last={index === 0 ? "true" : undefined}
-						hidden={index >= DISPLAY_LIMIT}
-					>
-						<a
-							class="guestbook-comment"
-							href="/guestbook/#comments"
-							title={`查看 ${comment.author} 的留言`}
+				<i
+					class="fa fa-random"
+					aria-hidden="true"
+					data-newcomment-icon
+				/>
+				<span data-newcomment-label>换一批</span>
+			</button>
+		)
+	}
+	{
+		guestbookComments.length > 0 ? (
+			<>
+				<ul
+					id="guestbook-comments"
+					class="guestbook-comment-list"
+					aria-live="polite"
+				>
+					{guestbookComments.map((comment, index) => (
+						<li
+							data-newcomment-item
+							data-comment-last={index === 0 ? "true" : undefined}
+							hidden={index >= DISPLAY_LIMIT}
 						>
-							<img
-								class="guestbook-avatar"
-								src={comment.avatar ?? "/images/avatar.webp"}
-								alt={`${comment.author} 的头像`}
-								loading={index === 0 ? "eager" : "lazy"}
-								decoding="async"
-							/>
-							<span class="guestbook-body">
-								<span class="guestbook-meta">
-									<strong>{comment.author}</strong>
-									<time datetime={comment.date}>
-										{dayjs(comment.date).format("MM月DD日")}
-									</time>
+							<a
+								class="guestbook-comment"
+								href="/guestbook/#comments"
+								title={`查看 ${comment.author} 的留言`}
+							>
+								<img
+									class="guestbook-avatar"
+									src={
+										comment.avatar ?? "/images/avatar.webp"
+									}
+									alt={`${comment.author} 的头像`}
+									loading={index === 0 ? "eager" : "lazy"}
+									decoding="async"
+								/>
+								<span class="guestbook-body">
+									<span class="guestbook-meta">
+										<strong>{comment.author}</strong>
+										<time datetime={comment.date}>
+											{dayjs(comment.date).format(
+												"MM月DD日",
+											)}
+										</time>
+									</span>
+									<span class="guestbook-content">
+										{truncateComment(comment.content)}
+									</span>
 								</span>
-								<span class="guestbook-content">
-									{truncateComment(comment.content)}
-								</span>
-							</span>
-						</a>
-					</li>
-				))}
-			</ul>
-			<a class="guestbook-link" href="/guestbook/#comments">
-				去留言板
-				<i class="fa fa-angle-right" aria-hidden="true"></i>
-			</a>
-		</>
-	) : (
-		<div class="sidebar-comment-composer">
-			<a class="sidebar-comment-button" href="/guestbook/#comments">
-				<i class="fa fa-commenting-o" aria-hidden="true"></i>
-				去留言板
-			</a>
-		</div>
-	)}
+							</a>
+						</li>
+					))}
+				</ul>
+				<a class="guestbook-link" href="/guestbook/#comments">
+					去留言板
+					<i class="fa fa-angle-right" aria-hidden="true" />
+				</a>
+			</>
+		) : (
+			<div class="sidebar-comment-composer">
+				<a class="sidebar-comment-button" href="/guestbook/#comments">
+					<i class="fa fa-commenting-o" aria-hidden="true" />
+					去留言板
+				</a>
+			</div>
+		)
+	}
 </WidgetLayout>

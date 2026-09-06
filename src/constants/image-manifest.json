@@ -65,6 +65,24 @@
 			480
 		]
 	},
+	"public:images/diary/202603031515.jpg": {
+		"width": 1272,
+		"height": 1259,
+		"variants": [
+			480,
+			720
+		]
+	},
+	"public:images/diary/202605012020.jpg": {
+		"width": 2400,
+		"height": 1080,
+		"variants": [
+			480,
+			720,
+			1080,
+			1440
+		]
+	},
 	"public:images/guide-cover.png": {
 		"width": 1920,
 		"height": 1080,

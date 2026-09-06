@@ -12,7 +12,11 @@ export async function getStaticPaths() {
 	const allPosts = await getCollection("posts");
 	const sortedPosts = getSortedPosts(allPosts.filter(isPublicPost));
 	const months = [
-		...new Set(sortedPosts.map((post) => dayjs(post.data.published).format("YYYY-M"))),
+		...new Set(
+			sortedPosts.map((post) =>
+				dayjs(post.data.published).format("YYYY-M"),
+			),
+		),
 	];
 	return months.map((month) => {
 		const [year, monthNumber] = month.split("-");

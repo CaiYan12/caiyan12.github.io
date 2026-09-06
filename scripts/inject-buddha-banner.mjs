@@ -14,7 +14,11 @@ const banner = (await fs.readFile(bannerPath, "utf8"))
 	.replace(/^\uFEFF/, "")
 	.replace(/\r\n/g, "\n")
 	.replace(/\s+$/, "");
-if (!banner.startsWith("<!--") || !banner.endsWith("-->") || banner.slice(4, -3).includes("-->")) {
+if (
+	!banner.startsWith("<!--") ||
+	!banner.endsWith("-->") ||
+	banner.slice(4, -3).includes("-->")
+) {
 	console.error(
 		"佛祖保佑.xml 格式不正确：必须是完整 HTML 注释块（<!-- 开头、--> 结尾，注释内部不得出现 -->）。",
 	);
@@ -47,7 +51,10 @@ for (const filePath of htmlFiles) {
 		changed = true;
 	}
 	if (!html.includes(consoleScript)) {
-		html = html.replace(/<head(\s[^>]*)?>/i, (headTag) => `${headTag}${consoleScript}`);
+		html = html.replace(
+			/<head(\s[^>]*)?>/i,
+			(headTag) => `${headTag}${consoleScript}`,
+		);
 		changed = true;
 	}
 	if (changed) {

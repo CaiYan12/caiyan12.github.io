@@ -32,9 +32,7 @@ interface Props {
 const { title, description, image, canonicalUrl, prevUrl, nextUrl, ogType } =
 	Astro.props;
 
-const siteTitle = title
-	? `${title} - ${siteConfig.title}`
-	: siteConfig.title;
+const siteTitle = title ? `${title} - ${siteConfig.title}` : siteConfig.title;
 const siteDescription = description ?? siteConfig.subtitle;
 const absoluteUrl = (relativeUrl: string) =>
 	new URL(relativeUrl, siteConfig.siteURL).toString();
@@ -62,14 +60,20 @@ const myhkwScriptAttributes: Record<string, string> = {
 		<link rel="canonical" href={canonicalHref} />
 		{prevUrl && <link rel="prev" href={absoluteUrl(prevUrl)} />}
 		{nextUrl && <link rel="next" href={absoluteUrl(nextUrl)} />}
-		<meta
-			name="viewport"
-			content="width=device-width, initial-scale=1.0"
-		/>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<link rel="apple-touch-icon" href="/images/avatar.webp" />
 		<link rel="icon" href="/images/avatar.webp" type="image/webp" />
-		<link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
-		{pioConfig.enable && <link rel="stylesheet" href="/pio/static/pio.css" />}
+		<link
+			rel="alternate"
+			type="application/rss+xml"
+			title="RSS"
+			href="/rss.xml"
+		/>
+		{
+			pioConfig.enable && (
+				<link rel="stylesheet" href="/pio/static/pio.css" />
+			)
+		}
 		<meta property="og:title" content={siteTitle} />
 		<meta data-pagefind-meta="title[content]" content={siteTitle} />
 		<meta property="og:description" content={siteDescription} />
@@ -103,17 +107,22 @@ const myhkwScriptAttributes: Record<string, string> = {
 
 		{pioConfig.enable && <Pio client:idle />}
 
-		{myhkwPlayerConfig.enable && (
-			<>
-				{/* 明月浩空播放器要求 jQuery 先于播放器脚本加载 */}
-				<script is:inline src="https://myhkw.cn/player/js/jquery.min.js"></script>
-				<script
-					is:inline
-					src={`https://myhkw.cn/api/player/${myhkwPlayerConfig.playerId}`}
-					{...myhkwScriptAttributes}
-				></script>
-			</>
-		)}
+		{
+			myhkwPlayerConfig.enable && (
+				<>
+					{/* 明月浩空播放器要求 jQuery 先于播放器脚本加载 */}
+					<script
+						is:inline
+						src="https://myhkw.cn/player/js/jquery.min.js"
+					/>
+					<script
+						is:inline
+						src={`https://myhkw.cn/api/player/${myhkwPlayerConfig.playerId}`}
+						{...myhkwScriptAttributes}
+					/>
+				</>
+			)
+		}
 
 		<style is:inline>
 			/* myhkw 与 Pio 同在左下角：播放器必须覆盖 Pio，避免控制面板被模型遮挡。 */

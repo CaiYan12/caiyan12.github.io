@@ -2,30 +2,89 @@
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { timelineData } from "../data/timeline";
 
-const typeLabels = { education: "学习", work: "工作", project: "项目", achievement: "成就" } as const;
-const items = [...timelineData].sort((a, b) => b.startDate.localeCompare(a.startDate));
+const typeLabels = {
+	education: "学习",
+	work: "工作",
+	project: "项目",
+	achievement: "成就",
+} as const;
+const items = [...timelineData].sort((a, b) =>
+	b.startDate.localeCompare(a.startDate),
+);
 ---
 
-<MainGridLayout title="时间线" description="WindowsIt 的学习与成长记录" showSidebar={false} searchIndex>
+<MainGridLayout
+	title="时间线"
+	description="WindowsIt 的学习与成长记录"
+	showSidebar={false}
+	searchIndex
+>
 	<div class="page personal-page">
-		<header class="post-header"><h2><i class="fa fa-history" aria-hidden="true"></i> 时间线</h2></header>
-		<address class="post-metaa"><i class="fa fa-home" aria-hidden="true"></i> <a href="/">首页</a> &raquo; 时间线</address>
+		<header class="post-header">
+			<h2><i class="fa fa-history" aria-hidden="true"></i> 时间线</h2>
+		</header>
+		<address class="post-metaa">
+			<i class="fa fa-home" aria-hidden="true"></i>
+			<a href="/">首页</a> &raquo; 时间线
+		</address>
 		<ol class="timeline-list">
-			{items.map((item) => (
-				<li class="timeline-item">
-					<div class="timeline-marker" aria-hidden="true"></div>
-					<article class="personal-card">
-						<div class="personal-card-heading"><h3>{item.title}</h3><span class="timeline-type">{typeLabels[item.type]}</span></div>
-						<p class="personal-meta"><i class="fa fa-calendar" aria-hidden="true"></i> {item.startDate} — {item.endDate ?? "至今"}</p>
-						{item.organization && <p class="personal-meta"><i class="fa fa-university" aria-hidden="true"></i> {item.organization}</p>}
-						{item.location && <p class="personal-meta"><i class="fa fa-map-marker" aria-hidden="true"></i> {item.location}</p>}
-						<p>{item.description}</p>
-						{item.skills && <ul class="personal-tags" aria-label="相关技能">{item.skills.map((skill) => <li>{skill}</li>)}</ul>}
-						{item.achievements && item.achievements.length > 0 && <ul class="achievement-list">{item.achievements.map((achievement) => <li>{achievement}</li>)}</ul>}
-					</article>
-				</li>
-			))}
+			{
+				items.map((item) => (
+					<li class="timeline-item">
+						<div class="timeline-marker" aria-hidden="true" />
+						<article class="personal-card">
+							<div class="personal-card-heading">
+								<>
+									<h3>{item.title}</h3>
+									<span class="timeline-type">
+										{typeLabels[item.type]}
+									</span>
+								</>
+							</div>
+							<p class="personal-meta">
+								<i class="fa fa-calendar" aria-hidden="true" />{" "}
+								{item.startDate} — {item.endDate ?? "至今"}
+							</p>
+							{item.organization && (
+								<p class="personal-meta">
+									<i
+										class="fa fa-university"
+										aria-hidden="true"
+									/>{" "}
+									{item.organization}
+								</p>
+							)}
+							{item.location && (
+								<p class="personal-meta">
+									<i
+										class="fa fa-map-marker"
+										aria-hidden="true"
+									/>{" "}
+									{item.location}
+								</p>
+							)}
+							<p>{item.description}</p>
+							{item.skills && (
+								<ul class="personal-tags" aria-label="相关技能">
+									{item.skills.map((skill) => (
+										<li>{skill}</li>
+									))}
+								</ul>
+							)}
+							{item.achievements &&
+								item.achievements.length > 0 && (
+									<ul class="achievement-list">
+										{item.achievements.map(
+											(achievement) => (
+												<li>{achievement}</li>
+											),
+										)}
+									</ul>
+								)}
+						</article>
+					</li>
+				))
+			}
 		</ol>
 	</div>
 </MainGridLayout>
-

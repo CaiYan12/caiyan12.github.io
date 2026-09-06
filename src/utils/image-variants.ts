@@ -66,12 +66,9 @@ export function getResponsiveImage(src: string): ResponsiveImageAttrs {
 	const webpCandidates = widths.map(
 		(w) => `/images/_variants/${toUrlPath(rel)}.${w}w.webp ${w}w`,
 	);
-	const origCandidates = [
-		`${src} ${entry.width}w`,
-		...widths.map(
-			(w) => `/images/_variants/${toUrlPath(rel)}.${w}w.webp ${w}w`,
-		),
-	];
+	// <img srcset> 只做宽度协商、无格式协商：非 WebP 浏览器会按宽度选中 webp 候选导致裂图，
+	// 因此原图 srcset 只保留原图一个候选，webp 缩放档仅进入 <source type="image/webp">。
+	const origCandidates = [`${src} ${entry.width}w`];
 
 	return {
 		src,

@@ -2,36 +2,90 @@
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { projectsData } from "../data/projects";
 
-const statusLabels = { completed: "已完成", "in-progress": "进行中", planned: "计划中" } as const;
+const statusLabels = {
+	completed: "已完成",
+	"in-progress": "进行中",
+	planned: "计划中",
+} as const;
 ---
 
-<MainGridLayout title="我的项目" description="WindowsIt 的项目与作品" showSidebar={false} searchIndex>
+<MainGridLayout
+	title="我的项目"
+	description="WindowsIt 的项目与作品"
+	showSidebar={false}
+	searchIndex
+>
 	<div class="page personal-page">
-		<header class="post-header"><h2><i class="fa fa-briefcase" aria-hidden="true"></i> 我的项目</h2></header>
-		<address class="post-metaa"><i class="fa fa-home" aria-hidden="true"></i> <a href="/">首页</a> &raquo; 我的项目</address>
-		{/* GitHub 个人统计（profile-summary-for-github，社区托管服务，外链 iframe；/user/<名> 为结果页路由，/search?q= 仅是搜索表单） */}
+		<header class="post-header">
+			<h2><i class="fa fa-briefcase" aria-hidden="true"></i> 我的项目</h2>
+		</header>
+		<address class="post-metaa">
+			<i class="fa fa-home" aria-hidden="true"></i>
+			<a href="/">首页</a> &raquo; 我的项目
+		</address>
+		{
+			/* GitHub 个人统计（profile-summary-for-github，社区托管服务，外链 iframe；/user/<名> 为结果页路由，/search?q= 仅是搜索表单） */
+		}
 		<div class="github-profile-wrap">
 			<iframe
 				class="github-profile-summary"
 				src="https://profile-summary-for-github.com/user/CaiYan12"
 				title="GitHub 个人统计概览"
-				loading="lazy"
-			></iframe>
+				loading="lazy"></iframe>
 		</div>
 		<div class="personal-grid project-grid">
-			{projectsData.map((project) => (
-				<article class="personal-card project-card">
-					<div class="personal-card-heading"><h3>{project.title}</h3><span class={`status status-${project.status}`}>{statusLabels[project.status]}</span></div>
-					<p>{project.description}</p>
-					<p class="personal-meta"><i class="fa fa-calendar" aria-hidden="true"></i> {project.startDate} — {project.endDate ?? "至今"}</p>
-					<ul class="personal-tags" aria-label="技术栈">{project.techStack.map((tech) => <li>{tech}</li>)}</ul>
-					<div class="personal-actions">
-						{project.visitUrl && <a href={project.visitUrl} target="_blank" rel="noreferrer">访问项目 <i class="fa fa-external-link" aria-hidden="true"></i></a>}
-						{project.sourceCode && <a href={project.sourceCode} target="_blank" rel="noreferrer">查看源码 <i class="fa fa-github" aria-hidden="true"></i></a>}
-					</div>
-				</article>
-			))}
+			{
+				projectsData.map((project) => (
+					<article class="personal-card project-card">
+						<div class="personal-card-heading">
+							<>
+								<h3>{project.title}</h3>
+								<span class={`status status-${project.status}`}>
+									{statusLabels[project.status]}
+								</span>
+							</>
+						</div>
+						<p>{project.description}</p>
+						<p class="personal-meta">
+							<i class="fa fa-calendar" aria-hidden="true" />{" "}
+							{project.startDate} — {project.endDate ?? "至今"}
+						</p>
+						<ul class="personal-tags" aria-label="技术栈">
+							{project.techStack.map((tech) => (
+								<li>{tech}</li>
+							))}
+						</ul>
+						<div class="personal-actions">
+							{project.visitUrl && (
+								<a
+									href={project.visitUrl}
+									target="_blank"
+									rel="noreferrer"
+								>
+									访问项目{" "}
+									<i
+										class="fa fa-external-link"
+										aria-hidden="true"
+									/>
+								</a>
+							)}
+							{project.sourceCode && (
+								<a
+									href={project.sourceCode}
+									target="_blank"
+									rel="noreferrer"
+								>
+									查看源码{" "}
+									<i
+										class="fa fa-github"
+										aria-hidden="true"
+									/>
+								</a>
+							)}
+						</div>
+					</article>
+				))
+			}
 		</div>
 	</div>
 </MainGridLayout>
-

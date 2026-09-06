@@ -39,7 +39,8 @@
 		try {
 			await loadPagefind();
 			if (!pagefind) {
-				error = "搜索索引未就绪（请先执行 pnpm build 生成 pagefind 索引）";
+				error =
+					"搜索索引未就绪（请先执行 pnpm build 生成 pagefind 索引）";
 				searching = false;
 				return;
 			}

@@ -54,7 +54,9 @@ function calendarPayload(counts) {
 }
 
 // 总贡献 12+25+17=54；最长连续 7（跨周边界 1,2,3,4,5,6,7）；当前连续 2（5,6）
-const TYPICAL_COUNTS = [1, 2, 3, 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 2, 1, 0, 0, 5, 6];
+const TYPICAL_COUNTS = [
+	1, 2, 3, 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 2, 1, 0, 0, 5, 6,
+];
 // 末尾补 0：当前连续应跨过末位零日回看（6,5 → 2）
 const TRAILING_ZERO_COUNTS = [
 	1, 2, 3, 0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 2, 1, 0, 5, 6, 0,
@@ -85,7 +87,13 @@ test("normalizeCalendar 校验非法形状并按日期排序", () => {
 	assert.throws(
 		() =>
 			normalizeCalendar({
-				weeks: [{ contributionDays: [{ date: "bad", contributionCount: 1 }] }],
+				weeks: [
+					{
+						contributionDays: [
+							{ date: "bad", contributionCount: 1 },
+						],
+					},
+				],
 			}),
 		/invalid day date/,
 	);
@@ -93,7 +101,11 @@ test("normalizeCalendar 校验非法形状并按日期排序", () => {
 		() =>
 			normalizeCalendar({
 				weeks: [
-					{ contributionDays: [{ date: "2025-09-01", contributionCount: -1 }] },
+					{
+						contributionDays: [
+							{ date: "2025-09-01", contributionCount: -1 },
+						],
+					},
 				],
 			}),
 		/invalid day contributionCount/,
@@ -109,11 +121,10 @@ test("normalizeCalendar 校验非法形状并按日期排序", () => {
 			},
 		],
 	});
-	assert.deepEqual(days.map((d) => d.date), [
-		"2025-09-01",
-		"2025-09-02",
-		"2025-09-03",
-	]);
+	assert.deepEqual(
+		days.map((d) => d.date),
+		["2025-09-01", "2025-09-02", "2025-09-03"],
+	);
 });
 
 test("computeStats 统计总贡献与连续口径", () => {
@@ -160,10 +171,7 @@ test("fetchContributions 使用环境令牌发送 Authorization", async () => {
 	});
 	assert.equal(calls.length, 1);
 	assert.equal(calls[0].url, "https://api.github.com/graphql");
-	assert.equal(
-		calls[0].options.headers.Authorization,
-		"Bearer secret-token",
-	);
+	assert.equal(calls[0].options.headers.Authorization, "Bearer secret-token");
 });
 
 test("fetchContributions 无令牌时不发请求、不动缓存", async () => {

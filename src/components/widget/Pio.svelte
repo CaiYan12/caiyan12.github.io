@@ -37,10 +37,14 @@
 			const script = document.createElement("script");
 			script.id = id;
 			script.src = src;
-			script.addEventListener("load", () => {
-				script.dataset.loaded = "true";
-				resolve();
-			}, { once: true });
+			script.addEventListener(
+				"load",
+				() => {
+					script.dataset.loaded = "true";
+					resolve();
+				},
+				{ once: true },
+			);
 			script.addEventListener("error", reject, { once: true });
 			document.head.appendChild(script);
 		});
@@ -75,7 +79,8 @@
 		}
 		desktopQuery.addEventListener("change", handleViewportChange);
 
-		return () => desktopQuery.removeEventListener("change", handleViewportChange);
+		return () =>
+			desktopQuery.removeEventListener("change", handleViewportChange);
 	});
 </script>
 

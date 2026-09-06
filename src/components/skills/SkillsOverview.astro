@@ -5,28 +5,90 @@ const stats = getSkillStats();
 const averageExperience = getAverageExperience();
 
 const levelData = [
-	{ key: "expert", label: "擅长", value: stats.byLevel.expert, color: "#ef4444" },
-	{ key: "advanced", label: "进阶", value: stats.byLevel.advanced, color: "#f97316" },
-	{ key: "intermediate", label: "熟练", value: stats.byLevel.intermediate, color: "#eab308" },
-	{ key: "beginner", label: "入门", value: stats.byLevel.beginner, color: "#22c55e" },
+	{
+		key: "expert",
+		label: "擅长",
+		value: stats.byLevel.expert,
+		color: "#ef4444",
+	},
+	{
+		key: "advanced",
+		label: "进阶",
+		value: stats.byLevel.advanced,
+		color: "#f97316",
+	},
+	{
+		key: "intermediate",
+		label: "熟练",
+		value: stats.byLevel.intermediate,
+		color: "#eab308",
+	},
+	{
+		key: "beginner",
+		label: "入门",
+		value: stats.byLevel.beginner,
+		color: "#22c55e",
+	},
 ] as const;
 
 const categoryData = [
-	{ key: "frontend", label: "前端开发", value: stats.byCategory.frontend, color: "#3b82f6" },
-	{ key: "backend", label: "后端与编程", value: stats.byCategory.backend, color: "#8b5cf6" },
-	{ key: "database", label: "数据库", value: stats.byCategory.database, color: "#10b981" },
-	{ key: "tools", label: "开发工具", value: stats.byCategory.tools, color: "#f59e0b" },
-	{ key: "other", label: "其他技能", value: stats.byCategory.other, color: "#ec4899" },
+	{
+		key: "frontend",
+		label: "前端开发",
+		value: stats.byCategory.frontend,
+		color: "#3b82f6",
+	},
+	{
+		key: "backend",
+		label: "后端与编程",
+		value: stats.byCategory.backend,
+		color: "#8b5cf6",
+	},
+	{
+		key: "database",
+		label: "数据库",
+		value: stats.byCategory.database,
+		color: "#10b981",
+	},
+	{
+		key: "tools",
+		label: "开发工具",
+		value: stats.byCategory.tools,
+		color: "#f59e0b",
+	},
+	{
+		key: "other",
+		label: "其他技能",
+		value: stats.byCategory.other,
+		color: "#ec4899",
+	},
 ] as const;
 
-const calculateDonutPath = (startAngle: number, endAngle: number, outerRadius = 40, innerRadius = 22) => {
+const calculateDonutPath = (
+	startAngle: number,
+	endAngle: number,
+	outerRadius = 40,
+	innerRadius = 22,
+) => {
 	const center = 50;
 	const startRadians = ((startAngle - 90) * Math.PI) / 180;
 	const endRadians = ((endAngle - 90) * Math.PI) / 180;
-	const outerStart = [center + outerRadius * Math.cos(startRadians), center + outerRadius * Math.sin(startRadians)];
-	const outerEnd = [center + outerRadius * Math.cos(endRadians), center + outerRadius * Math.sin(endRadians)];
-	const innerStart = [center + innerRadius * Math.cos(endRadians), center + innerRadius * Math.sin(endRadians)];
-	const innerEnd = [center + innerRadius * Math.cos(startRadians), center + innerRadius * Math.sin(startRadians)];
+	const outerStart = [
+		center + outerRadius * Math.cos(startRadians),
+		center + outerRadius * Math.sin(startRadians),
+	];
+	const outerEnd = [
+		center + outerRadius * Math.cos(endRadians),
+		center + outerRadius * Math.sin(endRadians),
+	];
+	const innerStart = [
+		center + innerRadius * Math.cos(endRadians),
+		center + innerRadius * Math.sin(endRadians),
+	];
+	const innerEnd = [
+		center + innerRadius * Math.cos(startRadians),
+		center + innerRadius * Math.sin(startRadians),
+	];
 	const largeArcFlag = endAngle - startAngle > 180 ? 1 : 0;
 
 	return [
@@ -48,107 +110,165 @@ const levelSegments = levelData.map((item) => {
 });
 
 const maxCategory = Math.max(...categoryData.map((item) => item.value), 1);
-const percentage = (value: number, total: number) => (total > 0 ? Math.round((value / total) * 100) : 0);
+const percentage = (value: number, total: number) =>
+	total > 0 ? Math.round((value / total) * 100) : 0;
 const experienceValue = `${averageExperience.years}.${averageExperience.months.toString().padStart(2, "0")}`;
 ---
 
 <section class="skills-overview" data-skills-overview aria-label="技能总体概览">
 	<div class="skills-overview-grid">
-		<section class="skills-overview-panel skills-level-panel" aria-labelledby="skills-level-heading">
+		<section
+			class="skills-overview-panel skills-level-panel"
+			aria-labelledby="skills-level-heading"
+		>
 			<h3 id="skills-level-heading">
-				<span class="skills-overview-marker skills-level-marker" aria-hidden="true"></span>
+				<span
+					class="skills-overview-marker skills-level-marker"
+					aria-hidden="true"></span>
 				按等级分布
 			</h3>
 			<div class="skills-donut-wrap">
-				{totalLevel > 0 ? (
-					<svg
-						class="skills-donut"
-						viewBox="0 0 100 100"
-						role="img"
-						aria-labelledby="skills-level-chart-title skills-level-chart-description"
-					>
-						<title id="skills-level-chart-title">技能熟练度分布</title>
-						<desc id="skills-level-chart-description">共 {stats.total} 项技能，按入门、熟练、进阶和擅长等级分布。</desc>
-						{levelSegments.map((segment) => (
-							segment.endAngle > segment.startAngle && (
-								<g class="skills-donut-segment-group">
-									<path
-										class="skills-donut-segment skills-donut-segment-base"
-										d={calculateDonutPath(segment.startAngle, segment.endAngle)}
-										fill={segment.color}
-										tabindex="0"
-										aria-label={`${segment.label}：${segment.value} 项技能，占 ${percentage(segment.value, totalLevel)}%`}
-										data-skill-level={segment.key}
-										data-skill-label={segment.label}
-										data-skill-value={segment.value}
-										data-skill-percentage={percentage(segment.value, totalLevel)}
-										data-skill-color={segment.color}
-									/>
-									<path
-										class="skills-donut-segment skills-donut-segment-expanded"
-										d={calculateDonutPath(segment.startAngle, segment.endAngle, 43)}
-										fill={segment.color}
-										aria-hidden="true"
-									/>
-								</g>
-							)
-						))}
-					</svg>
-				) : (
-					<span class="skills-chart-empty">暂无数据</span>
-				)}
+				{
+					totalLevel > 0 ? (
+						<svg
+							class="skills-donut"
+							viewBox="0 0 100 100"
+							role="img"
+							aria-labelledby="skills-level-chart-title skills-level-chart-description"
+						>
+							<title id="skills-level-chart-title">
+								技能熟练度分布
+							</title>
+							<desc id="skills-level-chart-description">
+								共 {stats.total}{" "}
+								项技能，按入门、熟练、进阶和擅长等级分布。
+							</desc>
+							{levelSegments.map(
+								(segment) =>
+									segment.endAngle > segment.startAngle && (
+										<g class="skills-donut-segment-group">
+											<path
+												class="skills-donut-segment skills-donut-segment-base"
+												d={calculateDonutPath(
+													segment.startAngle,
+													segment.endAngle,
+												)}
+												fill={segment.color}
+												tabindex="0"
+												aria-label={`${segment.label}：${segment.value} 项技能，占 ${percentage(segment.value, totalLevel)}%`}
+												data-skill-level={segment.key}
+												data-skill-label={segment.label}
+												data-skill-value={segment.value}
+												data-skill-percentage={percentage(
+													segment.value,
+													totalLevel,
+												)}
+												data-skill-color={segment.color}
+											/>
+											<path
+												class="skills-donut-segment skills-donut-segment-expanded"
+												d={calculateDonutPath(
+													segment.startAngle,
+													segment.endAngle,
+													43,
+												)}
+												fill={segment.color}
+												aria-hidden="true"
+											/>
+										</g>
+									),
+							)}
+						</svg>
+					) : (
+						<span class="skills-chart-empty">暂无数据</span>
+					)
+				}
 			</div>
 			<ul class="skills-level-legend" aria-label="技能等级图例">
-				{levelData.map((item) => (
-					<li>
-						<span class="skills-level-label">
-							<span class="skills-legend-swatch" style={`background: ${item.color}`} aria-hidden="true"></span>
-							<span>{item.label}</span>
-						</span>
-						<span class="skills-level-value">
-							<strong>{item.value}</strong>
-							<small>{percentage(item.value, totalLevel)}%</small>
-						</span>
-					</li>
-				))}
+				{
+					levelData.map((item) => (
+						<li>
+							<span class="skills-level-label">
+								<span
+									class="skills-legend-swatch"
+									style={`background: ${item.color}`}
+									aria-hidden="true"
+								/>
+								<span>{item.label}</span>
+							</span>
+							<span class="skills-level-value">
+								<strong>{item.value}</strong>
+								<small>
+									{percentage(item.value, totalLevel)}%
+								</small>
+							</span>
+						</li>
+					))
+				}
 			</ul>
-			<div class="skills-donut-tooltip" data-skills-donut-tooltip hidden role="tooltip" aria-hidden="true">
-				<span class="skills-donut-tooltip-swatch" data-skills-tooltip-swatch aria-hidden="true"></span>
+			<div
+				class="skills-donut-tooltip"
+				data-skills-donut-tooltip
+				hidden
+				role="tooltip"
+				aria-hidden="true"
+			>
+				<span
+					class="skills-donut-tooltip-swatch"
+					data-skills-tooltip-swatch
+					aria-hidden="true"></span>
 				<div class="skills-donut-tooltip-content">
 					<strong data-skills-tooltip-label>技能等级</strong>
-					<span><b data-skills-tooltip-value>0</b> 项技能 · 占 <b data-skills-tooltip-percentage>0</b>%</span>
+					<span
+						><b data-skills-tooltip-value>0</b> 项技能 · 占 <b
+							data-skills-tooltip-percentage>0</b
+						>%</span
+					>
 				</div>
 			</div>
 		</section>
 
-		<section class="skills-overview-panel skills-category-panel" aria-labelledby="skills-category-heading">
+		<section
+			class="skills-overview-panel skills-category-panel"
+			aria-labelledby="skills-category-heading"
+		>
 			<h3 id="skills-category-heading">
-				<span class="skills-overview-marker skills-category-marker" aria-hidden="true"></span>
+				<span
+					class="skills-overview-marker skills-category-marker"
+					aria-hidden="true"></span>
 				按分类分布
 			</h3>
 			<div class="skills-category-list">
-				{categoryData.map((item) => (
-					<div class="skills-category-row">
-						<div class="skills-category-label">
-							<span class="skills-category-name">{item.label}</span>
-							<span class="skills-category-count">{item.value}</span>
-							<span class="skills-category-percentage">{percentage(item.value, stats.total)}%</span>
+				{
+					categoryData.map((item) => (
+						<div class="skills-category-row">
+							<div class="skills-category-label">
+								<span class="skills-category-name">
+									{item.label}
+								</span>
+								<span class="skills-category-count">
+									{item.value}
+								</span>
+								<span class="skills-category-percentage">
+									{percentage(item.value, stats.total)}%
+								</span>
+							</div>
+							<div
+								class="skills-category-track"
+								role="progressbar"
+								aria-label={`${item.label}技能数量`}
+								aria-valuenow={item.value}
+								aria-valuemin="0"
+								aria-valuemax={maxCategory}
+							>
+								<span
+									class="skills-category-fill"
+									style={`--skill-overview-color: ${item.color}; --skill-overview-width: ${(item.value / maxCategory) * 100}%`}
+								/>
+							</div>
 						</div>
-						<div
-							class="skills-category-track"
-							role="progressbar"
-							aria-label={`${item.label}技能数量`}
-							aria-valuenow={item.value}
-							aria-valuemin="0"
-							aria-valuemax={maxCategory}
-						>
-							<span
-								class="skills-category-fill"
-								style={`--skill-overview-color: ${item.color}; --skill-overview-width: ${(item.value / maxCategory) * 100}%`}
-							></span>
-						</div>
-					</div>
-				))}
+					))
+				}
 			</div>
 			<div class="skills-summary-stats">
 				<div class="skills-summary-stat skills-experience-stat">
@@ -255,7 +375,9 @@ const experienceValue = `${averageExperience.years}.${averageExperience.months.t
 		transform: scale(0.93);
 		transform-box: view-box;
 		transform-origin: 50% 50%;
-		transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+		transition:
+			opacity 0.2s var(--ease-out),
+			transform 0.2s var(--ease-out);
 	}
 
 	.skills-donut-segment-group:focus-within .skills-donut-segment-expanded {
@@ -364,7 +486,8 @@ const experienceValue = `${averageExperience.years}.${averageExperience.months.t
 		max-width: calc(100vw - 32px);
 		box-sizing: border-box;
 		border: 1px solid var(--line);
-		border-left: 3px solid var(--skills-tooltip-color, var(--colorful-green));
+		border-left: 3px solid
+			var(--skills-tooltip-color, var(--colorful-green));
 		border-radius: 3px;
 		background: rgba(255, 255, 255, 0.96);
 		box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
@@ -373,7 +496,9 @@ const experienceValue = `${averageExperience.years}.${averageExperience.months.t
 		opacity: 0;
 		transform: translateY(6px) scale(0.97);
 		transform-origin: bottom right;
-		transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+		transition:
+			opacity 0.2s var(--ease-out),
+			transform 0.2s var(--ease-out);
 		pointer-events: none;
 	}
 
@@ -430,7 +555,8 @@ const experienceValue = `${averageExperience.years}.${averageExperience.months.t
 		}
 
 		.skills-donut-segment-group:hover .skills-donut-segment-expanded,
-		.skills-donut-segment-group:focus-within .skills-donut-segment-expanded {
+		.skills-donut-segment-group:focus-within
+			.skills-donut-segment-expanded {
 			transform: none;
 		}
 

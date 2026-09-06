@@ -40,23 +40,29 @@ const { album } = Astro.props;
 			</address>
 
 			<div class="photo-grid">
-				{album.photos.map((photo) => (
-					<a
-						href={photo.url}
-						class="lqip-wrap"
-						data-fancybox="album"
-						data-caption={photo.name}
-						title={photo.name}
-					>
-						<span class="lqip-placeholder" style={getLqipProps(photo.url).style} aria-hidden="true"></span>
-					<ResponsiveImage
-						src={photo.url}
-						alt={photo.name}
-						loading="lazy"
-						sizes="(max-width: 680px) 50vw, 330px"
-					/>
-					</a>
-				))}
+				{
+					album.photos.map((photo) => (
+						<a
+							href={photo.url}
+							class="lqip-wrap"
+							data-fancybox="album"
+							data-caption={photo.name}
+							title={photo.name}
+						>
+							<span
+								class="lqip-placeholder"
+								style={getLqipProps(photo.url).style}
+								aria-hidden="true"
+							/>
+							<ResponsiveImage
+								src={photo.url}
+								alt={photo.name}
+								loading="lazy"
+								sizes="(max-width: 680px) 50vw, 330px"
+							/>
+						</a>
+					))
+				}
 			</div>
 		</article>
 	</div>

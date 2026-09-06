@@ -30,42 +30,64 @@ const getFriendFaviconFallback = (url: string) =>
 			</div>
 
 			<div class="link-content">
-				{friends.map((f) => (
-					<a
-						href={f.url}
-						target="_blank"
-						rel="nofollow noopener noreferrer"
-						title={f.description || f.name}
-					>
-						<div class="friend-card-head">
-							<span class="friend-card-avatar" aria-hidden="true">
-								<span class="friend-card-avatar-fallback">{f.name.slice(0, 1)}</span>
-								<img
-									src={f.avatar || getFriendFavicon(f.url)}
-									data-fallback-src={getFriendFaviconFallback(f.url)}
-									alt=""
-									loading="lazy"
-									decoding="async"
-									onerror="if (this.dataset.fallbackSrc && this.getAttribute('src') !== this.dataset.fallbackSrc) { this.setAttribute('src', this.dataset.fallbackSrc); } else { this.remove(); }"
+				{
+					friends.map((f) => (
+						<a
+							href={f.url}
+							target="_blank"
+							rel="nofollow noopener noreferrer"
+							title={f.description || f.name}
+						>
+							<div class="friend-card-head">
+								<span
+									class="friend-card-avatar"
+									aria-hidden="true"
+								>
+									<span class="friend-card-avatar-fallback">
+										{f.name.slice(0, 1)}
+									</span>
+									<img
+										src={
+											f.avatar || getFriendFavicon(f.url)
+										}
+										data-fallback-src={getFriendFaviconFallback(
+											f.url,
+										)}
+										alt=""
+										loading="lazy"
+										decoding="async"
+										onerror="if (this.dataset.fallbackSrc && this.getAttribute('src') !== this.dataset.fallbackSrc) { this.setAttribute('src', this.dataset.fallbackSrc); } else { this.remove(); }"
+									/>
+								</span>
+								<span class="friend-card-heading">
+									<span class="fname">{f.name}</span>
+									<span class="friend-domain">
+										{getFriendHostname(f.url)}
+									</span>
+								</span>
+							</div>
+							{f.description && (
+								<div class="fdes">{f.description}</div>
+							)}
+							{f.tags.length > 0 && (
+								<div class="friend-card-tags" aria-label="标签">
+									{f.tags.map((tag) => (
+										<span class="friend-card-tag">
+											#{tag}
+										</span>
+									))}
+								</div>
+							)}
+							<span class="friend-card-action">
+								<span>访问站点</span>
+								<i
+									class="fa fa-external-link"
+									aria-hidden="true"
 								/>
 							</span>
-							<span class="friend-card-heading">
-								<span class="fname">{f.name}</span>
-								<span class="friend-domain">{getFriendHostname(f.url)}</span>
-							</span>
-						</div>
-						{f.description && <div class="fdes">{f.description}</div>}
-						{f.tags.length > 0 && (
-							<div class="friend-card-tags" aria-label="标签">
-								{f.tags.map((tag) => <span class="friend-card-tag">#{tag}</span>)}
-							</div>
-						)}
-						<span class="friend-card-action">
-							<span>访问站点</span>
-							<i class="fa fa-external-link" aria-hidden="true"></i>
-						</span>
-					</a>
-				))}
+						</a>
+					))
+				}
 			</div>
 		</article>
 	</div>

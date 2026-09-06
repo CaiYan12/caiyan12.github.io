@@ -23,24 +23,30 @@ const showHot = post.data.hotness >= 4;
 <article class="post-list" role="article">
 	<header class="post-header">
 		<h2>
-			{post.data.pinned && (
-				<>
-					<span class="good-label">置顶</span>
-					<i class="good-arrow"></i>
-				</>
-			)}
-			{showNew && (
-				<>
-					<span class="new-label">近期更新</span>
-					<i class="new-arrow"></i>
-				</>
-			)}
-			{!post.data.pinned && showHot && effectiveComments >= 50 && (
-				<>
-					<span class="hot-label">热门</span>
-					<i class="hot-arrow"></i>
-				</>
-			)}
+			{
+				post.data.pinned && (
+					<>
+						<span class="good-label">置顶</span>
+						<i class="good-arrow" />
+					</>
+				)
+			}
+			{
+				showNew && (
+					<>
+						<span class="new-label">近期更新</span>
+						<i class="new-arrow" />
+					</>
+				)
+			}
+			{
+				!post.data.pinned && showHot && effectiveComments >= 50 && (
+					<>
+						<span class="hot-label">热门</span>
+						<i class="hot-arrow" />
+					</>
+				)
+			}
 			<a rel="bookmark" title={title} href={url}>
 				{title}
 			</a>
@@ -56,28 +62,35 @@ const showHot = post.data.hotness >= 4;
 			<i class="fa fa-calendar" aria-hidden="true"></i>
 			{dayjs(published).format("YYYY年MM月DD日")}
 		</span>
-		{category && (
-			<span class="pcate">
-				<i class="fa fa-folder-open-o" aria-hidden="true"></i>
-				<a
-					href={`/category/${encodeURIComponent(category)}/`}
-					title={`查看${category}下的全部文章`}
-				>
-					{category}
-				</a>
-			</span>
-		)}
+		{
+			category && (
+				<span class="pcate">
+					<i class="fa fa-folder-open-o" aria-hidden="true" />
+					<a
+						href={`/category/${encodeURIComponent(category)}/`}
+						title={`查看${category}下的全部文章`}
+					>
+						{category}
+					</a>
+				</span>
+			)
+		}
 		<span class="pview">
 			<i class="fa fa-comments" aria-hidden="true"></i>
-			{effectiveComments > 0 ? (
-				<a title={`查看《${title}》的吐槽`} href={`${url}#comments`}>
-					{effectiveComments}次吐槽
-				</a>
-			) : (
-				<a title="抢沙发" href={`${url}#comments`}>
-					抢沙发
-				</a>
-			)}
+			{
+				effectiveComments > 0 ? (
+					<a
+						title={`查看《${title}》的吐槽`}
+						href={`${url}#comments`}
+					>
+						{effectiveComments}次吐槽
+					</a>
+				) : (
+					<a title="抢沙发" href={`${url}#comments`}>
+						抢沙发
+					</a>
+				)
+			}
 		</span>
 	</div>
 

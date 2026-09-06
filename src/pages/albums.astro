@@ -6,7 +6,11 @@ import { getLqipProps } from "../utils/lqip-utils";
 const albums = scanAlbums();
 ---
 
-<MainGridLayout title="相册图库" description="WindowsIt 的相册图库" showSidebar={false}>
+<MainGridLayout
+	title="相册图库"
+	description="WindowsIt 的相册图库"
+	showSidebar={false}
+>
 	<div class="page">
 		<article role="article">
 			<header class="post-header">
@@ -22,34 +26,49 @@ const albums = scanAlbums();
 				相册图库
 			</address>
 
-			{albums.length > 0 ? (
-				<div class="album-grid">
-					{albums.map((album) => (
-						<a
-							href={`/albums/${encodeURIComponent(album.slug)}/`}
-							class="album-card"
-							title={`查看相册：${album.name}`}
-						>
-							<span class="album-cover">
-								<span class="lqip-placeholder" style={getLqipProps(album.cover).style} aria-hidden="true"></span>
-								<img src={album.cover} alt={album.name} loading="lazy" />
-								<span class="album-count">{album.photos.length} 张</span>
-							</span>
-							<span class="album-name">
-								<i class="fa fa-picture-o" aria-hidden="true"></i>
-								{album.name}
-							</span>
-						</a>
-					))}
-				</div>
-			) : (
-				<div class="post-context">
-					<p>
-						还没有相册。在 <code>public/images/albums/</code>{" "}
-						下新建文件夹（每张图片即一张照片），即可生成相册。
-					</p>
-				</div>
-			)}
+			{
+				albums.length > 0 ? (
+					<div class="album-grid">
+						{albums.map((album) => (
+							<a
+								href={`/albums/${encodeURIComponent(album.slug)}/`}
+								class="album-card"
+								title={`查看相册：${album.name}`}
+							>
+								<span class="album-cover">
+									<span
+										class="lqip-placeholder"
+										style={getLqipProps(album.cover).style}
+										aria-hidden="true"
+									/>
+									<img
+										src={album.cover}
+										alt={album.name}
+										loading="lazy"
+									/>
+									<span class="album-count">
+										{album.photos.length} 张
+									</span>
+								</span>
+								<span class="album-name">
+									<i
+										class="fa fa-picture-o"
+										aria-hidden="true"
+									/>
+									{album.name}
+								</span>
+							</a>
+						))}
+					</div>
+				) : (
+					<div class="post-context">
+						<p>
+							还没有相册。在 <code>public/images/albums/</code>{" "}
+							下新建文件夹（每张图片即一张照片），即可生成相册。
+						</p>
+					</div>
+				)
+			}
 		</article>
 	</div>
 </MainGridLayout>

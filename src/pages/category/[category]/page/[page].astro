@@ -4,7 +4,11 @@ import PostCard from "../../../../components/layout/PostCard.astro";
 import Pagination from "../../../../components/layout/Pagination.astro";
 import { getCollection } from "astro:content";
 import type { GetStaticPaths } from "astro";
-import { getCategoryList, getSortedPosts, isPublicPost } from "../../../../utils/content-utils";
+import {
+	getCategoryList,
+	getSortedPosts,
+	isPublicPost,
+} from "../../../../utils/content-utils";
 import { getPaginationUrl } from "../../../../utils/pagination";
 import { siteConfig } from "../../../../config";
 
@@ -37,7 +41,9 @@ const total = page.lastPage;
 	description={`分类 ${name} 下的全部文章`}
 	canonicalUrl={getPaginationUrl(rootUrl, current)}
 	prevUrl={current > 1 ? getPaginationUrl(rootUrl, current - 1) : undefined}
-	nextUrl={current < total ? getPaginationUrl(rootUrl, current + 1) : undefined}
+	nextUrl={current < total
+		? getPaginationUrl(rootUrl, current + 1)
+		: undefined}
 >
 	<div class="page category-page">
 		<header class="post-header">
@@ -62,16 +68,21 @@ const total = page.lastPage;
 
 		<ul id="blogtags">
 			<li class="tag-cloud-items">
-				{categories.map((cat) => (
-					<a
-						href={`/category/${encodeURIComponent(cat.name)}/`}
-						title={`${cat.count}篇文章`}
-						aria-current={cat.name === name ? "page" : undefined}
-						class:list={[{ "is-current": cat.name === name }]}
-					>
-						{cat.name}<span class="tag-count">&times;{cat.count}</span>
-					</a>
-				))}
+				{
+					categories.map((cat) => (
+						<a
+							href={`/category/${encodeURIComponent(cat.name)}/`}
+							title={`${cat.count}篇文章`}
+							aria-current={
+								cat.name === name ? "page" : undefined
+							}
+							class:list={[{ "is-current": cat.name === name }]}
+						>
+							{cat.name}
+							<span class="tag-count">&times;{cat.count}</span>
+						</a>
+					))
+				}
 			</li>
 		</ul>
 	</div>

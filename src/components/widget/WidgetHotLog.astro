@@ -11,19 +11,31 @@ const isHomePage =
 	Astro.url.pathname === "/" || /^\/page\/\d+\/?$/.test(Astro.url.pathname);
 ---
 
-{isHomePage && (
-	<WidgetLayout title="热门推荐" icon="fa-fire">
-		<ul id="hotlog">
-			{hotPosts.map((post, index) => (
-				<li>
-					<em class={index === 0 ? "hotone" : index === 1 ? "hottwo" : index === 2 ? "hotthree" : "hotSoSo"}>
-						{index + 1}
-					</em>
-					<a href={`/posts/${post.id}/`} title={post.data.title}>
-						{post.data.title}
-					</a>
-				</li>
-			))}
-		</ul>
-	</WidgetLayout>
-)}
+{
+	isHomePage && (
+		<WidgetLayout title="热门推荐" icon="fa-fire">
+			<ul id="hotlog">
+				{hotPosts.map((post, index) => (
+					<li>
+						<em
+							class={
+								index === 0
+									? "hotone"
+									: index === 1
+										? "hottwo"
+										: index === 2
+											? "hotthree"
+											: "hotSoSo"
+							}
+						>
+							{index + 1}
+						</em>
+						<a href={`/posts/${post.id}/`} title={post.data.title}>
+							{post.data.title}
+						</a>
+					</li>
+				))}
+			</ul>
+		</WidgetLayout>
+	)
+}

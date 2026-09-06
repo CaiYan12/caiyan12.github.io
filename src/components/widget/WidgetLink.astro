@@ -5,13 +5,20 @@ import { friends } from "../../data/friends";
 
 <WidgetLayout title="友情链接" icon="fa-link">
 	<ul id="link">
-		{friends.map((f) => (
-			<li>
-				<i class="fa fa-angle-right" aria-hidden="true"></i>
-				<a href={f.url} target="_blank" rel="nofollow" title={f.description}>
-					{f.name}
-				</a>
-			</li>
-		))}
+		{
+			friends.map((f) => (
+				<li>
+					<i class="fa fa-angle-right" aria-hidden="true" />
+					<a
+						href={f.url}
+						target="_blank"
+						rel="nofollow"
+						title={f.description}
+					>
+						{f.name}
+					</a>
+				</li>
+			))
+		}
 	</ul>
 </WidgetLayout>

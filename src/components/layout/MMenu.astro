@@ -3,7 +3,8 @@ import { navBarConfig } from "../../config";
 
 const pathname = Astro.url.pathname;
 const isCurrent = (url: string) =>
-	pathname === url || (url !== "/" && pathname.startsWith(url.replace(/\/$/, "")));
+	pathname === url ||
+	(url !== "/" && pathname.startsWith(url.replace(/\/$/, "")));
 ---
 
 <!-- 移动端全屏菜单（对应 #mmenu） -->
@@ -14,76 +15,106 @@ const isCurrent = (url: string) =>
 		<li>
 			<div class="msearch">
 				<form name="keyform" method="get" action="/search/">
-					<input type="text" name="keyword" placeholder="搜搜更健康" />
+					<input
+						type="text"
+						name="keyword"
+						placeholder="搜搜更健康"
+					/>
 					<input type="submit" name="submit" value="搜索" />
 				</form>
 			</div>
 		</li>
-		{navBarConfig.items.map((item) => (
-			<li class:list={[{ current: isCurrent(item.url) }]}>
-				<a href={item.url}>{item.name}</a>
-			</li>
-		))}
+		{
+			navBarConfig.items.map((item) => (
+				<li class:list={[{ current: isCurrent(item.url) }]}>
+					<a href={item.url}>{item.name}</a>
+				</li>
+			))
+		}
 		<li
 			class:list={[
 				{
-					current: navBarConfig.archiveSite.some((item) => isCurrent(item.url)),
+					current: navBarConfig.archiveSite.some((item) =>
+						isCurrent(item.url),
+					),
 				},
 			]}
 		>
 			<a href="javascript:void(0)">文章归档</a>
 			<ul class="submenu">
-				{navBarConfig.archiveSite.map((item) => (
-					<li class:list={[{ current: isCurrent(item.url) }]}>
-						<a href={item.url}>{item.name}</a>
-					</li>
-				))}
+				{
+					navBarConfig.archiveSite.map((item) => (
+						<li class:list={[{ current: isCurrent(item.url) }]}>
+							<a href={item.url}>{item.name}</a>
+						</li>
+					))
+				}
 			</ul>
 		</li>
 		<li
 			class:list={[
 				{
-					current: navBarConfig.aboutSite.some((item) => isCurrent(item.url)),
+					current: navBarConfig.aboutSite.some((item) =>
+						isCurrent(item.url),
+					),
 				},
 			]}
 		>
 			<a href="javascript:void(0)">关于本站</a>
 			<ul class="submenu">
-				{navBarConfig.aboutSite.map((item) => (
-					<li class:list={[{ current: isCurrent(item.url) }]}>
-						<a href={item.url}>{item.name}</a>
-					</li>
-				))}
+				{
+					navBarConfig.aboutSite.map((item) => (
+						<li class:list={[{ current: isCurrent(item.url) }]}>
+							<a href={item.url}>{item.name}</a>
+						</li>
+					))
+				}
 			</ul>
 		</li>
 		<li>
 			<a href="javascript:void(0)">附加功能</a>
 			<ul class="submenu">
-				{navBarConfig.extra.map((item) => (
-					<li>
-						<a href={item.url}>{item.name}</a>
-					</li>
-				))}
+				{
+					navBarConfig.extra.map((item) => (
+						<li>
+							<a href={item.url}>{item.name}</a>
+						</li>
+					))
+				}
 			</ul>
 		</li>
 		<li
 			class:list={[
 				{
-					current: navBarConfig.resourceSite.some((item) => isCurrent(item.url)),
+					current: navBarConfig.resourceSite.some((item) =>
+						isCurrent(item.url),
+					),
 				},
 			]}
 		>
 			<a href="javascript:void(0)">本站资源</a>
 			<ul class="submenu">
-				{navBarConfig.resourceSite.map((item) => (
-					<li class:list={[{ current: isCurrent(item.url) }]}>
-						<a href={item.url} data-no-swup={item.noSwup ? "" : undefined}>{item.name}</a>
-					</li>
-				))}
+				{
+					navBarConfig.resourceSite.map((item) => (
+						<li class:list={[{ current: isCurrent(item.url) }]}>
+							<a
+								href={item.url}
+								data-no-swup={item.noSwup ? "" : undefined}
+							>
+								{item.name}
+							</a>
+						</li>
+					))
+				}
 			</ul>
 		</li>
 		<li>
-			<button id="close-nav" class="close-nav" type="button" aria-label="关闭导航菜单">
+			<button
+				id="close-nav"
+				class="close-nav"
+				type="button"
+				aria-label="关闭导航菜单"
+			>
 				<i class="fa fa-times" aria-hidden="true"></i>
 			</button>
 		</li>

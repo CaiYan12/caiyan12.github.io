@@ -10,10 +10,7 @@ import { siteConfig } from "../../config";
 const allPosts = await getCollection("posts");
 const hotPosts = getHotPosts(allPosts, Infinity);
 const rootUrl = "/hot/";
-const pages = Math.max(
-	1,
-	Math.ceil(hotPosts.length / siteConfig.postsPerPage),
-);
+const pages = Math.max(1, Math.ceil(hotPosts.length / siteConfig.postsPerPage));
 const pagePosts = hotPosts.slice(0, siteConfig.postsPerPage);
 ---
 

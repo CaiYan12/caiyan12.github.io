@@ -8,15 +8,17 @@ const latest = [...diary].slice(0, 4);
 
 <WidgetLayout title="最新微语" icon="fa-twitter">
 	<ul class="widget-twitter-list">
-		{latest.map((item) => (
-			<li title={item.content}>
-				<i class="fa fa-angle-right" aria-hidden="true"></i>
-				<a href="/diary/" title="查看更多微言碎语">
-					{item.content.slice(0, 30)}
-					{item.content.length > 30 ? "…" : ""}
-				</a>
-				<span>{dayjs(item.date).format("MM-DD")}</span>
-			</li>
-		))}
+		{
+			latest.map((item) => (
+				<li title={item.content}>
+					<i class="fa fa-angle-right" aria-hidden="true" />
+					<a href="/diary/" title="查看更多微言碎语">
+						{item.content.slice(0, 30)}
+						{item.content.length > 30 ? "…" : ""}
+					</a>
+					<span>{dayjs(item.date).format("MM-DD")}</span>
+				</li>
+			))
+		}
 	</ul>
 </WidgetLayout>

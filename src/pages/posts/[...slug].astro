@@ -3,11 +3,7 @@ import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import Giscus from "../../components/comment/Giscus.astro";
 import dayjs from "dayjs";
 import { getCollection, render } from "astro:content";
-import {
-	getHotPosts,
-	getNeighbors,
-	getCover,
-} from "../../utils/content-utils";
+import { getHotPosts, getNeighbors, getCover } from "../../utils/content-utils";
 import { siteConfig } from "../../config";
 import { getEffectiveComments } from "../../utils/site-stats";
 import QRCode from "qrcode";
@@ -84,7 +80,12 @@ const starLevel = (comments: number) => {
 	/>
 	<div class="page">
 		<figure class="post-cover lqip-wrap">
-			<div class="lqip-placeholder" style={getLqipProps(cover).style} aria-hidden="true"></div>
+			<div
+				class="lqip-placeholder"
+				style={getLqipProps(cover).style}
+				aria-hidden="true"
+			>
+			</div>
 			<ResponsiveImage
 				src={cover}
 				alt={title}
@@ -104,16 +105,18 @@ const starLevel = (comments: number) => {
 				<a href="/" title="返回首页">首页</a>
 				&raquo;
 				<i class="fa fa-folder-open-o" aria-hidden="true"></i>
-				{category ? (
-					<a
-						href={`/category/${encodeURIComponent(category)}/`}
-						title={`查看${category}下的全部文章`}
-					>
-						{category}
-					</a>
-				) : (
-					"未分类"
-				)}
+				{
+					category ? (
+						<a
+							href={`/category/${encodeURIComponent(category)}/`}
+							title={`查看${category}下的全部文章`}
+						>
+							{category}
+						</a>
+					) : (
+						"未分类"
+					)
+				}
 				&raquo;
 				<i class="fa fa-clock-o" aria-hidden="true"></i>
 				{dayjs(published).format("YYYY年M月D日")}
@@ -131,12 +134,17 @@ const starLevel = (comments: number) => {
 				<PostToc headings={headings} />
 				<Content />
 
-				{updated && (
-					<p class="post-last-updated">
-						<i class="fa fa-pencil-square-o" aria-hidden="true"></i>
-						最后更新于 {dayjs(updated).format("YYYY年M月D日")}
-					</p>
-				)}
+				{
+					updated && (
+						<p class="post-last-updated">
+							<i
+								class="fa fa-pencil-square-o"
+								aria-hidden="true"
+							/>
+							最后更新于 {dayjs(updated).format("YYYY年M月D日")}
+						</p>
+					)
+				}
 
 				<div class="post-lisence">
 					<div class="qrimg">
@@ -156,18 +164,20 @@ const starLevel = (comments: number) => {
 					<div class="post-tags">
 						<i class="fa fa-tags" aria-hidden="true"></i>
 						本文标签：
-						{tags.length > 0 ? (
-							tags.map((tag) => (
-								<a
-									rel="tag"
-									href={`/tag/${encodeURIComponent(tag)}/`}
-								>
-									{tag}
-								</a>
-							))
-						) : (
-							<span>这篇文章木有标签</span>
-						)}
+						{
+							tags.length > 0 ? (
+								tags.map((tag) => (
+									<a
+										rel="tag"
+										href={`/tag/${encodeURIComponent(tag)}/`}
+									>
+										{tag}
+									</a>
+								))
+							) : (
+								<span>这篇文章木有标签</span>
+							)
+						}
 					</div>
 					<License author={author} />
 					<br />
@@ -189,79 +199,89 @@ const starLevel = (comments: number) => {
 				</div>
 
 				<div class="post-navigation">
-					{prev && (
-						<a
-							rel="prev"
-							href={`/posts/${prev.id}/`}
-							class="prev"
-							title={prev.data.title}
-						>
-							<span class="icon-wrap"></span>
-							<h3>
-								<span class="post-navigation-title">{prev.data.title}</span>
-							</h3>
-						</a>
-					)}
-					{next && (
-						<a
-							rel="next"
-							href={`/posts/${next.id}/`}
-							class="next"
-							title={next.data.title}
-						>
-							<span class="icon-wrap"></span>
-							<h3>
-								<span class="post-navigation-title">{next.data.title}</span>
-							</h3>
-						</a>
-					)}
+					{
+						prev && (
+							<a
+								rel="prev"
+								href={`/posts/${prev.id}/`}
+								class="prev"
+								title={prev.data.title}
+							>
+								<span class="icon-wrap" />
+								<h3>
+									<span class="post-navigation-title">
+										{prev.data.title}
+									</span>
+								</h3>
+							</a>
+						)
+					}
+					{
+						next && (
+							<a
+								rel="next"
+								href={`/posts/${next.id}/`}
+								class="next"
+								title={next.data.title}
+							>
+								<span class="icon-wrap" />
+								<h3>
+									<span class="post-navigation-title">
+										{next.data.title}
+									</span>
+								</h3>
+							</a>
+						)
+					}
 				</div>
 			</div>
 		</article>
 
 		{/* 热门推荐（对应 echo_log.php 的 post-related） */}
-		{hotPosts.length > 0 && (
-			<div class="post-related">
-				<h3>
-					<i class="fa fa-fire" aria-hidden="true"></i> 热门推荐
-				</h3>
-				<ul>
-					{hotPosts.map((p) => (
-						<li>
-							<div class="thumb">
-								<a
-									href={`/posts/${p.id}/`}
-									title={`查看文章：${p.data.title}`}
-								>
-									<img
-										src={getCover(p)}
-										alt={p.data.title}
-										loading="lazy"
+		{
+			hotPosts.length > 0 && (
+				<div class="post-related">
+					<h3>
+						<i class="fa fa-fire" aria-hidden="true" /> 热门推荐
+					</h3>
+					<ul>
+						{hotPosts.map((p) => (
+							<li>
+								<div class="thumb">
+									<a
+										href={`/posts/${p.id}/`}
+										title={`查看文章：${p.data.title}`}
+									>
+										<img
+											src={getCover(p)}
+											alt={p.data.title}
+											loading="lazy"
+										/>
+									</a>
+								</div>
+								<div class="title">
+									<a
+										href={`/posts/${p.id}/`}
+										title={`查看文章：${p.data.title}`}
+									>
+										{p.data.title}
+									</a>
+								</div>
+								<div class="modified">
+									热门指数：
+									<span
+										class="star-rating"
+										style={`--level: ${starLevel(getEffectiveComments(p))}`}
 									/>
-								</a>
-							</div>
-							<div class="title">
-								<a
-									href={`/posts/${p.id}/`}
-									title={`查看文章：${p.data.title}`}
-								>
-									{p.data.title}
-								</a>
-							</div>
-							<div class="modified">
-								热门指数：
-								<span
-									class="star-rating"
-									style={`--level: ${starLevel(getEffectiveComments(p))}`}
-								></span>
-							</div>
-						</li>
-					))}
-				</ul>
-				<div class="clear"></div>
-				<div class="cutline"></div>
-			</div>
-		)}
+								</div>
+							</li>
+						))}
+					</ul>
+					<div class="clear" />
+					<div class="cutline" />
+				</div>
+			)
+		}
 
 		{/* Giscus 评论（对应 blog_comments + blog_comments_post） */}
 		<Giscus />

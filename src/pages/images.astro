@@ -36,21 +36,32 @@ const wallImages = allPosts
 
 			<div class="imageswall">
 				<div class="grid">
-					{wallImages.map((item) => (
-						<a class="image-card" href={item.url} title={item.title}>
-							<span class="imgtext">{item.title}</span>
-							<ResponsiveImage
-								src={item.image}
-								alt={item.title}
-								loading="lazy"
-								sizes="(max-width: 680px) 33vw, 240px"
-							/>
-							<span class="meta">
-								<i class="fa fa-calendar" aria-hidden="true"></i>
-								{dayjs(item.published).format("YYYY年MM月DD日")}
-							</span>
-						</a>
-					))}
+					{
+						wallImages.map((item) => (
+							<a
+								class="image-card"
+								href={item.url}
+								title={item.title}
+							>
+								<span class="imgtext">{item.title}</span>
+								<ResponsiveImage
+									src={item.image}
+									alt={item.title}
+									loading="lazy"
+									sizes="(max-width: 680px) 33vw, 240px"
+								/>
+								<span class="meta">
+									<i
+										class="fa fa-calendar"
+										aria-hidden="true"
+									/>
+									{dayjs(item.published).format(
+										"YYYY年MM月DD日",
+									)}
+								</span>
+							</a>
+						))
+					}
 				</div>
 			</div>
 		</article>

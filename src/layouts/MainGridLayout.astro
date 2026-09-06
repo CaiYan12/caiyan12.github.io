@@ -39,13 +39,15 @@ const { showSidebar = true, searchIndex = false } = Astro.props;
 		<Navbar />
 
 		<div id="wrapper" class="wrapper-box">
-			<main
-				id="main"
-				class="transition-swup-fade"
-			>
+			<main id="main" class="transition-swup-fade">
 				<div id="container">
 					<div id="anitOut"></div>
-					<div class:list={["main-grid", !showSidebar && "main-grid-full"]}>
+					<div
+						class:list={[
+							"main-grid",
+							!showSidebar && "main-grid-full",
+						]}
+					>
 						<div
 							id="content"
 							role="main"

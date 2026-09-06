@@ -10,14 +10,16 @@ const tags = getTagList(allPosts);
 <WidgetLayout title="标签云" icon="fa-tags">
 	<ul id="blogtags">
 		<li class="tag-cloud-items">
-			{tags.map((tag) => (
-				<a
-					href={`/tag/${encodeURIComponent(tag.name)}/`}
-					title={`${tag.count}篇文章`}
-				>
-					{tag.name}
-				</a>
-			))}
+			{
+				tags.map((tag) => (
+					<a
+						href={`/tag/${encodeURIComponent(tag.name)}/`}
+						title={`${tag.count}篇文章`}
+					>
+						{tag.name}
+					</a>
+				))
+			}
 		</li>
 	</ul>
 </WidgetLayout>

@@ -17,24 +17,34 @@ const totalDays = Math.max(
 		<i class="fa fa-html5" aria-hidden="true"></i>
 		Copyright&nbsp;©&nbsp;{startYear}-{currentYear}&nbsp;{siteConfig.title}
 		<div class="copyright">
-			&nbsp;|&nbsp;勉强运行：<span id="runtime-days">{totalDays}</span>天&nbsp;|&nbsp;
-			{siteConfig.icp && (
-				<>
-					<a href="http://www.miibeian.gov.cn" target="_blank">
-						{siteConfig.icp}
-					</a>
-					&nbsp;|&nbsp;
-				</>
-			)}
+			&nbsp;|&nbsp;勉强运行：<span id="runtime-days">{totalDays}</span
+			>天&nbsp;|&nbsp;
+			{
+				siteConfig.icp && (
+					<>
+						<a href="http://www.miibeian.gov.cn" target="_blank">
+							{siteConfig.icp}
+						</a>
+						&nbsp;|&nbsp;
+					</>
+				)
+			}
 			{siteConfig.footerInfo}
-			{footerConfig.showEmlogCredit && (
-				<>
-					&nbsp;|&nbsp;自豪的采用 Astro&nbsp;驱动&nbsp;|&nbsp;主题移植自
-					<a href="http://limh.me" title="明月浩空" target="_blank">
-						Colorful
-					</a>
-				</>
-			)}
+			{
+				footerConfig.showEmlogCredit && (
+					<>
+						&nbsp;|&nbsp;自豪的采用
+						Astro&nbsp;驱动&nbsp;|&nbsp;主题移植自
+						<a
+							href="http://limh.me"
+							title="明月浩空"
+							target="_blank"
+						>
+							Colorful
+						</a>
+					</>
+				)
+			}
 		</div>
 	</address>
 </footer>

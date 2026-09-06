@@ -24,23 +24,30 @@ const categories = getCategoryList(allPosts);
 		</address>
 
 		<div class="post-context">
-			<p>共 {categories.length} 个分类 · 收录 {publicPosts.length} 篇文章</p>
+			<p>
+				共 {categories.length} 个分类 · 收录 {publicPosts.length} 篇文章
+			</p>
 			{categories.length === 0 && <p>暂无分类。</p>}
 		</div>
 
-		{categories.length > 0 && (
-			<ul id="blogtags">
-				<li class="tag-cloud-items">
-					{categories.map((cat) => (
-						<a
-							href={`/category/${encodeURIComponent(cat.name)}/`}
-							title={`${cat.count}篇文章`}
-						>
-							{cat.name}<span class="tag-count">&times;{cat.count}</span>
-						</a>
-					))}
-				</li>
-			</ul>
-		)}
+		{
+			categories.length > 0 && (
+				<ul id="blogtags">
+					<li class="tag-cloud-items">
+						{categories.map((cat) => (
+							<a
+								href={`/category/${encodeURIComponent(cat.name)}/`}
+								title={`${cat.count}篇文章`}
+							>
+								{cat.name}
+								<span class="tag-count">
+									&times;{cat.count}
+								</span>
+							</a>
+						))}
+					</li>
+				</ul>
+			)
+		}
 	</div>
 </MainGridLayout>

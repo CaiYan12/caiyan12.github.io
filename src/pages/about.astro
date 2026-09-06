@@ -20,7 +20,12 @@ const aboutContent = aboutPage ? await render(aboutPage) : null;
 let calendarHtml: string;
 try {
 	const raw = fs.readFileSync(
-		path.resolve(process.cwd(), "src", "constants", "github-contributions.json"),
+		path.resolve(
+			process.cwd(),
+			"src",
+			"constants",
+			"github-contributions.json",
+		),
 		"utf-8",
 	);
 	calendarHtml = renderContributionsCalendar(JSON.parse(raw));
@@ -35,7 +40,9 @@ try {
 	showSidebar={false}
 	searchIndex
 >
-	{/* 稿纸字体：平方时光体（ZeoSeven FontsAPI，src 含 local() 本机优先）+ 方正书宋（jsDelivr 分包，回退字体） */}
+	{
+		/* 稿纸字体：平方时光体（ZeoSeven FontsAPI，src 含 local() 本机优先）+ 方正书宋（jsDelivr 分包，回退字体） */
+	}
 	<head slot="head">
 		<link
 			rel="stylesheet"
@@ -57,25 +64,30 @@ try {
 				<i class="fa fa-home" aria-hidden="true"></i>
 				<a href="/" title="返回首页">首页</a>
 				&raquo;
-			<i class="fa fa-user" aria-hidden="true"></i>
-			关于我
+				<i class="fa fa-user" aria-hidden="true"></i>
+				关于我
 			</address>
 
 			<Fragment set:html={calendarHtml} />
 
-			{aboutContent ? (
-				<div class="post-context prose">
-					<aboutContent.Content />
-				</div>
-			) : (
-				<div class="post-context">
-					<p>
-						你好！我是 <b>{siteConfig.author}</b>，这里是
-						<b>{siteConfig.title}</b>。
-					</p>
-					<p>关于页面内容在 <code>src/content/spec/about.md</code> 中编辑。</p>
-				</div>
-			)}
+			{
+				aboutContent ? (
+					<div class="post-context prose">
+						<aboutContent.Content />
+					</div>
+				) : (
+					<div class="post-context">
+						<p>
+							你好！我是 <b>{siteConfig.author}</b>，这里是
+							<b>{siteConfig.title}</b>。
+						</p>
+						<p>
+							关于页面内容在{" "}
+							<code>src/content/spec/about.md</code> 中编辑。
+						</p>
+					</div>
+				)
+			}
 		</article>
 	</div>
 </MainGridLayout>
