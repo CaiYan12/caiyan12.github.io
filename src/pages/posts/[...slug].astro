@@ -75,7 +75,7 @@ const starLevel = (comments: number) => {
 	<script
 		is:inline
 		type="application/ld+json"
-		set:html={JSON.stringify(blogPostingJsonLd)}
+		set:html={JSON.stringify(blogPostingJsonLd).replace(/</g, "\\u003c")}
 		slot="head"
 	/>
 	<div class="page">
@@ -97,7 +97,7 @@ const starLevel = (comments: number) => {
 
 		<article role="article">
 			<header class="post-header">
-				<h2>{title.slice(0, 50)}</h2>
+				<h1>{title}</h1>
 			</header>
 
 			<address class="post-metaa">

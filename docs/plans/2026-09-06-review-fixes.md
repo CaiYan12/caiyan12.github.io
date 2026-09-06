@@ -60,11 +60,12 @@
 
 ## 阶段 5：视觉敏感三项（克制版，清单 #6/#10/#15）
 
-- [ ] 5.1 `Giscus.astro` 加载超时检测 + Colorful 风格失败提示卡 + 重试
-- [ ] 5.2 h1 层级：文章/独立页主标题 h2→h1；去 title.slice(0,50) 截断；站名 h1 不动；逐断点实测
-- [ ] 5.3 对比度：正文级灰字改 WCAG AA（--text-light #999→#767676 等逐处评估）；装饰/边框不动
-- [ ] 验证：全页视觉抽查（桌面+680px 截图对比）；对比度抽检 ≥4.5:1
-- [ ] commit 5
+- [x] 5.1 Giscus.astro：8s 超时检测 + IntersectionObserver 先确认用户看过评论区（data-loading="lazy" 下避免未滚动误报）→ 失败显示 Colorful 卡片风格提示（.giscus-fallback，白底圆角细边框）+ 重试按钮（按原脚本属性重建 script 重新加载）。**实施陷阱记录**：带内容的内联 `<script>` 位于三元表达式容器内会使 prettier-plugin-astro 脚本解析失败——watcher 必须渲染在表达式之外，靠 giscus-src 存在性自检实现"未启用即退出"
+- [x] 5.2 h1 层级：20 个页面主标题 h2→h1（posts/[...slug] + 19 个独立页/空态，node 脚本批量 + 复核每文件恰 1 个 h1）；去掉 title.slice(0,50) 无声截断；站名两处 h1 保留（1:1 还原）；CSS `.page .post-header` 与 `.post-header` 两组选择器追加 h1（PostCard 卡片标题保持 h2 层级不变）；实测文章页 h1 计算样式与原 h2 完全一致（20px/25px/#000）
+- [x] 5.3 对比度（正文级达 AA，装饰不动）：--text-light #999→#767676（17 处随 token 生效）、--colorful-muted #999aaa→#667a8a（保蓝灰调，边框用例随之略深）、.post-metaa/.post-toc summary/.skill-section h3 span 的 #999 与输入类 #aaa 四处 →#767676；#ccc 装饰性图标色不动
+- 附：JSON-LD `<` 转义已在本阶段与 [...slug] 改动同文件落地（4.8 顺延至此）
+- [x] 验证：format/check/build 全绿；Playwright 实测——route.abort 模拟 giscus.app 不可达：滚动到评论区 8s 后提示卡出现、点重试重新注入脚本并再武装超时（隐藏→再现）；h1 计算样式与改前一致；.post-metaa 计算色 #666（AA 达标）
+- [x] commit 5
 
 ## 阶段 6：测试面 + 列表页家族收敛（清单 #7→#5）
 

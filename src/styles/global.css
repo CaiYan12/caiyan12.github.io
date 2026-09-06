@@ -20,7 +20,8 @@
     --border: #eaeaea;
     --line: #ddd;
     --text: #000;
-    --text-light: #999;
+    /* #767676：正文级灰字达 WCAG AA（4.54:1）；装饰/边框不走此 token */
+    --text-light: #767676;
     --text-gray: #505050;
   }
 
@@ -471,6 +472,7 @@
     margin-left: 0;
     padding: 12px 0 8px 20px;
   }
+  .page .post-header h1,
   .page .post-header h2 {
     margin: 0;
     font-size: 20px;
@@ -1752,7 +1754,8 @@
 :root {
   --colorful-green: #00c000;
   --colorful-line: #ddd;
-  --colorful-muted: #999aaa;
+  /* #667a8a：文本用例达 AA（≈4.65:1），保留原 #999aaa 的蓝灰调；边框用例随之略深 */
+  --colorful-muted: #667a8a;
 }
 
 html {
@@ -2481,6 +2484,8 @@ img:hover {
   border-left: 3px solid #000;
 }
 
+.post-list .post-header h1,
+.post-header h1,
 .post-list .post-header h2,
 .post-header h2 {
   display: block;
@@ -2612,7 +2617,7 @@ img:hover {
   border: 1px solid var(--colorful-line);
   border-radius: 0;
   background: transparent;
-  color: #aaa;
+  color: #767676;
   font-size: 12px;
   line-height: 24px;
 }
@@ -2849,7 +2854,7 @@ img:hover {
   margin-bottom: 10px;
   padding: 10px 0 1px;
   border-bottom: 1px dotted var(--colorful-line);
-  color: #999;
+  color: #767676;
   font-size: 12px;
   font-style: normal;
 }
@@ -5272,7 +5277,7 @@ body,
 
 .post-toc summary span {
   margin-left: auto;
-  color: #999;
+  color: #767676;
   font-size: 12px;
   font-weight: 400;
 }
@@ -5462,7 +5467,7 @@ body,
 
 .skill-section > h3 span {
   margin-left: 8px;
-  color: #999;
+  color: #767676;
   font-size: 12px;
   font-weight: 400;
 }
@@ -5633,4 +5638,37 @@ body,
 
 .skip-link:focus-visible {
   transform: translateY(0);
+}
+
+/* Giscus 加载失败提示卡（Giscus.astro 配套；白底圆角细边框的 Colorful 卡片风格） */
+.giscus-fallback {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid var(--colorful-line);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-gray);
+  font-size: 14px;
+}
+
+.giscus-fallback p {
+  margin: 0 0 10px;
+}
+
+.giscus-fallback button {
+  padding: 4px 14px;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.giscus-fallback button:hover {
+  background: var(--primary);
+  color: #fff;
 }

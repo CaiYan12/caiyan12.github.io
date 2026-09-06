@@ -19,6 +19,7 @@ const pageMapping = term ? "specific" : commentConfig.mapping;
 			</h3>
 			<script
 				is:inline
+				id="giscus-src"
 				src="https://giscus.app/client.js"
 				data-repo={commentConfig.repo}
 				data-repo-id={commentConfig.repoId}
@@ -36,6 +37,15 @@ const pageMapping = term ? "specific" : commentConfig.mapping;
 				async
 				{...{ "data-term": pageTerm }}
 			/>
+			<div id="giscus-fallback" class="giscus-fallback" hidden>
+				<p>
+					<i class="fa fa-exclamation-circle" aria-hidden="true" />
+					评论加载失败：可能无法访问 giscus.app，请检查网络后重试。
+				</p>
+				<button type="button" id="giscus-retry">
+					重试加载
+				</button>
+			</div>
 		</section>
 	) : (
 		<section id="comments">
@@ -49,3 +59,61 @@ const pageMapping = term ? "specific" : commentConfig.mapping;
 		</section>
 	)
 }
+
+{
+	/* watcher 必须留在三元表达式之外：带内容的内联脚本位于表达式容器内时
+    prettier-plugin-astro 的脚本解析会失败；评论区未启用时脚本开头的
+    giscus-src 自检会直接退出，无需条件渲染 */
+}
+<script is:inline>
+	(() => {
+		const section = document.getElementById("comments");
+		if (!section || section.dataset.giscusWatch === "1") return;
+		if (!document.getElementById("giscus-src")) return;
+		section.dataset.giscusWatch = "1";
+		// data-loading="lazy" 下 giscus 只在滚动进入视口才建 iframe：
+		// 先等 IntersectionObserver 确认用户看过评论区，超时后仍无
+		// iframe 才判失败，避免未滚到的页面误报
+		const GISCUS_TIMEOUT_MS = 8000;
+		const fallback = document.getElementById("giscus-fallback");
+		if (!fallback) return;
+		let seen = false;
+		let timer;
+		const io = new IntersectionObserver((entries) => {
+			if (entries.some((entry) => entry.isIntersecting)) {
+				seen = true;
+				io.disconnect();
+			}
+		});
+		io.observe(section);
+		const check = () => {
+			if (!seen) return;
+			if (document.querySelector(".giscus-frame")) return;
+			fallback.hidden = false;
+		};
+		const arm = () => {
+			timer = setTimeout(check, GISCUS_TIMEOUT_MS);
+		};
+		const retry = () => {
+			clearTimeout(timer);
+			document
+				.querySelectorAll(".giscus-frame")
+				.forEach((frame) => frame.remove());
+			// 以原脚本属性重建脚本元素（cloneNode 不会重新执行）
+			const template = document.getElementById("giscus-src");
+			if (template) {
+				const fresh = document.createElement("script");
+				for (const attr of template.attributes) {
+					fresh.setAttribute(attr.name, attr.value);
+				}
+				template.replaceWith(fresh);
+			}
+			fallback.hidden = true;
+			arm();
+		};
+		document
+			.getElementById("giscus-retry")
+			?.addEventListener("click", retry);
+		arm();
+	})();
+</script>
