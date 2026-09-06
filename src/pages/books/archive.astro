@@ -1,10 +1,9 @@
 ---
 /**
  * /books/archive/ — 书库（独立壳）
- * 全量 22 本以 JSON 内嵌（~15KB），客户端六字段过滤（决策 #3）；
- * 搜索/标签/双视图/分页交互见 scripts/archive.ts。
+ * 数据来自静态端点 /books/data.json（swup 替换 main 会丢 DOM 内嵌 JSON，
+ * 见 scripts/archive.ts）；客户端六字段过滤（决策 #3）。
  */
-import { books } from "../../nice-books/data/books";
 import SiteHead from "../../nice-books/components/SiteHead.astro";
 import SiteHeader from "../../nice-books/components/SiteHeader.astro";
 import SiteFooter from "../../nice-books/components/SiteFooter.astro";
@@ -44,6 +43,15 @@ const btnBase =
 						autocomplete="off"
 						class="min-w-0 flex-1 border-0 bg-transparent px-0.5 py-2.5 text-[14.5px] text-nb-ink outline-none placeholder:text-nb-muted"
 					/>
+					<button
+						id="nb-search-btn"
+						type="button"
+						aria-label="搜索"
+						title="搜索"
+						class="inline-flex cursor-pointer items-center border-0 bg-transparent p-1.5 text-nb-muted transition-colors duration-150 hover:text-nb-ink"
+					>
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg>
+					</button>
 					<kbd class="rounded-[3px] border border-nb-border-strong bg-nb-paper px-[7px] font-nb-mono text-[11px] text-nb-muted" title="按斜杠键快速聚焦">/</kbd>
 				</div>
 				<div class="flex overflow-hidden rounded-[3px] border border-nb-border-strong" role="group" aria-label="切换浏览视图">
@@ -75,9 +83,8 @@ const btnBase =
 			</div>
 		</main>
 		<SiteFooter />
-		<script type="application/json" id="nb-books-data" is:inline set:html={JSON.stringify(books)} />
 		<script>
-			import "../../nice-books/scripts/archive";
+			import "../../nice-books/scripts/main";
 		</script>
 	</body>
 </html>

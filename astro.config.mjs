@@ -100,7 +100,7 @@ export default defineConfig({
 			preprocess: vitePreprocess(),
 		}),
 		sitemap({
-			filter: (page) => !page.endsWith("/page/1/"),
+			filter: (page) => !page.endsWith("/page/1/") && !page.includes("/books/data.json"),
 		}),
 	],
 	markdown: {

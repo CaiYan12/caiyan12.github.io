@@ -1,24 +1,24 @@
 /**
  * /books/ 首页交互（契约：访问级随机；新 ≠ 当前；推荐组整组替换去重）
- * swup 协议：顶层 init + astro:page-load 重跑 + main dataset 守卫。
+ * 由 scripts/main.ts 统一调度：initHome 自查元素早退，astro:page-load 重跑。
  */
 
 import { books, featuredBooks } from "../data/books";
 import { pickOne, sampleUnique } from "../lib/random";
 import { bookCardHTML, heroCardHTML } from "../lib/render";
-import { bindShuffle, bindCoverFallback, qs } from "./shared";
+import { bindShuffle, qs } from "./shared";
 
 const FEATURED_COUNT = 6; // 原型参考值，featured 池 13 本时整组排除始终可行
 
-function initHome(): void {
+export function initHome(): void {
 	const main = qs("#nb-books-main");
 	if (!main || main.dataset.nbInit) return;
-	main.dataset.nbInit = "1";
-	bindCoverFallback();
-
 	const heroWrap = qs<HTMLElement>("#nb-hero");
 	const grid = qs<HTMLElement>("#nb-featured-grid");
+	// 先确认本页元素存在再打标记：main 与 archive 页同 ID，
+	// swup 切页后本函数在其他 books 页面触发时不得误打标记（否则封锁对方 init）
 	if (!heroWrap || !grid) return;
+	main.dataset.nbInit = "1";
 
 	const ssrBookId = heroWrap.dataset.ssrBookId ?? null;
 	const ssrGroupIds = (grid.dataset.ssrGroupIds ?? "").split(",").filter(Boolean);
@@ -80,6 +80,3 @@ function initHome(): void {
 	bindShuffle(qs<HTMLButtonElement>("#nb-today-shuffle"), shuffleHero);
 	bindShuffle(qs<HTMLButtonElement>("#nb-featured-shuffle"), shuffleGroup);
 }
-
-initHome();
-document.addEventListener("astro:page-load", initHome);

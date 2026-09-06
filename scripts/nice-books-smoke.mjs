@@ -314,6 +314,29 @@ try {
 	);
 	check("重复进入后换一换计数严格为 1（无重复绑定）", true);
 
+	// --- swup 首次进入书库 + 搜索按钮（2026-09-06 书库空数据事故回归）---
+	await page.goto(new URL("/books/", baseUrl).href, { waitUntil: "domcontentloaded" });
+	await page.waitForSelector("#nb-hero .nb-book3d", { timeout: 15000 });
+	await page.click('header a[href="/books/archive/"]');
+	await page.waitForURL(/archive/, { timeout: 8000 });
+	await page.waitForSelector("#nb-archive-grid li", { timeout: 10000 });
+	check("swup 首次进入书库即渲染书目（共享 main.ts 入口）", (await page.locator("#nb-archive-grid li").count()) === 12);
+	await page.fill("#nb-search-input", "鲁迅");
+	await page.click("#nb-search-btn");
+	await page.waitForFunction(
+		() => (document.querySelector("#nb-result-line")?.textContent ?? "").includes("符合条件"),
+		null,
+		{ timeout: 4000 },
+	);
+	check("搜索按钮立即过滤", (await page.locator("#nb-archive-grid li").count()) === 1);
+	// 搜索后 goBack 链路（replaceState 不得抹掉 swup history state）
+	await page.click("#nb-archive-grid li a");
+	await page.waitForURL(/books\/\d+\//, { timeout: 8000 });
+	await page.waitForSelector("article h1", { timeout: 8000 });
+	await page.goBack();
+	await page.waitForSelector("#nb-archive-grid li", { timeout: 10000 });
+	check("搜索后 goBack 回书库仍渲染书目", (await page.locator("#nb-archive-grid li").count()) === 12);
+
 	console.log(`外部 CDN 失败 ${externalFailures.length} 项（jsDelivr 字体，本机网络抖动，不计 FAIL）`);
 } finally {
 	await browser.close();
