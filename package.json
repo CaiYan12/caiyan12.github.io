@@ -8,8 +8,9 @@
     "dev": "astro dev",
     "start": "astro dev",
     "check": "astro check",
-    "build": "node scripts/validate-post-slugs.mjs && node scripts/generate-lqips.mjs && node scripts/fetch-github-repos.mjs && node scripts/fetch-github-contributions.mjs && astro build && node scripts/inject-buddha-banner.mjs && pagefind --site dist",
+    "build": "pnpm test:nice-books && node scripts/validate-post-slugs.mjs && node scripts/generate-lqips.mjs && node scripts/fetch-github-repos.mjs && node scripts/fetch-github-contributions.mjs && astro build && node scripts/inject-buddha-banner.mjs && pagefind --site dist",
     "smoke:ai-news": "node scripts/ai-news-smoke.mjs",
+    "smoke:nice-books": "node scripts/nice-books-smoke.mjs",
     "preview": "astro preview",
     "new-post": "node scripts/new-post.mjs",
     "lqips": "node scripts/generate-lqips.mjs",
@@ -18,6 +19,7 @@
     "test:site-stats": "node --test scripts/sync-site-stats.test.mjs",
     "test:contributions": "node --test scripts/fetch-github-contributions.test.mjs",
     "test:utils": "node --import ./scripts/test-hooks.mjs --test \"src/utils/*.test.ts\"",
+    "test:nice-books": "node --import ./scripts/test-hooks.mjs --test \"src/nice-books/**/*.test.ts\"",
     "astro": "astro",
     "format": "prettier --write ./src ./scripts tailwind.config.cjs"
   },

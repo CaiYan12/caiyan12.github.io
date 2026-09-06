@@ -25,6 +25,19 @@ module.exports = {
 				chip: "var(--t-chip)",
 				"chip-text": "var(--t-chip-text)",
 				read: "var(--t-read)",
+				// Nice Books 纸墨色板（design-handoff.md §5 权威值，变量定义在 src/nice-books/styles/books.css）
+				nb: {
+					paper: "var(--nb-paper)",
+					surface: "var(--nb-surface)",
+					note: "var(--nb-note)",
+					ink: "var(--nb-ink)",
+					"ink-soft": "var(--nb-ink-soft)",
+					muted: "var(--nb-muted)",
+					blue: "var(--nb-blue)",
+					seal: "var(--nb-seal)",
+					border: "var(--nb-border)",
+					"border-strong": "var(--nb-border-strong)",
+				},
 			},
 			fontFamily: {
 				sans: [
@@ -48,6 +61,10 @@ module.exports = {
 				],
 				heading: "var(--t-font-heading)",
 				body: "var(--t-font-body)",
+				// Nice Books 字体槽位（方正书宋 CDN / 本地楷体栈；变量在 books.css）
+				"nb-serif": ["var(--nb-font-serif)"],
+				"nb-kai": ["var(--nb-font-kai)"],
+				"nb-mono": ["var(--nb-font-mono)"],
 			},
 			boxShadow: {
 				wrapper: "var(--shadow-wrapper)",

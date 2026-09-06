@@ -1,0 +1,37 @@
+---
+/**
+ * Nice Books 共享 head（独立壳，不经博客 Layout.astro）。
+ * SEO 达到契约 §40 下限：title/description/canonical/og；books 全部页面
+ * 由 <body> 内 main[data-pagefind-ignore="all"] 排除出站内搜索（决策 #3）。
+ * 字体三件套在此集中引入：@fontsource 两款（frontmatter import）+
+ * 方正书宋 CDN link（照搬 about.astro:55 先例）。
+ */
+import "@fontsource-variable/noto-sans-sc";
+import "@fontsource-variable/jetbrains-mono";
+import "../styles/books.css";
+import { siteConfig } from "../../config";
+
+interface Props {
+	/** 完整 <title> 文本（含「Nice Books」品牌段，由调用方拼装） */
+	title: string;
+	description: string;
+	/** 规范路径（默认当前路径；Astro trailingSlash=always，调用方传带尾斜杠形式） */
+	canonicalPath?: string;
+}
+const { title, description, canonicalPath } = Astro.props;
+const canonicalHref = new URL(canonicalPath ?? Astro.url.pathname, siteConfig.siteURL).toString();
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="robots" content="index,follow" />
+<link rel="icon" href="/images/avatar.webp" type="image/webp" />
+<link rel="canonical" href={canonicalHref} />
+<meta property="og:title" content={title} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonicalHref} />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Nice Books" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cn-fontsource-fz-shu-song-z-01-regular/font.css" />

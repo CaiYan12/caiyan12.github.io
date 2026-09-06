@@ -1,0 +1,222 @@
+/* ============================================================
+ * Nice Books V1 · 样式层（Tailwind 重写方案的薄自定义层）
+ * ------------------------------------------------------------
+ * 设计 token 权威来源：design-handoff.md §5–§8（禁止改动数值）。
+ * 分工：
+ *  - 常规布局/排版 → 组件标记里的 Tailwind utility（nb-* 色板 / 任意值）
+ *  - 伪元素装饰、keyframes、SVG 内部选择器、swup 过渡 → 本文件
+ * 页面壳不加载博客 global.css，本文件是 books 页面唯一样式源。
+ * ============================================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------- Design Tokens（handoff §5）---------- */
+:root {
+	--nb-paper: #f5f0e4; /* 页面底（暖米纸） */
+	--nb-surface: #fcf9f0; /* 卡片/输入框底 */
+	--nb-note: #f8efcf; /* 荐语便签 */
+	--nb-note-border: #e3d3a2;
+	--nb-ink: #2d2820; /* 标题/正文 */
+	--nb-ink-soft: #5a5142; /* 次级文字 */
+	--nb-muted: #8c8170; /* 元信息/占位符 */
+	--nb-blue: #3a6ea5; /* 老网页蓝：链接、focus 环 */
+	--nb-seal: #a8433c; /* 印章红 */
+	--nb-kraft: #8a5a33;
+	--nb-border: #ddd2ba;
+	--nb-border-strong: #b9ac8e;
+
+	/* 字体槽位（仓库字体策略：方正书宋 CDN、思源黑体 VF、JetBrains VF、本地楷体） */
+	--nb-font-serif: "FZShuSong-Z01S", "方正书宋", "FangZheng ShuSong", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
+	--nb-font-sans: "Noto Sans SC Variable", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB", "WenQuanYi Micro Hei", sans-serif;
+	--nb-font-kai: "KaiTi", "STKaiti", "楷体", "Noto Serif SC", serif;
+	--nb-font-mono: "JetBrains Mono Variable", "JetBrains Mono", Consolas, "Courier New", monospace;
+
+	/* 硬边纸张投影（handoff §8：禁止大模糊软阴影） */
+	--nb-shadow-paper: 2px 3px 0 rgba(74, 63, 46, 0.1);
+	--nb-shadow-lift: 4px 5px 0 rgba(74, 63, 46, 0.07);
+}
+
+/* ---------- Base 层微调（仅 books 页面生效）---------- */
+@layer base {
+	/* Tailwind utility 的 display（grid/flex/inline-flex）会覆盖 [hidden] 的 UA 样式，
+	 * 这里强制恢复 hidden 语义（archive 的视图切换/载入更多/空状态依赖它） */
+	[hidden] {
+		display: none !important;
+	}
+
+	::selection {
+		background: rgba(168, 67, 60, 0.22);
+	}
+
+	:focus-visible {
+		outline: 2px solid var(--nb-blue);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+
+	/* 点阵方格纸质感，极低对比，不干扰阅读 */
+	body.nb-page {
+		background-color: var(--nb-paper);
+		background-image: radial-gradient(rgba(74, 63, 46, 0.07) 1px, transparent 1.2px);
+		background-size: 26px 26px;
+	}
+
+	/* 封面 SVG 内部字体（.cover text 系列选择器无法用 utility 表达） */
+	.nb-cover text {
+		font-family: var(--nb-font-serif);
+	}
+	.nb-cover .cv-meta {
+		font-family: var(--nb-font-sans);
+	}
+
+	/* Swup 页面过渡（与博客 global.css:1503-1511 同款约定，色值无关） */
+	.transition-swup-fade {
+		transition: opacity 0.3s ease;
+	}
+	html.is-animating .transition-swup-fade {
+		opacity: 0;
+	}
+	html.is-leaving .transition-swup-fade {
+		opacity: 0;
+	}
+}
+
+/* ---------- Keyframes（handoff §11 动画参数）---------- */
+@layer components {
+	/* Hero 换书入场：translateY(10px)→0 + opacity，240ms ease-out */
+	@keyframes nb-hero-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	/* 推荐卡片级联入场：translateY(8px)→0，240ms，delay=--d */
+	@keyframes nb-card-in {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	/* 视图/结果切换淡入：220ms */
+	@keyframes nb-fade-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+}
+
+/* ---------- 装饰组件类（伪元素/复杂背景，utility 不宜表达）---------- */
+@layer components {
+	/* Hero 换书两段式编排（handoff §11：出 170ms / 入 240ms） */
+	.nb-hero-swap {
+		transition:
+			opacity 0.17s ease,
+			transform 0.17s ease;
+	}
+	.nb-hero-swap.is-leaving {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	.nb-hero-swap.is-entering {
+		animation: nb-hero-in 0.24s ease-out both;
+	}
+
+	/* 推荐卡片级联入场：delay 由行内 --d 提供（45ms × index） */
+	.nb-stagger {
+		animation: nb-card-in 0.24s ease-out both;
+		animation-delay: var(--d, 0ms);
+	}
+
+	/* 书库结果区切换淡入：220ms */
+	.nb-fade-swap {
+		animation: nb-fade-in 0.22s ease-out;
+	}
+
+	/* 换一换按钮 loading：↻ 旋转 0.8s（handoff §11） */
+	.nb-shuffle.is-loading .nb-shuffle-icon {
+		animation: nb-spin 0.8s linear infinite;
+	}
+	@keyframes nb-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	/* 封面外壳：条纹纸底兜底 + 2:3 比例 + 硬边投影 */
+	.nb-cover {
+		position: relative;
+		aspect-ratio: 2 / 3;
+		background: repeating-linear-gradient(45deg, #f1ead8 0 6px, #ece4d0 6px 12px);
+		border: 1px solid var(--nb-border-strong);
+		border-radius: 2px;
+		overflow: hidden;
+		box-shadow: var(--nb-shadow-paper);
+	}
+	.nb-cover svg {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	/* 封面胶带（单页重装饰点睛） */
+	.nb-tape::before {
+		content: "";
+		position: absolute;
+		top: -9px;
+		left: 50%;
+		z-index: 2;
+		width: 76px;
+		height: 20px;
+		transform: translateX(-50%) rotate(-2.5deg);
+		background: rgba(240, 233, 214, 0.78);
+		border: 1px solid rgba(74, 63, 46, 0.12);
+		box-shadow: 0 1px 2px rgba(74, 63, 46, 0.08);
+	}
+
+	/* 空状态小书图形 */
+	.nb-empty-glyph {
+		width: 64px;
+		height: 44px;
+		margin: 0 auto 20px;
+		border: 1.5px solid var(--nb-border-strong);
+		border-radius: 2px;
+		background: var(--nb-surface);
+		position: relative;
+		transform: rotate(-3deg);
+		box-shadow: var(--nb-shadow-paper);
+	}
+	.nb-empty-glyph::after {
+		content: "";
+		position: absolute;
+		top: 5px;
+		bottom: 5px;
+		left: 50%;
+		border-left: 1.5px solid var(--nb-border-strong);
+	}
+}
+
+/* ---------- 动效尊重系统偏好（handoff §11）---------- */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}

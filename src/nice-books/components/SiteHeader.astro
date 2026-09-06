@@ -1,0 +1,51 @@
+---
+/**
+ * Nice Books 独立页眉（handoff §3.1 / 原型 style.css §3）
+ * sticky + 双线下边框；当前项红色下划线；Blog/关于 回主站（data-no-swup 整页加载）。
+ */
+interface Props {
+	active: "home" | "archive";
+}
+const { active } = Astro.props;
+
+const links: { href: string; label: string; key: "home" | "archive" | null; noSwup?: boolean }[] = [
+	{ href: "/books/", label: "今日好书", key: "home" },
+	{ href: "/books/archive/", label: "书库", key: "archive" },
+	{ href: "/", label: "Blog", key: null, noSwup: true },
+	{ href: "/about/", label: "关于", key: null, noSwup: true },
+];
+---
+
+<header class="sticky top-0 z-20 border-b-[3px] border-double border-nb-border-strong bg-nb-paper">
+	<div class="mx-auto max-w-[1080px] px-6 max-[540px]:px-4">
+		<div class="flex h-[62px] items-center justify-between max-[640px]:h-auto max-[640px]:flex-wrap max-[640px]:gap-2 max-[640px]:py-3">
+			<a
+				href="/books/"
+				class="inline-flex items-baseline gap-2 font-nb-serif text-[20px] font-bold tracking-[0.5px] text-nb-ink no-underline hover:text-nb-ink"
+			>
+				<span class="text-[15px] text-nb-seal" aria-hidden="true">✦</span>Nice Books<span
+					class="rounded-[2px] border border-nb-border-strong px-1.5 py-px text-[11px] font-normal tracking-[2px] text-nb-muted"
+					>每日好书</span
+				>
+			</a>
+			<nav class="flex items-center gap-[22px] max-[640px]:gap-4" aria-label="站内导航">
+				{
+					links.map((link) => (
+						<a
+							href={link.href}
+							class:list={[
+								"border-b-2 border-transparent py-1 text-[14px] no-underline transition-colors duration-150 hover:text-nb-blue max-[640px]:text-[13px]",
+								link.key === null ? "" : "text-nb-ink-soft",
+								link.key === active ? "border-nb-seal text-nb-ink" : "",
+							]}
+							aria-current={link.key === active ? "page" : undefined}
+							data-no-swup={link.noSwup ? "" : undefined}
+						>
+							{link.label}
+						</a>
+					))
+				}
+			</nav>
+		</div>
+	</div>
+</header>

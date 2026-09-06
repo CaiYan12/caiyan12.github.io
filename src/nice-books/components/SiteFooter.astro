@@ -1,0 +1,30 @@
+---
+/**
+ * Nice Books 独立页脚（handoff §3.1 / 原型 style.css §15）
+ * 双线上边框 + 三段 grid（≤760px 单列）；含手作章 chip 与回主站链接。
+ */
+---
+
+<footer class="mt-[96px] border-t-[3px] border-double border-nb-border-strong pb-16 pt-11 max-[760px]:mt-[72px]">
+	<div class="mx-auto grid max-w-[1080px] grid-cols-[1.2fr_1fr_1.2fr] items-start gap-8 px-6 max-[760px]:grid-cols-1 max-[760px]:gap-5 max-[540px]:px-4">
+		<div>
+			<p class="font-nb-serif text-[17px] font-bold text-nb-ink">
+				<span class="mr-1.5 text-[15px] text-nb-seal" aria-hidden="true">✦</span>Nice Books
+			</p>
+			<p class="mt-2 font-nb-kai text-[14px] text-nb-muted">Made with too many books.</p>
+		</div>
+		<nav class="flex flex-wrap gap-x-5 gap-y-1.5 pt-1" aria-label="页脚导航">
+			<a href="/books/" class="text-[13.5px] text-nb-ink-soft no-underline hover:text-nb-blue">今日好书</a>
+			<a href="/books/archive/" class="text-[13.5px] text-nb-ink-soft no-underline hover:text-nb-blue">书库</a>
+			<a href="/" class="text-[13.5px] text-nb-ink-soft no-underline hover:text-nb-blue" data-no-swup>返回博客</a>
+			<a href="/about/" class="text-[13.5px] text-nb-ink-soft no-underline hover:text-nb-blue" data-no-swup>关于</a>
+		</nav>
+		<p class="text-right text-[12.5px] leading-8 text-nb-muted max-[960px]:text-left">
+			© 2026 Nice Books · 一位爱书的站长手工整理<br />
+			<span
+				class="mt-2 inline-block rotate-[-1.5deg] rounded-[2px] border border-[rgba(168,67,60,0.55)] px-2 py-px text-[11px] tracking-[1px] text-[rgba(168,67,60,0.85)]"
+				>手工制作 · 持续上架</span
+			>
+		</p>
+	</div>
+</footer>
