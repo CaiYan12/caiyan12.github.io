@@ -122,6 +122,52 @@
 
 /* ---------- 装饰组件类（伪元素/复杂背景，utility 不宜表达）---------- */
 @layer components {
+	/* ---------- 立体书本外壳 ----------
+	 * 三层结构（z 低→高）：背板书壳（深色，右下偏移最大）
+	 * → 书页纸张层（右/下露出的页纹条纹）→ 前封面（SVG/img）
+	 * 全部纯 CSS 实色+细条纹，延续「硬边纸张」哲学（无模糊阴影/无渐变装饰）。
+	 * --p: 页纹露出宽度；--e: 背板在页纹外再露出的深色边宽度。
+	 * mini 场景（列表 48px 行）用 .nb-book3d-thin 收窄。 */
+	.nb-book3d {
+		--p: 9px;
+		--e: 2px;
+		position: relative;
+	}
+	.nb-book3d-thin {
+		--p: 3px;
+		--e: 1px;
+	}
+	.nb-book3d .nb-cover {
+		position: relative;
+		z-index: 3;
+	}
+	/* 层1：背板书壳（第二层封面，深色硬壳） */
+	.nb-book3d .nb-book3d-back {
+		position: absolute;
+		z-index: 1;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		transform: translate(calc(var(--p) + var(--e)), calc(var(--p) + var(--e)));
+		background: #453c31;
+		border-radius: 2px;
+	}
+	/* 层2：书页纸张（右侧 = 水平页线；底部 = 纵向页线，模拟纸叠） */
+	.nb-book3d .nb-book3d-pages {
+		position: absolute;
+		z-index: 2;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		transform: translate(var(--p), var(--p));
+		background:
+			repeating-linear-gradient(to bottom, #f6f0e0 0 2px, #e2d8c0 2px 3px) right top / var(--p) 100% no-repeat,
+			repeating-linear-gradient(to right, #f6f0e0 0 2px, #e2d8c0 2px 3px) left bottom / 100% var(--p) no-repeat;
+		border-radius: 0 2px 2px 0;
+	}
+
 	/* Hero 换书两段式编排（handoff §11：出 170ms / 入 240ms） */
 	.nb-hero-swap {
 		transition:

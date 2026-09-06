@@ -20,18 +20,22 @@ export function esc(s: string): string {
 		.replace(/'/g, "&#39;");
 }
 
-/** 书封外壳：coverUrl 存在 → <img>（含兜底数据属性）；null → 内联 SVG */
-export function coverHTML(book: Book, opts?: { tape?: boolean }): string {
-	const cls = ["nb-cover", opts?.tape ? "nb-tape" : ""].filter(Boolean).join(" ");
-	if (book.coverUrl) {
-		return (
-			`<div class="${cls}"><img src="${esc(book.coverUrl)}" alt="《${esc(book.title)}》封面" width="300" height="450" loading="lazy" decoding="async" class="h-full w-full object-cover"` +
-			` data-nb-cover data-nb-id="${esc(book.id)}" data-nb-title="${esc(book.title)}"` +
-			` data-nb-author="${esc(book.author.join(" · "))}" data-nb-publisher="${esc(book.publisher)}" data-nb-year="${book.firstEdition.year}">` +
-			`</div>`
-		);
-	}
-	return `<div class="${cls}">${generateCoverSvg(book)}</div>`;
+/** 书封外壳：立体书本三层（背板书壳 + 书页纸张 + 前封面）；thin 用于列表 48px 行 */
+export function coverHTML(book: Book, opts?: { tape?: boolean; thin?: boolean }): string {
+	const shellCls = ["nb-cover", opts?.tape ? "nb-tape" : ""].filter(Boolean).join(" ");
+	const inner =
+		book.coverUrl
+			? `<img src="${esc(book.coverUrl)}" alt="《${esc(book.title)}》封面" width="300" height="450" loading="lazy" decoding="async" class="h-full w-full object-cover"` +
+				` data-nb-cover data-nb-id="${esc(book.id)}" data-nb-title="${esc(book.title)}"` +
+				` data-nb-author="${esc(book.author.join(" · "))}" data-nb-publisher="${esc(book.publisher)}" data-nb-year="${book.firstEdition.year}">`
+			: generateCoverSvg(book);
+	return (
+		`<div class="nb-book3d${opts?.thin ? " nb-book3d-thin" : ""}">` +
+		`<i class="nb-book3d-back" aria-hidden="true"></i>` +
+		`<i class="nb-book3d-pages" aria-hidden="true"></i>` +
+		`<div class="${shellCls}">${inner}</div>` +
+		`</div>`
+	);
 }
 
 export type TagPillVariant = "link" | "button" | "static";
@@ -115,7 +119,7 @@ export function heroCardHTML(book: Book, swapCount = 0): string {
 export function listRowHTML(book: Book): string {
 	return (
 		`<li><a class="grid grid-cols-[48px_1fr_auto] items-center gap-[18px] border-b border-dashed border-nb-border px-2 py-3 no-underline transition-colors duration-150 hover:bg-[rgba(252,249,240,0.9)] max-[640px]:grid-cols-[42px_1fr] max-[640px]:gap-3.5" href="${esc(bookHref(book))}">` +
-		`<span class="w-12 self-center max-[640px]:w-[42px]">${coverHTML(book)}</span>` +
+		`<span class="w-12 self-center max-[640px]:w-[42px]">${coverHTML(book, { thin: true })}</span>` +
 		`<span class="block min-w-0">` +
 		`<span class="block font-nb-serif text-[15.5px] font-bold text-nb-ink group-hover:text-nb-blue">${esc(book.title)}</span>` +
 		`<span class="mt-0.5 block text-[12.5px] text-nb-muted">${esc(formatAuthors(book))} · ${esc(book.publisher)} · ${book.firstEdition.year}</span>` +
