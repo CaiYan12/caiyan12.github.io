@@ -33,11 +33,16 @@ export function initHome(): void {
 		currentId = book.id;
 	}
 
+	let swapping = false; // 换书动画进行中标志：两个入口（主按钮/intro 按钮）共用，期间忽略触发
+
 	function shuffleHero(): void {
+		if (swapping) return;
+		swapping = true;
 		const next = pickOne(books, currentId); // 契约：新 ≠ 当前
 		swapCount += 1;
 		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
 			renderHero(next.id);
+			swapping = false;
 			return;
 		}
 		heroWrap!.classList.add("is-leaving");
@@ -45,7 +50,10 @@ export function initHome(): void {
 			renderHero(next.id);
 			heroWrap!.classList.remove("is-leaving");
 			heroWrap!.classList.add("is-entering");
-			window.setTimeout(() => heroWrap!.classList.remove("is-entering"), 260);
+			window.setTimeout(() => {
+				heroWrap!.classList.remove("is-entering");
+				swapping = false;
+			}, 260);
 		}, 170);
 	}
 
@@ -79,4 +87,7 @@ export function initHome(): void {
 
 	bindShuffle(qs<HTMLButtonElement>("#nb-today-shuffle"), shuffleHero);
 	bindShuffle(qs<HTMLButtonElement>("#nb-featured-shuffle"), shuffleGroup);
+	// intro 宣言里的「换一换」：与主按钮同一逻辑（swapping 守卫防动画期重复触发）；
+	// 无图标可转，直接触发换书动画，不加 240ms 模拟 loading
+	qs("#nb-intro-shuffle")?.addEventListener("click", () => shuffleHero());
 }
