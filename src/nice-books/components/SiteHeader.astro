@@ -11,8 +11,7 @@ const { active } = Astro.props;
 const links: { href: string; label: string; key: "home" | "archive" | null; noSwup?: boolean }[] = [
 	{ href: "/books/", label: "今日好书", key: "home" },
 	{ href: "/books/archive/", label: "书库", key: "archive" },
-	{ href: "/", label: "Blog", key: null, noSwup: true },
-	{ href: "/about/", label: "关于", key: null, noSwup: true },
+	{ href: "/", label: "返回主站", key: null, noSwup: true },
 ];
 ---
 
