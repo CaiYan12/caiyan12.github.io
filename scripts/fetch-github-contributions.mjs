@@ -202,7 +202,17 @@ async function main() {
 		hadCache = false;
 	}
 
-	const result = await fetchContributions();
+	// 拉取/数据失败已由 fetchContributions 归一为 status 对象；此处兜底
+	// tmp+rename 等 IO 异常——保留旧缓存本身是正确行为，不应裸栈崩溃
+	let result;
+	try {
+		result = await fetchContributions();
+	} catch (error) {
+		console.warn(
+			`SKIP github contributions: IO failure: ${error?.message ?? error}. About page will use ${hadCache ? "stale cache" : "fallback card"}.`,
+		);
+		return;
+	}
 	if (result.status === "ok") {
 		console.log(
 			`GitHub contributions synced: total=${result.totals.total} longest=${result.totals.longestStreak} current=${result.totals.currentStreak}. Output: ${result.outputPath}`,

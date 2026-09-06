@@ -6,7 +6,9 @@
 
 import lqipData from "@constants/lqips.json";
 
-const lqips: Record<string, string> = lqipData as Record<string, string>;
+// 值为 { g: 18 字符紧凑渐变, bytes: 源图字节数（generate-lqips 变更检测用） }
+const lqips: Record<string, { g: string; bytes: number }> =
+	lqipData as Record<string, { g: string; bytes: number }>;
 
 const DEFAULT_GRADIENT =
 	"linear-gradient(135deg, #d6d3d1 0%, #a8a29e 50%, #d6d3d1 100%)";
@@ -23,14 +25,15 @@ export function getLqipGradient(src: string): string | undefined {
 	} catch {
 		/* 含孤立 % 等非法序列时保持原值 */
 	}
-	let compact: string | undefined;
+	let entry: { g: string; bytes: number } | undefined;
 	if (decoded.startsWith("/")) {
 		// public 图片：key 格式为 public:xxx（去掉开头的 /）
-		compact = lqips[`public:${decoded.slice(1)}`];
+		entry = lqips[`public:${decoded.slice(1)}`];
 	} else {
 		// src 图片：key 格式为 src:xxx
-		compact = lqips[`src:${decoded}`] || lqips[decoded];
+		entry = lqips[`src:${decoded}`] || lqips[decoded];
 	}
+	const compact = entry?.g;
 	if (compact?.length !== 18) return undefined;
 	const c1 = `#${compact.slice(0, 6)}`;
 	const c2 = `#${compact.slice(6, 12)}`;

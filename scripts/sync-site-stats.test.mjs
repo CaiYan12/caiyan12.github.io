@@ -353,6 +353,61 @@ test("guestbook 留言独立保存并只保留最新 20 条", async () => {
 	}
 });
 
+test("空内容评论/留言（纯表情空白）跳过本条而不阻塞整批同步", async () => {
+	const responses = [
+		discussionsPage(
+			[
+				{ id: "D1", title: `posts/${slugA}/` },
+				{ id: "D2", title: "guestbook" },
+			],
+			false,
+			null,
+		),
+		commentsPage(2, [
+			{
+				replies: { totalCount: 0 },
+				author: { login: "emoji-only" },
+				bodyText: "   ",
+				createdAt: "2026-09-01T00:00:00Z",
+			},
+			{
+				replies: { totalCount: 0 },
+				author: { login: "normal-user" },
+				bodyText: "正常评论",
+				createdAt: "2026-09-02T00:00:00Z",
+			},
+		]),
+		commentsPage(2, [
+			{
+				replies: { totalCount: 0 },
+				author: { login: "guestbook-emoji" },
+				bodyText: "\n",
+				createdAt: "2026-09-01T00:00:00Z",
+			},
+			{
+				replies: { totalCount: 0 },
+				author: { login: "guestbook-normal" },
+				bodyText: "正常留言",
+				createdAt: "2026-09-03T00:00:00Z",
+			},
+		]),
+	];
+	const output = tmpFile();
+	try {
+		const snapshot = await syncSiteStats({
+			fetchImpl: async () => responses.shift(),
+			outputPath: output,
+			env: { GITHUB_TOKEN: "test-token" },
+		});
+		assert.equal(snapshot.recentComments.length, 1);
+		assert.equal(snapshot.recentComments[0].content, "正常评论");
+		assert.equal(snapshot.guestbookComments.length, 1);
+		assert.equal(snapshot.guestbookComments[0].content, "正常留言");
+	} finally {
+		await fs.rm(output, { force: true });
+	}
+});
+
 test("有效的 Discussions 与 comments 分页超过 50 页仍完成", async () => {
 	const totalPages = 51;
 	let discussionPage = 0;

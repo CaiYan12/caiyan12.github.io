@@ -462,6 +462,9 @@ function validateDiscussionCommentNode(node, slug) {
 
 function toRecentComment(node, slug, postTitle) {
 	validateDiscussionCommentNode(node, slug);
+	// 纯表情/空白内容是 Giscus 允许的合法评论，但空 content 过不了快照校验；
+	// 单条内容形状异常降级为跳过本条，不阻塞整批同步（与网络失败的 fail-closed 区分）
+	if (node.bodyText.trim().length === 0) return null;
 	return {
 		author: node.author?.login?.trim() ?? DELETED_AUTHOR_LABEL,
 		avatar: node.author?.avatarUrl?.trim() ?? FALLBACK_AVATAR,
@@ -474,6 +477,8 @@ function toRecentComment(node, slug, postTitle) {
 
 function toGuestbookComment(node, index) {
 	validateDiscussionCommentNode(node, GUESTBOOK_DISCUSSION_TITLE);
+	// 同 toRecentComment：空白内容留言跳过而非抛错阻塞部署
+	if (node.bodyText.trim().length === 0) return null;
 	const comment = {
 		author: node.author?.login?.trim() ?? DELETED_AUTHOR_LABEL,
 		avatar: node.author?.avatarUrl?.trim() ?? FALLBACK_AVATAR,
@@ -640,9 +645,8 @@ export async function syncSiteStats({
 			` for ${slug}`,
 		);
 		for (const node of nodes) {
-			recentComments.push(
-				toRecentComment(node, slug, postTitles.get(slug)),
-			);
+			const comment = toRecentComment(node, slug, postTitles.get(slug));
+			if (comment) recentComments.push(comment);
 		}
 		comments.set(slug, countDiscussionComments(pages));
 	}
@@ -657,6 +661,7 @@ export async function syncSiteStats({
 		);
 		guestbookComments = nodes
 			.map((node, index) => toGuestbookComment(node, index))
+			.filter((comment) => comment !== null)
 			.sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
 			.slice(0, GUESTBOOK_COMMENTS_LIMIT);
 	} else {

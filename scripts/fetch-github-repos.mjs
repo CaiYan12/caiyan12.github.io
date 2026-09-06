@@ -93,15 +93,24 @@ async function collectRepos(files) {
 async function main() {
 	const refresh = process.argv.includes("--refresh");
 
-	// 读取已有缓存
+	// 读取已有缓存；文件不存在与内容损坏必须区分——损坏时备份旧文件后从空缓存
+	// 重建（相当于全量拉取），不能静默当空缓存覆盖写回，否则限流时会永久丢数据
 	let cache = {};
 	try {
 		cache = JSON.parse(await fs.readFile(OUTPUT_FILE, "utf-8"));
 		console.log(
 			`Loaded ${Object.keys(cache).length} existing entries from ${OUTPUT_FILE}`,
 		);
-	} catch {
-		console.log(`No existing ${OUTPUT_FILE} found, will create new.`);
+	} catch (error) {
+		if (error instanceof SyntaxError) {
+			const backup = `${OUTPUT_FILE}.corrupt-${Date.now()}`;
+			await fs.rename(OUTPUT_FILE, backup).catch(() => {});
+			console.warn(
+				`Existing ${OUTPUT_FILE} is corrupted (backed up to ${backup}). Rebuilding cache from scratch.`,
+			);
+		} else {
+			console.log(`No existing ${OUTPUT_FILE} found, will create new.`);
+		}
 	}
 
 	const files = [];
@@ -151,4 +160,9 @@ async function main() {
 	);
 }
 
-main();
+// 单条仓库拉取失败只告警；其余异常（缓存读写等）clear error 后以非零码退出，
+// 与"只告警不中断"的仓库拉取契约区分
+main().catch((error) => {
+	console.error(`fetch-github-repos failed:`, error);
+	process.exit(1);
+});

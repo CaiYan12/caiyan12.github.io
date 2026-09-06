@@ -4,7 +4,9 @@
 // 扫描 src/ 与 public/ 下的位图，缩到 2x2 取四角颜色生成 135° 斜向渐变，
 // 以 18 字符紧凑 hex 存入 src/constants/lqips.json（构建期由 lqip-utils 读取）。
 // 与 Firefly 原版差异：用 node:fs 递归代替 glob（免依赖），脚本改为 .mjs（免 tsx）。
-// 增量执行：已处理的图片跳过，已删除的图片清理条目。
+// 增量执行：按源图字节数检测变更（bytes 不变即跳过；git checkout 不保留 mtime，
+// 故不用 mtime 以免 CI 每次全量重算；极端同大小改图可用 --refresh 强制全量），
+// 已删除的图片清理条目。lqips.json 值格式：{ g: 18 字符紧凑 hex, bytes: 源图字节数 }。
 //
 // 同时为 public/images/ 下的大图生成响应式 WebP 变体（TODO2）：
 // 变体输出到 public/images/_variants/<相对路径>.<宽度>w.webp（不入库，随构建进 dist），
@@ -139,11 +141,33 @@ async function main() {
 		console.log(`Removed ${removedKeys.length} stale entries.`);
 	}
 
-	// 过滤掉已有数据的图片
-	const newFiles = files.filter((file) => {
-		const key = filePathToKey(file);
-		return !(key in existingLqips);
-	});
+	// 过滤出需要处理的图片：key 缺失、旧格式（无 bytes 字段）、源图字节数变化，
+	// 或显式 --refresh。用字节数而非 mtime 检测变更：git checkout 不保留 mtime，
+	// mtime 方案会让 CI 每次全量重算；图片编辑后大小几乎必然变化，
+	// 极端同大小修改属罕见漏检，可用 --refresh 强制全量重算
+	const refresh = process.argv.includes("--refresh");
+	const newFiles = [];
+	for (const file of files) {
+		if (refresh) {
+			newFiles.push(file);
+			continue;
+		}
+		const entry = existingLqips[filePathToKey(file)];
+		if (
+			!entry ||
+			typeof entry !== "object" ||
+			typeof entry.bytes !== "number"
+		) {
+			newFiles.push(file);
+			continue;
+		}
+		try {
+			const { size } = await fs.stat(file);
+			if (size !== entry.bytes) newFiles.push(file);
+		} catch {
+			newFiles.push(file);
+		}
+	}
 
 	console.log(
 		`Found ${files.length} images, ${newFiles.length} new to process.`,
@@ -159,7 +183,8 @@ async function main() {
 		);
 		const compact = await processImage(filePath);
 		if (compact !== null) {
-			lqips[filePathToKey(file)] = compact;
+			const { size } = await fs.stat(file);
+			lqips[filePathToKey(file)] = { g: compact, bytes: size };
 			processed++;
 		}
 	}
@@ -256,10 +281,13 @@ async function generateVariants() {
 	for (const rel of sources) {
 		const srcPath = path.join(IMAGES_ROOT, rel);
 		let metadata;
+		let srcMtime;
 		try {
 			metadata = await sharp(srcPath).metadata();
+			srcMtime = (await fs.stat(srcPath)).mtimeMs;
 		} catch (error) {
-			console.error(`\nError reading ${srcPath}:`, error?.message);
+			// 单图损坏或读取中消失：warn 跳过，不让一张坏图中断整个变体阶段
+			console.warn(`\nWarn: skip variant source ${srcPath}: ${error?.message}`);
 			continue;
 		}
 		const srcWidth = metadata.width ?? 0;
@@ -278,12 +306,11 @@ async function generateVariants() {
 			};
 		}
 
-		const srcMtime = (await fs.stat(srcPath)).mtimeMs;
 		for (const w of widths) {
 			const variantPath = path.join(VARIANTS_ROOT, `${rel}.${w}w.webp`);
-			await fs.mkdir(path.dirname(variantPath), { recursive: true });
 			// 增量：变体已存在且不早于原图 mtime 则跳过
 			try {
+				await fs.mkdir(path.dirname(variantPath), { recursive: true });
 				const stat = await fs.stat(variantPath);
 				if (stat.mtimeMs >= srcMtime) {
 					skipped++;
@@ -292,11 +319,17 @@ async function generateVariants() {
 			} catch {
 				/* 不存在则生成 */
 			}
-			await sharp(srcPath)
-				.resize({ width: w })
-				.webp({ quality: 82 })
-				.toFile(variantPath);
-			generated++;
+			try {
+				await sharp(srcPath)
+					.resize({ width: w })
+					.webp({ quality: 82 })
+					.toFile(variantPath);
+				generated++;
+			} catch (error) {
+				console.warn(
+					`\nWarn: variant ${rel}.${w}w failed: ${error?.message}`,
+				);
+			}
 		}
 	}
 

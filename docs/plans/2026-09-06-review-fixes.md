@@ -22,13 +22,13 @@
 
 ## 阶段 2：构建脚本容错（清单 #4）
 
-- [ ] 2.1 `fetch-github-repos.mjs:98-105` 缓存 JSON 损坏 → warn + 备份 + 空缓存重建（ENOENT 保持现状）；:154 补 main().catch()
-- [ ] 2.2 `generate-lqips.mjs` 变体阶段 :263/:277/:294 per-file try/catch；:139-142 LQIP 增量加 mtime 比较（manifest 存 mtimeMs）
-- [ ] 2.3 `sync-site-stats.mjs:151-206/475-485` 空 bodyText 留言 → warn+跳过该节点（网络失败维持 fail-closed）
-- [ ] 2.4 `fetch-github-contributions.mjs:178-189/194-226` main 包 try/catch，IO 失败 warn 不中断
-- [ ] 2.5 补单测：sync-site-stats.test.mjs 加空 bodyText 用例
+- [x] 2.1 `fetch-github-repos.mjs` 缓存损坏（SyntaxError）→ warn + 备份 `.corrupt-<ts>` + 空缓存重建（ENOENT 保持现状）；`main().catch()` 以明确错误非零退出
+- [x] 2.2 `generate-lqips.mjs` 变体阶段逐图 try/catch（metadata/stat 合并守卫 + 单档变体失败 warn 跳过）；LQIP 变更检测改为**源图字节数**（计划原定 mtime，实施时改为 bytes：git checkout 不保留 mtime，mtime 方案会使 CI 每次全量重算 176 图；bytes 方案 CI 零成本），值格式迁移为 `{ g, bytes }`，lqip-utils.ts 同步适配，另加 `--refresh` 兜底同大小改图
+- [x] 2.3 `sync-site-stats.mjs` toRecentComment/toGuestbookComment 对空白 bodyText 返回 null，调用方过滤（网络失败维持 fail-closed）
+- [x] 2.4 `fetch-github-contributions.mjs` main 内 fetchContributions 包 try/catch，IO 失败 warn 不中断
+- [x] 2.5 补单测："空内容评论/留言（纯表情空白）跳过本条而不阻塞整批同步"（覆盖 recent + guestbook 两条路径）
 - 注：readPostTitles 只读 index.md 是 slug 规范契约，不做防御性扩展（不可达分支）
-- [ ] 验证：故意损坏缓存副本实测重建路径；node --test 全过
+- [x] 验证：node --test 15/15 全过；沙箱实测损坏缓存（备份+重建+exit 0）；pnpm check 0 错、build 成功（137 条 LQIP 迁移新格式、变体 0 生成 52 复用）；contributions 独立运行 OK；dist 文章页 LQIP 渐变正常渲染
 - [ ] commit 2
 
 ## 阶段 3：客户端逻辑 bug 批次（清单 #8 及逻辑轴小项）
