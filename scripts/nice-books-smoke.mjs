@@ -55,6 +55,19 @@ try {
 	// --- 首页基础 ---
 	check("main 带 data-pagefind-ignore=all", (await page.locator('main[data-pagefind-ignore="all"]').count()) === 1);
 	check("hero 容器 aria-live=polite", (await page.getAttribute("#nb-hero", "aria-live")) === "polite");
+	// 当前页导航高亮（border/text 色类必须互斥拼接，否则被 Tailwind 源顺序覆盖）
+	const navActive = await page.evaluate(() => {
+		const a = Array.from(document.querySelectorAll('nav[aria-label="站内导航"] a')).find(
+			(x) => x.getAttribute("aria-current") === "page",
+		);
+		const s = a ? getComputedStyle(a) : null;
+		return s ? { label: a.textContent.trim(), border: s.borderBottomColor } : null;
+	});
+	check(
+		"当前页导航高亮（墨字+红下划线）",
+		navActive?.label === "今日好书" && navActive.border === "rgb(168, 67, 60)",
+		JSON.stringify(navActive),
+	);
 
 	const ssrId = await page.getAttribute("#nb-hero", "data-ssr-book-id");
 	const initialId = await heroId();

@@ -33,9 +33,12 @@ const links: { href: string; label: string; key: "home" | "archive" | null; noSw
 						<a
 							href={link.href}
 							class:list={[
-								"border-b-2 border-transparent py-1 text-[14px] no-underline transition-colors duration-150 hover:text-nb-blue max-[640px]:text-[13px]",
-								link.key === null ? "" : "text-nb-ink-soft",
-								link.key === active ? "border-nb-seal text-nb-ink" : "",
+								"border-b-2 py-1 text-[14px] no-underline transition-colors duration-150 max-[640px]:text-[13px]",
+								// 同组色 utility（border/text）互斥拼接：Tailwind 冲突类胜负由产物 CSS
+								// 源顺序决定，border-transparent 与 border-nb-seal 同存会使高亮失效
+								link.key === active
+									? "border-nb-seal text-nb-ink"
+									: "border-transparent text-nb-ink-soft hover:text-nb-blue",
 							]}
 							aria-current={link.key === active ? "page" : undefined}
 							data-no-swup={link.noSwup ? "" : undefined}
