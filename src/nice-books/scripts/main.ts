@@ -7,11 +7,12 @@
  * 在 swup 导航后不会被执行——2026-09-06 书库空数据事故根因）。
  */
 
-import { bindCoverFallback } from "./shared";
+import { bindCoverFallback, syncHeaderNav } from "./shared";
 import { initHome } from "./home";
 import { initArchive } from "./archive";
 
 function init(): void {
+	syncHeaderNav(); // 页眉在 swup 容器外：切页后立即重算高亮（含详情页归入书库分支）
 	bindCoverFallback();
 	initHome();
 	initArchive();

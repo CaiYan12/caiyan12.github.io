@@ -347,6 +347,17 @@ try {
 	await page.waitForURL(/archive/, { timeout: 8000 });
 	await page.waitForSelector("#nb-archive-grid li", { timeout: 10000 });
 	check("swup 首次进入书库即渲染书目（共享 main.ts 入口）", (await page.locator("#nb-archive-grid li").count()) === 12);
+	// swup 切页后页眉高亮应立刻迁移到「书库」（页眉在容器外，靠 syncHeaderNav 重算）
+	await page.waitForTimeout(400);
+	const navAfterSwup = await page.evaluate(() => {
+		const a = document.querySelector('nav[aria-label="站内导航"] a[aria-current="page"]');
+		return a ? { label: a.textContent.trim(), border: getComputedStyle(a).borderBottomColor } : null;
+	});
+	check(
+		"swup 切页后高亮立即迁移（书库墨字+红下划线）",
+		navAfterSwup?.label === "书库" && navAfterSwup.border === "rgb(168, 67, 60)",
+		JSON.stringify(navAfterSwup),
+	);
 	await page.fill("#nb-search-input", "鲁迅");
 	await page.click("#nb-search-btn");
 	await page.waitForFunction(

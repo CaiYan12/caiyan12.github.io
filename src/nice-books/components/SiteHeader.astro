@@ -1,8 +1,12 @@
 ---
 /**
  * Nice Books 独立页眉（handoff §3.1 / 原型 style.css §3）
- * sticky + 双线下边框；当前项红色下划线；Blog/关于 回主站（data-no-swup 整页加载）。
+ * sticky + 双线下边框；当前项红色下划线——SSR 按 active prop 判定，
+ * swup 切页后由 scripts/shared.ts 的 syncHeaderNav() 重算（页眉在容器外）。
+ * 导航色类与 shared.ts 的 NAV_BASE/NAV_ACTIVE/NAV_IDLE 常量共用，勿在标记里另写。
  */
+import { NAV_ACTIVE, NAV_BASE, NAV_IDLE } from "../scripts/shared";
+
 interface Props {
 	active: "home" | "archive";
 }
@@ -32,15 +36,9 @@ const links: { href: string; label: string; key: "home" | "archive" | null; noSw
 					links.map((link) => (
 						<a
 							href={link.href}
-							class:list={[
-								"border-b-2 py-1 text-[14px] no-underline transition-colors duration-150 max-[640px]:text-[13px]",
-								// 同组色 utility（border/text）互斥拼接：Tailwind 冲突类胜负由产物 CSS
-								// 源顺序决定，border-transparent 与 border-nb-seal 同存会使高亮失效
-								link.key === active
-									? "border-nb-seal text-nb-ink"
-									: "border-transparent text-nb-ink-soft hover:text-nb-blue",
-							]}
+							class={`${NAV_BASE} ${link.key === active ? NAV_ACTIVE : NAV_IDLE}`}
 							aria-current={link.key === active ? "page" : undefined}
+							data-nb-nav={link.key ?? "external"}
 							data-no-swup={link.noSwup ? "" : undefined}
 						>
 							{link.label}

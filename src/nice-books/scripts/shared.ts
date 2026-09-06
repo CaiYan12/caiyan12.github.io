@@ -13,6 +13,31 @@ export function qsa<T extends Element = Element>(sel: string, root: ParentNode =
 	return Array.from(root.querySelectorAll<T>(sel));
 }
 
+/* ---------- 页眉导航高亮（swup 切页后由 main.ts 的 init 周期调用）----------
+ * 页眉在 swup 容器外不随切页替换，高亮必须客户端重算。
+ * 色类互斥拼接（Tailwind 冲突教训 ×3）。类常量由 SiteHeader.astro 共用。 */
+export const NAV_BASE = "border-b-2 py-1 text-[14px] no-underline transition-colors duration-150 max-[640px]:text-[13px]";
+export const NAV_ACTIVE = "border-nb-seal text-nb-ink";
+export const NAV_IDLE = "border-transparent text-nb-ink-soft hover:text-nb-blue";
+
+export function syncHeaderNav(): void {
+	const path = window.location.pathname;
+	// 详情页归入「书库」高亮分支；books 之外（不应发生）不高亮
+	const current = /^\/books\/(archive(\/|$)|\d+\/?$)/.test(path)
+		? "archive"
+		: path.startsWith("/books/")
+			? "home"
+			: null;
+	qs('nav[aria-label="站内导航"]')?.querySelectorAll<HTMLAnchorElement>("a[data-nb-nav]").forEach((a) => {
+		const key = a.dataset.nbNav;
+		if (key === "external") return;
+		const isActive = key !== null && key === current;
+		a.className = `${NAV_BASE} ${isActive ? NAV_ACTIVE : NAV_IDLE}`;
+		if (isActive) a.setAttribute("aria-current", "page");
+		else a.removeAttribute("aria-current");
+	});
+}
+
 export function prefersReducedMotion(): boolean {
 	return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
