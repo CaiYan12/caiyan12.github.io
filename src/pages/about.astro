@@ -29,7 +29,9 @@ try {
 		"utf-8",
 	);
 	calendarHtml = renderContributionsCalendar(JSON.parse(raw));
-} catch {
+} catch (error) {
+	// 构建期降级必须留下排错信号：静默吞错曾让"读缓存失败"在线上只能靠肉眼发现
+	console.warn("[about] contributions calendar fallback:", error);
 	calendarHtml = renderContributionsFallback();
 }
 ---

@@ -75,6 +75,41 @@ export function normalizeCalendar(contributionCalendar) {
 	return days;
 }
 
+/**
+ * 把 days 补齐为"周日起始的完整周"网格（消费端 contributions-calendar.ts
+ * 按 7 天切列、断言总长为 7 的倍数）。GitHub contributionCalendar 只返回到
+ * 今天为止（未来日期缺席）：今天为周日时尾周仅 1 天，总长 365 % 7 = 1，
+ * 恰好让整周校验周期性失败（每周日~周五部署都会触发）。
+ * 首部：contributionCalendar 首周恒为周日起（GitHub 日历 UI 同款），
+ * 若上游行为变化导致首日非周日则向前补齐；尾部补到 7 的倍数，补入天
+ * count=0（与官方 UI 对未来日期的浅色空格一致），computeStats 不受影响。
+ */
+export function padToFullWeeks(days) {
+	if (days.length === 0) return days;
+	const padded = [...days];
+	const firstDate = new Date(`${padded[0].date}T00:00:00Z`);
+	const firstWeekday = firstDate.getUTCDay(); // 0 = 周日
+	// 先按升序收集首部补位（offset 大 = 日期早），再整体插到头部；
+	// 逐个 unshift 会把日期顺序颠倒
+	if (firstWeekday > 0) {
+		const lead = [];
+		for (let offset = firstWeekday; offset > 0; offset -= 1) {
+			const d = new Date(firstDate);
+			d.setUTCDate(d.getUTCDate() - offset);
+			lead.push({ date: d.toISOString().slice(0, 10), count: 0 });
+		}
+		padded.unshift(...lead);
+	}
+	while (padded.length % 7 !== 0) {
+		const lastDate = new Date(
+			`${padded[padded.length - 1].date}T00:00:00Z`,
+		);
+		lastDate.setUTCDate(lastDate.getUTCDate() + 1);
+		padded.push({ date: lastDate.toISOString().slice(0, 10), count: 0 });
+	}
+	return padded;
+}
+
 /** 总贡献、最长连续、当前连续（今天为 0 时按 GitHub 惯例回看一天） */
 export function computeStats(days) {
 	let total = 0;
@@ -154,7 +189,10 @@ export async function fetchContributions(options = {}) {
 		return { status: "invalid-data", message: error.message };
 	}
 
+	// 统计必须用补零前的真实数据：computeStats 的"末位零日只回看一天"口径
+	// 会被尾部补零天截断（今天为周日时补 6 天 → current 恒为 0）
 	const totals = computeStats(days);
+	days = padToFullWeeks(days);
 	const snapshot = {
 		schemaVersion: SCHEMA_VERSION,
 		generatedAt: now.toISOString(),
