@@ -90,9 +90,13 @@
 
 ## 收尾
 
-- [ ] 统一 push 全部 commit → deploy.yml 自动部署
-- [ ] 线上验证：artifact/Last-Modified + 抽查首页/文章/相册/留言板 + reduced-motion 线上抽查
-- [ ] 计划文件标记终态、更新记忆
+- [x] 统一 push 全部 commit（8 个：30ad855 → 03ce7f2，2026-09-06 推送成功）→ deploy.yml 自动部署
+- [x] 线上验证：deploy run 34009752195 success；Last-Modified 03:45:25 GMT 与部署吻合；内容断言通过——文章页 h1 / giscus-fallback / JSON-LD `u003c` 转义、首页与内页 `aria-current="page"`、/tag/ 药丸云、Layout chunk 含 prefers-reduced-motion 守卫（2 处）；Mimosa 完整扫描 0 findings
+- [x] 计划文件标记终态、更新记忆
+
+## 终态
+
+**全部 16 项审查发现已实施完毕**（Astro 升级按既定决策仅评估补记，未实施）。执行 2026-09-06 当日完成，7 阶段 8 commit，Mimosa 深度扫描 0 findings，38 例单测全过，线上部署验证通过。实施过程中的关键陷阱已记录于各阶段条目与组件注释（compressHTML 空白规则、prettier-plugin-astro 表达式容器内联脚本限制、git ls-files 中文路径八进制转义、CI checkout 不保留 mtime 故 LQIP 用字节检测）。
 
 ## 边界约束
 
