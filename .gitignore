@@ -42,6 +42,7 @@ bun.lockb
 .trae/
 
 # workbuddy local memory
+.workbuddy/
 .workbuddy-ai/
 
 # local tool artifacts

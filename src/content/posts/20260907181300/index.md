@@ -16,25 +16,27 @@ hotness: 0
 
 Windows 10 LTSC 负责日常，Linux 那块专门用来折腾。我选了 Nyarch。
 
-结果最后是：Nyarch 被我整个卸掉了 (￣▽￣)／
+结果最后是：Nyarch 被我整个卸掉了 (￣▽￣)
+
+---
 
 ## 开头其实挺顺的 🫠
 
 Nyarch 装完，我先把它弄成能日常用的样子。
 
-第一个装的是 Clash Verge Rev。它官方 Linux 主要提供的是 `.deb` 和 `.rpm`，没有 Arch 包，好在 AUR 里已经有人维护了：
+第一个装的是 Clash Verge Rev，这个用来干啥想必大伙都懂。它官方主要提供的是 `.deb` 和 `.rpm`，没有 Arch 包，好在 AUR 里已经有人维护了：
 
 ```text
 aur/clash-verge-rev-bin
 ```
 
-于是直接：
+于是直接无脑：
 
 ```bash
 yay -S clash-verge-rev-bin
 ```
 
-装好了。接着是 Google Chrome。
+装好了。接着是装 Google Chrome，个人原因不太喜欢 Firefox。
 
 然后为了让两台设备共用一套鼠标键盘，我装了 Deskflow。
 
@@ -48,13 +50,7 @@ yay -S clash-verge-rev-bin
 
 Deskflow 的鼠标和键盘都正常，唯独两台机器之间的剪贴板死活不互通。
 
-我当时的环境是：
-
-```text
-GNOME 50.1
-Wayland
-Deskflow 1.26.0
-```
+我当时的环境是：GNOME 50.1 + Wayland + Deskflow 1.26.0
 
 查了一圈，问题出在 Wayland 上：Deskflow 的剪贴板实现正在从旧的 `wl-clipboard` 路径迁到 XDG Desktop Portal，而我系统里的 `libportal` 是 `0.9.1-3`，没到新实现要求的版本。
 
@@ -129,13 +125,13 @@ EXT4-fs ... Journal has aborted
 EXT4-fs ... Remounting filesystem read-only
 ```
 
-所以不是 `yay` 抽风，也不是 `dwarfs` 自己的锅——是这块用了六年的老 SSD，在高强度编译写盘的时候，实打实来了一次底层 I/O 超时。
+所以不是 `yay` 抽风，也不是 `dwarfs` 自己的锅。是这块用了六年的老 SSD，在高强度编译写盘的时候，实打实来了一次底层 I/O 超时。
 
 我没接着往下挖。这台机器本来就准备退了，里面也没有要救的数据。
 
 重启之后 `/dev/sda7` 又回到 `rw,noatime`，之后也没马上再报 I/O Error。
 
-所以我的判断就是：这块老 SSD 确实出过一次明确的 I/O 异常，但它已经不是值得我继续花时间的东西了。
+所以我的判断就是：这块陈年老盘确实出过一次明确的 I/O 故障，但它已经不是值得我继续花时间的东西了。
 
 ## 更新终于跑了，然后就炸了 💥
 
@@ -150,16 +146,14 @@ EXT4-fs ... Remounting filesystem read-only
 
 包列表里已经能看到新的 `gcc-libs`。我那会儿还挺高兴，觉得折腾这么久终于要过去了。
 
-然后 GNOME 和 Chrome 一起卡死。
-
-整个桌面没响应，最后只能直接重启。
+然后 GNOME 和系统一起卡死。整个桌面没响应，最后只能直接重启。
 
 ## GRUB：你别进来了
 
 重启之后 GRUB 直接甩脸：
 
 ```text
-loading linux linux
+loading Linux linux
 error: loader/i386/linux.c:grub_cmd_linux:710:invalid magic number.
 Loading initial ramdisk
 error: loader/i386/linux.c:grub_cmd_initrd:1082:you need to load the kernel first
@@ -177,7 +171,9 @@ error: loader/i386/linux.c:grub_cmd_initrd:1082:you need to load the kernel firs
 
 ## 卸了
 
-回到 Windows 10 LTSC，开始清 Nyarch。
+顺便讲一讲删Linux双系统的正确方法吧，哥们之前也在这块上翻过大车：
+
+回到 Windows 10 ，开始清 Nyarch。
 
 先删分区：
 
@@ -194,11 +190,7 @@ Boot
 nyarch
 ```
 
-删掉 Nyarch 对应的 UEFI 启动项：
-
-```text
-{a9a683a2-aa5e-11f1-a430-806e6f6e6963}
-```
+先删掉 Nyarch 对应的 UEFI 启动项，这串命令暂时记不得了，不过也不难找就是了。
 
 最后删掉：
 
@@ -206,17 +198,17 @@ nyarch
 S:\EFI\nyarch
 ```
 
-这台机器又变回纯 Windows 10 LTSC，我继续当我的钉子户。
+这台机器又变回纯血 Windows 10 LTSC，我则继续当我的钉子户。
 
 ## 先叠个甲 🛡️
 
-不是黑 Arch，不是给 Debian 打广告，也不是要说 Arch 不稳——老 SSD 的 I/O Error 不是 Arch 造成的，更新途中死机也不是 Arch 独有，中间一大半问题都出在我这台机器自己身上。
+哥们不是黑 Arch，不是给 Debian 打广告，也不是要说 Arch 不稳——老 SSD 的 I/O Error 不是 Arch 造成的，更新途中死机也不是 Arch 独有，中间一大半问题都出在我这台机器自己身上。
 
 甲叠完了。**Arch 的维护模式不适合这台机器，也不适合我对它的定位。**
 
-我想要的东西其实不复杂：装完能稳定用，中文输入正常，Chrome、Clash Verge Rev、Deskflow 都正常，偶尔还能拿来写写代码、折腾下 Linux。但最要紧的就一句——我不想天天维护系统。
+我想要的东西其实不复杂：装完能稳定用，中文输入正常，Chrome、Clash Verge Rev、Deskflow 都正常，偶尔还能拿来写写代码、折腾下 Linux。但最要紧的就一句：“我不想天天维护系统”。
 
-而 Arch 实际给我的是这么一条链：
+而 Arch 实际甩给我这么一条链子：
 
 ```mermaid
 flowchart TD
@@ -233,36 +225,26 @@ flowchart TD
 
 单拎出来一条都不算大事。全叠在一起，我就只剩一个念头：
 
-我为什么要在一台准备退休的电脑上花这个时间？
+我为什么要在一台准备退休的电脑上花这个时间？所以不如
 
-## 下次不折腾这个了
+![跑路了兄弟，跑路了](/images/posts/20260907181300/run.jpg "跑路了兄弟，下次不折腾这个了")
 
-这台机器以后要是再装 Linux，我不会优先选 Arch 系了。下一次大概是：
+这台机器以后要是再装 Linux，我不会优先选 Arch 系了。下一集大概是：Windows 10 LTSC + Ubuntu LTS
 
-```text
-Windows 10 LTSC
-+
-Debian Stable / Ubuntu LTS
-```
+因为我现在要的不是“最新”，是稳定、简单、能用。
 
-因为我现在要的不是"最新"，是稳定、简单、能用。
+挺现实的原因，引用 Arch Wiki 的一段话：
 
-还有个挺现实的原因。我一开始折腾 Arch，其中一个原因就是想装 Clash Verge Rev，它给的是 `.deb` 和 `.rpm`。
+> 您或许不想使用 Arch Linux，如果您：
+>
+> - 没有经验、能力、时间、想法和愿望去打理这样一个高度可定制的 GNU/Linux 发行版。
+> - 需要非 x86_64 平台支持。
+> - 你是狂热的自由软件爱好者，只希望发行版提供 GNU 定义的自由软件。
+> - 你认为好的操作系统应当是已经配置好的：安装介质应默认包含一套完整的应用软件包、图形化桌面环境——达到“开箱即用”。
+> - 你不需要或不想使用滚动升级的发行版。
+> - 你对目前使用的操作系统感到满意。
 
-最后我发现，两条路差得不是一点半点：
-
-```mermaid
-flowchart TD
-    deb[Debian / Ubuntu] --> debeat[直接吃 .deb]
-    arch[AUR / Arch] --> archm[第三方维护]
-    archm --> archd[依赖]
-    archd --> archabi[ABI]
-    archabi --> archself[自己处理]
-```
-
-Arch 折腾起来确实有意思。但对一台我想拿来用的老电脑，就不合适了。
-
-## 也没白折腾 🔧
+作为曾经的一名极客，Arch 折腾起来确实有意思。但对于一台我想拿来用的老电脑，和一个没太多时间整天肝论文的我，就不太合适了。
 
 不是所有旧电脑都适合拿来跑 Arch。有的机器适合折腾，有的适合安安静静干活，这台 RedmiBook 14 明显是后者。
 
