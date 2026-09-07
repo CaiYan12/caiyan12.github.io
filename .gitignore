@@ -41,6 +41,9 @@ bun.lockb
 # trae local memory
 .trae/
 
+# workbuddy local memory
+.workbuddy-ai/
+
 # local tool artifacts
 output/
 .mimosa/
