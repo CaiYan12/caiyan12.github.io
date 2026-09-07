@@ -19,7 +19,7 @@ const ssrBook = books[0]!;
 const ssrGroup = featuredBooks.slice(0, 6);
 const topTags = allTags().slice(0, 6);
 const shuffleBtnClass =
-	"nb-shuffle inline-flex cursor-pointer items-center gap-[7px] rounded-[3px] border border-[rgba(168,67,60,0.5)] bg-nb-surface px-4 py-2 text-[13.5px] text-nb-seal transition-[border-color,background,transform,color] duration-[160ms] hover:-translate-y-px hover:border-nb-seal hover:bg-[rgba(168,67,60,0.06)] active:translate-y-0 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-60";
+	"nb-shuffle inline-flex min-h-11 cursor-pointer items-center gap-[7px] rounded-[3px] border border-[rgba(168,67,60,0.5)] bg-nb-surface px-4 py-2 text-[13.5px] text-nb-seal transition-[border-color,background,transform,color] duration-[160ms] hover:-translate-y-px hover:border-nb-seal hover:bg-[rgba(168,67,60,0.06)] active:translate-y-0 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-60";
 ---
 
 <!doctype html>
@@ -40,7 +40,10 @@ const shuffleBtnClass =
 		>
 			<h1 class="sr-only">Nice Books · 每日好书</h1>
 
-			<section class="mb-1 mt-11 max-[540px]:mt-8" aria-label="关于本站">
+			<section
+				class="nb-intro mb-1 mt-11 max-[540px]:mt-6"
+				aria-label="关于本站"
+			>
 				<p
 					class="max-w-[38em] font-nb-serif text-[17.5px] leading-[2.2] max-[540px]:text-base"
 				>
@@ -51,7 +54,7 @@ const shuffleBtnClass =
 					每次打开，随机遇见一本书；不喜欢，就<button
 						id="nb-intro-shuffle"
 						type="button"
-						class="cursor-pointer border-0 bg-transparent p-0 font-[inherit] font-semibold text-nb-blue underline decoration-1 decoration-dashed decoration-[rgba(58,110,165,0.6)] underline-offset-[3px] transition-colors duration-150 hover:text-nb-seal hover:decoration-nb-seal active:translate-y-px"
+						class="inline-flex min-h-11 cursor-pointer items-center align-middle border-0 bg-transparent p-0 font-[inherit] font-semibold text-nb-blue underline decoration-1 decoration-dashed decoration-[rgba(58,110,165,0.6)] underline-offset-[3px] transition-colors duration-150 hover:text-nb-seal hover:decoration-nb-seal active:translate-y-px"
 						>换一换</button
 					>。
 				</p>
@@ -70,7 +73,7 @@ const shuffleBtnClass =
 						class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px] max-[540px]:text-[19px]"
 					>
 						<span
-							class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal"
+							class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-[13px] tracking-[1px] text-nb-seal"
 							aria-hidden="true">01</span
 						>今日好书
 					</h2>
@@ -83,7 +86,7 @@ const shuffleBtnClass =
 							<span
 								class="nb-shuffle-icon inline-block text-[15px] leading-none"
 								aria-hidden="true">↻</span
-							>换一换
+							><span data-nb-shuffle-label>换一换</span>
 						</button>
 					</div>
 				</div>
@@ -116,10 +119,10 @@ const shuffleBtnClass =
 						class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px] max-[540px]:text-[19px]"
 					>
 						<span
-							class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal"
+							class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-[13px] tracking-[1px] text-nb-seal"
 							aria-hidden="true">02</span
 						>站长推荐<span
-							class="ml-3.5 font-nb-mono text-[11px] font-normal tracking-[2px] text-nb-muted max-[540px]:mb-0 max-[540px]:ml-[34px] max-[540px]:mt-0.5 max-[540px]:block"
+							class="ml-3.5 font-nb-mono text-[13px] font-normal tracking-[2px] text-nb-muted max-[540px]:mb-0 max-[540px]:ml-[34px] max-[540px]:mt-0.5 max-[540px]:block"
 							>EDITOR'S PICKS</span
 						>
 					</h2>
@@ -131,12 +134,12 @@ const shuffleBtnClass =
 						<span
 							class="nb-shuffle-icon inline-block text-[15px] leading-none"
 							aria-hidden="true">↻</span
-						>换一换
+						><span data-nb-shuffle-label>换一换</span>
 					</button>
 				</div>
 				<ul
 					id="nb-featured-grid"
-					class="grid grid-cols-3 gap-[22px] max-[960px]:gap-4 max-[540px]:grid-cols-2 max-[540px]:gap-3"
+					class="nb-book-grid gap-[22px] max-[960px]:gap-4 max-[540px]:gap-3"
 					data-ssr-group-ids={ssrGroup.map((b) => b.id).join(",")}
 				>
 					<Fragment
@@ -157,7 +160,7 @@ const shuffleBtnClass =
 					class="font-nb-serif text-[22px] font-bold leading-[1.4] tracking-[1px] max-[540px]:text-[19px]"
 				>
 					<span
-						class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-xs tracking-[1px] text-nb-seal"
+						class="mr-3 inline-block -translate-y-[7px] font-nb-mono text-[13px] tracking-[1px] text-nb-seal"
 						aria-hidden="true">03</span
 					>探索更多
 				</h2>
@@ -171,7 +174,9 @@ const shuffleBtnClass =
 								>{books.length}</strong
 							> 本书，随时可以慢慢翻。
 						</p>
-						<div class="mb-1 mt-3.5 flex flex-wrap gap-2">
+						<div
+							class="mb-1 mt-3.5 flex flex-wrap gap-2 [&>a]:min-h-11 [&>a]:items-center"
+						>
 							{
 								topTags.map((t) => (
 									<Fragment
@@ -184,7 +189,7 @@ const shuffleBtnClass =
 						</div>
 					</div>
 					<a
-						class="inline-flex items-center gap-[7px] rounded-[3px] border border-nb-ink bg-nb-ink px-4 py-2 text-[13.5px] text-nb-paper no-underline transition-[border-color,background,transform] duration-[160ms] hover:-translate-y-px hover:border-[#443c2f] hover:bg-[#443c2f] active:translate-y-0"
+						class="inline-flex min-h-11 items-center gap-[7px] rounded-[3px] border border-nb-ink bg-nb-ink px-4 py-2 text-[13.5px] text-nb-paper no-underline transition-[border-color,background,transform] duration-[160ms] hover:-translate-y-px hover:border-[#443c2f] hover:bg-[#443c2f] active:translate-y-0"
 						href="/books/archive/"
 						>进入书库 <span aria-hidden="true">→</span></a
 					>

@@ -54,28 +54,97 @@ export function prefersReducedMotion(): boolean {
 
 export { esc } from "../lib/render";
 
+/* 当前 Swup 页面注册的资源清理器。astro:before-swap 在 main 被替换前触发，
+ * 所有 books 页面脚本都通过这里取消请求、计时器与动画。 */
+const pageCleanups = new Set<() => void>();
+let pageCleanupBound = false;
+
+function ensurePageCleanupListener(): void {
+	if (pageCleanupBound) return;
+	pageCleanupBound = true;
+	document.addEventListener("astro:before-swap", () => {
+		const cleanups = Array.from(pageCleanups);
+		pageCleanups.clear();
+		for (const cleanup of cleanups) cleanup();
+	});
+}
+
+export function registerPageCleanup(cleanup: () => void): () => void {
+	ensurePageCleanupListener();
+	pageCleanups.add(cleanup);
+	return () => pageCleanups.delete(cleanup);
+}
+
+function ensureShuffleLabel(btn: HTMLButtonElement): HTMLElement {
+	const current = btn.querySelector<HTMLElement>("[data-nb-shuffle-label]");
+	if (current) return current;
+	const label = document.createElement("span");
+	label.dataset.nbShuffleLabel = "";
+	label.textContent =
+		Array.from(btn.childNodes)
+			.filter((node) => node.nodeType === Node.TEXT_NODE)
+			.map((node) => node.textContent ?? "")
+			.join("")
+			.trim() || "换一换";
+	for (const node of Array.from(btn.childNodes)) {
+		if (node.nodeType === Node.TEXT_NODE) node.remove();
+	}
+	btn.append(label);
+	return label;
+}
+
+function setShuffleBusy(
+	buttons: HTMLButtonElement[],
+	busy: boolean,
+	loadingText: string,
+): void {
+	for (const btn of buttons) {
+		const label = ensureShuffleLabel(btn);
+		btn.disabled = busy;
+		btn.classList.toggle("is-loading", busy);
+		if (busy) {
+			btn.setAttribute("aria-busy", "true");
+			label.textContent = loadingText;
+		} else {
+			btn.removeAttribute("aria-busy");
+			label.textContent = "换一换";
+		}
+	}
+}
+
 /**
- * 「换一换」绑定（handoff §10）：点击 → loading（↻ 旋转 + disabled +
- * aria-busy）→ ~240ms 后执行替换（reduced-motion 时 60ms）→ 恢复。
+ * 绑定一个独立的换书/换组忙碌组。替换函数立即开始，动画或请求完成后
+ * 通过 finally 恢复按钮，避免人为延迟掩盖真实交互时序。
  */
 export function bindShuffle(
-	btn: HTMLButtonElement | null,
-	fire: () => void,
+	btns: Array<HTMLButtonElement | null>,
+	fire: () => void | Promise<void>,
+	opts?: { loadingText?: string; signal?: AbortSignal },
 ): void {
-	if (!btn) return;
-	btn.addEventListener("click", () => {
-		if (btn.disabled) return;
-		btn.disabled = true;
-		btn.classList.add("is-loading");
-		btn.setAttribute("aria-busy", "true");
-		const delay = prefersReducedMotion() ? 60 : 240;
-		window.setTimeout(() => {
-			fire();
-			btn.classList.remove("is-loading");
-			btn.disabled = false;
-			btn.removeAttribute("aria-busy");
-		}, delay);
-	});
+	const buttons = btns.filter(
+		(btn): btn is HTMLButtonElement => btn !== null,
+	);
+	if (buttons.length === 0) return;
+	const loadingText = opts?.loadingText ?? "换一换";
+	for (const btn of buttons) ensureShuffleLabel(btn);
+	let busy = false;
+	const run = () => {
+		if (busy) return;
+		busy = true;
+		setShuffleBusy(buttons, true, loadingText);
+		Promise.resolve()
+			.then(() => fire())
+			.catch((error) => {
+				console.error("[nice-books] 换一换失败：", error);
+			})
+			.finally(() => {
+				busy = false;
+				setShuffleBusy(buttons, false, loadingText);
+			});
+	};
+	for (const btn of buttons) {
+		btn.addEventListener("click", run, { signal: opts?.signal });
+	}
 }
 
 /**
@@ -93,7 +162,7 @@ export function bindCoverFallback(): void {
 			const target = event.target;
 			if (
 				!(target instanceof HTMLImageElement) ||
-				!target.dataset.nbCover
+				!target.hasAttribute("data-nb-cover")
 			)
 				return;
 			const { nbId, nbTitle, nbAuthor, nbPublisher, nbYear } =

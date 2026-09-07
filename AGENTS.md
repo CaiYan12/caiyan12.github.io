@@ -240,7 +240,7 @@ pnpm preview     # 预览构建产物（需先 build）
 pnpm check       # astro check 类型检查
 pnpm test:contributions  # 贡献日历数据脚本离线单测（node --test，注入 fetchImpl 不访问真实网络）
 pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/搜索/封面，node --test，已串入 build 链头部）
-pnpm smoke:nice-books  # Nice Books 三页实机 Smoke（Playwright 43 项，需先启动 pnpm dev）
+pnpm smoke:nice-books  # Nice Books 三页 Playwright Smoke；支持 NICE_BOOKS_BASE_URL 指向 build + preview
 pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ```
 
@@ -319,9 +319,11 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - **独立壳**模块（仿 ai-news 先例）：`/books/`（今日好书随机 + 换一换 + 站长推荐 + 探索更多）、`/books/archive/`（书库：六字段搜索 × 标签叠加 × 双视图 × 载入更多 × `?q=`/`?tag=` 直达）、`/books/:id/`（getStaticPaths 22 静态页 + 同架 top4；无效 id 自然落站级 404）。不加载博客 Layout/global.css/Pio/播放器；产品契约=访问级随机（禁日期映射）、无评论/评分/购买。
 - 数据单一真相源 `src/nice-books/data/books.ts`（22 本 V1 fixture + 顶层运行时断言 fail-fast，build 链头部 `pnpm test:nice-books` 把关）；查询函数纯函数化（`lib/random.ts` RNG 可注入、`lib/search.ts` 六字段、`lib/cover.ts` 确定性 SVG 书封兜底——`coverUrl` 非空走 `<img>`、onerror 由 shared 的捕获监听重建 SVG）。
 - **SSR/客户端标记单源**：凡会被客户端 innerHTML 重渲染的片段（hero 卡/网格卡/便签/标签药丸/列表行）一律由 `lib/render.ts` 字符串构造器输出（.astro 侧 `set:html` 引用同一函数），禁止在 .astro 里另写一份标记。
-- 样式：`styles/books.css` 是 books 页面唯一样式源（含 `@tailwind` 三指令 → 有 preflight）；token 锁定 design-handoff §5–§8（`--nb-*` 变量，勿改值）；Tailwind 色板走 `nb.` 命名空间（tailwind.config，勿与 ai-news 的 `bg/surface/border/text/accent` 键混淆）；handoff 断点 540/640/760/820/960 用任意值变体 `min-[540px]:` 表达。**坑：Tailwind utility 的 display 会覆盖 `[hidden]` 属性**，books.css @layer base 的 `[hidden]{display:none!important}` 勿删。
+- 样式：`styles/books.css` 是 books 页面唯一样式源（含 `@tailwind` 三指令 → 有 preflight）；2026-09-07 用户批准「私人藏书桌」设计升级，`docs/nice-books-design.md` 替代旧 handoff §5–§8 的固定视觉值。继续使用 `--nb-*` token、Tailwind v3 `nb.` 命名空间（勿与 ai-news 色板混淆），`font-nb-body` 映射正文思源黑体。网格 `<360px` 单列、`360–759px` 两列、`>=760px` 三列，同架图书 `>=1080px` 四列。**坑：Tailwind utility 的 display 会覆盖 `[hidden]` 属性**，books.css @layer base 的 `[hidden]{display:none!important}` 勿删。
 - swup 协议（模块脚本）：顶层直接 init（首次整页加载）+ `document.addEventListener("astro:page-load", init)`（swup 导航进入时重跑）+ main 内 `dataset.nbInit` 守卫 + 目标元素缺失早退；document 级监听（archive 的「/」快捷键、封面 onerror）只在模块顶层注册一次。注意 `@swup/astro` 默认 `loadOnIdle`——swup 实例在页面空闲后才存在（`window.swup` 需等待），未就绪窗口内点击链接无害降级为整页加载。
-- books 全部页面 main 带 `data-pagefind-ignore="all"`（决策：博客全局搜索只搜正式文章，详情页也不进索引）；导航入口在 `navBarConfig.resourceSite`「每日好书」（`noSwup: true`，Navbar/MMenu 数据驱动自动渲染）；`pnpm smoke:nice-books` 为三页 Playwright 实机验收（43 项，含 swup 切页/后退/重复初始化防护；jsDelivr 字体 CDN 的网络层失败单独统计不计 FAIL）。
+- books 全部页面 main 带 `data-pagefind-ignore="all"`（决策：博客全局搜索只搜正式文章，详情页也不进索引）；导航入口在 `navBarConfig.resourceSite`「每日好书」（`noSwup: true`，Navbar/MMenu 数据驱动自动渲染）；`pnpm smoke:nice-books` 覆盖三页业务、Swup 切页/后退/重复初始化与忙碌中断；`node scripts/nice-books-design-qa.mjs` 补充设计、响应式及故障检查（先 build + preview，默认4322端口）。实际项目数与截图见 `docs/nice-books-design-test.md`；字体 CDN 的网络层失败单独统计。
+- 2026-09-07 书封展示：`lib/display.ts` 按 ID 确定四种原创 SVG 家族，未知 ID 回退文学；不往 `Book` 加展示字段。`coverHTML` 支持 `hero/card/list`，精选书主图和卡片带腰封，列表省略腰封，普通书裸封。封面硬壳最大、纸块内缩、右侧书口、左侧装订；外壳允许厚度和胶带外伸，图像内层独立裁切，真实图片 `object-contain`。腰封只引用现有荐语，禁止编造奖项或销量。
+- 2026-09-07 动效生命周期：GSAP 按需用于 books 主书时间线，常规反馈用 CSS/WAAPI；两个今日换书入口共享全周期忙碌状态并在 finally 恢复。`shared.ts` 统一注册 `astro:before-swap` 清理，页面卸载取消请求/计时器/动画并 settle 未完成的换书 Promise。书库失败必须解除初始化守卫并显示重试；搜索输入不重播入场，标签/视图短过渡可中断。不要恢复额外240ms模拟等待或旧 Hero CSS 动画。
 
 ### 统计与表情边界
 - 独立浏览量与 GoatCounter 已移除；frontmatter 的 `views` 仅作迁移兼容字段，不参与页面渲染。

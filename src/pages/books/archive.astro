@@ -9,9 +9,9 @@ import SiteHeader from "../../nice-books/components/SiteHeader.astro";
 import SiteFooter from "../../nice-books/components/SiteFooter.astro";
 
 const VT_BASE =
-	"cursor-pointer border-0 px-3.5 py-[9px] text-[13px] transition-colors duration-150";
+	"inline-flex min-h-11 cursor-pointer items-center border-0 px-4 py-2 text-[13px] transition-colors duration-150";
 const btnBase =
-	"inline-flex cursor-pointer items-center gap-[7px] rounded-[3px] border border-nb-border-strong bg-nb-surface px-4 py-2 text-[13.5px] text-nb-ink transition-[border-color,background,transform,color] duration-[160ms] hover:-translate-y-px hover:border-nb-ink active:translate-y-0";
+	"inline-flex min-h-11 cursor-pointer items-center gap-[7px] rounded-[3px] border border-nb-border-strong bg-nb-surface px-4 py-2 text-[13.5px] text-nb-ink transition-[border-color,background,transform,color] duration-[160ms] hover:-translate-y-px hover:border-nb-ink active:translate-y-0";
 ---
 
 <!doctype html>
@@ -42,10 +42,15 @@ const btnBase =
 			</section>
 
 			<div
-				class="mb-3.5 mt-[26px] flex flex-wrap items-center gap-3.5 max-[540px]:mt-5"
+				class="mb-3.5 mt-[26px] flex flex-wrap items-end gap-3.5 max-[540px]:mt-5"
 			>
+				<label
+					for="nb-search-input"
+					class="w-full font-nb-serif text-[15px] font-bold text-nb-ink"
+					>搜索藏书</label
+				>
 				<div
-					class="flex flex-1 basis-[260px] items-center gap-2 rounded-[3px] border border-nb-border-strong bg-nb-surface px-3 transition-colors duration-150 focus-within:border-nb-blue focus-within:shadow-[0_0_0_3px_rgba(58,110,165,0.13)]"
+					class="flex min-h-11 min-w-0 flex-1 basis-[260px] items-center gap-2 rounded-[3px] border border-nb-border-strong bg-nb-surface px-3 transition-colors duration-150 focus-within:border-nb-blue focus-within:shadow-[0_0_0_3px_rgba(58,110,165,0.13)] max-[540px]:basis-full"
 				>
 					<span class="inline-flex text-nb-muted" aria-hidden="true">
 						<svg
@@ -77,7 +82,7 @@ const btnBase =
 						type="button"
 						aria-label="搜索"
 						title="搜索"
-						class="inline-flex cursor-pointer items-center border-0 bg-transparent p-1.5 text-nb-muted transition-colors duration-150 hover:text-nb-ink"
+						class="inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center border-0 bg-transparent p-1.5 text-nb-muted transition-colors duration-150 hover:text-nb-ink"
 					>
 						<svg
 							width="16"
@@ -97,12 +102,12 @@ const btnBase =
 						>
 					</button>
 					<kbd
-						class="rounded-[3px] border border-nb-border-strong bg-nb-paper px-[7px] font-nb-mono text-[11px] text-nb-muted"
+						class="rounded-[3px] border border-nb-border-strong bg-nb-paper px-[7px] font-nb-mono text-[13px] text-nb-muted"
 						title="按斜杠键快速聚焦">/</kbd
 					>
 				</div>
 				<div
-					class="flex overflow-hidden rounded-[3px] border border-nb-border-strong"
+					class="flex min-h-11 overflow-hidden rounded-[3px] border border-nb-border-strong [&>button]:inline-flex [&>button]:min-h-11 [&>button]:items-center"
 					role="group"
 					aria-label="切换浏览视图"
 				>
@@ -126,7 +131,7 @@ const btnBase =
 
 			<div
 				id="nb-tag-filter"
-				class="mb-3.5 flex flex-wrap gap-2"
+				class="mb-3.5 flex flex-wrap gap-2 [&>button]:min-h-11"
 				role="group"
 				aria-label="按标签筛选"
 			>
@@ -135,7 +140,7 @@ const btnBase =
 
 			<p
 				id="nb-result-line"
-				class="mb-[18px] font-nb-mono text-xs text-nb-muted"
+				class="mb-[18px] font-nb-mono text-[13px] text-nb-muted"
 				role="status"
 			>
 			</p>
@@ -143,7 +148,7 @@ const btnBase =
 			<div id="nb-results">
 				<ul
 					id="nb-archive-grid"
-					class="grid grid-cols-3 gap-[22px] max-[960px]:gap-4 max-[540px]:grid-cols-2 max-[540px]:gap-3"
+					class="nb-book-grid gap-[22px] max-[960px]:gap-4 max-[540px]:gap-3"
 				>
 					<!-- 渲染于 archive.ts -->
 				</ul>

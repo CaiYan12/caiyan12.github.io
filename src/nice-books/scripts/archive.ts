@@ -1,15 +1,12 @@
 /**
- * /books/archive/ 书库交互（handoff §3.2/§10）：
- * 六字段即时搜索（160ms debounce）× 标签筛选叠加 × 书架/列表双视图
- * × 每页 12 载入更多 × URL query（?q=/?tag=）读写。
- * 由 scripts/main.ts 统一调度：initArchive 自查元素早退，astro:page-load 重跑；
- * 「/」快捷键为 document 级监听（模块顶层注册一次，handler 内自查元素）。
+ * /books/archive/ 书库交互：六字段即时搜索 × 标签筛选 × 双视图 × 载入更多。
+ * 查询和动画均限定当前 main；Swup 替换前由共享清理器取消请求与动画。
  */
 
 import { searchBooks } from "../lib/search";
 import type { Book } from "../types";
 import { bookCardHTML, listRowHTML, tagPillHTML } from "../lib/render";
-import { prefersReducedMotion, qs } from "./shared";
+import { prefersReducedMotion, qs, registerPageCleanup } from "./shared";
 
 const PAGE_SIZE = 12;
 
@@ -20,233 +17,335 @@ interface ArchiveState {
 	shown: number;
 }
 
-export async function initArchive(): Promise<void> {
-	const main = qs("#nb-books-main");
-	if (!main || main.dataset.nbInit) return;
-	// 先确认本页元素存在再打标记：main 与首页同 ID，
-	// swup 切页后本函数在其他 books 页面触发时不得误打标记（否则封锁对方 init）
-	const searchInput = qs<HTMLInputElement>("#nb-search-input");
-	const grid = qs<HTMLElement>("#nb-archive-grid");
-	const list = qs<HTMLElement>("#nb-archive-list");
-	const resultsWrap = qs<HTMLElement>("#nb-results");
-	if (!searchInput || !grid || !list || !resultsWrap) return;
-	main.dataset.nbInit = "1"; // fetch 期间阻止 astro:page-load 并发重入
-
-	// 数据源为独立静态端点：swup 替换 main 会丢失 DOM 内嵌 JSON（实测），fetch 全路径健壮
-	let all: Book[];
-	try {
-		const res = await fetch("/books/data.json");
-		if (!res.ok) throw new Error(`HTTP ${res.status}`);
-		all = (await res.json()) as Book[];
-		if (!Array.isArray(all) || all.length === 0) throw new Error("空数据");
-	} catch (error) {
-		console.warn("[nice-books] 书库数据加载失败：", error);
-		return;
+function showArchiveError(
+	main: HTMLElement,
+	resultsWrap: HTMLElement,
+	retry: () => void,
+): void {
+	let error = qs<HTMLElement>("[data-nb-archive-error]", main);
+	if (!error) {
+		error = document.createElement("div");
+		error.dataset.nbArchiveError = "";
+		error.className =
+			"nb-archive-error border border-nb-border-strong bg-nb-surface p-6 text-center";
+		error.innerHTML =
+			'<p class="font-nb-serif text-[17px]">书库暂时打不开。</p>' +
+			'<p class="mt-1.5 text-[13.5px] text-nb-muted">请检查网络后重试。</p>' +
+			'<button type="button" data-nb-archive-retry class="mt-4 inline-flex cursor-pointer items-center rounded-[3px] border border-nb-ink bg-nb-ink px-4 py-2 text-[13.5px] text-nb-paper">重试</button>';
+		resultsWrap.prepend(error);
 	}
-
-	const state: ArchiveState = {
-		q: "",
-		tag: null,
-		view: "grid",
-		shown: PAGE_SIZE,
-	};
-
-	/* ---------- URL query ---------- */
-
-	function syncUrl(): void {
-		const params = new URLSearchParams();
-		if (state.tag) params.set("tag", state.tag);
-		if (state.q) params.set("q", state.q);
-		const qsStr = params.toString();
-		// 保留 history.state：swup 依赖自己写入的 state 处理 popstate，置 null 会断裂后退链
-		history.replaceState(
-			history.state,
-			"",
-			qsStr ? `?${qsStr}` : location.pathname,
-		);
+	error.hidden = false;
+	const retryButton = qs<HTMLButtonElement>("[data-nb-archive-retry]", error);
+	if (retryButton) {
+		retryButton.onclick = () => {
+			error!.hidden = true;
+			retry();
+		};
 	}
-
-	/* ---------- 渲染 ---------- */
-
-	function renderTagFilter(): void {
-		const wrap = qs<HTMLElement>("#nb-tag-filter");
-		if (!wrap) return;
-		const tagCounts = new Map<string, number>();
-		for (const b of all)
-			for (const t of b.tags)
-				tagCounts.set(t, (tagCounts.get(t) ?? 0) + 1);
-		const tags = Array.from(tagCounts.entries())
-			.sort((a, z) => z[1] - a[1])
-			.map(([t]) => t);
-		wrap.innerHTML =
-			tagPillHTML("全部", {
-				variant: "button",
-				on: state.tag === null,
-			}).replace('data-tag="全部"', 'data-tag=""') +
-			tags
-				.map((t) =>
-					tagPillHTML(t, { variant: "button", on: state.tag === t }),
-				)
-				.join("");
-	}
-
-	function render(): void {
-		const filtered = searchBooks(all, state.q, state.tag);
-		const visible = filtered.slice(0, state.shown);
-
-		let line = `共 ${all.length} 本藏书`;
-		if (filtered.length < all.length)
-			line += ` · 符合条件 ${filtered.length} 本`;
-		if (filtered.length > state.shown)
-			line += `（显示前 ${state.shown} 本）`;
-		const resultLine = qs<HTMLElement>("#nb-result-line");
-		if (resultLine) resultLine.textContent = line;
-
-		const isEmpty = filtered.length === 0;
-		const empty = qs<HTMLElement>("#nb-empty-state");
-		if (empty) empty.hidden = !isEmpty;
-		grid!.hidden = isEmpty || state.view !== "grid";
-		list!.hidden = isEmpty || state.view !== "list";
-
-		if (!isEmpty) {
-			const html = visible
-				.map((b) =>
-					state.view === "grid" ? bookCardHTML(b) : listRowHTML(b),
-				)
-				.join("");
-			if (state.view === "grid") {
-				grid!.innerHTML = html;
-				list!.innerHTML = "";
-			} else {
-				list!.innerHTML = html;
-				grid!.innerHTML = "";
-			}
-		}
-
-		const moreWrap = qs<HTMLButtonElement>("#nb-btn-more");
-		const theEnd = qs<HTMLElement>("#nb-the-end");
-		if (moreWrap && theEnd) {
-			if (filtered.length > state.shown) {
-				moreWrap.hidden = false;
-				moreWrap.textContent = `载入更多（还有 ${filtered.length - state.shown} 本）`;
-				theEnd.hidden = true;
-			} else {
-				moreWrap.hidden = true;
-				theEnd.hidden = filtered.length === 0;
-				theEnd.textContent = `已经到底啦 · 共 ${filtered.length} 本 \u2726`;
-			}
-		}
-
-		renderTagFilter();
-	}
-
-	function reflowAnim(): void {
-		if (prefersReducedMotion()) return;
-		resultsWrap!.classList.remove("nb-fade-swap");
-		void resultsWrap!.offsetWidth; // 重触发动画
-		resultsWrap!.classList.add("nb-fade-swap");
-	}
-
-	function resetPaging(): void {
-		state.shown = PAGE_SIZE;
-	}
-
-	function applyChange(): void {
-		resetPaging();
-		render();
-		reflowAnim();
-		syncUrl();
-	}
-
-	/* ---------- 事件 ---------- */
-
-	let debounceTimer: number | null = null;
-	const flushSearch = () => {
-		window.clearTimeout(debounceTimer ?? undefined);
-		state.q = searchInput.value.trim();
-		applyChange();
-	};
-	searchInput.addEventListener("input", () => {
-		window.clearTimeout(debounceTimer ?? undefined);
-		debounceTimer = window.setTimeout(() => {
-			state.q = searchInput.value.trim();
-			applyChange();
-		}, 160);
-	});
-	// 显式搜索按钮 / 回车：立即过滤（跳过 debounce 等待）
-	qs("#nb-search-btn")?.addEventListener("click", () => {
-		flushSearch();
-		searchInput.blur();
-	});
-	searchInput.addEventListener("keydown", (e) => {
-		if (e.key === "Enter") flushSearch();
-	});
-
-	qs<HTMLElement>("#nb-tag-filter")?.addEventListener("click", (e) => {
-		const btn = (e.target as HTMLElement).closest("button[data-tag]");
-		if (!btn) return;
-		const tag = btn.getAttribute("data-tag") || null;
-		state.tag = tag && tag !== "" ? tag : null;
-		applyChange();
-	});
-
-	const VT_BASE =
-		"cursor-pointer border-0 px-3.5 py-[9px] text-[13px] transition-colors duration-150";
-	const vtClass = (on: boolean) =>
-		on
-			? `${VT_BASE} bg-nb-ink text-nb-paper`
-			: `${VT_BASE} bg-nb-surface text-nb-ink-soft hover:text-nb-ink`;
-
-	function setView(view: "grid" | "list"): void {
-		state.view = view;
-		for (const v of ["grid", "list"] as const) {
-			const btn = qs<HTMLButtonElement>(`#nb-view-${v}`);
-			// Tailwind utilities 写在标记里，状态切换用 className 全量替换（is-* 覆盖不了 utilities 层）
-			if (btn) btn.className = vtClass(state.view === v);
-			btn?.setAttribute("aria-pressed", String(state.view === v));
-		}
-		applyChange();
-	}
-	qs("#nb-view-grid")?.addEventListener("click", () => setView("grid"));
-	qs("#nb-view-list")?.addEventListener("click", () => setView("list"));
-
-	qs("#nb-btn-more")?.addEventListener("click", () => {
-		state.shown += PAGE_SIZE;
-		render();
-	});
-
-	qs("#nb-btn-clear")?.addEventListener("click", () => {
-		state.q = "";
-		state.tag = null;
-		searchInput.value = "";
-		applyChange();
-		searchInput.focus();
-	});
-
-	// 初始化：支持 ?tag= / ?q= 直达（handoff §0.3）
-	const params = new URLSearchParams(window.location.search);
-	const urlTag = params.get("tag");
-	const urlQ = params.get("q");
-	if (urlTag) state.tag = urlTag;
-	if (urlQ) {
-		state.q = urlQ;
-		searchInput.value = urlQ;
-	}
-	render();
 }
 
-/* 「/」快捷键：document 级监听只在模块顶层注册一次（swup 协议） */
-document.addEventListener("keydown", (e) => {
-	if (e.key !== "/") return;
-	const input = document.querySelector<HTMLInputElement>("#nb-search-input");
-	if (!input) return; // 非 archive 页
-	const target = e.target as HTMLElement;
+export function initArchive(): void {
+	const main = qs<HTMLElement>("#nb-books-main");
+	if (!main || main.dataset.nbInit) return;
+	const searchInput = qs<HTMLInputElement>("#nb-search-input", main);
+	const gridCandidate = qs<HTMLElement>("#nb-archive-grid", main);
+	const listCandidate = qs<HTMLElement>("#nb-archive-list", main);
+	const resultsCandidate = qs<HTMLElement>("#nb-results", main);
+	if (!searchInput || !gridCandidate || !listCandidate || !resultsCandidate)
+		return;
+	const grid = gridCandidate;
+	const list = listCandidate;
+	const resultsWrap = resultsCandidate;
+	main.dataset.nbInit = "1";
+
+	const abort = new AbortController();
+	let disposed = false;
+	let debounceTimer: number | null = null;
+	let resultAnimation: Animation | null = null;
+	const unregister = registerPageCleanup(() => {
+		disposed = true;
+		abort.abort();
+		if (debounceTimer !== null) window.clearTimeout(debounceTimer);
+		resultAnimation?.cancel();
+		resultAnimation = null;
+		delete main.dataset.nbInit;
+	});
+
+	const fail = (error: unknown): void => {
+		if (disposed || abort.signal.aborted) return;
+		console.warn("[nice-books] 书库数据加载失败：", error);
+		unregister();
+		delete main.dataset.nbInit;
+		showArchiveError(main, resultsWrap, () => initArchive());
+	};
+
+	void fetch("/books/data.json", { signal: abort.signal })
+		.then(async (res) => {
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const data = (await res.json()) as Book[];
+			if (!Array.isArray(data) || data.length === 0)
+				throw new Error("空数据");
+			return data;
+		})
+		.then((all) => {
+			if (disposed || abort.signal.aborted) return;
+			const state: ArchiveState = {
+				q: "",
+				tag: null,
+				view: "grid",
+				shown: PAGE_SIZE,
+			};
+			const tagFilter = qs<HTMLElement>("#nb-tag-filter", main);
+			const resultLine = qs<HTMLElement>("#nb-result-line", main);
+			const empty = qs<HTMLElement>("#nb-empty-state", main);
+			const moreButton = qs<HTMLButtonElement>("#nb-btn-more", main);
+			const theEnd = qs<HTMLElement>("#nb-the-end", main);
+
+			function syncUrl(): void {
+				const params = new URLSearchParams();
+				if (state.tag) params.set("tag", state.tag);
+				if (state.q) params.set("q", state.q);
+				const query = params.toString();
+				history.replaceState(
+					history.state,
+					"",
+					query ? `?${query}` : location.pathname,
+				);
+			}
+
+			function renderTagFilter(): void {
+				if (!tagFilter) return;
+				const tagCounts = new Map<string, number>();
+				for (const book of all)
+					for (const tag of book.tags)
+						tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+				const tags = Array.from(tagCounts.entries())
+					.sort((a, z) => z[1] - a[1])
+					.map(([tag]) => tag);
+				tagFilter.innerHTML =
+					tagPillHTML("全部", {
+						variant: "button",
+						on: state.tag === null,
+					}).replace('data-tag="全部"', 'data-tag=""') +
+					tags
+						.map((tag) =>
+							tagPillHTML(tag, {
+								variant: "button",
+								on: state.tag === tag,
+							}),
+						)
+						.join("");
+			}
+
+			function render(): void {
+				const filtered = searchBooks(all, state.q, state.tag);
+				const visible = filtered.slice(0, state.shown);
+				let line = `共 ${all.length} 本藏书`;
+				if (filtered.length < all.length)
+					line += ` · 符合条件 ${filtered.length} 本`;
+				if (filtered.length > state.shown)
+					line += `（显示前 ${state.shown} 本）`;
+				if (resultLine) resultLine.textContent = line;
+				const isEmpty = filtered.length === 0;
+				if (empty) empty.hidden = !isEmpty;
+				grid.hidden = isEmpty || state.view !== "grid";
+				list.hidden = isEmpty || state.view !== "list";
+				if (!isEmpty) {
+					const html = visible
+						.map((book) =>
+							state.view === "grid"
+								? bookCardHTML(book)
+								: listRowHTML(book),
+						)
+						.join("");
+					if (state.view === "grid") {
+						grid.innerHTML = html;
+						list.innerHTML = "";
+					} else {
+						list.innerHTML = html;
+						grid.innerHTML = "";
+					}
+				}
+				if (moreButton && theEnd) {
+					if (filtered.length > state.shown) {
+						moreButton.hidden = false;
+						moreButton.textContent = `载入更多（还有 ${filtered.length - state.shown} 本）`;
+						theEnd.hidden = true;
+					} else {
+						moreButton.hidden = true;
+						theEnd.hidden = filtered.length === 0;
+						theEnd.textContent = `已经到底啦 · 共 ${filtered.length} 本 \u2726`;
+					}
+				}
+				renderTagFilter();
+			}
+
+			function animateResults(): void {
+				resultAnimation?.cancel();
+				if (prefersReducedMotion()) {
+					resultAnimation = resultsWrap.animate(
+						[{ opacity: 0.85 }, { opacity: 1 }],
+						{ duration: 80, easing: "ease-out" },
+					);
+					return;
+				}
+				resultAnimation = resultsWrap.animate(
+					[
+						{ opacity: 0.78, transform: "translateY(4px)" },
+						{ opacity: 1, transform: "translateY(0)" },
+					],
+					{
+						duration: 180,
+						easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+					},
+				);
+			}
+
+			function applyChange(animate = false): void {
+				state.shown = PAGE_SIZE;
+				render();
+				if (animate) animateResults();
+				syncUrl();
+			}
+
+			const flushSearch = (): void => {
+				if (debounceTimer !== null) window.clearTimeout(debounceTimer);
+				debounceTimer = null;
+				state.q = searchInput.value.trim();
+				applyChange(false);
+			};
+			searchInput.addEventListener(
+				"input",
+				() => {
+					if (debounceTimer !== null)
+						window.clearTimeout(debounceTimer);
+					debounceTimer = window.setTimeout(() => {
+						state.q = searchInput.value.trim();
+						applyChange(false);
+					}, 160);
+				},
+				{ signal: abort.signal },
+			);
+			qs("#nb-search-btn", main)?.addEventListener(
+				"click",
+				() => {
+					flushSearch();
+					searchInput.blur();
+				},
+				{ signal: abort.signal },
+			);
+			searchInput.addEventListener(
+				"keydown",
+				(event) => {
+					if (event.key === "Enter") flushSearch();
+				},
+				{ signal: abort.signal },
+			);
+			tagFilter?.addEventListener(
+				"click",
+				(event) => {
+					const button = (
+						event.target as HTMLElement
+					).closest<HTMLButtonElement>("button[data-tag]");
+					if (!button) return;
+					const restoreFocus = document.activeElement === button;
+					const tag = button.getAttribute("data-tag") || null;
+					state.tag = tag && tag !== "" ? tag : null;
+					applyChange(true);
+					if (restoreFocus) {
+						const nextButton = Array.from(
+							tagFilter.querySelectorAll<HTMLButtonElement>(
+								"button[data-tag]",
+							),
+						).find(
+							(candidate) =>
+								candidate.getAttribute("data-tag") ===
+								(tag ?? ""),
+						);
+						nextButton?.focus();
+					}
+				},
+				{ signal: abort.signal },
+			);
+
+			const viewBase =
+				"cursor-pointer border-0 px-3.5 py-[9px] text-[13px] transition-colors duration-150";
+			const viewClass = (on: boolean) =>
+				on
+					? `${viewBase} bg-nb-ink text-nb-paper`
+					: `${viewBase} bg-nb-surface text-nb-ink-soft hover:text-nb-ink`;
+			function setView(view: "grid" | "list"): void {
+				state.view = view;
+				for (const name of ["grid", "list"] as const) {
+					const button = qs<HTMLButtonElement>(
+						`#nb-view-${name}`,
+						main!,
+					);
+					if (button)
+						button.className = viewClass(state.view === name);
+					button?.setAttribute(
+						"aria-pressed",
+						String(state.view === name),
+					);
+				}
+				applyChange(true);
+			}
+			qs("#nb-view-grid", main)?.addEventListener(
+				"click",
+				() => setView("grid"),
+				{ signal: abort.signal },
+			);
+			qs("#nb-view-list", main)?.addEventListener(
+				"click",
+				() => setView("list"),
+				{ signal: abort.signal },
+			);
+			moreButton?.addEventListener(
+				"click",
+				() => {
+					state.shown += PAGE_SIZE;
+					render();
+				},
+				{ signal: abort.signal },
+			);
+			qs("#nb-btn-clear", main)?.addEventListener(
+				"click",
+				() => {
+					state.q = "";
+					state.tag = null;
+					searchInput.value = "";
+					applyChange(false);
+					searchInput.focus();
+				},
+				{ signal: abort.signal },
+			);
+
+			const params = new URLSearchParams(window.location.search);
+			const urlTag = params.get("tag");
+			const urlQ = params.get("q");
+			if (urlTag) state.tag = urlTag;
+			if (urlQ) {
+				state.q = urlQ;
+				searchInput.value = urlQ;
+			}
+			render();
+		})
+		.catch(fail);
+}
+
+/* 「/」快捷键是 document 级监听，但查询目标只接受当前书库输入框。 */
+document.addEventListener("keydown", (event) => {
+	if (event.key !== "/") return;
+	const main = qs<HTMLElement>("#nb-books-main");
+	const input = main ? qs<HTMLInputElement>("#nb-search-input", main) : null;
+	if (!input) return;
+	const target = event.target as HTMLElement;
 	if (
 		target instanceof HTMLInputElement ||
 		target instanceof HTMLTextAreaElement ||
 		target.isContentEditable
 	)
 		return;
-	e.preventDefault();
+	event.preventDefault();
 	input.focus();
 });

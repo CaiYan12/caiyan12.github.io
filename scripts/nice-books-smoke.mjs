@@ -120,15 +120,26 @@ try {
 	// 注意 handoff §10 时序：按钮 loading 240ms → 卡片淡出 170ms → 换书 → 淡入；
 	// 按钮解锁早于内容替换约 170ms（与原型一致），故以「内容实际变化」为等待条件。
 	const beforeId = await heroId();
+	const swapStartedAt = Date.now();
 	await page.click("#nb-today-shuffle");
 	const loadingDisabled = await page.getAttribute(
 		"#nb-today-shuffle",
 		"disabled",
 	);
 	const ariaBusy = await page.getAttribute("#nb-today-shuffle", "aria-busy");
+	const todayIntroBusy = await page.getAttribute(
+		"#nb-intro-shuffle",
+		"aria-busy",
+	);
+	const todayLabel = await page.textContent(
+		"#nb-today-shuffle [data-nb-shuffle-label]",
+	);
 	check(
-		"点击后按钮进入 loading（disabled + aria-busy）",
-		loadingDisabled !== null && ariaBusy === "true",
+		"点击后两个今日入口同步 loading（disabled + aria-busy + 文案）",
+		loadingDisabled !== null &&
+			ariaBusy === "true" &&
+			todayIntroBusy === "true" &&
+			todayLabel === "换书中…",
 	);
 	await page.waitForFunction(
 		(prev) => {
@@ -148,6 +159,12 @@ try {
 		{ timeout: 5000 },
 	);
 	const afterId = await heroId();
+	const swapElapsed = Date.now() - swapStartedAt;
+	check(
+		"主书换书为真实双阶段时序（约 420ms）",
+		swapElapsed >= 380 && swapElapsed <= 760,
+		`${swapElapsed}ms`,
+	);
 	check(
 		"换一换后书已变化且 ≠ 当前",
 		afterId !== beforeId,
@@ -166,7 +183,36 @@ try {
 
 	// --- 站长推荐换一组 ---
 	const oldGroup = currentGroup;
-	await page.click("#nb-featured-shuffle");
+	// 直接派发事件，捕获同步进入 busy 的瞬时状态；Playwright click 可能
+	// 等待按钮因 CSS 入场动画稳定后才返回，错过该观察窗口。
+	const featureBusyState = await page.evaluate(() => {
+		const button = document.querySelector("#nb-featured-shuffle");
+		button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		return {
+			busy: button?.getAttribute("aria-busy"),
+			label: button?.querySelector("[data-nb-shuffle-label]")
+				?.textContent,
+		};
+	});
+	check(
+		"推荐组入口独立进入 loading",
+		featureBusyState.busy === "true" &&
+			featureBusyState.label === "换一批中…",
+	);
+	await page.waitForTimeout(80);
+	const featureMidBusy = await page.evaluate(() => ({
+		busy: document
+			.querySelector("#nb-featured-shuffle")
+			?.getAttribute("aria-busy"),
+		animations: document
+			.querySelector("#nb-featured-grid")
+			?.getAnimations({ subtree: true }).length,
+	}));
+	check(
+		"推荐组 busy 覆盖真实卡片入场中段",
+		featureMidBusy.busy === "true" && (featureMidBusy.animations ?? 0) > 0,
+		JSON.stringify(featureMidBusy),
+	);
 	await page.waitForFunction(
 		() =>
 			!document
@@ -212,6 +258,36 @@ try {
 		"loading 期间连点不产生额外状态错误",
 		errors.length === 0,
 		errors.join(" | ").slice(0, 200),
+	);
+
+	// 第二次换组在 CSS 入场中切页，验证 before-swap 会取消后代动画并移除旧作用域。
+	await page.evaluate(() => {
+		const grid = document.querySelector("#nb-featured-grid");
+		const button = document.querySelector("#nb-featured-shuffle");
+		window.__nbOldFeaturedGrid = grid;
+		window.__nbOldFeaturedButton = button;
+		button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+	});
+	await page.waitForTimeout(30);
+	await page.click('header a[href="/books/archive/"]');
+	await page.waitForURL(/\/books\/archive\//, { timeout: 8000 });
+	await page.waitForSelector("#nb-archive-grid li", { timeout: 8000 });
+	const interruptedState = await page.evaluate(() => {
+		const oldGrid = window.__nbOldFeaturedGrid;
+		const oldButton = window.__nbOldFeaturedButton;
+		return {
+			oldDisconnected: oldGrid ? !oldGrid.isConnected : false,
+			oldAnimations:
+				oldGrid?.getAnimations({ subtree: true }).length ?? -1,
+			oldBusy: oldButton?.getAttribute("aria-busy") ?? null,
+		};
+	});
+	check(
+		"切页中断取消推荐组后代动画并移除旧作用域",
+		interruptedState.oldDisconnected &&
+			interruptedState.oldAnimations === 0 &&
+			interruptedState.oldBusy === null,
+		JSON.stringify(interruptedState),
 	);
 
 	// --- reduced-motion ---
@@ -284,6 +360,92 @@ try {
 			.locator('#nb-archive-grid svg[viewBox="0 0 300 450"]')
 			.count()) > 0,
 	);
+	const coverFallbackReady = await page.evaluate(() => {
+		const fields = {
+			nbId: "01",
+			nbTitle: "百年孤独",
+			nbAuthor: "加西亚·马尔克斯",
+			nbPublisher: "南海出版公司",
+			nbYear: "1967",
+		};
+		for (const suffix of ["a", "b"]) {
+			const host = document.createElement("span");
+			host.dataset.nbCoverFallbackFixture = suffix;
+			const image = document.createElement("img");
+			image.setAttribute("data-nb-cover", "");
+			for (const [key, value] of Object.entries(fields))
+				image.dataset[key] = value;
+			host.append(image);
+			document.body.append(host);
+			image.dispatchEvent(new Event("error"));
+		}
+		return true;
+	});
+	await page.waitForFunction(
+		() =>
+			document.querySelectorAll(
+				'[data-nb-cover-fallback-fixture] svg[viewBox="0 0 300 450"]',
+			).length === 2,
+		{ timeout: 3000 },
+	);
+	const coverFallbackState = await page.evaluate(() => {
+		const svgs = Array.from(
+			document.querySelectorAll(
+				'[data-nb-cover-fallback-fixture] svg[viewBox="0 0 300 450"]',
+			),
+		).map((svg) => svg.outerHTML);
+		return {
+			ready: svgs.length === 2,
+			sameIdDeterministic: svgs[0] === svgs[1],
+			imagesReplaced:
+				document.querySelectorAll(
+					"[data-nb-cover-fallback-fixture] img[data-nb-cover]",
+				).length === 0,
+		};
+	});
+	check(
+		"真实 data-nb-cover='' 图片错误替换为确定性 SVG",
+		coverFallbackReady &&
+			coverFallbackState.ready &&
+			coverFallbackState.sameIdDeterministic &&
+			coverFallbackState.imagesReplaced,
+		JSON.stringify(coverFallbackState),
+	);
+	await page.evaluate(() => {
+		document
+			.querySelectorAll("[data-nb-cover-fallback-fixture]")
+			.forEach((node) => node.remove());
+	});
+	// 书库数据失败后必须显示重试，且重试会解除错误初始化守卫并恢复渲染。
+	const retryPage = await context.newPage();
+	let failOnce = true;
+	await retryPage.route("**/books/data.json", async (route) => {
+		if (failOnce) {
+			failOnce = false;
+			await route.fulfill({
+				status: 503,
+				contentType: "application/json",
+				body: JSON.stringify({ error: "smoke" }),
+			});
+			return;
+		}
+		await route.continue();
+	});
+	await retryPage.goto(archiveUrl, { waitUntil: "domcontentloaded" });
+	await retryPage.waitForSelector("[data-nb-archive-error]", {
+		timeout: 5000,
+	});
+	check(
+		"书库失败显示可操作重试",
+		(await retryPage.locator("[data-nb-archive-retry]").count()) === 1,
+	);
+	await retryPage.click("[data-nb-archive-retry]");
+	await retryPage.waitForSelector("#nb-archive-grid li", { timeout: 5000 });
+	check(
+		"书库重试解除错误守卫并恢复数据",
+		(await retryPage.locator("#nb-archive-grid li").count()) === 12,
+	);
+	await retryPage.close();
 
 	// 六字段搜索：description 词 + recommendationReason 词（比原型多出的两字段，决策 #3）
 	const searchAndCount = async (word) => {
@@ -324,18 +486,34 @@ try {
 			document.querySelectorAll("#nb-tag-filter button"),
 		).find((x) => x.getAttribute("data-tag") === "科幻");
 		const s = b ? getComputedStyle(b) : null;
-		return s ? { color: s.color, bg: s.backgroundColor } : null;
+		return s
+			? {
+					color: s.color,
+					bg: s.backgroundColor,
+					ariaPressed: b?.getAttribute("aria-pressed"),
+				}
+			: null;
 	});
 	check(
 		"选中药丸墨底反白",
 		selectedPill?.bg === "rgb(45, 40, 32)" &&
-			selectedPill?.color === "rgb(245, 240, 228)",
+			selectedPill?.color === "rgb(245, 240, 228)" &&
+			selectedPill?.ariaPressed === "true",
 		JSON.stringify(selectedPill),
 	);
 	await page.goto(`${archiveUrl}?tag=${encodeURIComponent("文学")}`, {
 		waitUntil: "domcontentloaded",
 	});
 	await page.waitForSelector("#nb-archive-grid li", { timeout: 15000 });
+	await page.locator('#nb-tag-filter button[data-tag="文学"]').focus();
+	await page.keyboard.press("Enter");
+	const tagKeyboardState = await page.evaluate(() => {
+		const button = document.activeElement;
+		return {
+			focused: button?.getAttribute("data-tag") === "文学",
+			ariaPressed: button?.getAttribute("aria-pressed"),
+		};
+	});
 	await page.fill("#nb-search-input", "马尔克斯");
 	await page.waitForFunction(
 		() =>
@@ -347,7 +525,10 @@ try {
 	);
 	check(
 		"标签与搜索叠加为 AND",
-		(await page.locator("#nb-archive-grid li").count()) === 2,
+		(await page.locator("#nb-archive-grid li").count()) === 2 &&
+			tagKeyboardState.focused &&
+			tagKeyboardState.ariaPressed === "true",
+		JSON.stringify(tagKeyboardState),
 	);
 
 	// 双视图切换

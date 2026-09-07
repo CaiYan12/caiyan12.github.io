@@ -62,8 +62,10 @@ module.exports = {
 				heading: "var(--t-font-heading)",
 				body: "var(--t-font-body)",
 				// Nice Books 字体槽位（方正书宋 CDN / 本地楷体栈；变量在 books.css）
+				"nb-body": ["var(--nb-font-body)"],
 				"nb-serif": ["var(--nb-font-serif)"],
 				"nb-kai": ["var(--nb-font-kai)"],
+				"nb-hand": ["var(--nb-font-hand)"],
 				"nb-mono": ["var(--nb-font-mono)"],
 			},
 			boxShadow: {

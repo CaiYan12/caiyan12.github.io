@@ -26,15 +26,40 @@ function escapeCheck(s: string): string {
 test("短标题（≤4 字）走竖排分支：dominant-baseline central + 逐字 <text>", () => {
 	const svg = generateCoverSvg(围城);
 	assert.ok(svg.includes('dominant-baseline="central"'));
-	assert.ok(svg.includes('font-size="62"')); // 2 字 → 62px
+	assert.ok(svg.includes('font-size="60"')); // 文学族短标题大字
 	// 逐字竖排：围、城各自一个 <text>
 	assert.ok((svg.match(/class="cv-title"/g) ?? []).length === 2);
 });
 
+test("四字文学标题上收，为腰封预留下部安全区", () => {
+	const svg = generateCoverSvg(books.find((book) => book.id === "01")!);
+	assert.match(svg, /y="205"[^>]*class="cv-title"/);
+	assert.doesNotMatch(svg, /y="259"[^>]*class="cv-title"/);
+});
+
+test("22 本书标题均停在 hero/card 腰封安全线之上", () => {
+	for (const book of books) {
+		const titleBoxes = [
+			...generateCoverSvg(book).matchAll(
+				/<text[^>]*class="cv-title"[^>]*>/g,
+			),
+		].map((match) => {
+			const tag = match[0];
+			const y = Number(tag.match(/y="([0-9.]+)"/)?.[1]);
+			const size = Number(tag.match(/font-size="([0-9.]+)"/)?.[1]);
+			return y + size / 2;
+		});
+		assert.ok(
+			Math.max(...titleBoxes) < 247.5,
+			`${book.id} ${book.title} title extends into hero sash safe line`,
+		);
+	}
+});
+
 test("长标题（>6 字）拆两行横排", () => {
 	const svg = generateCoverSvg(棋王);
-	assert.ok(svg.includes('font-size="27"'));
 	assert.ok((svg.match(/class="cv-title"/g) ?? []).length === 2);
+	assert.ok(svg.includes('x="48"')); // 散文族左上疏排横题
 	assert.ok(!svg.includes('dominant-baseline="central"'));
 });
 
@@ -52,4 +77,48 @@ test("不同 id 允许不同配色，但同 id 配色恒定（palette 由 id 决
 			/<rect x="0" y="0" width="300" height="450" fill="(#[0-9a-f]+)"/,
 		)?.[1];
 	assert.equal(bgOf(generateCoverSvg(围城)), bgOf(generateCoverSvg(围城)));
+	assert.notEqual(
+		bgOf(generateCoverSvg(books[0]!)),
+		bgOf(generateCoverSvg(books[1]!)),
+	);
+});
+
+test("四个族保留独立构图，特殊标题与未知 ID 均安全回退", () => {
+	const byId = (id: string) => books.find((book) => book.id === id)!;
+	const literary = generateCoverSvg(byId("01"));
+	const history = generateCoverSvg(byId("06"));
+	const science = generateCoverSvg(byId("03"));
+	const essay = generateCoverSvg(byId("05"));
+	assert.match(literary, /M54 322/); // literary 曲线
+	assert.match(literary, /x="150" y="[0-9]+" class="cv-title"/); // 中央排版
+	assert.match(history, /M46 276/); // history 档案线
+	assert.match(history, /x="46" y="88" class="cv-title"/); // 左上排版
+	assert.match(science, /<ellipse/); // science 轨道
+	assert.match(science, /x="150" y="104" class="cv-title"/); // 上部横排
+	assert.match(essay, /M54 352/); // essay 地景
+	assert.match(essay, /x="48" y="88" class="cv-title"/); // 左上疏排
+	assert.match(history, /class="cv-meta cv-author"[^>]+opacity="1"/);
+	assert.match(history, /class="cv-meta cv-imprint"[^>]+opacity="1"/);
+	const special = { ...books[0]!, id: "99", title: '<测试 & "封面">' };
+	const unknown = generateCoverSvg(special);
+	assert.match(unknown, /M54 322/);
+	assert.match(unknown, /&lt;测试 &amp; &quot;封面&quot;&gt;/);
+});
+
+test("每个封面族的第二套配色也由 ID 稳定选择", () => {
+	const bgOf = (svg: string) =>
+		svg.match(
+			/<rect x="0" y="0" width="300" height="450" fill="(#[0-9a-f]+)"/,
+		)?.[1];
+	for (const [first, second] of [
+		["01", "02"],
+		["06", "14"],
+		["03", "17"],
+		["05", "08"],
+	] as const) {
+		assert.notEqual(
+			bgOf(generateCoverSvg(books.find((book) => book.id === first)!)),
+			bgOf(generateCoverSvg(books.find((book) => book.id === second)!)),
+		);
+	}
 });

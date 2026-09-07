@@ -1,7 +1,7 @@
 /* ============================================================
  * Nice Books V1 · 样式层（Tailwind 重写方案的薄自定义层）
  * ------------------------------------------------------------
- * 设计 token 权威来源：design-handoff.md §5–§8（禁止改动数值）。
+ * 设计 token 权威来源：docs/nice-books-design.md；本次升级允许按可读性和实体质感复调。
  * 分工：
  *  - 常规布局/排版 → 组件标记里的 Tailwind utility（nb-* 色板 / 任意值）
  *  - 伪元素装饰、keyframes、SVG 内部选择器、swup 过渡 → 本文件
@@ -20,7 +20,7 @@
   --nb-note-border: #e3d3a2;
   --nb-ink: #2d2820; /* 标题/正文 */
   --nb-ink-soft: #5a5142; /* 次级文字 */
-  --nb-muted: #8c8170; /* 元信息/占位符 */
+  --nb-muted: #6e6558; /* 元信息/占位符；在暖纸底上保持正文级小字对比度 */
   --nb-blue: #3a6ea5; /* 老网页蓝：链接、focus 环 */
   --nb-seal: #a8433c; /* 印章红 */
   --nb-kraft: #8a5a33;
@@ -30,15 +30,17 @@
   /* 字体槽位（仓库字体策略：方正书宋 CDN、思源黑体 VF、JetBrains VF、本地楷体） */
   --nb-font-serif: "FZShuSong-Z01S", "方正书宋", "FangZheng ShuSong", "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
   --nb-font-sans: "Noto Sans SC Variable", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Hiragino Sans GB", "WenQuanYi Micro Hei", sans-serif;
+  --nb-font-body: var(--nb-font-sans);
   --nb-font-kai: "KaiTi", "STKaiti", "楷体", "Noto Serif SC", serif;
   /* 手写字体（精选摘抄贴纸卡）：平方时光体经 ZeoSeven FontsAPI 按页引入（仅详情页 head），
 	 * 本地已装用户零下载（result.css src 含 local()），未装/CDN 失败时回退楷体 */
   --nb-font-hand: "平方时光体", "KaiTi", "STKaiti", "楷体", serif;
   --nb-font-mono: "JetBrains Mono Variable", "JetBrains Mono", Consolas, "Courier New", monospace;
 
-  /* 硬边纸张投影（handoff §8：禁止大模糊软阴影） */
+  /* 纸张硬边投影；书体接触处只使用小范围自然软影。 */
   --nb-shadow-paper: 2px 3px 0 rgba(74, 63, 46, 0.1);
   --nb-shadow-lift: 4px 5px 0 rgba(74, 63, 46, 0.07);
+  --nb-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* ---------- Base 层微调（仅 books 页面生效）---------- */
@@ -66,6 +68,19 @@
     background-size: 26px 26px;
   }
 
+  .font-nb-body {
+    font-family: var(--nb-font-body);
+  }
+  .font-nb-serif {
+    font-family: var(--nb-font-serif);
+  }
+  .font-nb-kai {
+    font-family: var(--nb-font-kai);
+  }
+  .font-nb-mono {
+    font-family: var(--nb-font-mono);
+  }
+
   /* 封面 SVG 内部字体（.cover text 系列选择器无法用 utility 表达） */
   .nb-cover text {
     font-family: var(--nb-font-serif);
@@ -77,38 +92,26 @@
   /* Swup 切页编排（作用于 main 容器：页眉/页脚静止，内容切换才需要过渡）
 	 * 官方 fade 模式：is-animating 贯穿离场+替换+入场等待期（元素保持隐藏上移态）；
 	 * swup 完成导航移除全部动画类的瞬间，元素经基础 240ms ease-out 过渡回落
-	 * ——即「新页面自下方 8px 上浮淡入」。离场用更快 170ms ease-in（类覆盖）。
+	 * ——即「新页面自下方 8px 上浮淡入」。离场用更快 170ms ease-out（类覆盖）。
 	 * 节奏与 hero 换书动效（handoff §11 出170/入240）同族；reduced-motion 全局归零。
 	 * 勿加 is-rendering 终态规则：swup 加 is-rendering 先于容器替换，新元素插入即
 	 * 终态会导致入场过渡无从发生（2026-09-06 实测）。 */
   .transition-swup-fade {
     transition:
-      opacity 0.24s ease-out,
-      transform 0.24s ease-out;
+      opacity 0.24s var(--nb-ease-out),
+      transform 0.24s var(--nb-ease-out);
   }
   html.is-animating .transition-swup-fade {
     opacity: 0;
     transform: translateY(-8px);
     transition:
-      opacity 0.17s ease-in,
-      transform 0.17s ease-in;
+      opacity 0.17s var(--nb-ease-out),
+      transform 0.17s var(--nb-ease-out);
   }
 }
 
 /* ---------- Keyframes（handoff §11 动画参数）---------- */
 @layer components {
-  /* Hero 换书入场：translateY(10px)→0 + opacity，240ms ease-out */
-  @keyframes nb-hero-in {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
   /* 推荐卡片级联入场：translateY(8px)→0，240ms，delay=--d */
   @keyframes nb-card-in {
     from {
@@ -118,16 +121,6 @@
     to {
       opacity: 1;
       transform: none;
-    }
-  }
-
-  /* 视图/结果切换淡入：220ms */
-  @keyframes nb-fade-in {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
     }
   }
 }
@@ -147,6 +140,8 @@
     --page-inset: 6px;
     --back-inset: 3px;
     position: relative;
+    isolation: isolate;
+    overflow: visible;
   }
   .nb-book3d-thin {
     --p: 3px;
@@ -169,6 +164,7 @@
     transform: translateX(calc(var(--p) + var(--e)));
     background: #453c31;
     border-radius: 2px;
+    box-shadow: 1px 2px 3px rgba(46, 38, 29, 0.18);
   }
   /* 层2：书页纸张（比背板更小，页纹为水平细线=逐页纸叠，从书口露出） */
   .nb-book3d .nb-book3d-pages {
@@ -181,6 +177,19 @@
     transform: translateX(var(--p));
     background: repeating-linear-gradient(to bottom, #f6f0e0 0 2px, #e2d8c0 2px 3px) right top / var(--p) 100% no-repeat;
     border-radius: 0 2px 2px 0;
+    box-shadow: 1px 1px 2px rgba(73, 60, 41, 0.11);
+  }
+
+  /* The named variants are a stable hook for page layout and motion workers. */
+  .nb-book3d-hero {
+    --p: 11px;
+    --e: 2px;
+  }
+  .nb-book3d-list {
+    --p: 3px;
+    --e: 1px;
+    --page-inset: 2px;
+    --back-inset: 1px;
   }
 
   /* ---------- 精选摘抄贴纸卡（参考 about 便签语言：实线边框+硬投影+微旋转+胶带+折角） ---------- */
@@ -206,9 +215,6 @@
     box-shadow: 2px 3px 0 rgba(74, 63, 46, 0.08);
     transform: rotate(var(--ex-rot, 0deg));
     transition: transform 0.2s ease;
-  }
-  .nb-excerpt-card:hover {
-    transform: rotate(0deg) translateY(-2px);
   }
   .nb-excerpt-card:nth-child(4n + 1) {
     --ex-rot: -0.8deg;
@@ -266,35 +272,16 @@
     display: block;
     margin-top: 8px;
     font-family: var(--nb-font-sans);
-    font-size: 12px;
+    font-size: 13px;
     font-style: normal;
-    color: rgba(74, 63, 46, 0.55);
+    color: #655a4a;
     text-align: right;
-  }
-
-  /* Hero 换书两段式编排（handoff §11：出 170ms / 入 240ms） */
-  .nb-hero-swap {
-    transition:
-      opacity 0.17s ease,
-      transform 0.17s ease;
-  }
-  .nb-hero-swap.is-leaving {
-    opacity: 0;
-    transform: translateY(-10px);
-  }
-  .nb-hero-swap.is-entering {
-    animation: nb-hero-in 0.24s ease-out both;
   }
 
   /* 推荐卡片级联入场：delay 由行内 --d 提供（45ms × index） */
   .nb-stagger {
     animation: nb-card-in 0.24s ease-out both;
     animation-delay: var(--d, 0ms);
-  }
-
-  /* 书库结果区切换淡入：220ms */
-  .nb-fade-swap {
-    animation: nb-fade-in 0.22s ease-out;
   }
 
   /* 换一换按钮 loading：↻ 旋转 0.8s（handoff §11） */
@@ -322,8 +309,62 @@
     width: 100%;
     height: 100%;
   }
+  /* 卡片只保留书架底线；封面尺寸由书本本身决定，不铺满整张卡。 */
+  .nb-book-card {
+    position: relative;
+    box-shadow: none;
+  }
+  .nb-book-card::after {
+    position: absolute;
+    z-index: 0;
+    inset: 4px 0 -3px;
+    border-radius: 2px;
+    box-shadow: 3px 5px 9px rgba(74, 63, 46, 0.13);
+    content: "";
+    opacity: 0;
+    transform: none;
+    transition: opacity 180ms var(--nb-ease-out);
+    pointer-events: none;
+  }
+  .nb-book-card .nb-book3d {
+    width: min(100%, 180px);
+    margin-inline: auto;
+    transition: transform 180ms var(--nb-ease-out);
+  }
+  .nb-book-card > a {
+    position: relative;
+    z-index: 1;
+  }
+  .nb-cover--card .cv-meta,
+  .nb-cover--list .cv-meta {
+    display: none;
+  }
+  .nb-hero-card {
+    min-width: 0;
+  }
+  .nb-hero-book .nb-book3d {
+    width: 100%;
+  }
+  /* Hero 腰封横跨书口安全区；作者与出版信息向下避让，保持主书署名可读。 */
+  .nb-cover--hero .cv-author {
+    transform: translateY(20px);
+  }
+  .nb-cover--hero .cv-imprint {
+    transform: translateY(8px);
+  }
+  /* 装订侧只在前封面左边落一条内侧暗线，纸口仍只从右侧露出。 */
+  .nb-cover::after {
+    content: "";
+    position: absolute;
+    z-index: 4;
+    inset: 0 auto 0 0;
+    width: 6px;
+    background: linear-gradient(to right, rgba(35, 28, 20, 0.28), rgba(35, 28, 20, 0.08) 55%, transparent);
+    box-shadow: 1px 0 1px rgba(255, 248, 228, 0.16);
+    pointer-events: none;
+  }
 
-  /* 封面胶带（单页重装饰点睛） */
+  /* 封面胶带：挂在外层书本，允许向上外伸；封面本身仍负责裁切图片。 */
   .nb-tape::before {
     content: "";
     position: absolute;
@@ -336,6 +377,127 @@
     background: rgba(240, 233, 214, 0.78);
     border: 1px solid rgba(74, 63, 46, 0.12);
     box-shadow: 0 1px 2px rgba(74, 63, 46, 0.08);
+  }
+
+  .nb-sash {
+    position: absolute;
+    z-index: 5;
+    top: 68%;
+    left: -4px;
+    width: calc(100% + var(--p) + 8px);
+    min-height: 34px;
+    transform: rotate(-2deg);
+    transform-origin: left center;
+    color: #fff8e8;
+    background: var(--nb-seal);
+    box-shadow: 1px 2px 3px rgba(73, 39, 32, 0.2);
+    padding-bottom: 6px;
+    pointer-events: none;
+  }
+  /* Hero 保留较低的腰封位置以避开标题；小卡上移，给两列窄屏留出完整底边。 */
+  .nb-book3d-card .nb-sash {
+    top: 58%;
+  }
+  @media (min-width: 640px) {
+    /* 180px 陈列封面有足够底边，把腰封放到标题安全线下方。 */
+    .nb-book3d-card .nb-sash {
+      top: 68%;
+    }
+  }
+  .nb-book3d-hero .nb-sash {
+    /* 腰封提前到下部安全区上缘，给 SVG y=378 作者与版次留出可量化的底部空间。 */
+    top: 55%;
+  }
+  .nb-sash-face {
+    display: block;
+    padding: 5px 10px 4px;
+    font-family: var(--nb-font-serif);
+    font-size: 13.5px;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+  .nb-sash-copy {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    box-sizing: border-box;
+    height: 37px;
+    overflow: hidden;
+    padding: 0 12px;
+    font-family: var(--nb-font-kai);
+    font-size: 13px;
+    line-height: 18px;
+    text-align: center;
+    text-overflow: ellipsis;
+  }
+  .nb-sash-fold {
+    position: absolute;
+    top: 0;
+    right: calc(var(--p) * -1);
+    width: var(--p);
+    height: 100%;
+    background: #7b312e;
+    clip-path: polygon(0 0, 100% 10%, 100% 90%, 0 100%);
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .nb-book-card:hover::after {
+      opacity: 1;
+      transform: translateY(2px) scale(0.98);
+    }
+    .nb-book-card:hover .nb-book3d {
+      transform: translateY(-4px) rotate(-1deg);
+    }
+    .nb-hero-book:hover {
+      transform: translateY(-3px) rotate(0deg);
+    }
+    .nb-excerpt-card:hover {
+      transform: rotate(0deg) translateY(-2px);
+    }
+  }
+
+  .nb-hero-book,
+  .nb-hero-copy,
+  .nb-note {
+    will-change: transform;
+  }
+
+  .nb-note {
+    transform-origin: left top;
+  }
+
+  /* Shared layout hooks; page templates may add these to their list elements. */
+  .nb-book-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+  }
+  .nb-related-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 22px;
+  }
+  @media (max-width: 1079px) {
+    .nb-related-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+  }
+  @media (max-width: 759px) {
+    .nb-book-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .nb-related-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 359px) {
+    .nb-book-grid,
+    .nb-related-grid {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
   }
 
   /* 空状态小书图形 */
@@ -368,5 +530,21 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .nb-book-card:hover,
+  .nb-hero-book:hover,
+  .nb-excerpt-card:hover {
+    transform: none;
+  }
+  .nb-book-card::after,
+  .nb-book-card .nb-book3d {
+    transform: none;
+  }
+  .nb-excerpt-card {
+    transform: none;
+  }
+  .nb-stagger {
+    animation-name: none !important;
+    animation-delay: 0ms !important;
   }
 }
