@@ -22,6 +22,15 @@ test("所有书目均有固定封面族，未知 ID 回退文学族", () => {
 	assert.equal(coverFamilyForId("unknown"), "literary");
 });
 
+test("所有书目均提供至少一条精选摘抄", () => {
+	for (const book of books) {
+		assert.ok(
+			book.excerpts?.some((excerpt) => excerpt.trim().length > 0),
+			`${book.id} ${book.title} 缺少精选摘抄`,
+		);
+	}
+});
+
 test("四个封面族有可辨识且确定的 SVG 构图", () => {
 	const svgs = new Set(books.map((book) => generateCoverSvg(book)));
 	assert.equal(svgs.size, books.length);

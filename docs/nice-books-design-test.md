@@ -95,7 +95,8 @@ node scripts/nice-books-design-qa.mjs
 
 - `src/nice-books/data/books.ts` 由 22 本扩充到 **70 本**（新增 23–70），ID 唯一、作者仍为 `string[]`，`coverUrl` 继续走程序化 SVG 回退契约。
 - `src/nice-books/lib/display.ts` 已为 01–70 全部登记固定封面族；未知 ID 仍回退文学族，不向 `Book` 领域模型添加展示字段。
-- `pnpm test:nice-books`：**50/50**；`pnpm check`：0 errors / 0 warnings / 2 个既有 hints。
+- `pnpm test:nice-books`：**51/51**，新增“所有书目均提供至少一条精选摘抄”契约；`pnpm check`：0 errors / 0 warnings / 2 个既有 hints。
+- 70 本书目均已补齐精选摘抄（70/70），详情页贴纸版块不再因数据缺失而消失。
 - `pnpm build`：通过，生成 **174** 个页面；构建自动更新的 LQIP、贡献和图片 manifest 缓存已恢复，未混入本次源码差异。
 - `pnpm smoke:nice-books`（开发服务器）：**72/72**，覆盖 70 本全量载入、收起/重新展开、动态标签计数和筛选单次最多追加 10 本。
 - `node scripts/nice-books-design-qa.mjs`（开发服务器）：**65/65**，书库网格与列表截图均完成 70 本载入，四族封面映射稳定且无运行时错误。
