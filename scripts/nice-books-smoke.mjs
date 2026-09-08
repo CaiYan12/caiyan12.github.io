@@ -70,12 +70,13 @@ try {
 		"hero 容器 aria-live=polite",
 		(await page.getAttribute("#nb-hero", "aria-live")) === "polite",
 	);
-	// 当前页导航高亮（border/text 色类必须互斥拼接，否则被 Tailwind 源顺序覆盖）
+	// 当前页导航高亮：44px 点击区不画边框，下划线只贴住内部文字层。
 	const navActive = await page.evaluate(() => {
 		const a = Array.from(
 			document.querySelectorAll('nav[aria-label="站内导航"] a'),
 		).find((x) => x.getAttribute("aria-current") === "page");
-		const s = a ? getComputedStyle(a) : null;
+		const label = a?.querySelector(".nb-site-nav-label");
+		const s = label ? getComputedStyle(label) : null;
 		return s
 			? { label: a.textContent.trim(), border: s.borderBottomColor }
 			: null;
@@ -548,24 +549,210 @@ try {
 	await page.click("#nb-view-grid");
 	await page.waitForSelector("#nb-archive-grid li", { timeout: 3000 });
 
-	// 载入更多 / 到底结语
+	// 载入更多 / 收起：按钮是异步交互，首次点击必须先进入可感知 loading。
 	await page.goto(archiveUrl, { waitUntil: "domcontentloaded" });
 	await page.waitForSelector("#nb-archive-grid li", { timeout: 15000 });
-	await page.click("#nb-btn-more");
+	const archiveLoadButton = () =>
+		page.locator("#nb-btn-more:visible, #nb-btn-collapse:visible").first();
+	const dispatchArchiveLoad = () =>
+		page.evaluate(() => {
+			const button = document.querySelector(
+				"#nb-btn-more:not([hidden]), #nb-btn-collapse:not([hidden])",
+			);
+			button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+			return button
+				? {
+						disabled: button.disabled,
+						busy: button.getAttribute("aria-busy"),
+						label: button.textContent?.trim() ?? "",
+					}
+				: null;
+		});
+	const initialLoad = await page.evaluate(() => {
+		const button = document.querySelector(
+			"#nb-btn-more:not([hidden]), #nb-btn-collapse:not([hidden])",
+		);
+		button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		const state = button
+			? {
+					disabled: button.disabled,
+					busy: button.getAttribute("aria-busy"),
+					label: button.textContent?.trim() ?? "",
+					count: document.querySelectorAll("#nb-archive-grid li")
+						.length,
+				}
+			: null;
+		// Dispatch synchronously against the same trigger so the test observes
+		// the actionBusy guard instead of accidentally clicking the post-load
+		// collapse control after the zero-delay task has rendered.
+		button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		return state;
+	});
+	check(
+		"书库首次载入期间显示 disabled + aria-busy + 载入中",
+		initialLoad?.disabled === true &&
+			initialLoad.busy === "true" &&
+			initialLoad.label.includes("加载中"),
+		JSON.stringify(initialLoad),
+	);
+	// loading 期间的重复点击不得并发追加或跳过中间状态。
+	check(
+		"书库载入中重复点击不提前追加书目",
+		initialLoad?.count === 12,
+		JSON.stringify(initialLoad),
+	);
+	await page.waitForFunction(
+		() => document.querySelectorAll("#nb-archive-grid li").length > 12,
+		null,
+		{ timeout: 5000 },
+	);
+	await page.waitForFunction(
+		() =>
+			!document.querySelector(
+				"#nb-btn-more[aria-busy], #nb-btn-collapse[aria-busy]",
+			),
+		null,
+		{ timeout: 5000 },
+	);
+	// 反复点击直到现有 22 本 fixture 全部出现，每次推进由 LOAD_STEP=10 控制。
+	for (let attempt = 0; attempt < 4; attempt += 1) {
+		if ((await page.locator("#nb-archive-grid li").count()) === 22) break;
+		const button = archiveLoadButton();
+		if (!(await button.count()) || !(await button.isVisible())) break;
+		const state = await dispatchArchiveLoad();
+		check(
+			`书库第 ${attempt + 2} 次载入有 loading 状态`,
+			state?.disabled === true &&
+				state.busy === "true" &&
+				state.label.includes("加载中"),
+			JSON.stringify(state),
+		);
+		await page.waitForFunction(
+			() =>
+				!document.querySelector(
+					"#nb-btn-more[aria-busy], #nb-btn-collapse[aria-busy]",
+				),
+			null,
+			{ timeout: 5000 },
+		);
+	}
 	await page.waitForFunction(
 		() => document.querySelectorAll("#nb-archive-grid li").length === 22,
 		null,
 		{ timeout: 3000 },
 	);
 	check(
-		"载入更多补足全量 22 本",
-		(await page.locator("#nb-btn-more").isHidden()) === true,
+		"重复载入补足全量 22 本",
+		(await page.locator("#nb-archive-grid li").count()) === 22,
 	);
 	check(
 		"到底结语显示",
 		((await page.textContent("#nb-the-end")) ?? "").includes(
 			"已经到底啦 · 共 22 本",
 		),
+	);
+	const collapse = page.locator("#nb-btn-collapse:visible");
+	check(
+		"全量后显示收起控件",
+		(await collapse.count()) === 1 &&
+			(await collapse.textContent())?.includes("收起") === true,
+	);
+	const collapseState = await page.evaluate(() => {
+		const button = document.querySelector("#nb-btn-collapse:not([hidden])");
+		button?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+		return button
+			? {
+					disabled: button.disabled,
+					busy: button.getAttribute("aria-busy"),
+					label: button.textContent?.trim() ?? "",
+				}
+			: null;
+	});
+	check(
+		"收起期间同样显示 disabled + aria-busy + 加载中",
+		collapseState?.disabled === true &&
+			collapseState.busy === "true" &&
+			collapseState.label.includes("加载中"),
+		JSON.stringify(collapseState),
+	);
+	await page.waitForFunction(
+		() =>
+			document.querySelectorAll("#nb-archive-grid li").length === 12 &&
+			!document.querySelector("#nb-btn-collapse[aria-busy]"),
+		null,
+		{ timeout: 5000 },
+	);
+	check(
+		"收起后恢复默认 12 本",
+		(await page.locator("#nb-archive-grid li").count()) === 12,
+	);
+	const expandAgain = archiveLoadButton();
+	check(
+		"收起后重新显示载入更多",
+		(await expandAgain.count()) === 1 &&
+			(await expandAgain.textContent())?.includes("载入") === true,
+	);
+	await expandAgain.click();
+	await page.waitForFunction(
+		() => document.querySelectorAll("#nb-archive-grid li").length > 12,
+		null,
+		{ timeout: 5000 },
+	);
+	while ((await page.locator("#nb-archive-grid li").count()) < 22) {
+		const more = archiveLoadButton();
+		if (!(await more.count()) || !(await more.isVisible())) break;
+		await more.click();
+		await page.waitForFunction(
+			() =>
+				!document.querySelector(
+					"#nb-btn-more[aria-busy], #nb-btn-collapse[aria-busy]",
+				),
+			null,
+			{ timeout: 5000 },
+		);
+	}
+	check(
+		"重新展开再次到达全量 22 本",
+		(await page.locator("#nb-archive-grid li").count()) === 22,
+	);
+	check(
+		"重新展开后收起控件再次可用",
+		(await page.locator("#nb-btn-collapse:visible").count()) === 1,
+	);
+
+	// 15 本筛选结果验证单次最多追加 10 本：初始 12 本，点击后只补齐剩余 3 本。
+	await page.fill("#nb-search-input", "小说");
+	await page.waitForFunction(
+		() =>
+			(
+				document.querySelector("#nb-result-line")?.textContent ?? ""
+			).includes("符合条件 15 本"),
+		null,
+		{ timeout: 3000 },
+	);
+	check(
+		"筛选结果载入前保留默认 12 本",
+		(await page.locator("#nb-archive-grid li").count()) === 12,
+	);
+	const filteredLoad = await dispatchArchiveLoad();
+	check(
+		"筛选结果载入期间仍显示 loading",
+		filteredLoad?.disabled === true &&
+			filteredLoad.busy === "true" &&
+			filteredLoad.label.includes("加载中"),
+		JSON.stringify(filteredLoad),
+	);
+	await page.waitForFunction(
+		() =>
+			document.querySelectorAll("#nb-archive-grid li").length === 15 &&
+			!document.querySelector("#nb-btn-more[aria-busy]"),
+		null,
+		{ timeout: 5000 },
+	);
+	check(
+		"单次载入最多追加 10 本并补齐 15 本筛选结果",
+		(await page.locator("#nb-archive-grid li").count()) === 15 &&
+			(await page.locator("#nb-btn-collapse:visible").count()) === 1,
 	);
 
 	// 空状态与清除
@@ -759,10 +946,13 @@ try {
 		const a = document.querySelector(
 			'nav[aria-label="站内导航"] a[aria-current="page"]',
 		);
+		const label = a?.querySelector(".nb-site-nav-label");
 		return a
 			? {
 					label: a.textContent.trim(),
-					border: getComputedStyle(a).borderBottomColor,
+					border: label
+						? getComputedStyle(label).borderBottomColor
+						: null,
 				}
 			: null;
 	});

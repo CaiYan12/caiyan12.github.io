@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { books } from "../data/books";
 import {
+	bookCardHTML,
 	coverHTML,
 	heroCardHTML,
 	listRowHTML,
@@ -55,16 +56,26 @@ test("四个封面族有可辨识且确定的 SVG 构图", () => {
 	);
 });
 
-test("书封支持 hero/card/list 三种展示规格并保留旧 thin/tape 选项", () => {
+test("书封支持 hero/card/list 三种展示规格与封面书签", () => {
 	const book = books[0]!;
 	assert.match(
-		coverHTML(book, { variant: "hero", tape: true }),
-		/nb-book3d-hero nb-tape/,
+		coverHTML(book, { variant: "hero", marker: true }),
+		/nb-book3d-hero/,
 	);
 	assert.match(coverHTML(book, { variant: "card" }), /nb-cover--card/);
 	assert.match(coverHTML(book, { variant: "list" }), /nb-book3d-list/);
 	assert.match(coverHTML(book, { thin: true }), /nb-book3d-list/);
-	assert.match(coverHTML(book, { tape: true }), /nb-tape/);
+	assert.match(coverHTML(book, { marker: true }), /nb-book-marker/);
+	assert.doesNotMatch(coverHTML(book, { marker: true }), /nb-book-tape/);
+	assert.match(coverHTML(book), /nb-book3d-object/);
+	assert.match(coverHTML(book), /nb-front-board/);
+	assert.match(coverHTML(book), /nb-front-artwork nb-cover/);
+	assert.match(coverHTML(book), /nb-back-board/);
+	assert.match(coverHTML(book), /nb-spine-body/);
+	assert.doesNotMatch(coverHTML(book), /nb-page-block/);
+	assert.match(coverHTML(book), /nb-page-top/);
+	assert.match(coverHTML(book), /nb-page-fore-edge/);
+	assert.match(coverHTML(book), /nb-page-bottom/);
 	assert.match(
 		coverHTML({ ...book, coverUrl: "/books/covers/01.jpg" }),
 		/object-contain/,
@@ -77,6 +88,11 @@ test("featured hero/card 有腰封，列表与普通书封均无腰封", () => {
 	for (const variant of ["hero", "card"] as const) {
 		const featuredHTML = coverHTML(featured, { variant });
 		assert.match(featuredHTML, /nb-sash/);
+		assert.match(featuredHTML, /nb-obi-front/);
+		assert.match(featuredHTML, /nb-obi-front-fold/);
+		assert.doesNotMatch(featuredHTML, /nb-obi-fore-edge/);
+		assert.match(featuredHTML, /nb-obi-back-return/);
+		assert.doesNotMatch(featuredHTML, /nb-obi-spine/);
 		assert.match(
 			featuredHTML,
 			new RegExp(featured.recommendationReason.slice(0, 8)),
@@ -85,6 +101,13 @@ test("featured hero/card 有腰封，列表与普通书封均无腰封", () => {
 	assert.doesNotMatch(coverHTML(featured, { variant: "list" }), /nb-sash/);
 	for (const variant of ["hero", "card", "list"] as const)
 		assert.doesNotMatch(coverHTML(plain, { variant }), /nb-sash/);
+	const relatedHTML = bookCardHTML(featured, undefined, { related: true });
+	assert.match(relatedHTML, /nb-book-card--shelf-style/);
+	assert.match(relatedHTML, /nb-related-book-title/);
+	assert.match(relatedHTML, /nb-book-authors/);
+	assert.doesNotMatch(relatedHTML, /group-hover:text-nb-blue/);
+	assert.match(bookCardHTML(featured), /nb-book-authors/);
+	assert.match(heroCardHTML(featured), /nb-hero-book--shelf-style/);
 });
 
 test("所有 22 本书均可输出三档封面，辅助字号不低于 13px", () => {

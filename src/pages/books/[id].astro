@@ -61,15 +61,17 @@ const metaDescription =
 		>
 			<p class="pb-5 pt-8 text-[13.5px]">
 				<a
-					class="inline-flex min-h-11 items-center border-b border-dashed border-nb-border-strong pb-px text-nb-ink-soft no-underline hover:border-nb-blue hover:text-nb-blue"
-					href="/books/archive/">← 返回书库</a
+					class="nb-back-link inline-flex min-h-11 items-center text-nb-ink-soft no-underline hover:text-nb-blue"
+					href="/books/archive/"
+					><span class="nb-back-link-label">← 返回书库</span></a
 				>
 			</p>
 
-			<article class="relative pb-3 pt-2 max-[540px]:pt-0">
-				<span
-					class="absolute -top-px right-12 h-[58px] w-6 bg-nb-seal shadow-[1px_2px_0_rgba(74,63,46,0.15)] [clip-path:polygon(0_0,100%_0,100%_100%,50%_72%,0_100%)] max-[640px]:right-5"
-					aria-hidden="true"></span>
+			<article class="relative pb-3 pt-14 max-[540px]:pt-12">
+				<span class="nb-detail-hanger" aria-hidden="true">
+					<i class="nb-detail-hanger-line"></i>
+					<i class="nb-detail-hanger-marker"></i>
+				</span>
 				<div
 					class="grid grid-cols-[240px_1fr] gap-x-11 gap-y-8 max-[960px]:grid-cols-[210px_1fr] max-[960px]:gap-x-8 max-[820px]:grid-cols-1 max-[820px]:gap-y-7"
 				>
@@ -90,7 +92,7 @@ const metaDescription =
 					>
 						<Fragment
 							set:html={coverHTML(book, {
-								tape: true,
+								marker: true,
 								variant: "hero",
 							})}
 						/>
@@ -222,7 +224,7 @@ const metaDescription =
 						<ul class="nb-related-grid gap-[22px] max-[960px]:gap-4 max-[540px]:gap-3">
 							<Fragment
 								set:html={sameShelf
-									.map((b) => bookCardHTML(b))
+									.map((b) => bookCardHTML(b, undefined, { related: true }))
 									.join("")}
 							/>
 						</ul>

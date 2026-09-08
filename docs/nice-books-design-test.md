@@ -73,3 +73,20 @@ node scripts/nice-books-design-qa.mjs
 ## 限制
 
 本机浏览器设备模拟不是实体手机硬件证明；性能采样仅代表记录的本机环境。CDN故障与功能失败分开记录，当前验收未观察到意外CDN失败；标题实际使用本机书宋，不能把它写成远程字体下载成功的证据。保留构建中的cover静态/动态混合导入提示及既有Mermaid大chunk提示；未修改框架版本。最终审美接受度交由用户人工审查。
+
+## 2026-09-08 Book3D 几何层重构复验
+
+- 删除旧的 `--depth-x/y` 屏幕错位、`back` 扩宽遮挡、顶面/书口 `clip-path` 拼接、固定宽度弧形书脊、`spine::before` 顶部补面，以及腰封 `width + right` 补偿。
+- 新增 `lib/book-geometry.ts`，hero/card/list 共享同一 `BookGeometry` 接口与 CSS Variables 输出；封面 SVG、真实图片回退和书籍数据未改。
+- 新增 `pnpm qa:nice-books-geometry`：在开发服务器上覆盖三页、320/390/768/1024/1280、换书后和 reduced-motion，共 **1239** 项运行时断言，验证前后封尺寸、双倍 depth 书口、页块三面、前封腰封及窄折边、断口补丁缺失与整页 overflow。
+
+## 2026-09-08 CodePen 框架复刻与七轮视觉复验
+
+- 参考实现：[CSS 3D book from a flat cover image](https://codepen.io/shanomurphy/pen/xxqVdxM)。按其 `front +thickness / back -thickness / pages 2×thickness / rotateY(-25deg)` 关系重写，未引入 Three.js 或位图书体。
+- 连续完成七轮“修改—截图—自评—优化”。关键纠正包括：移除会压平 3D 上下文的 `filter`、让详情页命中 hover、把书口提升为直接子面、恢复书口双面可见、把书口旋转原点从旧盒体的左缘改回参考实现的中心、让后封和书脊继承封面主色。
+- 用户补充后的腰封标准：只覆盖前封纸面，并以 `boardThickness + 3px` 的窄面绕过前封右缘；DOM 与 CSS 均不再生成后封／书脊腰封，因此白色书口从上到下保持连续。
+- 每轮静态与 hover 截图位于 `output/playwright/nice-books-three-faces/round-1` 至 `round-7`；跨页最终截图为同目录的 `home-desktop.png`、`archive-desktop.png`、`detail-desktop.png` 和 `home-mobile.png`。
+- 补充视觉修正：移除主书顶部胶带，改为封面右上印章红燕尾书签；静态和 hover 截图见同目录 `round-8-marker/rest.png` 与 `hover.png`。
+- 同架/书库小书腰封回归：180px 卡片压缩标题与两行荐语布局，书宽不超过 159px 时通过 container query 收敛为 17px + 28px；390px 实测腰封 `clientHeight=51`、`scrollHeight=51`，运行时几何 QA 同步检查荐语盒底边不越界。
+- 本轮开发服务器回归：单测 **45/45**、smoke **56/56**、设计 QA **65/65**；`pnpm check` 为 0 errors / 0 warnings / 2 个既有 hints，`pnpm build` 退出码 0。构建自动更新的数据缓存已恢复，没有混入工作区。
+- 自动截图位于 `output/nice-books-design/`；该轮以自然商业书籍视角为准，正面为主、右书口明确、顶部只作结构提示。

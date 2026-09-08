@@ -43,21 +43,21 @@ const links: {
 				>
 			</a>
 			<nav
-				class="flex items-center gap-[22px] max-[640px]:gap-4 [&>a]:inline-flex [&>a]:min-h-11 [&>a]:items-center"
+				class="flex items-center gap-[22px] max-[640px]:gap-4"
 				aria-label="站内导航"
 			>
 				{
 					links.map((link) => (
 						<a
 							href={link.href}
-							class={`${NAV_BASE} ${link.key === active ? NAV_ACTIVE : NAV_IDLE} inline-flex min-h-11 items-center`}
+							class={`${NAV_BASE} ${link.key === active ? NAV_ACTIVE : NAV_IDLE}`}
 							aria-current={
 								link.key === active ? "page" : undefined
 							}
 							data-nb-nav={link.key ?? "external"}
 							data-no-swup={link.noSwup ? "" : undefined}
 						>
-							{link.label}
+							<span class="nb-site-nav-label">{link.label}</span>
 						</a>
 					))
 				}

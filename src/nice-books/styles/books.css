@@ -81,6 +81,28 @@
     font-family: var(--nb-font-mono);
   }
 
+  /* 44px 点击区与文字装饰分层：下划线跟随字面，不沉到点击区底边。 */
+  .nb-site-nav-label {
+    display: inline-block;
+    padding-top: 2px;
+    border-bottom: 2px solid transparent;
+    line-height: 1.5;
+    transition: border-color 150ms ease;
+  }
+  .nb-site-nav-link[aria-current="page"] .nb-site-nav-label {
+    border-bottom-color: var(--nb-seal);
+  }
+  .nb-back-link-label {
+    display: inline-block;
+    padding-bottom: 1px;
+    border-bottom: 1px dashed var(--nb-border-strong);
+    line-height: 1.5;
+    transition: border-color 150ms ease;
+  }
+  .nb-back-link:hover .nb-back-link-label {
+    border-bottom-color: var(--nb-blue);
+  }
+
   /* 封面 SVG 内部字体（.cover text 系列选择器无法用 utility 表达） */
   .nb-cover text {
     font-family: var(--nb-font-serif);
@@ -127,69 +149,137 @@
 
 /* ---------- 装饰组件类（伪元素/复杂背景，utility 不宜表达）---------- */
 @layer components {
-  /* ---------- 立体书本外壳 ----------
-	 * 传统书本正视结构（书脊在左、书口朝右）：
-	 * 封面是最大的硬壳，包住纸张的上/下/左三侧；内页比封面小
-	 * （上下各内缩），页纹只从右侧书口露出；背板书壳居中包夹。
-	 * 层级尺寸（外→内）：封面(齐平) > 背板(内缩 --back-inset) > 纸张(内缩 --page-inset)。
-	 * --p: 页纹露出宽度；--e: 背板在页纹外再露出的深色边宽度。
-	 * mini 场景（列表 48px 行）用 .nb-book3d-thin 收窄。 */
+  /* ---------- Book3D geometry layer ----------
+	 * 复刻 CodePen xxqVdxM：前封位于 +thickness、后封位于 -thickness，
+	 * 书口宽 2*thickness 并绕 Y 轴 90deg；整本书只绕 Y 轴展示。 */
   .nb-book3d {
-    --p: 9px;
-    --e: 2px;
-    --page-inset: 6px;
-    --back-inset: 3px;
+    --page-depth: calc(var(--book-depth) + var(--book-depth));
+    --obi-front-fold-depth: calc(var(--board-thickness) + 3px);
+    --obi-return-width: 6px;
+    --front-z: var(--book-depth);
+    --back-z: calc(0px - var(--book-depth));
     position: relative;
     isolation: isolate;
+    aspect-ratio: var(--book-w) / var(--book-h);
     overflow: visible;
+    perspective: var(--book-perspective);
+    container-type: inline-size;
   }
-  .nb-book3d-thin {
-    --p: 3px;
-    --e: 1px;
-    --page-inset: 2px;
-    --back-inset: 1px;
-  }
-  .nb-book3d .nb-cover {
-    position: relative;
-    z-index: 3;
-  }
-  /* 层1：背板书壳（第二层封面，深色硬壳，比封面小一号、右移最多） */
-  .nb-book3d .nb-book3d-back {
+  .nb-book3d-object {
     position: absolute;
-    z-index: 1;
-    top: var(--back-inset);
-    bottom: var(--back-inset);
-    left: 0;
-    width: 100%;
-    transform: translateX(calc(var(--p) + var(--e)));
-    background: #453c31;
-    border-radius: 2px;
-    box-shadow: 1px 2px 3px rgba(46, 38, 29, 0.18);
+    inset: 0;
+    transform: rotateX(var(--book-rotate-x)) rotateY(var(--book-rotate-y)) rotateZ(var(--book-rotate-z));
+    transform-style: preserve-3d;
+    transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: transform;
   }
-  /* 层2：书页纸张（比背板更小，页纹为水平细线=逐页纸叠，从书口露出） */
-  .nb-book3d .nb-book3d-pages {
+  .nb-front-board,
+  .nb-back-board {
+    position: absolute;
+    inset: 0;
+    border-radius: 0 2px 2px 0;
+    background: #51483c;
+    backface-visibility: hidden;
+  }
+  .nb-front-board {
+    transform: translateZ(var(--front-z));
+    box-shadow:
+      5px 5px 20px rgba(40, 31, 20, 0.12),
+      12px 16px 26px rgba(40, 31, 20, 0.1);
+  }
+  .nb-back-board {
+    left: 1%;
+    width: 100%;
+    transform: translateZ(var(--back-z));
+    background: var(--book-cover-color, #4d9077);
+    border-radius: 0 2px 2px 0;
+    box-shadow: -10px 0 50px 10px rgba(40, 31, 20, 0.28);
+  }
+  .nb-front-artwork,
+  .nb-back-artwork {
+    position: absolute;
+    inset: 0;
+  }
+  .nb-front-artwork {
+    z-index: 1;
+  }
+  .nb-front-artwork::after {
     position: absolute;
     z-index: 2;
-    top: var(--page-inset);
-    bottom: var(--page-inset);
-    left: 0;
+    inset: 0 auto 0 0;
+    width: 7px;
+    background: linear-gradient(to right, rgba(24, 20, 15, 0.38), rgba(24, 20, 15, 0.14) 48%, rgba(255, 252, 238, 0.16) 72%, transparent);
+    content: "";
+    pointer-events: none;
+  }
+  .nb-front-board > .nb-front-artwork {
+    position: absolute;
+    inset: 0;
     width: 100%;
-    transform: translateX(var(--p));
-    background: repeating-linear-gradient(to bottom, #f6f0e0 0 2px, #e2d8c0 2px 3px) right top / var(--p) 100% no-repeat;
-    border-radius: 0 2px 2px 0;
-    box-shadow: 1px 1px 2px rgba(73, 60, 41, 0.11);
+    height: 100%;
+    aspect-ratio: auto;
   }
-
-  /* The named variants are a stable hook for page layout and motion workers. */
-  .nb-book3d-hero {
-    --p: 11px;
-    --e: 2px;
+  .nb-back-artwork {
+    background: linear-gradient(90deg, color-mix(in srgb, var(--book-cover-color, #4d9077) 76%, #15120e), var(--book-cover-color, #4d9077));
   }
-  .nb-book3d-list {
-    --p: 3px;
-    --e: 1px;
-    --page-inset: 2px;
-    --back-inset: 1px;
+  .nb-spine-body {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: var(--page-depth);
+    height: 100%;
+    transform: translateZ(var(--front-z)) rotateY(90deg);
+    transform-origin: left center;
+    background: #463d32;
+    border-radius: 48% 0 0 48% / 2% 0 0 2%;
+    overflow: hidden;
+  }
+  .nb-spine-artwork {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--book-cover-color, #4d9077) 68%, #17130f),
+      var(--book-cover-color, #4d9077) 46%,
+      color-mix(in srgb, var(--book-cover-color, #4d9077) 72%, #17130f)
+    );
+    box-shadow:
+      inset 1px 0 rgba(255, 250, 232, 0.14),
+      inset -1px 0 rgba(28, 22, 17, 0.28);
+  }
+  .nb-page-top,
+  .nb-page-bottom,
+  .nb-page-fore-edge {
+    position: absolute;
+  }
+  .nb-page-top,
+  .nb-page-bottom {
+    left: 1%;
+    width: 98%;
+    height: var(--page-depth);
+    transform-origin: top center;
+    background: linear-gradient(to right, rgba(112, 91, 58, 0.13), transparent 8% 91%, rgba(95, 75, 48, 0.15)), linear-gradient(#f8f2e3, #e9dec6);
+  }
+  .nb-page-top {
+    top: 1%;
+    transform: translateZ(var(--front-z)) rotateX(-90deg);
+  }
+  .nb-page-bottom {
+    top: 99%;
+    transform: translateZ(var(--front-z)) rotateX(-90deg);
+    background: linear-gradient(to right, #d4c5a9, #eee5d2 12% 88%, #c9b899);
+  }
+  .nb-page-fore-edge {
+    top: 1%;
+    left: 100%;
+    width: var(--page-depth);
+    height: 98%;
+    transform: translate(-55%, 0) rotateY(90deg);
+    transform-origin: center center;
+    background: repeating-linear-gradient(90deg, #fff 0 5%, #ededeb 5% 10%);
+    box-shadow:
+      inset 1px 0 rgba(99, 78, 48, 0.2),
+      inset -1px 0 rgba(87, 66, 42, 0.13);
   }
 
   /* ---------- 精选摘抄贴纸卡（参考 about 便签语言：实线边框+硬投影+微旋转+胶带+折角） ---------- */
@@ -288,6 +378,56 @@
   .nb-shuffle.is-loading .nb-shuffle-icon {
     animation: nb-spin 0.8s linear infinite;
   }
+
+  /* 书库分页动作：纸张扫过按钮，图标只在操作中旋转，保留克制的按压反馈。 */
+  .nb-archive-action {
+    position: relative;
+    z-index: 0;
+    isolation: isolate;
+    overflow: hidden;
+    box-shadow: 2px 2px 0 rgba(74, 63, 46, 0.08);
+  }
+  .nb-archive-action::before {
+    position: absolute;
+    z-index: 0;
+    inset: 0;
+    background: rgba(168, 67, 60, 0.1);
+    content: "";
+    transform: translateX(-102%);
+    transition: transform 220ms var(--nb-ease-out);
+    pointer-events: none;
+  }
+  .nb-archive-action > * {
+    position: relative;
+    z-index: 1;
+  }
+  .nb-archive-action-icon {
+    display: inline-flex;
+    flex: none;
+    transition: transform 160ms var(--nb-ease-out);
+  }
+  .nb-archive-action-icon-loading {
+    display: none;
+  }
+  .nb-archive-action.is-loading {
+    cursor: wait;
+    opacity: 0.76;
+    box-shadow: none;
+  }
+  .nb-archive-action.is-loading::before {
+    transform: translateX(0);
+  }
+  .nb-archive-action.is-loading .nb-archive-action-icon-default {
+    display: none;
+  }
+  .nb-archive-action.is-loading .nb-archive-action-icon-loading {
+    display: block;
+    animation: nb-spin 0.8s linear infinite;
+  }
+  .nb-archive-action:active {
+    box-shadow: 0 0 0 rgba(74, 63, 46, 0.08);
+    transform: translateY(1px) scale(0.98);
+  }
   @keyframes nb-spin {
     to {
       transform: rotate(360deg);
@@ -335,6 +475,56 @@
     position: relative;
     z-index: 1;
   }
+  /* 所有书架卡片共用同架书的书本层次：阴影直接落在硬壳，卡片本身不加框影。 */
+  .nb-book-card--shelf-style::after {
+    display: none;
+  }
+  .nb-book-card--shelf-style .nb-front-board,
+  .nb-hero-book--shelf-style .nb-front-board {
+    box-shadow:
+      3px 3px 10px rgba(40, 31, 20, 0.08),
+      6px 8px 14px rgba(40, 31, 20, 0.06);
+    transition: box-shadow 180ms var(--nb-ease-out);
+  }
+  .nb-book-card--shelf-style .nb-back-board,
+  .nb-hero-book--shelf-style .nb-back-board {
+    box-shadow: -6px 0 30px 6px rgba(40, 31, 20, 0.16);
+    transition: box-shadow 180ms var(--nb-ease-out);
+  }
+  .nb-book-card--shelf-style::before {
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    z-index: 2;
+    height: 1px;
+    background: var(--nb-seal);
+    content: "";
+    opacity: 0;
+    transform: scaleY(1);
+    transform-origin: center bottom;
+    transition:
+      opacity 160ms ease,
+      transform 160ms ease;
+    pointer-events: none;
+  }
+  .nb-book-card--shelf-style > a > h3 {
+    transition: color 160ms ease;
+  }
+  .nb-book-card--shelf-style:focus-within > a > h3 {
+    color: var(--nb-seal);
+  }
+  .nb-book-card--shelf-style:focus-within::before {
+    opacity: 1;
+    transform: scaleY(3);
+  }
+  .nb-book-authors {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .nb-cover--card .cv-meta,
   .nb-cover--list .cv-meta {
     display: none;
@@ -345,74 +535,111 @@
   .nb-hero-book .nb-book3d {
     width: 100%;
   }
-  /* Hero 腰封横跨书口安全区；作者与出版信息向下避让，保持主书署名可读。 */
-  .nb-cover--hero .cv-author {
-    transform: translateY(20px);
-  }
-  .nb-cover--hero .cv-imprint {
-    transform: translateY(8px);
-  }
-  /* 装订侧只在前封面左边落一条内侧暗线，纸口仍只从右侧露出。 */
-  .nb-cover::after {
-    content: "";
+  /* 详情页书目索引轨：细线从正文栏起笔，书签像菜单签一样悬挂在线上。 */
+  .nb-detail-hanger {
     position: absolute;
-    z-index: 4;
-    inset: 0 auto 0 0;
-    width: 6px;
-    background: linear-gradient(to right, rgba(35, 28, 20, 0.28), rgba(35, 28, 20, 0.08) 55%, transparent);
-    box-shadow: 1px 0 1px rgba(255, 248, 228, 0.16);
+    top: 0;
+    right: 0;
+    left: 284px;
+    height: 64px;
     pointer-events: none;
   }
-
-  /* 封面胶带：挂在外层书本，允许向上外伸；封面本身仍负责裁切图片。 */
-  .nb-tape::before {
-    content: "";
+  .nb-detail-hanger-line {
     position: absolute;
-    top: -9px;
-    left: 50%;
-    z-index: 2;
-    width: 76px;
-    height: 20px;
-    transform: translateX(-50%) rotate(-2.5deg);
-    background: rgba(240, 233, 214, 0.78);
-    border: 1px solid rgba(74, 63, 46, 0.12);
-    box-shadow: 0 1px 2px rgba(74, 63, 46, 0.08);
+    top: 9px;
+    right: 0;
+    left: 0;
+    height: 0;
+    border-top: 2px dashed color-mix(in srgb, var(--nb-seal) 76%, var(--nb-ink-soft));
   }
-
-  .nb-sash {
+  .nb-detail-hanger-line::before {
     position: absolute;
-    z-index: 5;
-    top: 68%;
-    left: -4px;
-    width: calc(100% + var(--p) + 8px);
-    min-height: 34px;
-    transform: rotate(-2deg);
-    transform-origin: left center;
-    color: #fff8e8;
+    top: -5px;
+    left: 0;
+    width: 7px;
+    height: 7px;
+    transform: rotate(45deg);
+    border: 1px solid var(--nb-seal);
+    background: var(--nb-paper);
+    content: "";
+  }
+  .nb-detail-hanger-marker {
+    position: absolute;
+    top: 8px;
+    right: 48px;
+    width: 24px;
+    height: 58px;
     background: var(--nb-seal);
-    box-shadow: 1px 2px 3px rgba(73, 39, 32, 0.2);
-    padding-bottom: 6px;
-    pointer-events: none;
+    box-shadow: 1px 2px 0 rgba(74, 63, 46, 0.15);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
   }
-  /* Hero 保留较低的腰封位置以避开标题；小卡上移，给两列窄屏留出完整底边。 */
-  .nb-book3d-card .nb-sash {
-    top: 58%;
+  .nb-detail-hanger-marker::before {
+    position: absolute;
+    inset: 3px 4px auto;
+    height: 1px;
+    background: rgba(255, 248, 232, 0.34);
+    content: "";
   }
-  @media (min-width: 640px) {
-    /* 180px 陈列封面有足够底边，把腰封放到标题安全线下方。 */
-    .nb-book3d-card .nb-sash {
-      top: 68%;
+  @media (max-width: 960px) {
+    .nb-detail-hanger {
+      left: 242px;
     }
   }
-  .nb-book3d-hero .nb-sash {
-    /* 腰封提前到下部安全区上缘，给 SVG y=378 作者与版次留出可量化的底部空间。 */
-    top: 55%;
+  @media (max-width: 820px) {
+    .nb-detail-hanger {
+      left: 0;
+    }
+  }
+  @media (max-width: 640px) {
+    .nb-detail-hanger-marker {
+      right: 20px;
+    }
+  }
+  /* 与站点书签同形的封面装饰：位于右上方，与腰封共用前封 Surface。 */
+  .nb-book-marker {
+    position: absolute;
+    top: 0;
+    right: 15%;
+    width: 20px;
+    height: 48px;
+    transform: translateZ(calc(var(--front-z) + var(--board-thickness) + 0.5px));
+    background: var(--nb-seal);
+    box-shadow: 1px 2px 0 rgba(74, 63, 46, 0.15);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 72%, 0 100%);
+    pointer-events: none;
+  }
+
+  /* 腰封只绕过前封硬壳边缘；白色书口必须完整裸露，背封仅单独露出窄回折。 */
+  .nb-sash {
+    position: absolute;
+    inset: 0;
+    transform-style: preserve-3d;
+    pointer-events: none;
+  }
+  .nb-obi-front,
+  .nb-obi-front-fold,
+  .nb-obi-back-return {
+    position: absolute;
+    top: var(--obi-y);
+    height: var(--obi-height);
+    color: #fff8e8;
+    background: var(--nb-seal);
+  }
+  .nb-obi-front {
+    left: 0;
+    width: 100%;
+  }
+  .nb-obi-front {
+    transform: translateZ(calc(var(--front-z) + var(--board-thickness) + 0.5px));
+    box-shadow: 1px 2px 3px rgba(73, 39, 32, 0.2);
+    overflow: hidden;
   }
   .nb-sash-face {
     display: block;
-    padding: 5px 10px 4px;
+    padding: 3px 10px;
     font-family: var(--nb-font-serif);
     font-size: 13.5px;
+    line-height: 18px;
     letter-spacing: 2px;
     text-align: center;
   }
@@ -421,7 +648,7 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     box-sizing: border-box;
-    height: 37px;
+    height: 36px;
     overflow: hidden;
     padding: 0 12px;
     font-family: var(--nb-font-kai);
@@ -430,29 +657,83 @@
     text-align: center;
     text-overflow: ellipsis;
   }
+  /* 180px 同架/书库小书：标题与两行荐语必须完整落在 62px 腰封内。 */
+  .nb-book3d-card .nb-sash-face {
+    padding: 3px 8px 1px;
+    font-size: 13px;
+    line-height: 18px;
+  }
+  .nb-book3d-card .nb-sash-copy {
+    height: 34px;
+    padding-inline: 8px;
+    line-height: 17px;
+  }
+  @container (max-width: 159px) {
+    .nb-book3d-card .nb-sash-face {
+      padding: 1px 6px;
+      line-height: 15px;
+    }
+    .nb-book3d-card .nb-sash-copy {
+      height: 28px;
+      padding-inline: 6px;
+      line-height: 14px;
+    }
+  }
   .nb-sash-fold {
-    position: absolute;
-    top: 0;
-    right: calc(var(--p) * -1);
-    width: var(--p);
-    height: 100%;
-    background: #7b312e;
-    clip-path: polygon(0 0, 100% 10%, 100% 90%, 0 100%);
+    left: 100%;
+    width: var(--obi-front-fold-depth);
+    transform: translateZ(calc(var(--front-z) + var(--board-thickness) + 0.5px)) rotateY(90deg);
+    transform-origin: left center;
+    background: linear-gradient(to right, #8f3632, #672925);
+    box-shadow: inset 1px 0 rgba(255, 226, 213, 0.16);
+  }
+  .nb-obi-back-return {
+    left: 100%;
+    width: var(--obi-return-width);
+    transform: translateZ(calc(var(--back-z) - var(--board-thickness) - 0.5px));
+    background: #7b2f2c;
+    box-shadow:
+      inset 1px 0 rgba(255, 226, 213, 0.12),
+      1px 1px 2px rgba(73, 39, 32, 0.16);
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .nb-book-card:hover::after {
-      opacity: 1;
-      transform: translateY(2px) scale(0.98);
+    .nb-book-card:hover .nb-book3d-object,
+    .nb-hero-book:hover .nb-book3d-object,
+    .nb-book3d-hero:hover .nb-book3d-object {
+      transform: rotateX(var(--book-rotate-x)) rotateY(var(--book-hover-rotate-y)) rotateZ(var(--book-rotate-z)) translateY(-2px);
     }
     .nb-book-card:hover .nb-book3d {
       transform: translateY(-4px) rotate(-1deg);
+    }
+    .nb-book-card--shelf-style:hover > a > h3 {
+      color: var(--nb-seal);
+    }
+    .nb-book-card--shelf-style:hover .nb-front-board,
+    .nb-hero-book--shelf-style:hover .nb-front-board {
+      box-shadow:
+        5px 5px 20px rgba(40, 31, 20, 0.12),
+        12px 16px 26px rgba(40, 31, 20, 0.1);
+    }
+    .nb-book-card--shelf-style:hover .nb-back-board,
+    .nb-hero-book--shelf-style:hover .nb-back-board {
+      box-shadow: -10px 0 50px 10px rgba(40, 31, 20, 0.28);
+    }
+    .nb-book-card--shelf-style:hover::before {
+      opacity: 1;
+      transform: scaleY(3);
     }
     .nb-hero-book:hover {
       transform: translateY(-3px) rotate(0deg);
     }
     .nb-excerpt-card:hover {
       transform: rotate(0deg) translateY(-2px);
+    }
+    .nb-archive-action:hover::before {
+      transform: translateX(0);
+    }
+    .nb-archive-action:hover .nb-archive-action-icon {
+      transform: translateY(-1px) rotate(-8deg);
     }
   }
 
@@ -540,7 +821,20 @@
   .nb-book-card .nb-book3d {
     transform: none;
   }
+  .nb-book3d:hover .nb-book3d-object {
+    transform: rotateY(var(--book-rotate-y));
+  }
   .nb-excerpt-card {
+    transform: none;
+  }
+  .nb-archive-action:hover::before {
+    transform: translateX(-102%);
+  }
+  .nb-archive-action:hover,
+  .nb-archive-action:hover .nb-archive-action-icon {
+    transform: none;
+  }
+  .nb-archive-action:active {
     transform: none;
   }
   .nb-stagger {

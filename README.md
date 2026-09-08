@@ -26,6 +26,7 @@ pnpm preview     # 预览构建产物
 pnpm check       # 类型检查
 pnpm smoke:ai-news  # AI 日报入口、详情、返回与离线快照 Smoke（需先启动 pnpm dev）
 pnpm smoke:nice-books  # Nice Books 三页全链路 Smoke（随机/换一换/书库/详情/swup，需先启动 pnpm dev）
+pnpm qa:nice-books-geometry  # Nice Books 统一3D几何运行时检查（需先启动 pnpm dev）
 pnpm test:utils  # src/utils 纯函数单测（content-utils 排序/评分/邻篇 + pagination canonical）
 pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/六字段搜索/SVG 封面，node --test）
 pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scripts/tailwind.config）
@@ -165,10 +166,10 @@ public/
 ### Nice Books 私人藏书桌升级（2026-09-07）
 
 - [x] **视觉系统**：字体映射、可读性、三页布局和响应式网格；保留独立书房气质。
-- [x] **立体质感**：四套原创生成书封、硬壳/页块/书脊、精选腰封与完整封面回退。
+- [x] **立体质感**：四套原创生成书封；Book3D 复刻 CodePen `xxqVdxM` 的前封、双倍厚度书口与后封透视框架；精选腰封贴合前封并只绕过硬壳右缘，不遮盖白色书页。
 - [x] **动画交互**：GSAP 主书换书、同步忙碌状态、Swup 清理、书库失败重试与减少动态效果。
 
-本地build4已通过41项单测、56项smoke、65项设计QA及真实200%缩放检查，交付人工审查。执行状态见 [分阶段计划](docs/plans/2026-09-07-nice-books-design-upgrade.md)，视觉契约见 [设计说明](docs/nice-books-design.md)，检查证据见 [验收记录](docs/nice-books-design-test.md)。升级不包含 Astro/Tailwind 迁移或自动发布。
+当前本地工作区已通过45项单测、1239项Book3D几何QA、56项smoke、65项设计QA、Astro check、生产构建及真实200%缩放检查，交付人工审查。执行状态见 [分阶段计划](docs/plans/2026-09-07-nice-books-design-upgrade.md)，视觉契约见 [设计说明](docs/nice-books-design.md)，检查证据见 [验收记录](docs/nice-books-design-test.md)。升级不包含 Astro/Tailwind 迁移或自动发布。
 
 ### 待办（优化项排行，2026-09-04 与 Firefly AB 对比制定）
 

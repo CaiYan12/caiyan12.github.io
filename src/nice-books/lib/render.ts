@@ -7,7 +7,8 @@
  * content 含 .ts，此处类名会被正常生成。
  */
 
-import { generateCoverSvg } from "./cover";
+import { coverShellColor, generateCoverSvg } from "./cover";
+import { geometryStyle, type CoverDisplayVariant } from "./book-geometry";
 import { bookHref, formatAuthors, formatMetaLine, tagHref } from "./format";
 import type { Book } from "../types";
 
@@ -20,12 +21,10 @@ export function esc(s: string): string {
 		.replace(/'/g, "&#39;");
 }
 
-export type CoverDisplayVariant = "hero" | "card" | "list";
-
-/** 书封外壳：立体书本三层（背板书壳 + 书页纸张 + 前封面）。 */
+/** 书封外壳：统一坐标系中的硬壳、页块、书脊与可选腰封。 */
 export function coverHTML(
 	book: Book,
-	opts?: { tape?: boolean; thin?: boolean; variant?: CoverDisplayVariant },
+	opts?: { marker?: boolean; thin?: boolean; variant?: CoverDisplayVariant },
 ): string {
 	const variant = opts?.variant ?? (opts?.thin ? "list" : "card");
 	const shellCls = ["nb-cover", `nb-cover--${variant}`]
@@ -36,17 +35,30 @@ export function coverHTML(
 			` data-nb-cover data-nb-id="${esc(book.id)}" data-nb-title="${esc(book.title)}"` +
 			` data-nb-author="${esc(book.author.join(" · "))}" data-nb-publisher="${esc(book.publisher)}" data-nb-year="${book.firstEdition.year}">`
 		: generateCoverSvg(book);
-	const sash =
+	const marker = opts?.marker
+		? `<i class="nb-book-marker" aria-hidden="true"></i>`
+		: "";
+	const obi =
 		(variant === "hero" || variant === "card") && book.featured
-			? `<span class="nb-sash" aria-label="站长推荐：${esc(book.recommendationReason)}"><span class="nb-sash-face">站长推荐</span><span class="nb-sash-copy">${esc(book.recommendationReason)}</span><i class="nb-sash-fold" aria-hidden="true"></i></span>`
+			? `<span class="nb-obi nb-sash" aria-label="站长推荐：${esc(book.recommendationReason)}">` +
+				`<span class="nb-obi-front"><span class="nb-sash-face">站长推荐</span><span class="nb-sash-copy">${esc(book.recommendationReason)}</span></span>` +
+				`<i class="nb-obi-front-fold nb-sash-fold" aria-hidden="true"></i>` +
+				`<i class="nb-obi-back-return" aria-hidden="true"></i>` +
+				`</span>`
 			: "";
+	const shellStyle = `${geometryStyle(variant)};--book-cover-color:${coverShellColor(book)}`;
 	return (
-		`<div class="nb-book3d nb-book3d-${variant}${opts?.thin ? " nb-book3d-thin" : ""}${opts?.tape ? " nb-tape" : ""}">` +
-		`<i class="nb-book3d-back" aria-hidden="true"></i>` +
-		`<i class="nb-book3d-pages" aria-hidden="true"></i>` +
-		`<div class="${shellCls}">${inner}</div>` +
-		sash +
-		`</div>`
+		`<div class="nb-book3d nb-book3d-${variant}${opts?.thin ? " nb-book3d-thin" : ""}" style="${shellStyle}">` +
+		`<div class="nb-book3d-object">` +
+		`<div class="nb-front-board"><div class="nb-front-artwork ${shellCls}">${inner}</div></div>` +
+		`<div class="nb-back-board nb-book3d-back"><div class="nb-back-artwork" aria-hidden="true"></div></div>` +
+		`<div class="nb-spine-body nb-book3d-spine"><div class="nb-spine-artwork" aria-hidden="true"></div></div>` +
+		`<i class="nb-page-top nb-book3d-top" aria-hidden="true"></i>` +
+		`<i class="nb-page-fore-edge nb-book3d-pages" aria-hidden="true"></i>` +
+		`<i class="nb-page-bottom" aria-hidden="true"></i>` +
+		marker +
+		obi +
+		`</div></div>`
 	);
 }
 
@@ -98,15 +110,23 @@ export function noteHTML(
 const CARD_BASE = "nb-book-card border-b border-nb-border bg-transparent";
 
 /** 书架网格卡片（真 <a> 整卡可点；delayMs 传入时附带级联入场） */
-export function bookCardHTML(book: Book, delayMs?: number): string {
+export function bookCardHTML(
+	book: Book,
+	delayMs?: number,
+	opts?: { related?: boolean },
+): string {
 	const stagger =
 		delayMs != null ? ` nb-stagger" style="--d:${delayMs}ms` : "";
+	const titleClass = opts?.related
+		? "nb-related-book-title mt-3 font-nb-serif text-[16.5px] font-bold leading-[1.5] text-nb-ink max-[540px]:text-[15px]"
+		: "mt-3 font-nb-serif text-[16.5px] font-bold leading-[1.5] text-nb-ink max-[540px]:text-[15px]";
+	const authorsClass = "nb-book-authors mt-[3px] text-[13.5px] text-nb-muted";
 	return (
-		`<li class="${CARD_BASE}${stagger}">` +
+		`<li class="${CARD_BASE} nb-book-card--shelf-style${opts?.related ? " nb-related-book-card" : ""}${stagger}">` +
 		`<a class="group block p-[13px] pb-4 no-underline" href="${esc(bookHref(book))}">` +
 		coverHTML(book, { variant: "card" }) +
-		`<h3 class="mt-3 font-nb-serif text-[16.5px] font-bold leading-[1.5] text-nb-ink group-hover:text-nb-blue max-[540px]:text-[15px]">${esc(book.title)}</h3>` +
-		`<p class="mt-[3px] text-[13.5px] text-nb-muted">${esc(formatAuthors(book))}</p>` +
+		`<h3 class="${titleClass}">${esc(book.title)}</h3>` +
+		`<p class="${authorsClass}">${esc(formatAuthors(book))}</p>` +
 		`<p class="mt-2.5 flex flex-wrap gap-1.5">${book.tags
 			.slice(0, 3)
 			.map((t) => tagPillHTML(t, { small: true }))
@@ -123,8 +143,8 @@ export function heroCardHTML(book: Book, swapCount = 0): string {
 			: "";
 	return (
 		`<article class="nb-hero-card grid grid-cols-[280px_1fr] gap-12 max-[960px]:grid-cols-[240px_1fr] max-[960px]:gap-8 max-[820px]:grid-cols-1">` +
-		`<a class="nb-hero-book block w-full max-w-[250px] rotate-[-1.4deg] self-start justify-self-center no-underline transition-transform duration-200 max-[820px]:max-w-[220px]" href="${esc(bookHref(book))}" aria-label="查看《${esc(book.title)}》详情">` +
-		coverHTML(book, { tape: true, variant: "hero" }) +
+		`<a class="nb-hero-book nb-hero-book--shelf-style block w-full max-w-[250px] rotate-[-1.4deg] self-start justify-self-center no-underline transition-transform duration-200 max-[820px]:max-w-[220px]" href="${esc(bookHref(book))}" aria-label="查看《${esc(book.title)}》详情">` +
+		coverHTML(book, { marker: true, variant: "hero" }) +
 		`</a>` +
 		`<div class="nb-hero-copy">` +
 		`<p class="mb-2.5 text-[13px] tracking-[1px] text-nb-muted"><span class="font-nb-mono tracking-[0.5px] text-nb-seal">No.${esc(book.id)}</span> · 藏书编号${countNote}</p>` +

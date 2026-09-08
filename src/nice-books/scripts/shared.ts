@@ -23,10 +23,10 @@ export function qsa<T extends Element = Element>(
  * 页眉在 swup 容器外不随切页替换，高亮必须客户端重算。
  * 色类互斥拼接（Tailwind 冲突教训 ×3）。类常量由 SiteHeader.astro 共用。 */
 export const NAV_BASE =
-	"border-b-2 py-1 text-[14px] no-underline transition-colors duration-150 max-[640px]:text-[13px]";
-export const NAV_ACTIVE = "border-nb-seal text-nb-ink";
+	"nb-site-nav-link inline-flex min-h-11 items-center text-[14px] no-underline transition-colors duration-150 max-[640px]:text-[13px]";
+export const NAV_ACTIVE = "text-nb-ink";
 export const NAV_IDLE =
-	"border-transparent text-nb-ink-soft hover:text-nb-blue";
+	"text-nb-ink-soft hover:text-nb-blue";
 
 export function syncHeaderNav(): void {
 	const path = window.location.pathname;

@@ -12,6 +12,8 @@ const VT_BASE =
 	"inline-flex min-h-11 cursor-pointer items-center border-0 px-4 py-2 text-[13px] transition-colors duration-150";
 const btnBase =
 	"inline-flex min-h-11 cursor-pointer items-center gap-[7px] rounded-[3px] border border-nb-border-strong bg-nb-surface px-4 py-2 text-[13.5px] text-nb-ink transition-[border-color,background,transform,color] duration-[160ms] hover:-translate-y-px hover:border-nb-ink active:translate-y-0";
+const archiveActionBase =
+	"nb-archive-action inline-flex min-h-11 cursor-pointer items-center gap-[7px] rounded-[3px] border border-nb-border-strong bg-nb-surface px-4 py-2 text-[13.5px] text-nb-ink transition-[border-color,background,transform,color,box-shadow] duration-[160ms] hover:-translate-y-px hover:border-nb-seal hover:bg-[rgba(168,67,60,0.06)] hover:text-nb-seal hover:shadow-[3px_5px_0_rgba(168,67,60,0.12)] active:translate-y-0";
 ---
 
 <!doctype html>
@@ -158,9 +160,77 @@ const btnBase =
 			</div>
 
 			<div class="mb-2 mt-9 text-center">
-				<button id="nb-btn-more" class={btnBase} type="button" hidden
-					>载入更多</button
+				<button
+					id="nb-btn-more"
+					class={archiveActionBase}
+					type="button"
+					hidden
 				>
+					<span class="nb-archive-action-icon" aria-hidden="true">
+						<svg
+							class="nb-archive-action-icon-default"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							><path d="M12 5v14M5 12h14"></path></svg
+						><svg
+							class="nb-archive-action-icon-loading"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							><circle
+								cx="12"
+								cy="12"
+								r="8"
+								stroke-dasharray="14 8"></circle></svg
+						>
+					</span>
+					<span data-nb-archive-label>载入更多</span>
+				</button>
+				<button
+					id="nb-btn-collapse"
+					class={archiveActionBase}
+					type="button"
+					hidden
+				>
+					<span class="nb-archive-action-icon" aria-hidden="true">
+						<svg
+							class="nb-archive-action-icon-default"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><path d="m18 15-6-6-6 6"></path></svg
+						><svg
+							class="nb-archive-action-icon-loading"
+							width="16"
+							height="16"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							><circle
+								cx="12"
+								cy="12"
+								r="8"
+								stroke-dasharray="14 8"></circle></svg
+						>
+					</span>
+					<span data-nb-archive-label>收起书库</span>
+				</button>
 				<p
 					id="nb-the-end"
 					class="mt-2.5 font-nb-kai text-[13.5px] text-nb-muted"
@@ -175,9 +245,9 @@ const btnBase =
 				<p class="mb-[22px] mt-2 font-nb-kai text-sm text-nb-muted">
 					换个关键词，或者清除筛选再试试。
 				</p>
-				<button id="nb-btn-clear" class={btnBase} type="button"
-					>清除搜索与筛选</button
-				>
+				<button id="nb-btn-clear" class={btnBase} type="button">
+					清除搜索与筛选
+				</button>
 			</div>
 		</main>
 		<SiteFooter />

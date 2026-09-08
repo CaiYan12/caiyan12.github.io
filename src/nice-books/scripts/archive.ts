@@ -9,6 +9,7 @@ import { bookCardHTML, listRowHTML, tagPillHTML } from "../lib/render";
 import { prefersReducedMotion, qs, registerPageCleanup } from "./shared";
 
 const PAGE_SIZE = 12;
+const LOAD_STEP = 10;
 
 interface ArchiveState {
 	q: string;
@@ -61,13 +62,18 @@ export function initArchive(): void {
 	const abort = new AbortController();
 	let disposed = false;
 	let debounceTimer: number | null = null;
+	let actionTimer: number | null = null;
 	let resultAnimation: Animation | null = null;
+	let restoreArchiveButtons: (() => void) | null = null;
 	const unregister = registerPageCleanup(() => {
 		disposed = true;
 		abort.abort();
 		if (debounceTimer !== null) window.clearTimeout(debounceTimer);
+		if (actionTimer !== null) window.clearTimeout(actionTimer);
 		resultAnimation?.cancel();
 		resultAnimation = null;
+		restoreArchiveButtons?.();
+		restoreArchiveButtons = null;
 		delete main.dataset.nbInit;
 	});
 
@@ -99,7 +105,43 @@ export function initArchive(): void {
 			const resultLine = qs<HTMLElement>("#nb-result-line", main);
 			const empty = qs<HTMLElement>("#nb-empty-state", main);
 			const moreButton = qs<HTMLButtonElement>("#nb-btn-more", main);
+			const collapseButton = qs<HTMLButtonElement>(
+				"#nb-btn-collapse",
+				main,
+			);
 			const theEnd = qs<HTMLElement>("#nb-the-end", main);
+			let actionBusy = false;
+			let moreIdleLabel = "载入更多";
+			const collapseIdleLabel = "收起书库";
+
+			function syncArchiveButtons(busy: boolean): void {
+				const controls = [moreButton, collapseButton];
+				for (const button of controls) {
+					if (!button) continue;
+					const label = qs<HTMLElement>(
+						"[data-nb-archive-label]",
+						button,
+					);
+					button.disabled = busy;
+					button.classList.toggle("is-loading", busy);
+					if (busy) {
+						button.setAttribute("aria-busy", "true");
+						if (label) label.textContent = "加载中…";
+					} else {
+						button.removeAttribute("aria-busy");
+						if (label)
+							label.textContent =
+								button === moreButton
+									? moreIdleLabel
+									: collapseIdleLabel;
+					}
+				}
+			}
+
+			restoreArchiveButtons = () => {
+				actionBusy = false;
+				syncArchiveButtons(false);
+			};
 
 			function syncUrl(): void {
 				const params = new URLSearchParams();
@@ -166,18 +208,66 @@ export function initArchive(): void {
 						grid.innerHTML = "";
 					}
 				}
-				if (moreButton && theEnd) {
-					if (filtered.length > state.shown) {
+				const hasMore = filtered.length > state.shown;
+				const canCollapse =
+					filtered.length > PAGE_SIZE && !hasMore && !isEmpty;
+				moreIdleLabel = hasMore
+					? `载入更多（还有 ${filtered.length - state.shown} 本）`
+					: "载入更多";
+				if (moreButton && collapseButton && theEnd) {
+					if (hasMore) {
 						moreButton.hidden = false;
-						moreButton.textContent = `载入更多（还有 ${filtered.length - state.shown} 本）`;
+						collapseButton.hidden = true;
 						theEnd.hidden = true;
 					} else {
 						moreButton.hidden = true;
+						collapseButton.hidden = !canCollapse;
 						theEnd.hidden = filtered.length === 0;
 						theEnd.textContent = `已经到底啦 · 共 ${filtered.length} 本 \u2726`;
 					}
 				}
 				renderTagFilter();
+				if (!actionBusy) syncArchiveButtons(false);
+			}
+
+			function runArchiveAction(
+				task: () => void,
+				trigger: HTMLButtonElement,
+				focusAfter: () => HTMLButtonElement | null,
+			): void {
+				if (actionBusy || disposed || abort.signal.aborted) return;
+				const restoreFocus = document.activeElement === trigger;
+				const previousShown = state.shown;
+				actionBusy = true;
+				syncArchiveButtons(true);
+				actionTimer = window.setTimeout(() => {
+					actionTimer = null;
+					if (disposed || abort.signal.aborted) {
+						actionBusy = false;
+						syncArchiveButtons(false);
+						return;
+					}
+					try {
+						task();
+						animateResults();
+					} catch (error) {
+						state.shown = previousShown;
+						try {
+							render();
+						} catch {
+							/* 保留当前 DOM，避免错误恢复再次中断交互。 */
+						}
+						if (resultLine)
+							resultLine.textContent = "载入失败，请重试。";
+						console.warn("[nice-books] 书库操作失败：", error);
+					}
+					actionBusy = false;
+					syncArchiveButtons(false);
+					if (restoreFocus) {
+						const next = focusAfter();
+						if (next && !next.hidden) next.focus();
+					}
+				}, 0);
 			}
 
 			function animateResults(): void {
@@ -303,8 +393,39 @@ export function initArchive(): void {
 			moreButton?.addEventListener(
 				"click",
 				() => {
-					state.shown += PAGE_SIZE;
-					render();
+					runArchiveAction(
+						() => {
+							const filtered = searchBooks(
+								all,
+								state.q,
+								state.tag,
+							);
+							state.shown = Math.min(
+								filtered.length,
+								state.shown + LOAD_STEP,
+							);
+							render();
+						},
+						moreButton!,
+						() =>
+							collapseButton?.hidden
+								? moreButton
+								: collapseButton,
+					);
+				},
+				{ signal: abort.signal },
+			);
+			collapseButton?.addEventListener(
+				"click",
+				() => {
+					runArchiveAction(
+						() => {
+							state.shown = PAGE_SIZE;
+							render();
+						},
+						collapseButton!,
+						() => moreButton,
+					);
 				},
 				{ signal: abort.signal },
 			);

@@ -41,6 +41,11 @@ function paletteFor(book: Book): Palette {
 	return PALETTES[family][paletteIndex % PALETTES[family].length]!;
 }
 
+/** 让伪 3D 后封与书脊继承程序封面的主色。 */
+export function coverShellColor(book: Book): string {
+	return paletteFor(book).bg;
+}
+
 function coverTitleLines(title: string): string[] {
 	const chars = Array.from(title);
 	if (chars.length <= 6) return [title];
