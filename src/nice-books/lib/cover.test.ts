@@ -37,7 +37,7 @@ test("四字文学标题上收，为腰封预留下部安全区", () => {
 	assert.doesNotMatch(svg, /y="259"[^>]*class="cv-title"/);
 });
 
-test("22 本书标题均停在 hero/card 腰封安全线之上", () => {
+test("所有书目标题均停在 hero/card 腰封安全线之上", () => {
 	for (const book of books) {
 		const titleBoxes = [
 			...generateCoverSvg(book).matchAll(

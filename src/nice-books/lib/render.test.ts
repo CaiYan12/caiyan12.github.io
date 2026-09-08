@@ -15,7 +15,7 @@ import {
 	generateCoverSvg,
 } from "./cover";
 
-test("22 本书均有固定封面族，未知 ID 回退文学族", () => {
+test("所有书目均有固定封面族，未知 ID 回退文学族", () => {
 	assert.equal(Object.keys(COVER_FAMILY_BY_ID).length, books.length);
 	for (const book of books)
 		assert.equal(coverFamilyForId(book.id), COVER_FAMILY_BY_ID[book.id]);
@@ -110,7 +110,7 @@ test("featured hero/card 有腰封，列表与普通书封均无腰封", () => {
 	assert.match(heroCardHTML(featured), /nb-hero-book--shelf-style/);
 });
 
-test("所有 22 本书均可输出三档封面，辅助字号不低于 13px", () => {
+test("所有书目均可输出三档封面，辅助字号不低于 13px", () => {
 	for (const book of books) {
 		for (const variant of ["hero", "card", "list"] as const) {
 			const html = coverHTML(book, { variant });

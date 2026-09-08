@@ -142,6 +142,36 @@ async function waitArchiveReady(page, allowError = false) {
 	);
 }
 
+async function getArchiveTotal(page) {
+	const line = await page.textContent("#nb-result-line");
+	const match = line?.match(/^共\s+(\d+)\s+本藏书/);
+	if (!match) throw new Error(`无法从书库结果行读取总数：${line ?? ""}`);
+	return Number(match[1]);
+}
+
+async function loadArchiveAll(page, selector) {
+	const total = await getArchiveTotal(page);
+	const limit = Math.ceil(Math.max(0, total - 12) / 10) + 2;
+	for (let attempt = 0; attempt < limit; attempt += 1) {
+		if ((await page.locator(`${selector} > li`).count()) >= total) break;
+		const more = page.locator("#nb-btn-more");
+		if (!(await more.count()) || !(await more.isVisible())) break;
+		await more.click();
+		await page.waitForFunction(
+			() =>
+				!document.querySelector(
+					"#nb-btn-more[aria-busy], #nb-btn-collapse[aria-busy]",
+				),
+			null,
+			{ timeout: 5000 },
+		);
+	}
+	const count = await page.locator(`${selector} > li`).count();
+	if (count !== total)
+		throw new Error(`${selector} 仅载入 ${count}/${total} 本书`);
+	return total;
+}
+
 async function visibleCount(page, selector) {
 	return page.locator(selector).evaluateAll(
 		(els) =>
@@ -837,15 +867,7 @@ async function run() {
 		await safe("书库列表使用 list 书封变体", async () => {
 			await open(page, urls.archive);
 			await waitArchiveReady(page);
-			const more = page.locator("#nb-btn-more");
-			if (await more.isVisible().catch(() => false)) await more.click();
-			await page.waitForFunction(
-				() =>
-					document.querySelectorAll("#nb-archive-grid > li").length >=
-					22,
-				null,
-				{ timeout: 3000 },
-			);
+			await loadArchiveAll(page, "#nb-archive-grid");
 			await screenshot(page, "archive-grid-all-1280");
 			await page.click("#nb-view-list");
 			await page.waitForFunction(
@@ -858,19 +880,7 @@ async function run() {
 				null,
 				{ timeout: 3000 },
 			);
-			const listMore = page.locator("#nb-btn-more");
-			if (await listMore.isVisible().catch(() => false))
-				await listMore.click();
-			await page.waitForFunction(
-				() =>
-					document.querySelectorAll("#nb-archive-list > li").length >=
-						22 &&
-					document.querySelectorAll(
-						"#nb-archive-list .nb-book3d-list",
-					).length >= 22,
-				null,
-				{ timeout: 3000 },
-			);
+			await loadArchiveAll(page, "#nb-archive-list");
 			await screenshot(page, "archive-list-all-1280");
 			const count = await page
 				.locator("#nb-archive-list .nb-book3d-list")
@@ -998,10 +1008,16 @@ async function run() {
 				JSON.stringify(info),
 			);
 		});
-		await safe("22 本书封映射稳定且至少四族", async () => {
+		await safe("全量书封映射稳定且至少四族", async () => {
+			const bookIds = await page.evaluate(async () => {
+				const response = await fetch("/books/data.json");
+				if (!response.ok) throw new Error(`HTTP ${response.status}`);
+				const data = await response.json();
+				if (!Array.isArray(data)) throw new Error("书库数据不是数组");
+				return data.map((book) => book.id);
+			});
 			const keys = new Map();
-			for (let n = 1; n <= 22; n++) {
-				const id = String(n).padStart(2, "0");
+			for (const id of bookIds) {
 				await open(page, `${origin}/books/${id}/`);
 				const first = await coverKey(page);
 				await page.reload({ waitUntil: "domcontentloaded" });

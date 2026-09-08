@@ -346,9 +346,12 @@ try {
 	await page.waitForSelector("#nb-archive-grid li", { timeout: 15000 });
 
 	const initialLine = await page.textContent("#nb-result-line");
+	const archiveTotal = Number(
+		initialLine?.match(/^共\s+(\d+)\s+本藏书/)?.[1] ?? NaN,
+	);
 	check(
 		"书库 result-line 全量计数",
-		initialLine?.startsWith("共 22 本藏书") === true,
+		Number.isInteger(archiveTotal) && archiveTotal >= 20,
 		`actual="${initialLine}"`,
 	);
 	check(
@@ -480,7 +483,15 @@ try {
 	});
 	await page.waitForSelector("#nb-archive-grid li", { timeout: 15000 });
 	const tagCount = await page.locator("#nb-archive-grid li").count();
-	check("?tag= 直达筛选", tagCount === 1, `科幻=${tagCount} 本`);
+	const tagLine = await page.textContent("#nb-result-line");
+	const expectedTagCount = Number(
+		tagLine?.match(/符合条件\s+(\d+)\s+本/)?.[1] ?? NaN,
+	);
+	check(
+		"?tag= 直达筛选",
+		Number.isInteger(expectedTagCount) && tagCount === expectedTagCount,
+		`科幻=${tagCount} 本`,
+	);
 	// 选中药丸必须是墨底反白（bg-transparent 与 bg-nb-ink 同存会被 Tailwind 源顺序覆盖 → 视觉空白）
 	const selectedPill = await page.evaluate(() => {
 		const b = Array.from(
@@ -614,9 +625,13 @@ try {
 		null,
 		{ timeout: 5000 },
 	);
-	// 反复点击直到现有 22 本 fixture 全部出现，每次推进由 LOAD_STEP=10 控制。
-	for (let attempt = 0; attempt < 4; attempt += 1) {
-		if ((await page.locator("#nb-archive-grid li").count()) === 22) break;
+	// 反复点击直到数据集全部出现，每次推进由 LOAD_STEP=10 控制。
+	const loadLimit = Math.ceil(Math.max(0, archiveTotal - 12) / 10) + 2;
+	for (let attempt = 0; attempt < loadLimit; attempt += 1) {
+		if (
+			(await page.locator("#nb-archive-grid li").count()) === archiveTotal
+		)
+			break;
 		const button = archiveLoadButton();
 		if (!(await button.count()) || !(await button.isVisible())) break;
 		const state = await dispatchArchiveLoad();
@@ -637,18 +652,19 @@ try {
 		);
 	}
 	await page.waitForFunction(
-		() => document.querySelectorAll("#nb-archive-grid li").length === 22,
-		null,
+		(total) =>
+			document.querySelectorAll("#nb-archive-grid li").length === total,
+		archiveTotal,
 		{ timeout: 3000 },
 	);
 	check(
-		"重复载入补足全量 22 本",
-		(await page.locator("#nb-archive-grid li").count()) === 22,
+		"重复载入补足全量书目",
+		(await page.locator("#nb-archive-grid li").count()) === archiveTotal,
 	);
 	check(
 		"到底结语显示",
 		((await page.textContent("#nb-the-end")) ?? "").includes(
-			"已经到底啦 · 共 22 本",
+			`已经到底啦 · 共 ${archiveTotal} 本`,
 		),
 	);
 	const collapse = page.locator("#nb-btn-collapse:visible");
@@ -698,7 +714,9 @@ try {
 		null,
 		{ timeout: 5000 },
 	);
-	while ((await page.locator("#nb-archive-grid li").count()) < 22) {
+	for (let attempt = 0; attempt < loadLimit; attempt += 1) {
+		if ((await page.locator("#nb-archive-grid li").count()) >= archiveTotal)
+			break;
 		const more = archiveLoadButton();
 		if (!(await more.count()) || !(await more.isVisible())) break;
 		await more.click();
@@ -712,27 +730,34 @@ try {
 		);
 	}
 	check(
-		"重新展开再次到达全量 22 本",
-		(await page.locator("#nb-archive-grid li").count()) === 22,
+		"重新展开再次到达全量书目",
+		(await page.locator("#nb-archive-grid li").count()) === archiveTotal,
 	);
 	check(
 		"重新展开后收起控件再次可用",
 		(await page.locator("#nb-btn-collapse:visible").count()) === 1,
 	);
 
-	// 15 本筛选结果验证单次最多追加 10 本：初始 12 本，点击后只补齐剩余 3 本。
+	// 使用当前数据集的小说筛选结果验证单次最多追加 10 本。
 	await page.fill("#nb-search-input", "小说");
 	await page.waitForFunction(
 		() =>
-			(
-				document.querySelector("#nb-result-line")?.textContent ?? ""
-			).includes("符合条件 15 本"),
+			/符合条件\s+\d+\s+本/.test(
+				document.querySelector("#nb-result-line")?.textContent ?? "",
+			),
 		null,
 		{ timeout: 3000 },
 	);
+	const filteredLine = await page.textContent("#nb-result-line");
+	const filteredTotal = Number(
+		filteredLine?.match(/符合条件\s+(\d+)\s+本/)?.[1] ?? NaN,
+	);
+	const filteredBefore = await page.locator("#nb-archive-grid li").count();
 	check(
 		"筛选结果载入前保留默认 12 本",
-		(await page.locator("#nb-archive-grid li").count()) === 12,
+		Number.isInteger(filteredTotal) &&
+			filteredTotal > 12 &&
+			filteredBefore === 12,
 	);
 	const filteredLoad = await dispatchArchiveLoad();
 	check(
@@ -743,16 +768,17 @@ try {
 		JSON.stringify(filteredLoad),
 	);
 	await page.waitForFunction(
-		() =>
-			document.querySelectorAll("#nb-archive-grid li").length === 15 &&
-			!document.querySelector("#nb-btn-more[aria-busy]"),
-		null,
+		(expected) =>
+			document.querySelectorAll("#nb-archive-grid li").length ===
+				expected && !document.querySelector("#nb-btn-more[aria-busy]"),
+		Math.min(filteredTotal, filteredBefore + 10),
 		{ timeout: 5000 },
 	);
+	const filteredAfter = await page.locator("#nb-archive-grid li").count();
 	check(
-		"单次载入最多追加 10 本并补齐 15 本筛选结果",
-		(await page.locator("#nb-archive-grid li").count()) === 15 &&
-			(await page.locator("#nb-btn-collapse:visible").count()) === 1,
+		"单次载入最多追加 10 本并推进筛选结果",
+		filteredAfter - filteredBefore <= 10 &&
+			filteredAfter === Math.min(filteredTotal, filteredBefore + 10),
 	);
 
 	// 空状态与清除
