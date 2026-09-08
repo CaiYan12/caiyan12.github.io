@@ -148,6 +148,7 @@ public/
 - 头部微言轮播（`#header .text`）由 `src/utils/theme-script.ts` 的 `initHeaderTicker()` 驱动：机制复刻原版 AutoScroll（每 4s 上滚一条 0.8s ease，滚完把首条 li 移到末尾无限轮转，无克隆条、任意条数无缝；hover 暂停、移出恢复；`prefers-reduced-motion` 下不启动）。条数取 `src/data/diary.ts` 前 4 条（`Navbar.astro` 的 `slice(0, 4)`）。**节奏对齐迁移前 CSS 关键帧版（勿改回原版 300ms）**；步长 `-24px` 与 `global.css` 的 `#header .text li` 行高耦合，改行高须同步；头部在 Swup 容器外，脚本随 `pagefindReady()` 初始化一次，勿加进 after-swap hook。
 - 涉及上述界面的样式调整后，应在本地开发服务器中检查主要宽度、hover 状态、裁切效果、日期/弹层对齐和页面横向溢出，并补跑 `pnpm check` 与 `pnpm build`。
 - 首页右侧文章推荐上方固定为“最新 / 手气不错”两栏，使用普通箭头＋日期列表；下方只保留一个“热门推荐”，按既有热度排序显示旗帜形序号。随机文章在构建期生成，浏览器不新增 GitHub 请求。
+- 3D 标签/分类云（`/tag/` 与 `/category/` 云集页）：由 `src/components/layout/TagCloud3D.astro` 渲染，数据与下方 `#blogtags` 药丸云同源（药丸云保留：当前项高亮 + `prefers-reduced-motion` 回退）。库为 vendored `public/vendor/svg3dtagcloud/`（npm `svg-3d-tag-cloud@0.0.20`，MIT），标签颜色走库内置 10 色调色板；hover 放大 1.15 倍、“N篇文章”tooltip 上浮已内置；实例经 `window.__tagCloud3D` 跨页交接，Swup 互切安全。
 - Pio 看板娘（`public/pio/static/`，vendored 但随本项目自维护）：
   - 操作按钮列顺序为 `home → info → side（停靠切换）→ close`，停靠支持左/右切换并写入 `localStorage.pioSide`，加载时恢复偏好；右侧停靠时按钮列、折叠按钮（`.pio-show`）、消息框位置均已对称适配。
   - 看板娘默认折叠，仅显示“点击召唤Pio”按钮（hover 有提示）；折叠状态记忆在 `localStorage.posterGirl`（召唤 = `1` 展开，关闭 = `0` 折叠，其余值一律折叠）。

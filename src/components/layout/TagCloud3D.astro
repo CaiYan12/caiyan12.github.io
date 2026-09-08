@@ -1,0 +1,219 @@
+---
+/**
+ * 3D 标签/分类云（svg3dtagcloud 试验组件）
+ * 与 TagPillCloud 数据同构（{name, count}[]），供 /tag/ 与 /category/ 云集页
+ * 调用；药丸云保留在页面中（当前项高亮 + prefers-reduced-motion 回退）。
+ */
+interface CloudItem {
+	name: string;
+	count: number;
+}
+
+interface Props {
+	items: CloudItem[];
+	/** 链接前缀：tag → /tag/<name>/，category → /category/<name>/ */
+	base: "tag" | "category";
+}
+
+const { items, base } = Astro.props;
+
+const children = items.map((item) => ({
+	label: item.name,
+	url: `/${base}/${encodeURIComponent(item.name)}/`,
+	tooltip: `${item.count}篇文章`,
+}));
+---
+
+<style>
+	/* 3D 云卡片：透明底融入页面，仅保留细边框勾出云的区域；
+	   内层 stage 不留 padding——库按 offsetWidth 计算 svg 宽度，padding 会溢出 */
+	.tag3d-card {
+		margin-bottom: 10px;
+		border: 1px solid #eaeaea;
+		background: transparent;
+		padding: 8px 10px;
+	}
+
+	.tag3d-stage {
+		width: 100%;
+	}
+</style>
+
+<style is:global>
+	/* 库运行时创建的 SVG 元素不带 Astro scoped 属性，规则统一放 is:global 块
+	   （scoped 管线会把 :global 内属性选择器的引号转义坏，编译出
+	   [opacity=\"1.0\"] 永不匹配——实测踩坑），用 .tag3d-stage 限定范围 */
+
+	/* hover 动效（animate 规范）：高频场景 → 快而含蓄；只过渡 transform/opacity，
+	   若用 all 会连库逐帧写的 x/y 也被缓动产生拖影；缓动复用项目 token 不另造 */
+	/* 标签强调 = Hover effect + Scale：150ms ease-out，克制的 1.15 倍；
+	   (hover:hover)+(pointer:fine) 门控，避免触屏点按触发假 hover 缩放 */
+	@media (hover: hover) and (pointer: fine) {
+		.tag3d-stage a text {
+			transition: transform 0.15s var(--ease-out);
+			transform-box: fill-box;
+			transform-origin: center;
+		}
+
+		.tag3d-stage a:hover text {
+			transform: scale(1.15);
+		}
+	}
+
+	/* tooltip 上浮 = Fade in + Translate：显示时上移 2px、消失回落；显示/隐藏由
+	   库写死的 opacity="1.0"/"0.0" 属性驱动（实码核实），属性变化可触发 CSS 过渡 */
+	.tag3d-stage svg > text {
+		transition:
+			opacity 0.16s ease,
+			transform 0.18s var(--ease-out);
+		transform: translateY(3px);
+	}
+
+	.tag3d-stage svg > text[opacity="1.0"] {
+		transform: translateY(-2px);
+	}
+
+	/* reduced motion：去位移（缩放/上浮），保留 tooltip opacity 淡入淡出辅助理解 */
+	@media (prefers-reduced-motion: reduce) {
+		.tag3d-stage a:hover text {
+			transform: none;
+		}
+
+		.tag3d-stage svg > text {
+			transform: none;
+			transition: opacity 0.16s ease;
+		}
+	}
+</style>
+
+{
+	items.length > 0 && (
+		<div class="tag3d-card">
+			<div class="tag3d-stage" data-tags={JSON.stringify(children)} />
+		</div>
+	)
+}
+
+<script>
+	/**
+	 * 3D 标签/分类云（svg3dtagcloud 试验组件，/tag/ 与 /category/ 云集页共用）
+	 *
+	 * 本组件必须用于 swup 容器（main）之内：dev 下 Astro 把组件脚本原位输出在
+	 * body，容器外脚本在 swup 换页时随旧页被丢弃，模块永远不会执行（实测踩坑）。
+	 *
+	 * Swup 协议（main 容器内组件统一形态）：顶层 init（swup 进入时 scripts-plugin
+	 * 克隆容器内脚本触发执行）+ colorful:page:loaded 重跑（theme-script 在
+	 * astro:page-load 中派发）+ dataset 守卫防重复 + init 内先 destroy 残留实例。
+	 * /tag/ 与 /category/ 互切时两页都有容器、模块只执行一次，实例挂 window
+	 * 注册表跨页交接：新容器首次 init 前先销毁上一页残留（旧 svg 已脱离 DOM，
+	 * 但库的 rAF 循环与 resize 监听仍在跑）。prefers-reduced-motion 时不启动
+	 * 动画，页面保留药丸云。
+	 */
+	interface Tag3DChild {
+		label: string;
+		url: string;
+		tooltip?: string;
+	}
+
+	interface Tag3DInstance {
+		build(): void;
+		destroy(): void;
+	}
+
+	type Tag3DCtor = new (
+		el: HTMLElement,
+		settings: Record<string, unknown>,
+	) => Tag3DInstance;
+
+	/* 实例挂 window 注册表而非模块变量：即使未来出现多模块副本各自持有状态，
+	   也不会漏销毁上一页实例 */
+	const host = window as unknown as { __tagCloud3D?: Tag3DInstance };
+	let libPromise: Promise<Tag3DCtor> | null = null;
+
+	/* Vite 禁止以 ESM import 引用 public/ 内的 JS（dev 下 500），
+	   故按 Pio 先例用运行时 <script> 注入加载 global 构建产物；
+	   data-swup-ignore-script 防止 scripts-plugin 每次换页克隆重执行 */
+	function loadTag3DLib(): Promise<Tag3DCtor> {
+		libPromise ??= new Promise<Tag3DCtor>((resolve, reject) => {
+			const el = document.createElement("script");
+			el.src = "/vendor/svg3dtagcloud/SVG3DTagCloud.global.js";
+			el.setAttribute("data-swup-ignore-script", "");
+			el.onload = () => {
+				const ctor = (
+					window as unknown as { SVG3DTagCloud?: Tag3DCtor }
+				).SVG3DTagCloud;
+				if (ctor) resolve(ctor);
+				else reject(new Error("SVG3DTagCloud 未注册到 window"));
+			};
+			el.onerror = () => {
+				libPromise = null;
+				reject(new Error("加载 SVG3DTagCloud.global.js 失败"));
+			};
+			document.head.appendChild(el);
+		});
+		return libPromise;
+	}
+
+	function destroyTag3D(): void {
+		host.__tagCloud3D?.destroy();
+		host.__tagCloud3D = undefined;
+	}
+
+	async function initTag3D(): Promise<void> {
+		const container = document.querySelector<HTMLElement>(".tag3d-stage");
+		if (!container) {
+			/* 已切离本页（新页无云）：终止残留实例的 rAF 循环 */
+			destroyTag3D();
+			return;
+		}
+		if (container.dataset.tag3dInit) return;
+		/* 新容器首次初始化：window 上还挂着的实例必为上一页残留 */
+		destroyTag3D();
+		container.dataset.tag3dInit = "1";
+		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+			return;
+		const raw = container.dataset.tags;
+		if (!raw) return;
+		let children: Tag3DChild[] = [];
+		try {
+			children = JSON.parse(raw) as Tag3DChild[];
+		} catch {
+			return;
+		}
+		if (children.length === 0) return;
+		try {
+			const Ctor = await loadTag3DLib();
+			/* lib 加载期间页面可能已被 swup 换走，容器已成游离节点 */
+			if (!container.isConnected) return;
+			const instance = new Ctor(container, {
+				children,
+				width: "100%",
+				height: "58",
+				radius: "78%",
+				radiusMin: 75,
+				isDrawSvgBg: false,
+				opacityOver: 1,
+				opacityOut: 0.25,
+				fov: 800,
+				speed: 0.4,
+				fontFamily:
+					'"Noto Sans SC Variable", "Source Han Sans SC", "PingFang SC", "WenQuanYi Micro Hei", sans-serif',
+				fontSize: "16",
+				fontToUpperCase: false,
+				tooltipFontSize: "12",
+				tooltipFontColor: "#666",
+				tooltipTextAnchor: "middle",
+				tooltipDiffX: 0,
+				tooltipDiffY: 12,
+			});
+			instance.build();
+			host.__tagCloud3D = instance;
+		} catch (err) {
+			console.warn("3D 标签/分类云加载失败，仅保留药丸云", err);
+			delete container.dataset.tag3dInit;
+		}
+	}
+
+	initTag3D();
+	document.addEventListener("colorful:page:loaded", initTag3D);
+</script>

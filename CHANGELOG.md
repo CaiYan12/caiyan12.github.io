@@ -1,5 +1,12 @@
 # 更新日志
 
+## 2026-09-08：标签云集/分类云集 3D 标签云上线
+
+- 新增 `src/components/layout/TagCloud3D.astro`：基于 svg3dtagcloud（vendored `public/vendor/svg3dtagcloud/`，npm `svg-3d-tag-cloud@0.0.20`，MIT，LICENSE 随附）的 3D 旋转标签/分类云，`/tag/` 与 `/category/` 云集页调用；数据与 `#blogtags` 药丸云同源（药丸云保留：当前项高亮 + 无动画回退），空数据自隐藏。
+- 视觉与主题融合：透明底卡片（1px 细边框）、库内置 10 色调色板轮换（`fontColor` 设置不生效）、hover 标签放大 1.15 倍（150ms，`(hover:hover)+(pointer:fine)` 门控）、“N篇文章”tooltip 淡入上浮（由库写死的 `opacity="1.0"/"0.0"` 属性选择器驱动，CSS 走 `<style is:global>`——Astro scoped 管线会转义坏 `:global()` 内属性选择器引号）；`prefers-reduced-motion` 去位移保淡入；禁 `transition: all` 防拖影。
+- 工程要点：库为自包含 global 构建（9.9KB），按 Pio 先例运行时 `<script>` 注入加载（Vite 禁止 ESM import public/ 内 JS），注入标签带 `data-swup-ignore-script`；组件脚本置于 swup 容器内（dev 下容器外脚本换页即丢）；实例挂 `window.__tagCloud3D` 跨页交接，云集页互切先销毁残留实例（rAF/resize 监听）再重建，切往无云页面自动销毁。
+- 验证：dev 与 `pnpm build && pnpm preview` 生产路径（组件脚本内联进 `<main>` 内 HTML）均实测 Swup 往返、tooltip 上浮、375px 无横向溢出；astro check 0 错误。
+
 ## 2026-09-06：Nice Books 每日好书 V1 移植上线
 
 - 从 `D:\pages\test\nice-books\prototype`（Design Agent 交付的 V1 参考原型 + design-handoff.md）正式移植为 `/books/` 生产模块：「今日好书」访问级随机单本 + 换一换（新 ≠ 当前）、「站长推荐」featured 池随机 6 本整组替换（新组排除旧组、组内无重复）、探索更多、书库（六字段即时搜索 × 标签叠加 × 书架/列表双视图 × 每页 12 载入更多 × `?q=`/`?tag=` URL 直达）、书籍详情（22 本 getStaticPaths 静态页 + 同架图书 top4 + 无效 id 站级 404）。
