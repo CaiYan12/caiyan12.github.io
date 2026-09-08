@@ -25,8 +25,7 @@ export function qsa<T extends Element = Element>(
 export const NAV_BASE =
 	"nb-site-nav-link inline-flex min-h-11 items-center text-[14px] no-underline transition-colors duration-150 max-[640px]:text-[13px]";
 export const NAV_ACTIVE = "text-nb-ink";
-export const NAV_IDLE =
-	"text-nb-ink-soft hover:text-nb-blue";
+export const NAV_IDLE = "text-nb-ink-soft hover:text-nb-blue";
 
 export function syncHeaderNav(): void {
 	const path = window.location.pathname;

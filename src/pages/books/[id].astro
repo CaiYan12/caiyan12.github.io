@@ -224,7 +224,11 @@ const metaDescription =
 						<ul class="nb-related-grid gap-[22px] max-[960px]:gap-4 max-[540px]:gap-3">
 							<Fragment
 								set:html={sameShelf
-									.map((b) => bookCardHTML(b, undefined, { related: true }))
+									.map((b) =>
+										bookCardHTML(b, undefined, {
+											related: true,
+										}),
+									)
 									.join("")}
 							/>
 						</ul>
