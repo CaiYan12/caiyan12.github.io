@@ -126,7 +126,23 @@ const starLevel = (comments: number) => {
 				</span>
 
 				<ul class="tools">
-					<li title="字号" class="size" id="font-size-btn">A</li>
+					<li title="字号" class="size" id="font-size-btn">
+						A
+						<div class="font-size-pop" id="font-size-pop">
+							<input
+								type="range"
+								id="font-size-range"
+								min="12"
+								max="24"
+								step="1"
+								value="14"
+								aria-label="正文字号"
+							/>
+							<output id="font-size-value" for="font-size-range"
+								>14px</output
+							>
+						</div>
+					</li>
 				</ul>
 			</address>
 
@@ -286,23 +302,99 @@ const starLevel = (comments: number) => {
 		{/* Giscus 评论（对应 blog_comments + blog_comments_post） */}
 		<Giscus />
 	</div>
-</MainGridLayout>
 
-<script>
-	// 字号调节（对应原主题 size() 函数）
-	const btn = document.getElementById("font-size-btn");
-	if (btn) {
-		const sizes = [13, 14, 16, 18];
-		let idx = 0;
-		btn.addEventListener("click", () => {
-			idx = (idx + 1) % sizes.length;
+	<script>
+		// 字号调节（对应原主题 size() 函数）。脚本必须位于 swup 容器（main）内：
+		// 容器外的模块脚本整页生命周期只执行一次，swup 换页后新按钮无监听（实测踩坑）。
+		// 协议：顶层 init + colorful:page:loaded 重跑 + dataset 守卫防重复（同 Slideshow）。
+		const FONT_SIZE_KEY = "postFontSize";
+		const FONT_SIZE_MIN = 12;
+		const FONT_SIZE_MAX = 24;
+
+		function applyPostFontSize(px: number): void {
 			const content = document.querySelector(
 				".post-context",
 			) as HTMLElement | null;
 			if (content) {
-				content.style.fontSize = `${sizes[idx]}px`;
+				content.style.fontSize = `${px}px`;
 				content.style.lineHeight = "1.9";
 			}
-		});
-	}
-</script>
+		}
+
+		function initFontSizeToggle(): void {
+			const btn = document.getElementById("font-size-btn");
+			const pop = document.getElementById("font-size-pop");
+			const range = document.getElementById(
+				"font-size-range",
+			) as HTMLInputElement | null;
+			const output = document.getElementById("font-size-value");
+			if (!btn || !pop || !range || !output) return;
+			if (btn.dataset.fontSizeInit === "true") return;
+			btn.dataset.fontSizeInit = "true";
+
+			// 恢复持久化字号：仅在用户调整过（存在存储值）时应用，默认档不写内联样式
+			const raw = localStorage.getItem(FONT_SIZE_KEY);
+			if (raw !== null) {
+				const saved = Number.parseInt(raw, 10);
+				if (saved >= FONT_SIZE_MIN && saved <= FONT_SIZE_MAX) {
+					applyPostFontSize(saved);
+					range.value = String(saved);
+					output.textContent = `${saved}px`;
+				}
+			}
+
+			// Flutter 式轨道填充：--p（0..1）驱动渐变端点对齐拇指圆心
+			const updateRangeFill = (): void => {
+				const p =
+					(Number.parseInt(range.value, 10) - FONT_SIZE_MIN) /
+					(FONT_SIZE_MAX - FONT_SIZE_MIN);
+				range.style.setProperty("--p", String(p));
+			};
+			updateRangeFill();
+
+			const setOpen = (open: boolean): void => {
+				btn.classList.toggle("active", open);
+				pop.classList.toggle("active", open);
+			};
+
+			btn.addEventListener("click", (event) => {
+				// 弹层（滑块）内的点击冒泡到按钮时不折叠
+				if ((event.target as HTMLElement).closest(".font-size-pop"))
+					return;
+				setOpen(!pop.classList.contains("active"));
+			});
+			range.addEventListener("pointerdown", () => {
+				// 拖动开始前清掉页面残留选区：旧选区会随拖动一起被拖着走，
+				// 在气泡内外留下 "A"/"xxpx" 的拖影
+				getSelection()?.removeAllRanges();
+			});
+			range.addEventListener("input", () => {
+				const px = Number.parseInt(range.value, 10);
+				output.textContent = `${px}px`;
+				applyPostFontSize(px);
+				updateRangeFill();
+				localStorage.setItem(FONT_SIZE_KEY, String(px));
+			});
+		}
+		initFontSizeToggle();
+		document.addEventListener("colorful:page:loaded", initFontSizeToggle);
+
+		// 点击按钮与弹层之外的区域收起弹层。用 pointerdown 而非 click：从拇指拖出
+		// 弹层松手时 click 的 target 会落在弹层外造成误关；window 旗标防生产内联
+		// 模块被 swup 克隆重执行时重复注册（同 TagCloud3D 注册表思路）
+		const w = window as unknown as { __fontSizeClickAwayBound?: true };
+		if (!w.__fontSizeClickAwayBound) {
+			w.__fontSizeClickAwayBound = true;
+			document.addEventListener("pointerdown", (event) => {
+				if (event.button !== 0) return;
+				const btn = document.getElementById("font-size-btn");
+				const pop = document.getElementById("font-size-pop");
+				if (!btn || !pop || !pop.classList.contains("active")) return;
+				const target = event.target as Node;
+				if (btn.contains(target) || pop.contains(target)) return;
+				btn.classList.remove("active");
+				pop.classList.remove("active");
+			});
+		}
+	</script>
+</MainGridLayout>

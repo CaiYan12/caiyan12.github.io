@@ -2880,6 +2880,7 @@ img:hover {
 .post-metaa .tools li {
   float: left;
   display: inline;
+  position: relative;
   min-width: 14px;
   margin: 0 4px 0 0;
   padding: 0 7px;
@@ -2888,6 +2889,145 @@ img:hover {
   background: linear-gradient(to bottom, #fefefe, #eee);
   color: #505050;
   text-align: center;
+  user-select: none; /* 工具按钮连点/拖动时不应选中按钮文字（如字号钮的 A） */
+}
+
+/* 字号按钮激活态：沿用 hover 内阴影语言（对应原主题 size() 的 bold + 内阴影） */
+.post-metaa .tools li.active {
+  font-weight: bold;
+  box-shadow: inset 0 0 10px #ccc;
+}
+
+/* 字号弹层：Pio 消息框同语言（白底、#eee 细边框、1em 圆角、双层三角尾巴、
+   opacity + visibility 过渡），锚定按钮右缘下弹，避免窄屏横向溢出 */
+.font-size-pop {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 180px;
+  padding: 0.75em 1em;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 1em;
+  font-size: 12px;
+  /* 拖动滑块时指针滑出输入框会误发起文本选择（选中 xxpx 并卡住拖动），整泡禁选 */
+  user-select: none;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.2s var(--ease-out),
+    visibility 0.2s;
+}
+
+.font-size-pop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* 顶部三角尾巴指向按钮，双层结构补出边框延续（同 pio-dialog::before/::after） */
+.font-size-pop::before {
+  content: "";
+  position: absolute;
+  bottom: 100%;
+  right: 8px;
+  border: 6px solid transparent;
+  border-bottom-color: #eee;
+}
+
+.font-size-pop::after {
+  content: "";
+  position: absolute;
+  bottom: calc(100% - 1px);
+  right: 8px;
+  border: 6px solid transparent;
+  border-bottom-color: #fff;
+}
+
+/* 字号滑块：Flutter (Material 3) 滑杆样式——4px 满圆角轨道（已滑过品牌绿 /
+   未滑过线灰）、10px 同色圆拇指带微投影、hover/按下/键盘聚焦时拇指外扩半透明
+   圆形态层（Flutter overlay，替代原生割裂的 hover 圈）。填充端点经 calc 对齐
+   拇指圆心：原生拇指行程被半径内缩，--p（0..1）由脚本随当前值写入 */
+.font-size-pop input[type="range"] {
+  width: 100%;
+  height: 10px;
+  margin: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+  outline: none; /* 键盘聚焦以拇指态层环为可见指示（同 Flutter overlay） */
+  touch-action: none; /* 触屏拖动时不触发页面滚动 */
+}
+
+.font-size-pop input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--colorful-green) 0 calc(5px + (100% - 10px) * var(--p, 0)), var(--colorful-line) calc(5px + (100% - 10px) * var(--p, 0)) 100%);
+}
+
+.font-size-pop input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 10px;
+  height: 10px;
+  margin-top: -3px; /* 居中于 4px 轨道 */
+  border: 0;
+  border-radius: 50%;
+  background: var(--colorful-green);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 24%);
+  transition: box-shadow 0.15s var(--ease-out);
+}
+
+.font-size-pop input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--colorful-green) 0 calc(5px + (100% - 10px) * var(--p, 0)), var(--colorful-line) calc(5px + (100% - 10px) * var(--p, 0)) 100%);
+}
+
+.font-size-pop input[type="range"]::-moz-range-thumb {
+  width: 10px;
+  height: 10px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--colorful-green);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 24%);
+  transition: box-shadow 0.15s var(--ease-out);
+}
+
+/* 注意：-webkit- 与 -moz- 伪元素不能共用逗号选择器组——任一引擎遇到不认识的
+   伪元素会按规范丢弃整条规则，必须拆成独立规则 */
+@media (hover: hover) and (pointer: fine) {
+  .font-size-pop input[type="range"]:hover::-webkit-slider-thumb,
+  .font-size-pop input[type="range"]:focus-visible::-webkit-slider-thumb,
+  .font-size-pop input[type="range"]:active::-webkit-slider-thumb {
+    box-shadow:
+      0 1px 4px rgb(0 0 0 / 24%),
+      0 0 0 4px color-mix(in srgb, var(--colorful-green) 12%, transparent);
+  }
+
+  .font-size-pop input[type="range"]:hover::-moz-range-thumb,
+  .font-size-pop input[type="range"]:focus-visible::-moz-range-thumb,
+  .font-size-pop input[type="range"]:active::-moz-range-thumb {
+    box-shadow:
+      0 1px 4px rgb(0 0 0 / 24%),
+      0 0 0 4px color-mix(in srgb, var(--colorful-green) 12%, transparent);
+  }
+}
+
+.font-size-pop output {
+  color: var(--colorful-muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .font-size-pop {
+    transition: none;
+  }
 }
 
 .post-context {
