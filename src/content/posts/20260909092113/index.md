@@ -50,7 +50,6 @@ qfluentwidgets 暗色主题里的控件背景其实都是透明的，看到的�
 为了解决 Mica 的表现，以下放我对 AI 的 prompt：
 
 > 原先的背景半透明效果似乎没了。
->
 
 经过一通博弈与分析：
 
@@ -68,11 +67,11 @@ setWidget 之后关掉 center.setAutoFillBackground(False)，实色底也撤了�
 
 雷霆大思考发力了，AI直接在我本机上跑了个测试：
 
-*用“红色标记法”真机对照实验定位：*
+_用“红色标记法”真机对照实验定位：_
 
-- *viewport qss `background: #FF0000` → **整片红色生效**（viewport 可控）*
-- *viewport qss `background: transparent` → 白（**qss transparent 在真机回退成调色板 Base 白底**）*
-- *调色板 Base 改红但不开 autofill → 白（无效）*
+- _viewport qss `background: #FF0000` → **整片红色生效**（viewport 可控）_
+- _viewport qss `background: transparent` → 白（**qss transparent 在真机回退成调色板 Base 白底**）_
+- _调色板 Base 改红但不开 autofill → 白（无效）_
 
 然鹅实际上跑了这么多趟，跑完还是白。viewport 自己还会拿调色板 Base 铺白，得连它一起透明。改完提交。
 
@@ -111,15 +110,15 @@ self.addSubInterface(
 
 enableTransparentBackground() 把 ScrollArea 和 content widget 一起处理掉，setWidget 留下的那个 autofill 问题在这儿一并清了。
 
-***本次方案：回到库里找官方姿势***
+_**本次方案：回到库里找官方姿势**_
 
-*你说得对——qfluentwidgets 自己就有标准答案。翻了库源码（`fluent_window.py` + 编译在资源里的 `fluent_window.qss`）找到官方机制：*
+_你说得对——qfluentwidgets 自己就有标准答案。翻了库源码（`fluent_window.py` + 编译在资源里的 `fluent_window.qss`）找到官方机制：_
 
-1. ***`addSubInterface(..., isTransparent=True)`**：官方原生参数（我们之前一直没用它！），会给页面设置透明属性，配合窗口 qss 规则 `StackedWidget[isTransparent=true]{background: transparent}` 让内容区完全透明*
-2. ***`ScrollArea.enableTransparentBackground()`**：官方 API，把滚动区及其内容全部透明化*
-3. *两者叠加 = **qfluentwidgets 设置界面同款**：Mica 完整透出，正是你图二要的效果*
+1. _**`addSubInterface(..., isTransparent=True)`**：官方原生参数（我们之前一直没用它！），会给页面设置透明属性，配合窗口 qss 规则 `StackedWidget[isTransparent=true]{background: transparent}` 让内容区完全透明_
+2. _**`ScrollArea.enableTransparentBackground()`**：官方 API，把滚动区及其内容全部透明化_
+3. _两者叠加 = **qfluentwidgets 设置界面同款**：Mica 完整透出，正是你图二要的效果_
 
-*之前所有失败尝试（实色补底、qss transparent、rgba 涂层、调色板透明）都是在绕路，因为 `QScrollArea.setWidget()` 会偷偷打开内容 widget 的 `autoFillBackground` 用亮色调色板铺底——官方 API 的组合拳才是正解。*
+_之前所有失败尝试（实色补底、qss transparent、rgba 涂层、调色板透明）都是在绕路，因为 `QScrollArea.setWidget()` 会偷偷打开内容 widget 的 `autoFillBackground` 用亮色调色板铺底——官方 API 的组合拳才是正解。_
 
 真机启动，白屏没了，整窗暗色统一。提交构建，就这样：
 
