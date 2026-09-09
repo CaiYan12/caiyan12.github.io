@@ -7,6 +7,14 @@
 		"forks_count": 4919,
 		"language": "Python"
 	},
+	"CaiYan12/video-to-gif": {
+		"html_url": "https://github.com/CaiYan12/video-to-gif",
+		"full_name": "CaiYan12/video-to-gif",
+		"description": "手动导入视频，裁剪时间区间，自选质量导出 GIF 的 Windows 桌面应用（PySide6 + PyQt-Fluent-Widgets + ffmpeg）",
+		"stargazers_count": 0,
+		"forks_count": 0,
+		"language": "Python"
+	},
 	"CaiYan12/windy-project-mgr": {
 		"html_url": "https://github.com/CaiYan12/windy-project-mgr",
 		"full_name": "CaiYan12/windy-project-mgr",
