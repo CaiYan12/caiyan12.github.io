@@ -107,7 +107,13 @@ function validIsoTimestamp(value) {
 const ALLOWED_CONTENT_TYPES = new Set(Object.values(MIME_BY_KIND).flat());
 
 function validRootRelativePath(value) {
-	return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") && !value.includes("\0") && !value.split("/").some((segment) => segment === "." || segment === "..");
+	return typeof value === "string"
+		&& value.startsWith("/")
+		&& !value.startsWith("//")
+		&& !value.includes("\\")
+		&& !value.includes("\0")
+		&& !value.includes("://")
+		&& !value.split("/").some((segment) => segment === "." || segment === "..");
 }
 
 function validSourceUrl(value) {
@@ -240,7 +246,7 @@ function localPathTarget(publicRoot, localPath) {
 	return target;
 }
 
-async function validLocalAsset(publicRoot, localPath) {
+async function validLocalAsset(publicRoot, localPath, expectedEntry) {
 	const target = localPathTarget(publicRoot, localPath);
 	if (!target) return null;
 	try {
@@ -248,7 +254,9 @@ async function validLocalAsset(publicRoot, localPath) {
 		if (!stat.isFile() || stat.size > DEFAULT_MAX_BYTES) return null;
 		const bytes = new Uint8Array(await fs.readFile(target));
 		const kind = detectKind(bytes);
-		return kind ? { target, bytes, kind } : null;
+		if (!kind) return null;
+		if (expectedEntry && (bytes.byteLength !== expectedEntry.byteSize || !MIME_BY_KIND[kind].includes(expectedEntry.contentType))) return null;
+		return { target, bytes, kind };
 	} catch {
 		return null;
 	}
@@ -282,48 +290,59 @@ async function readManifest(manifestPath) {
 
 export { readManifest };
 
-export async function atomicWrite(filePath, bytes, fsImpl = fs) {
+const atomicWriteLocks = new Map();
+
+async function atomicWriteOnce(filePath, bytes, fsImpl) {
 	await fsImpl.mkdir(path.dirname(filePath), { recursive: true });
-	const temporary = `${filePath}.tmp`;
-	const backup = `${filePath}.bak`;
+	const operationId = crypto.randomUUID();
+	const temporary = `${filePath}.tmp-${operationId}`;
+	const backup = `${filePath}.bak-${operationId}`;
+	let backupCreated = false;
+	let preserveBackup = false;
 	try {
-		try {
-			await fsImpl.access(backup);
-			try {
-				await fsImpl.access(filePath);
-				await fsImpl.rm(backup, { force: true });
-			} catch {
-				await fsImpl.rename(backup, filePath);
-			}
-		} catch { /* no recoverable backup */ }
 		await fsImpl.writeFile(temporary, bytes);
-		let movedOld = false;
 		try {
 			await fsImpl.rename(temporary, filePath);
 		} catch (error) {
 			let targetExists = true;
 			try { await fsImpl.access(filePath); } catch { targetExists = false; }
 			if (!targetExists) throw error;
+			// Windows may reject rename-overwrite. Move the old target to a unique,
+			// recoverable backup before installing the replacement, then restore it
+			// if the second rename is interrupted.
 			await fsImpl.rename(filePath, backup);
-			movedOld = true;
+			backupCreated = true;
 			try {
 				await fsImpl.rename(temporary, filePath);
 			} catch (replacementError) {
-				try { await fsImpl.rename(backup, filePath); } catch (restoreError) {
+				try {
+					await fsImpl.rename(backup, filePath);
+					backupCreated = false;
+				} catch (restoreError) {
+					preserveBackup = true;
 					replacementError.message += `; old cache restore failed: ${restoreError.message}`;
 				}
 				throw replacementError;
 			}
 		}
-		if (movedOld) await fsImpl.rm(backup, { force: true });
 	} finally {
 		await fsImpl.rm(temporary, { force: true });
+		if (backupCreated && !preserveBackup) {
+			try { await fsImpl.rm(backup, { force: true }); } catch {
+				// A recoverable backup may remain when antivirus software holds it.
+			}
+		}
 	}
-	try {
-		await fsImpl.rm(backup, { force: true });
-	} catch {
-		// A backup is recoverable on the next invocation if antivirus software holds it.
-	}
+}
+
+export function atomicWrite(filePath, bytes, fsImpl = fs) {
+	const lockKey = path.resolve(filePath);
+	const previous = atomicWriteLocks.get(lockKey) ?? Promise.resolve();
+	const operation = previous.catch(() => {}).then(() => atomicWriteOnce(filePath, bytes, fsImpl));
+	atomicWriteLocks.set(lockKey, operation);
+	return operation.finally(() => {
+		if (atomicWriteLocks.get(lockKey) === operation) atomicWriteLocks.delete(lockKey);
+	});
 }
 
 function stableAssetName(friendUrl, kind) {
@@ -411,6 +430,10 @@ function makeEntry(friendUrl, image, context) {
 }
 
 export async function fetchFriendIcons(options = {}) {
+	const maxBytes = options.maxBytes === undefined ? DEFAULT_MAX_BYTES : options.maxBytes;
+	if (typeof maxBytes !== "number" || !Number.isFinite(maxBytes) || maxBytes <= 0 || maxBytes > DEFAULT_MAX_BYTES) {
+		fail(`maxBytes must be a finite number greater than 0 and no more than ${DEFAULT_MAX_BYTES}`);
+	}
 	const context = {
 		friends: options.friends ?? defaultFriends,
 		publicRoot: options.publicRoot ?? DEFAULT_PUBLIC_ROOT,
@@ -418,7 +441,7 @@ export async function fetchFriendIcons(options = {}) {
 		fetchImpl: options.fetchImpl ?? fetch,
 		now: options.now ?? Date.now,
 		timeoutMs: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-		maxBytes: options.maxBytes ?? DEFAULT_MAX_BYTES,
+		maxBytes,
 		maxRedirects: options.maxRedirects ?? DEFAULT_MAX_REDIRECTS,
 		logger: options.logger ?? console,
 	};
@@ -439,7 +462,7 @@ export async function fetchFriendIcons(options = {}) {
 		if (seen.has(normalized)) continue;
 		seen.add(normalized);
 		const oldEntry = byUrl.get(normalized);
-		const oldAsset = oldEntry ? await validLocalAsset(context.publicRoot, oldEntry.localPath) : null;
+		const oldAsset = oldEntry ? await validLocalAsset(context.publicRoot, oldEntry.localPath, oldEntry) : null;
 		if (!options.refresh && oldAsset) {
 			negativeByUrl.delete(normalized);
 			entries.push(oldEntry);

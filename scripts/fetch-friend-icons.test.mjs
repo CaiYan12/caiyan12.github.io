@@ -9,6 +9,7 @@ import {
 	fetchFriendIcons,
 	readManifest,
 	atomicWrite,
+	DEFAULT_MAX_BYTES,
 } from "./fetch-friend-icons.mjs";
 
 async function tempFixture() {
@@ -216,17 +217,71 @@ test("duplicate and invalid friends are handled without duplicate requests", asy
 	assert.equal(result.fallbacks.length, 1);
 });
 
-test("bad MIME, signature and oversized body produce fallback and no temporary files", async () => {
+test("bad image MIME produces fallback and no temporary files", async () => {
+	const fixture = await tempFixture();
+	const result = await fetchFriendIcons({
+		friends: [{ name: "A", url: "https://example.test/", description: "", tags: [], avatar: "https://cdn.test/a.png" }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		fetchImpl: async (url) => response(pngBytes(), { url, contentType: "image/svg+xml" }),
+	});
+	assert.equal(result.fallbacks.length, 1);
+	assert.deepEqual((await fs.readdir(fixture.publicRoot)).filter((name) => name.includes(".tmp-")), []);
+});
+
+test("bad image signature produces fallback and no temporary files", async () => {
+	const fixture = await tempFixture();
+	const result = await fetchFriendIcons({
+		friends: [{ name: "A", url: "https://example.test/", description: "", tags: [], avatar: "https://cdn.test/a.png" }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		fetchImpl: async (url) => response(new TextEncoder().encode("not an image"), { url, contentType: "image/png" }),
+	});
+	assert.equal(result.fallbacks.length, 1);
+	assert.deepEqual((await fs.readdir(fixture.publicRoot)).filter((name) => name.includes(".tmp-")), []);
+});
+
+test("oversized body produces fallback and no temporary files", async () => {
 	const fixture = await tempFixture();
 	const result = await fetchFriendIcons({
 		friends: [{ name: "A", url: "https://example.test/", description: "", tags: [], avatar: "https://cdn.test/a.png" }],
 		publicRoot: fixture.publicRoot,
 		manifestPath: fixture.manifestPath,
 		maxBytes: 4,
-		fetchImpl: async (url) => response(new Uint8Array(8), { url, contentType: "image/png" }),
+		fetchImpl: async (url) => response(pngBytes(), { url, contentType: "image/png" }),
 	});
 	assert.equal(result.fallbacks.length, 1);
-	assert.deepEqual((await fs.readdir(fixture.publicRoot)).filter((name) => name.endsWith(".tmp")), []);
+	assert.deepEqual((await fs.readdir(fixture.publicRoot)).filter((name) => name.includes(".tmp-")), []);
+});
+
+test("maxBytes accepts a lower positive value up to the hard ceiling", async () => {
+	const fixture = await tempFixture();
+	const result = await fetchFriendIcons({
+		friends: [{ name: "A", url: "https://example.test/", description: "", tags: [], avatar: "https://cdn.test/a.png" }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		maxBytes: pngBytes().byteLength,
+		fetchImpl: async (url) => response(pngBytes(), { url, contentType: "image/png" }),
+	});
+	assert.equal(result.entries.length, 1);
+});
+
+test("maxBytes rejects invalid values before any network request", async () => {
+	for (const maxBytes of [Number.NaN, Number.POSITIVE_INFINITY, 0, -1, DEFAULT_MAX_BYTES + 1]) {
+		const fixture = await tempFixture();
+		let calls = 0;
+		await assert.rejects(
+			fetchFriendIcons({
+				friends: [{ name: "A", url: "https://example.test/", description: "", tags: [] }],
+				publicRoot: fixture.publicRoot,
+				manifestPath: fixture.manifestPath,
+				maxBytes,
+				fetchImpl: async () => { calls += 1; throw new Error("must not fetch"); },
+			}),
+			/maxBytes/,
+		);
+		assert.equal(calls, 0);
+	}
 });
 
 test("hung requests time out and continue without leaving temporary files", async () => {
@@ -255,10 +310,12 @@ test("atomic replacement restores old bytes when the replacement is interrupted"
 	const target = path.join(fixture.publicRoot, "icon.png");
 	await fs.writeFile(target, Buffer.from("old"));
 	let renameCalls = 0;
+	const renamePaths = [];
 	const fsImpl = {
 		...fs,
 		rename: async (from, to) => {
 			renameCalls += 1;
+			renamePaths.push([from, to]);
 			if (renameCalls === 1) { const error = new Error("target exists"); error.code = "EEXIST"; throw error; }
 			if (renameCalls === 3) { const error = new Error("antivirus lock"); error.code = "EACCES"; throw error; }
 			return fs.rename(from, to);
@@ -266,8 +323,80 @@ test("atomic replacement restores old bytes when the replacement is interrupted"
 	};
 	await assert.rejects(atomicWrite(target, Buffer.from("new"), fsImpl), /antivirus lock/);
 	assert.deepEqual(await fs.readFile(target), Buffer.from("old"));
-	await assert.rejects(fs.access(`${target}.tmp`));
-	await assert.rejects(fs.access(`${target}.bak`));
+	assert.match(path.basename(renamePaths[0][0]), /^icon\.png\.tmp-/);
+	assert.match(path.basename(renamePaths[0][1]), /^icon\.png$/);
+	assert.match(path.basename(renamePaths[1][0]), /^icon\.png$/);
+	assert.match(path.basename(renamePaths[1][1]), /^icon\.png\.bak-/);
+	assert.notEqual(path.basename(renamePaths[1][1]), path.basename(renamePaths[2][1]));
+	await assert.rejects(fs.access(renamePaths[0][0]));
+	await assert.rejects(fs.access(renamePaths[1][1]));
+});
+
+test("atomic writes serialize same-target operations and clean unique artifacts", async () => {
+	const fixture = await tempFixture();
+	const target = path.join(fixture.publicRoot, "icon.png");
+	let activeWrites = 0;
+	let maxActiveWrites = 0;
+	const fsImpl = {
+		...fs,
+		writeFile: async (...args) => {
+			activeWrites += 1;
+			maxActiveWrites = Math.max(maxActiveWrites, activeWrites);
+			await new Promise((resolve) => setTimeout(resolve, 10));
+			try { return await fs.writeFile(...args); } finally { activeWrites -= 1; }
+		},
+	};
+	await Promise.all([
+		atomicWrite(target, Buffer.from("one"), fsImpl),
+		atomicWrite(target, Buffer.from("two"), fsImpl),
+	]);
+	assert.equal(maxActiveWrites, 1);
+	assert.deepEqual(await fs.readFile(target), Buffer.from("two"));
+	assert.deepEqual((await fs.readdir(fixture.publicRoot)).filter((name) => name.includes(".tmp-") || name.includes(".bak-")), []);
+});
+
+test("cache metadata byte size mismatch triggers a refetch", async () => {
+	const fixture = await tempFixture();
+	const localPath = "/friend-icons/existing.png";
+	const assetPath = path.join(fixture.publicRoot, localPath.slice(1));
+	await fs.mkdir(path.dirname(assetPath), { recursive: true });
+	await fs.writeFile(assetPath, pngBytes());
+	await fs.writeFile(fixture.manifestPath, JSON.stringify({
+		schemaVersion: 1,
+		entries: [{ friendUrl: "https://example.test/", localPath, sourceUrl: "https://cdn.test/old.png", contentType: "image/png", byteSize: 8, lastSuccessfulAt: "2026-01-01T00:00:00.000Z" }],
+		negativeEntries: [],
+	}));
+	let calls = 0;
+	const result = await fetchFriendIcons({
+		friends: [{ name: "A", url: "https://example.test/", description: "", tags: [], avatar: "https://cdn.test/new.png" }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		fetchImpl: async (url) => { calls += 1; return response(pngBytes(), { url, contentType: "image/png" }); },
+	});
+	assert.ok(calls > 0);
+	assert.equal(result.entries[0].byteSize, pngBytes().byteLength);
+});
+
+test("cache metadata content type mismatch triggers a refetch", async () => {
+	const fixture = await tempFixture();
+	const localPath = "/friend-icons/existing.png";
+	const assetPath = path.join(fixture.publicRoot, localPath.slice(1));
+	await fs.mkdir(path.dirname(assetPath), { recursive: true });
+	await fs.writeFile(assetPath, pngBytes());
+	await fs.writeFile(fixture.manifestPath, JSON.stringify({
+		schemaVersion: 1,
+		entries: [{ friendUrl: "https://example.test/", localPath, sourceUrl: "https://cdn.test/old.png", contentType: "image/jpeg", byteSize: 9, lastSuccessfulAt: "2026-01-01T00:00:00.000Z" }],
+		negativeEntries: [],
+	}));
+	let calls = 0;
+	const result = await fetchFriendIcons({
+		friends: [{ name: "A", url: "https://example.test/", description: "", tags: [], avatar: "https://cdn.test/new.png" }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		fetchImpl: async (url) => { calls += 1; return response(pngBytes(), { url, contentType: "image/png" }); },
+	});
+	assert.ok(calls > 0);
+	assert.equal(result.entries[0].contentType, "image/png");
 });
 
 test("missing old asset is removed from the active manifest after refresh failure", async () => {
@@ -460,6 +589,10 @@ test("malformed positive cache entries are fatal before any fetch", async () => 
 		{ ...valid, extra: true },
 		{ ...valid, friendUrl: "https://example.test/#fragment" },
 		{ ...valid, localPath: "/friend-icons/../secret.png" },
+		{ ...valid, localPath: "/friend-icons/.\\secret.png" },
+		{ ...valid, localPath: "/friend-icons/\0secret.png" },
+		{ ...valid, localPath: "/friend-icons/https://evil.test/icon.png" },
+		{ ...valid, localPath: "//evil.test/icon.png" },
 		{ ...valid, sourceUrl: "ftp://cdn.test/icon.png" },
 		{ ...valid, contentType: "image/svg+xml" },
 		{ ...valid, byteSize: 0 },
