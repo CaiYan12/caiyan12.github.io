@@ -292,7 +292,6 @@ async function fetchImage(url, options) {
 async function processFriend(friend, context) {
 	let normalized;
 	try { normalized = normalizeFriendUrl(friend.url); } catch (error) {
-		if (!friend.url) return { status: "fallback", reason: error.message };
 		return { status: "fallback", reason: error.message };
 	}
 	const localAvatar = typeof friend.avatar === "string" && friend.avatar.startsWith("/") && !friend.avatar.startsWith("//") ? friend.avatar : null;

@@ -139,7 +139,7 @@ test("redirect limit stops a loop and final response URL drives relative candida
 	assert.equal(limited.fallbacks.length, 1);
 });
 
-test("no-icon and malformed HTML fall back to the final origin favicon", async () => {
+test("no-icon HTML falls back to the final origin favicon", async () => {
 	const fixture = await tempFixture();
 	const calls = [];
 	const result = await fetchFriendIcons({
@@ -148,7 +148,24 @@ test("no-icon and malformed HTML fall back to the final origin favicon", async (
 		manifestPath: fixture.manifestPath,
 		fetchImpl: async (url) => {
 			calls.push(url);
-			if (url.endsWith("start")) return response("<html><link rel='icon'", { url: "https://example.test/final/page" });
+			if (url.endsWith("start")) return response("<html><body>no icon</body></html>", { url: "https://example.test/final/page" });
+			return response(pngBytes(), { url, contentType: "image/png" });
+		},
+	});
+	assert.deepEqual(calls, ["https://example.test/start", "https://example.test/favicon.ico"]);
+	assert.equal(result.entries[0].sourceUrl, "https://example.test/favicon.ico");
+});
+
+test("malformed HTML still reaches the final origin favicon", async () => {
+	const fixture = await tempFixture();
+	const calls = [];
+	const result = await fetchFriendIcons({
+		friends: [{ name: "Malformed", url: "https://example.test/start", description: "", tags: [] }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		fetchImpl: async (url) => {
+			calls.push(url);
+			if (url.endsWith("start")) return response("<html><head><link rel='icon' href='", { url: "https://example.test/final/page" });
 			return response(pngBytes(), { url, contentType: "image/png" });
 		},
 	});
@@ -265,4 +282,22 @@ test("missing old asset is removed from the active manifest after refresh failur
 	});
 	assert.equal(result.fallbacks.length, 1);
 	assert.deepEqual((await readManifest(fixture.manifestPath)).entries, []);
+});
+
+test("corrupt old asset is removed from the active manifest after refresh failure", async () => {
+	const fixture = await tempFixture();
+	const corruptPath = path.join(fixture.publicRoot, "friend-icons", "corrupt.png");
+	await fs.mkdir(path.dirname(corruptPath), { recursive: true });
+	await fs.writeFile(corruptPath, Buffer.from("this is not a PNG"));
+	await fs.writeFile(fixture.manifestPath, JSON.stringify({ schemaVersion: 1, entries: [{ friendUrl: "https://example.test/", localPath: "/friend-icons/corrupt.png", sourceUrl: "https://cdn.test/old.png", contentType: "image/png", byteSize: 17, lastSuccessfulAt: "2026-01-01T00:00:00.000Z" }] }));
+	const result = await fetchFriendIcons({
+		friends: [{ name: "A", url: "https://example.test/", description: "", tags: [] }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		refresh: true,
+		fetchImpl: async () => { throw new Error("offline"); },
+	});
+	assert.equal(result.fallbacks.length, 1);
+	assert.deepEqual((await readManifest(fixture.manifestPath)).entries, []);
+	assert.deepEqual(await fs.readFile(corruptPath), Buffer.from("this is not a PNG"));
 });
