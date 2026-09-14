@@ -236,6 +236,8 @@ pnpm dev         # 本地开发 http://localhost:4321
 pnpm build       # 构建 dist/（LQIP 生成 + GitHub 仓库/贡献数据拉取 + astro build + Pagefind，已串联）
 pnpm new-post -- <yyyymmddhhmmss> [标题]  # 按强制 URL 规范创建文章
 pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存（默认增量只拉缺失）
+pnpm fetch-friend-icons     # 增量补齐缺失的友链图标缓存
+pnpm fetch-friend-icons --refresh  # 手动刷新当前友链图标缓存
 pnpm preview     # 预览构建产物（需先 build）
 pnpm check       # astro check 类型检查
 pnpm test:contributions  # 贡献日历数据脚本离线单测（node --test，注入 fetchImpl 不访问真实网络）
@@ -265,7 +267,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - 文章：`src/content/posts/<yyyymmddhhmmss>/index.md`（**目录名即 URL slug**，可放封面图在同目录），schema 在 `src/content.config.ts`（posts + spec 两个 collection）
 - frontmatter 字段：title/published/category/tags/description/image/pinned/views/comments/hotness(0-5)/draft 等，其中 comments/hotness 用于首页吐槽与热门展示；views 为迁移兼容字段，当前不渲染围观数
 - 特殊页面：`src/content/spec/about.md`（关于）
-- 数据文件：`src/data/diary.ts`（说说）、`friends.ts`（友链）、`comments.ts`（开发环境最新评论 mock）、`guestbook.ts`（开发环境留言板单条换一批 mock）、`site-stats.json`（构建期同步快照）
+- 数据文件：`src/data/diary.ts`（说说）、`friends.json`（友链单一数据源）+ `friends.ts`（`Friend` 类型与兼容导出）、`comments.ts`（开发环境最新评论 mock）、`guestbook.ts`（开发环境留言板单条换一批 mock）、`site-stats.json`（构建期同步快照）
 - 相册：**文件夹驱动**——`public/images/albums/<相册名>/` 下放图即自动生成相册（`src/utils/album-scanner.ts` 构建期扫描，中文目录名没问题，slug 用原始名不要预编码）
 
 ### 文章 URL 硬规则（必须遵守）
@@ -284,6 +286,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 | 主页吐槽水军 | 构建期从 guestbook Discussion 同步最多 20 条顶层留言到 `guestbookComments`，侧栏单条展示并复用“最新评论—换一批”系统，不在浏览器请求 GitHub/Giscus |
 | 图片灯箱 | Fancybox（`src/utils/theme-script.ts` 的 `initFancybox()` 懒加载绑定） |
 | GitHub 仓库卡片 | 构建期渲染：`scripts/fetch-github-repos.mjs` 拉取元数据缓存到 `src/constants/github-repos.json`，`remark-extended.mjs` 直接输出完整卡片 HTML；卡片左侧使用 `https://github.com/<owner>.png?size=128` owner 头像（桌面 `48×48`，移动 `40×40`），右侧为名称/描述/star/fork/语言；**客户端零 GitHub API 请求**（规避访客 IP 匿名 API 60 次/小时限流），令牌解析 `GITHUB_TOKEN`/`GH_TOKEN` → `gh auth token` → 匿名，拉取失败渲染回退链接不阻塞构建 |
+| 友链图标 | `scripts/fetch-friend-icons.mjs` 构建期维护 `src/constants/friend-icons.json` 与 `public/friend-icons/`；普通模式只补缺，`--refresh` 手动刷新当前友链，成功写入本地缓存，失败保留旧缓存或记录负缓存并显示首字占位，删除友链不清理历史记录；页面运行时只请求本地路径，CI 生成的缓存仅随当次部署 artifact，长期复用需本地生成并提交资产和清单 |
 | Markdown 表格 | Markdown 表格经 `rehype-table-wrapper.mjs` 包裹 `.table-scroll`，原生 HTML 表格由 `remark-extended.mjs` 包裹；`global.css` 统一提供满宽、居中、边框和单元格上下居中样式，过宽表格仅在自身容器内滚动 |
 | 代码高亮/公式 | Expressive Code + KaTeX（KaTeX CSS 按需动态导入；`expressiveCode` 必须保持 `useDarkModeMediaQuery: false`，否则系统暗色访客的代码块变暗色） |
 | Mermaid 图表 | 客户端懒加载渲染（`theme-script.ts` 的 `renderMermaid()`，仅页面存在 `pre.mermaid` 时 `import("mermaid")`）。**体积治理已评估关闭（2026-09-04）**：mermaid 11 对全部 38 种 diagram 均为动态 import，访客只下载实际用到的类型（实测约 450KB gzip），未用 chunk 是 dist 死产物但无访客成本；注册表硬编码在 `mermaid.core.mjs` 不可外部裁剪；预渲染（rehype-mermaid + playwright）需引入 Chromium 构建依赖性价比不足。构建期 3 个大 chunk 警告（cynefin/core/cytoscape）为已知问题保留，勿重新评估 |

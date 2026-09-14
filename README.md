@@ -22,6 +22,8 @@ pnpm dev         # 本地开发（http://localhost:4321）
 pnpm build       # 构建到 dist/（LQIP 占位图 + GitHub 仓库数据 + 佛祖横幅注入 + Pagefind 已串联）
 pnpm new-post -- <yyyymmddhhmmss> [标题]  # 按规范创建文章目录
 pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存
+pnpm fetch-friend-icons     # 增量补齐缺失的友链图标缓存
+pnpm fetch-friend-icons --refresh  # 手动刷新当前友链图标缓存
 pnpm preview     # 预览构建产物
 pnpm check       # 类型检查
 pnpm smoke:ai-news  # AI 日报入口、详情、返回与离线快照 Smoke（需先启动 pnpm dev）
@@ -58,7 +60,8 @@ src/
     spec/about.md           ← 关于页面
   data/
     diary.ts             ← 微言碎语
-    friends.ts           ← 友链
+    friends.json         ← 友链数据源
+    friends.ts           ← 友链类型与兼容导出
     comments.ts          ← 最新评论小部件数据
     guestbook.ts         ← 留言板单条换一批数据
   pages/                 ← 路由（首页/文章/归档/说说/友链/相册/留言板/…）
@@ -84,6 +87,7 @@ public/
 主站统一由 `src/layouts/Layout.astro` 引入 `src/styles/markdown-extended.css`。所有经 `MainGridLayout` 渲染的主站页面（文章、关于、归档、搜索、友链、留言板等）共享 `.post-context` 下的扩展组件样式；独立的 `/ai-news/` React 阅读页不使用这套 Layout，保持自己的运行时和视觉边界。
 
 - **GitHub 仓库卡片**：文章中的 `::github{repo="owner/name"}` 由 `src/plugins/remark-extended.mjs` 在构建期输出 `.github-card`。卡片左侧显示 owner 的 GitHub 头像（`https://github.com/<owner>.png?size=128`），桌面端为 `48×48`，移动端（`≤680px`）为 `40×40`；右侧显示仓库名、描述、star、fork 和语言。元数据来自 `src/constants/github-repos.json`，浏览器不请求 GitHub API；缓存缺失时保留可用的回退链接。
+- **友链图标缓存**：`src/data/friends.json` 是友链单一数据源，`src/data/friends.ts` 仅提供 `Friend` 类型和兼容导出。`pnpm fetch-friend-icons` 只补齐缺失图标，`--refresh` 才会刷新当前友链；成功资产和清单分别写入 `public/friend-icons/` 与 `src/constants/friend-icons.json`。失败时保留旧缓存，首次失败记录负缓存并显示首字占位；普通模式命中负缓存不会重试，删除友链也保留历史记录。页面只引用本地路径，运行时不请求友链域名或 Google favicon 服务。CI 构建生成的缓存只进入当次部署 artifact；要长期复用，需在本地运行命令并提交上述资产和清单。
 - **信纸稿纸面板**（/about/ 专用）：`:::letter-paper` 容器指令由 `src/plugins/remark-extended.mjs` 输出 `.letter-paper` 稿纸面板（暖纸底 + 32px 横线 + 红装订线 + 蓝红双笔手绘涂鸦层），内部结构为巨型头部（topbar/眉题/标题/手绘线）、黄色便签贴纸（承载原"写在前面"内容）、"✎ 碎碎念"小节标题、裸 `<div class="letter-paper-body">` 横线正文（逐字符静态微随机，见 `theme-script.ts` 的 `initPaperHandwriting()`）、"✦ NOW / NEXT" 时间线与页尾签名行（签名由插件固定输出，不写入 md）。**陷阱**：micromark 容器指令的一个 `:::` 会关闭整层嵌套栈，横线区必须用裸 div 包裹而非嵌套容器指令；**字体**：稿纸整体 `var(--font-hand)` 平方时光体（global.css 元素级 reset 会切断继承，容器需显式重声明），横线对齐 `--lp-shift` 与字体度量耦合、换字体须实测。
 - **Markdown 表格**：`src/styles/global.css` 中的 `.post-context table` 与 `.table-scroll` 规则在主站正文统一生效。Markdown 表格由 `src/plugins/rehype-table-wrapper.mjs` 包裹，原生 HTML 表格由 `src/plugins/remark-extended.mjs` 包裹；表格默认满正文宽度、居中，单元格文字上下居中，边框为 `#c4c4c4`，过宽内容只在自身滚动容器内横向滚动。
 - 修改上述插件或表格/卡片样式后，应至少检查一篇旧文章和一篇新文章的桌面、移动端布局，并补跑 `pnpm check`、`pnpm exec prettier --check ./src` 与 `pnpm build`。
