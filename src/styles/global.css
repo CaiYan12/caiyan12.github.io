@@ -3471,6 +3471,32 @@ img:hover {
   min-width: 110px;
 }
 
+#link {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 10px;
+}
+
+#link li {
+  display: flex;
+  float: none;
+  align-items: center;
+  min-width: 0;
+  margin-right: 0;
+}
+
+#link li i {
+  flex: 0 0 auto;
+}
+
+#link li a {
+  display: block;
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 #blogsort i,
 #record i,
 #link i {
