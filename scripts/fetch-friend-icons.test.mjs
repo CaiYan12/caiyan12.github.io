@@ -8,6 +8,7 @@ import {
 	parseIconCandidates,
 	fetchFriendIcons,
 	readManifest,
+	atomicWrite,
 } from "./fetch-friend-icons.mjs";
 
 async function tempFixture() {
@@ -58,18 +59,21 @@ test("parseIconCandidates follows rel tokens case-insensitively and resolves aga
 test("fetchFriendIcons fetches remote avatar first, writes manifest and stable asset", async () => {
 	const fixture = await tempFixture();
 	const calls = [];
+	const requestOptions = [];
 	const friends = [{ name: "A", url: "https://Example.test:443/", description: "", tags: [], avatar: "https://cdn.test/avatar.png" }];
 	const result = await fetchFriendIcons({
 		friends,
 		publicRoot: fixture.publicRoot,
 		manifestPath: fixture.manifestPath,
 		now: () => "2026-09-14T00:00:00.000Z",
-		fetchImpl: async (url) => {
+		fetchImpl: async (url, options) => {
 			calls.push(url);
+			requestOptions.push(options);
 			return response(pngBytes(), { url, contentType: "image/png" });
 		},
 	});
 	assert.equal(calls.length, 1);
+	assert.equal(requestOptions[0].headers["User-Agent"], "myblog-friend-icons/1.0");
 	assert.equal(result.entries.length, 1);
 	assert.match(result.entries[0].localPath, /^\/friend-icons\/[a-f0-9]{16}\.png$/);
 	assert.equal(result.entries[0].sourceUrl, "https://cdn.test/avatar.png");
@@ -116,6 +120,40 @@ test("HTML candidates fall back after bad icon and preserve final redirect URL",
 	]);
 	assert.equal(result.entries[0].sourceUrl, "https://example.test/final/ok.webp");
 	assert.equal(result.entries[0].localPath.endsWith(".webp"), true);
+});
+
+test("redirect limit stops a loop and final response URL drives relative candidates", async () => {
+	const fixture = await tempFixture();
+	let calls = 0;
+	const limited = await fetchFriendIcons({
+		friends: [{ name: "Loop", url: "https://example.test/start", description: "", tags: [] }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		maxRedirects: 1,
+		fetchImpl: async (url) => {
+			calls += 1;
+			return { ok: false, status: 302, url, headers: new Headers({ location: "/again" }) };
+		},
+	});
+	assert.equal(calls, 2);
+	assert.equal(limited.fallbacks.length, 1);
+});
+
+test("no-icon and malformed HTML fall back to the final origin favicon", async () => {
+	const fixture = await tempFixture();
+	const calls = [];
+	const result = await fetchFriendIcons({
+		friends: [{ name: "Favicon", url: "https://example.test/start", description: "", tags: [] }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		fetchImpl: async (url) => {
+			calls.push(url);
+			if (url.endsWith("start")) return response("<html><link rel='icon'", { url: "https://example.test/final/page" });
+			return response(pngBytes(), { url, contentType: "image/png" });
+		},
+	});
+	assert.deepEqual(calls, ["https://example.test/start", "https://example.test/favicon.ico"]);
+	assert.equal(result.entries[0].sourceUrl, "https://example.test/favicon.ico");
 });
 
 test("normal mode skips valid cache, refresh fetches, and failed refresh keeps old bytes", async () => {
@@ -176,13 +214,55 @@ test("bad MIME, signature and oversized body produce fallback and no temporary f
 
 test("hung requests time out and continue without leaving temporary files", async () => {
 	const fixture = await tempFixture();
+	let cancelled = 0;
 	const result = await fetchFriendIcons({
 		friends: [{ name: "A", url: "https://example.test/", description: "", tags: [], avatar: "https://cdn.test/a.png" }],
 		publicRoot: fixture.publicRoot,
 		manifestPath: fixture.manifestPath,
 		timeoutMs: 5,
-		fetchImpl: async () => new Promise(() => {}),
+		fetchImpl: async () => ({
+			ok: true,
+			status: 200,
+			url: "https://cdn.test/a.png",
+			headers: new Headers({ "content-type": "image/png" }),
+			body: { getReader: () => ({ read: () => new Promise(() => {}), cancel: async () => { cancelled += 1; }, releaseLock() {} }) },
+		}),
 	});
 	assert.equal(result.fallbacks.length, 1);
+	assert.ok(cancelled >= 1);
 	assert.deepEqual((await fs.readdir(fixture.publicRoot)).filter((name) => name.endsWith(".tmp")), []);
+});
+
+test("atomic replacement restores old bytes when the replacement is interrupted", async () => {
+	const fixture = await tempFixture();
+	const target = path.join(fixture.publicRoot, "icon.png");
+	await fs.writeFile(target, Buffer.from("old"));
+	let renameCalls = 0;
+	const fsImpl = {
+		...fs,
+		rename: async (from, to) => {
+			renameCalls += 1;
+			if (renameCalls === 1) { const error = new Error("target exists"); error.code = "EEXIST"; throw error; }
+			if (renameCalls === 3) { const error = new Error("antivirus lock"); error.code = "EACCES"; throw error; }
+			return fs.rename(from, to);
+		},
+	};
+	await assert.rejects(atomicWrite(target, Buffer.from("new"), fsImpl), /antivirus lock/);
+	assert.deepEqual(await fs.readFile(target), Buffer.from("old"));
+	await assert.rejects(fs.access(`${target}.tmp`));
+	await assert.rejects(fs.access(`${target}.bak`));
+});
+
+test("missing old asset is removed from the active manifest after refresh failure", async () => {
+	const fixture = await tempFixture();
+	await fs.writeFile(fixture.manifestPath, JSON.stringify({ schemaVersion: 1, entries: [{ friendUrl: "https://example.test/", localPath: "/friend-icons/missing.png", sourceUrl: "https://cdn.test/old.png", contentType: "image/png", byteSize: 4, lastSuccessfulAt: "2026-01-01T00:00:00.000Z" }] }));
+	const result = await fetchFriendIcons({
+		friends: [{ name: "A", url: "https://example.test/", description: "", tags: [] }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		refresh: true,
+		fetchImpl: async () => { throw new Error("offline"); },
+	});
+	assert.equal(result.fallbacks.length, 1);
+	assert.deepEqual((await readManifest(fixture.manifestPath)).entries, []);
 });

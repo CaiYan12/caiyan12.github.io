@@ -104,13 +104,15 @@ function verifyImage(bytes, type) {
 	return kind;
 }
 
-async function readResponseBytes(response, maxBytes) {
+async function readResponseBytes(response, maxBytes, signal) {
 	const declared = Number(response.headers?.get?.("content-length") ?? 0);
 	if (declared > maxBytes) throw new Error(`response exceeds ${maxBytes} bytes`);
 	if (response.body?.getReader) {
 		const reader = response.body.getReader();
 		const chunks = [];
 		let total = 0;
+		const cancel = () => reader.cancel?.().catch(() => {});
+		signal?.addEventListener("abort", cancel, { once: true });
 		try {
 			while (true) {
 				const { done, value } = await reader.read();
@@ -119,7 +121,11 @@ async function readResponseBytes(response, maxBytes) {
 				if (total > maxBytes) throw new Error(`response exceeds ${maxBytes} bytes`);
 				chunks.push(value);
 			}
+		} catch (error) {
+			cancel();
+			throw error;
 		} finally {
+			signal?.removeEventListener("abort", cancel);
 			reader.releaseLock?.();
 		}
 		const output = new Uint8Array(total);
@@ -135,33 +141,37 @@ async function readResponseBytes(response, maxBytes) {
 	return buffer;
 }
 
+async function withTimeout(operation, controller, timeoutMs) {
+	let timeoutHandle;
+	try {
+		return await Promise.race([
+			operation(),
+			new Promise((_, reject) => {
+				timeoutHandle = setTimeout(() => {
+					controller.abort();
+					reject(new Error(`request timed out after ${timeoutMs}ms`));
+				}, timeoutMs);
+			}),
+		]);
+	} finally {
+		clearTimeout(timeoutHandle);
+	}
+}
+
 async function fetchWithLimits(url, options) {
 	const { fetchImpl, timeoutMs, maxBytes, maxRedirects } = options;
 	let current = url;
 	for (let redirects = 0; redirects <= maxRedirects; redirects += 1) {
 		const controller = new AbortController();
-		const timer = setTimeout(() => controller.abort(), timeoutMs);
-		let timeoutHandle;
-		let response;
-		try {
-			response = await Promise.race([
-				fetchImpl(current, {
+		const request = () => fetchImpl(current, {
 				redirect: "manual",
 				signal: controller.signal,
 				headers: { Accept: "text/html,image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8", "User-Agent": FRIEND_ICON_USER_AGENT },
-				}),
-				new Promise((_, reject) => { timeoutHandle = setTimeout(() => reject(new Error(`request timed out after ${timeoutMs}ms`)), timeoutMs); }),
-			]);
-		} catch (error) {
-			if (controller.signal.aborted || error.message?.includes("timed out")) {
-				controller.abort();
-				throw new Error(`request timed out after ${timeoutMs}ms`);
-			}
+		});
+		const response = await withTimeout(request, controller, timeoutMs).catch((error) => {
+			if (controller.signal.aborted || error.message?.includes("timed out")) throw new Error(`request timed out after ${timeoutMs}ms`);
 			throw error;
-		} finally {
-			clearTimeout(timer);
-			clearTimeout(timeoutHandle);
-		}
+		});
 		if (response.status >= 300 && response.status < 400) {
 			const location = response.headers?.get?.("location");
 			if (!location) throw new Error(`redirect missing location (${response.status})`);
@@ -171,7 +181,10 @@ async function fetchWithLimits(url, options) {
 			continue;
 		}
 		if (!response.ok) throw new Error(`HTTP ${response.status}`);
-		const bytes = await readResponseBytes(response, maxBytes);
+		const bytes = await withTimeout(() => readResponseBytes(response, maxBytes, controller.signal), controller, timeoutMs).catch((error) => {
+			if (controller.signal.aborted || error.message?.includes("timed out")) throw new Error(`request timed out after ${timeoutMs}ms`);
+			throw error;
+		});
 		return { bytes, contentType: contentType(response.headers?.get?.("content-type")), url: normalizeFriendUrl(response.url || current) };
 	}
 	fail("unreachable redirect loop");
@@ -213,18 +226,47 @@ async function readManifest(manifestPath) {
 
 export { readManifest };
 
-async function atomicWrite(filePath, bytes) {
-	await fs.mkdir(path.dirname(filePath), { recursive: true });
+export async function atomicWrite(filePath, bytes, fsImpl = fs) {
+	await fsImpl.mkdir(path.dirname(filePath), { recursive: true });
 	const temporary = `${filePath}.tmp`;
+	const backup = `${filePath}.bak`;
 	try {
-		await fs.writeFile(temporary, bytes);
-		try { await fs.rename(temporary, filePath); } catch (error) {
-			if (!['EEXIST', 'EPERM', 'ENOTEMPTY'].includes(error.code)) throw error;
-			await fs.rm(filePath, { force: true });
-			await fs.rename(temporary, filePath);
+		try {
+			await fsImpl.access(backup);
+			try {
+				await fsImpl.access(filePath);
+				await fsImpl.rm(backup, { force: true });
+			} catch {
+				await fsImpl.rename(backup, filePath);
+			}
+		} catch { /* no recoverable backup */ }
+		await fsImpl.writeFile(temporary, bytes);
+		let movedOld = false;
+		try {
+			await fsImpl.rename(temporary, filePath);
+		} catch (error) {
+			let targetExists = true;
+			try { await fsImpl.access(filePath); } catch { targetExists = false; }
+			if (!targetExists) throw error;
+			await fsImpl.rename(filePath, backup);
+			movedOld = true;
+			try {
+				await fsImpl.rename(temporary, filePath);
+			} catch (replacementError) {
+				try { await fsImpl.rename(backup, filePath); } catch (restoreError) {
+					replacementError.message += `; old cache restore failed: ${restoreError.message}`;
+				}
+				throw replacementError;
+			}
 		}
+		if (movedOld) await fsImpl.rm(backup, { force: true });
 	} finally {
-		await fs.rm(temporary, { force: true });
+		await fsImpl.rm(temporary, { force: true });
+	}
+	try {
+		await fsImpl.rm(backup, { force: true });
+	} catch {
+		// A backup is recoverable on the next invocation if antivirus software holds it.
 	}
 }
 
@@ -247,7 +289,7 @@ async function fetchImage(url, options) {
 	return { ...resource, kind };
 }
 
-async function processFriend(friend, context, oldEntry) {
+async function processFriend(friend, context) {
 	let normalized;
 	try { normalized = normalizeFriendUrl(friend.url); } catch (error) {
 		if (!friend.url) return { status: "fallback", reason: error.message };
@@ -335,7 +377,7 @@ export async function fetchFriendIcons(options = {}) {
 			logLine(context.logger, "CACHED", friend, normalized);
 			continue;
 		}
-		const result = await processFriend(friend, context, oldEntry);
+		const result = await processFriend(friend, context);
 		if (result.status === "fetched") {
 			const entry = { ...result.entry };
 			if (entry.bytes) {
@@ -345,13 +387,12 @@ export async function fetchFriendIcons(options = {}) {
 			}
 			byUrl.set(normalized, entry);
 			entries.push(entry);
-			logLine(context.logger, oldEntry ? "FETCHED" : "FETCHED", friend, entry.sourceUrl);
+			logLine(context.logger, "FETCHED", friend, entry.sourceUrl);
 		} else if (oldEntry && oldAsset) {
 			entries.push({ ...oldEntry, status: "kept-old" });
 			context.logger?.warn?.(`friend icon fetch failed for ${normalized}: ${result.reason}`);
 			logLine(context.logger, "KEPT OLD", friend, normalized);
 		} else {
-			if (oldEntry) entries.push({ ...oldEntry, status: "fallback" });
 			context.logger?.warn?.(`friend icon fetch failed for ${normalized}: ${result.reason}`);
 			fallbacks.push({ friend, reason: result.reason });
 			logLine(context.logger, "FALLBACK", friend, normalized);
