@@ -341,6 +341,21 @@ test("normal mode uses a negative cache without issuing another request", async 
 	assert.equal(await fs.readFile(fixture.manifestPath, "utf8"), before);
 });
 
+test("committed current negative cache schema is accepted with zero fetches", async () => {
+	const fixture = await tempFixture();
+	const committed = JSON.parse(await fs.readFile(path.join(import.meta.dirname, "..", "src", "constants", "friend-icons.json"), "utf8"));
+	await fs.writeFile(fixture.manifestPath, JSON.stringify(committed));
+	let calls = 0;
+	await fetchFriendIcons({
+		friends: [{ name: "Astro", url: "https://astro.build/", description: "", tags: [] }, { name: "ZCJUN", url: "https://zcjun.com/", description: "", tags: [] }],
+		publicRoot: fixture.publicRoot,
+		manifestPath: fixture.manifestPath,
+		fetchImpl: async () => { calls += 1; throw new Error("must not fetch"); },
+		logger: { log() {}, warn() {} },
+	});
+	assert.equal(calls, 0);
+});
+
 test("refresh retries a negative cache and promotes success", async () => {
 	const fixture = await tempFixture();
 	const friends = [{ name: "Negative", url: "https://negative.test/", description: "", tags: [] }];
