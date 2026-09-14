@@ -10,6 +10,14 @@
 			"lastSuccessfulAt": "2026-09-14T12:23:03.675Z"
 		},
 		{
+			"friendUrl": "https://jufe.woodfish.site/",
+			"localPath": "/friend-icons/670eac224187d5e5.webp",
+			"sourceUrl": "https://jufe.woodfish.site/_next/image?url=%2F0b9e02d4fcddecc48d4b61e79cb26f16_compressed.png&w=64&q=75",
+			"contentType": "image/webp",
+			"byteSize": 1814,
+			"lastSuccessfulAt": "2026-09-14T14:39:25.915Z"
+		},
+		{
 			"friendUrl": "https://www.luogu.com.cn/",
 			"localPath": "/friend-icons/1493330d8467e169.ico",
 			"sourceUrl": "https://fecdn.luogu.com.cn/favicon.ico",
@@ -27,6 +35,11 @@
 		{
 			"friendUrl": "https://zcjun.com/",
 			"lastAttemptedAt": "2026-09-14T12:42:49.302Z",
+			"status": "no-valid-icon"
+		},
+		{
+			"friendUrl": "https://www.jxufe-cs.top/index.html",
+			"lastAttemptedAt": "2026-09-14T14:39:25.478Z",
 			"status": "no-valid-icon"
 		}
 	]

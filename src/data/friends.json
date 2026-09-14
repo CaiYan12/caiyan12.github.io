@@ -6,6 +6,18 @@
 		"tags": ["Music", "Tool"]
 	},
 	{
+		"name": "江西财经大学计算机协会",
+		"url": "https://www.jxufe-cs.top/index.html",
+		"description": "“普及计算机知识，提高计算机应用水平，培养计算机专业人才。”",
+		"tags": ["Community", "Education"]
+	},
+	{
+		"name": "JUFE Offer",
+		"url": "https://jufe.woodfish.site/",
+		"description": "实习、竞赛和学习资料交流，打破信息差。",
+		"tags": ["Community", "Education"]
+	},
+	{
 		"name": "Astro",
 		"url": "https://astro.build/",
 		"description": "面向内容驱动网站与 Web 应用的现代框架。",
