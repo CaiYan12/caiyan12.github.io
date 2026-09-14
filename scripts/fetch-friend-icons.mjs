@@ -13,6 +13,15 @@ export const FRIEND_ICON_USER_AGENT = "myblog-friend-icons/1.0";
 export const DEFAULT_MAX_BYTES = 1024 * 1024;
 export const DEFAULT_MAX_REDIRECTS = 5;
 export const DEFAULT_TIMEOUT_MS = 10_000;
+export const NEGATIVE_STATUSES = Object.freeze([
+	"no-valid-icon",
+	"http-error",
+	"network-error",
+	"timeout",
+	"redirect-limit",
+	"body-too-large",
+	"invalid-image",
+]);
 
 const MIME_BY_KIND = {
 	png: ["image/png"],
@@ -87,6 +96,12 @@ export function parseIconCandidates(html, finalUrl) {
 
 function contentType(value) {
 	return String(value ?? "").split(";", 1)[0].trim().toLowerCase();
+}
+
+function validIsoTimestamp(value) {
+	if (typeof value !== "string") return false;
+	const parsed = new Date(value);
+	return Number.isFinite(parsed.getTime()) && parsed.toISOString() === value;
 }
 
 function detectKind(bytes) {
@@ -223,6 +238,13 @@ async function readManifest(manifestPath) {
 	if (manifest?.schemaVersion !== FRIEND_ICON_SCHEMA_VERSION || !Array.isArray(manifest.entries)) throw new Error("corrupt friend icon manifest schema");
 	if (manifest.negativeEntries === undefined) manifest.negativeEntries = [];
 	if (!Array.isArray(manifest.negativeEntries)) throw new Error("corrupt friend icon negative cache schema");
+	manifest.negativeEntries.forEach((entry, index) => {
+		let normalizedUrl;
+		try { normalizedUrl = typeof entry?.friendUrl === "string" ? normalizeFriendUrl(entry.friendUrl) : null; } catch { normalizedUrl = null; }
+		if (!entry || typeof entry !== "object" || Array.isArray(entry) || Object.keys(entry).some((key) => !["friendUrl", "lastAttemptedAt", "status"].includes(key)) || normalizedUrl !== entry.friendUrl || !validIsoTimestamp(entry.lastAttemptedAt) || !NEGATIVE_STATUSES.includes(entry.status)) {
+			throw new Error(`corrupt friend icon negative cache entry at index ${index}`);
+		}
+	});
 	return manifest;
 }
 
@@ -281,7 +303,18 @@ function timestamp(now) {
 }
 
 function logLine(logger, status, friend, url) {
-	logger?.log?.(`${status} ${friend.name || friend.url} ${url}`);
+	logger?.log?.(`${status} ${friend.name || "friend"}`);
+}
+
+function classifyFailure(reason) {
+	const message = String(reason ?? "").toLowerCase();
+	if (message.includes("timed out")) return "timeout";
+	if (message.includes("too many redirects")) return "redirect-limit";
+	if (message.includes("exceeds")) return "body-too-large";
+	if (message.includes("no valid icon")) return "no-valid-icon";
+	if (message.includes("unsupported") || message.includes("mismatched")) return "invalid-image";
+	if (/\bhttp \d{3}\b/.test(message)) return "http-error";
+	return "network-error";
 }
 
 async function fetchImage(url, options) {
@@ -399,17 +432,19 @@ export async function fetchFriendIcons(options = {}) {
 			entries.push(entry);
 			logLine(context.logger, "FETCHED", friend, entry.sourceUrl);
 		} else if (oldEntry && oldAsset) {
+			negativeByUrl.delete(normalized);
 			entries.push({ ...oldEntry, status: "kept-old" });
-			context.logger?.warn?.(`friend icon fetch failed for ${normalized}: ${result.reason}`);
+			context.logger?.warn?.(`friend icon fetch failed for ${friend.name || "friend"} (${classifyFailure(result.reason)})`);
 			logLine(context.logger, "KEPT OLD", friend, normalized);
 		} else {
+			const failureStatus = classifyFailure(result.reason);
 			negativeByUrl.set(normalized, {
 				friendUrl: normalized,
 				lastAttemptedAt: timestamp(context.now),
-				status: String(result.reason || "no valid icon candidate").slice(0, 120),
+				status: failureStatus,
 			});
-			context.logger?.warn?.(`friend icon fetch failed for ${normalized}: ${result.reason}`);
-			fallbacks.push({ friend, reason: result.reason });
+			context.logger?.warn?.(`friend icon fetch failed for ${friend.name || "friend"} (${failureStatus})`);
+			fallbacks.push({ friend, reason: failureStatus });
 			logLine(context.logger, "FALLBACK", friend, normalized);
 		}
 	}

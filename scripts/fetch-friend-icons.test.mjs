@@ -309,7 +309,9 @@ test("first complete candidate failure writes a versioned negative cache", async
 		publicRoot: fixture.publicRoot,
 		manifestPath: fixture.manifestPath,
 		now: () => "2026-09-14T00:00:00.000Z",
-		fetchImpl: async (url) => response("<html><body>no icon</body></html>", { url, status: 404 }),
+		fetchImpl: async (url) => url.endsWith("negative.test/")
+			? response("<html><body>no icon</body></html>", { url })
+			: response("", { url, status: 404 }),
 		logger: { log() {}, warn() {} },
 	});
 	assert.equal(result.fallbacks.length, 1);
@@ -318,7 +320,7 @@ test("first complete candidate failure writes a versioned negative cache", async
 	assert.deepEqual(manifest.negativeEntries, [{
 		friendUrl: "https://negative.test/",
 		lastAttemptedAt: "2026-09-14T00:00:00.000Z",
-		status: "HTTP 404",
+		status: "no-valid-icon",
 	}]);
 	assert.deepEqual(manifest.entries, []);
 });
@@ -360,11 +362,73 @@ test("negative records for removed friends remain historical", async () => {
 	await fs.writeFile(fixture.manifestPath, JSON.stringify({
 		schemaVersion: 1,
 		entries: [],
-		negativeEntries: [{ friendUrl: "https://removed.test/", lastAttemptedAt: "2026-01-01T00:00:00.000Z", status: "offline" }],
+		negativeEntries: [{ friendUrl: "https://removed.test/", lastAttemptedAt: "2026-01-01T00:00:00.000Z", status: "network-error" }],
 	}));
 	await fetchFriendIcons({
 		friends: [], publicRoot: fixture.publicRoot, manifestPath: fixture.manifestPath,
 		fetchImpl: async () => { throw new Error("must not fetch"); }, logger: { log() {}, warn() {} },
 	});
-	assert.deepEqual((await readManifest(fixture.manifestPath)).negativeEntries, [{ friendUrl: "https://removed.test/", lastAttemptedAt: "2026-01-01T00:00:00.000Z", status: "offline" }]);
+	assert.deepEqual((await readManifest(fixture.manifestPath)).negativeEntries, [{ friendUrl: "https://removed.test/", lastAttemptedAt: "2026-01-01T00:00:00.000Z", status: "network-error" }]);
+});
+
+test("failed refresh updates the negative timestamp and keeps a controlled status code", async () => {
+	const fixture = await tempFixture();
+	const friends = [{ name: "Negative", url: "https://negative.test/", description: "", tags: [] }];
+	await fetchFriendIcons({
+		friends, publicRoot: fixture.publicRoot, manifestPath: fixture.manifestPath,
+		now: () => "2026-09-14T00:00:00.000Z", fetchImpl: async (url) => response("", { url, status: 404 }), logger: { log() {}, warn() {} },
+	});
+	await fetchFriendIcons({
+		friends, publicRoot: fixture.publicRoot, manifestPath: fixture.manifestPath, refresh: true,
+		now: () => "2026-09-15T00:00:00.000Z", fetchImpl: async () => { throw new Error("token=super-secret"); }, logger: { log() {}, warn() {} },
+	});
+	assert.deepEqual((await readManifest(fixture.manifestPath)).negativeEntries, [{
+		friendUrl: "https://negative.test/", lastAttemptedAt: "2026-09-15T00:00:00.000Z", status: "network-error",
+	}]);
+});
+
+test("valid success wins over a stray negative record when refresh fails", async () => {
+	const fixture = await tempFixture();
+	const friendUrl = "https://negative.test/";
+	const localPath = "/friend-icons/existing.png";
+	await fs.mkdir(path.join(fixture.publicRoot, "friend-icons"), { recursive: true });
+	await fs.writeFile(path.join(fixture.publicRoot, localPath.slice(1)), pngBytes());
+	await fs.writeFile(fixture.manifestPath, JSON.stringify({
+		schemaVersion: 1,
+		entries: [{ friendUrl, localPath, sourceUrl: "https://cdn.test/old.png", contentType: "image/png", byteSize: 9, lastSuccessfulAt: "2026-01-01T00:00:00.000Z" }],
+		negativeEntries: [{ friendUrl, lastAttemptedAt: "2026-01-02T00:00:00.000Z", status: "network-error" }],
+	}));
+	await fetchFriendIcons({
+		friends: [{ name: "A", url: friendUrl, description: "", tags: [] }], publicRoot: fixture.publicRoot, manifestPath: fixture.manifestPath, refresh: true,
+		fetchImpl: async () => { throw new Error("token=super-secret"); }, logger: { log() {}, warn() {} },
+	});
+	const manifest = await readManifest(fixture.manifestPath);
+	assert.equal(manifest.entries[0].localPath, localPath);
+	assert.deepEqual(manifest.negativeEntries, []);
+	assert.deepEqual(await fs.readFile(path.join(fixture.publicRoot, localPath.slice(1))), Buffer.from(pngBytes()));
+});
+
+test("raw fetch errors are absent from the manifest and logs", async () => {
+	const fixture = await tempFixture();
+	const logs = [];
+	await fetchFriendIcons({
+		friends: [{ name: "A", url: "https://negative.test/", description: "", tags: [] }], publicRoot: fixture.publicRoot, manifestPath: fixture.manifestPath,
+		fetchImpl: async () => { throw new Error("Authorization token=super-secret"); }, logger: { log: (line) => logs.push(line), warn: (line) => logs.push(line) },
+	});
+	assert.doesNotMatch(JSON.stringify(await readManifest(fixture.manifestPath)), /super-secret/);
+	assert.doesNotMatch(logs.join("\n"), /super-secret|Authorization/);
+});
+
+test("malformed negative cache entries are fatal", async () => {
+	const fixture = await tempFixture();
+	const base = { schemaVersion: 1, entries: [] };
+	for (const negativeEntries of [
+		[{ friendUrl: "javascript:alert(1)", lastAttemptedAt: "2026-01-01T00:00:00.000Z", status: "network-error" }],
+		[{ friendUrl: "https://example.test/", lastAttemptedAt: "bad", status: "network-error" }],
+		[{ friendUrl: "https://example.test/", lastAttemptedAt: "2026-01-01T00:00:00.000Z", status: "raw-error" }],
+		[{ friendUrl: "https://example.test/", localPath: "/friend-icons/x.png", lastAttemptedAt: "2026-01-01T00:00:00.000Z", status: "network-error" }],
+	]) {
+		await fs.writeFile(fixture.manifestPath, JSON.stringify({ ...base, negativeEntries }));
+		await assert.rejects(fetchFriendIcons({ friends: [], publicRoot: fixture.publicRoot, manifestPath: fixture.manifestPath }), /corrupt friend icon negative cache entry/);
+	}
 });
