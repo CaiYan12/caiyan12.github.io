@@ -1,11 +1,63 @@
 ---
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { friends } from "../data/friends";
+import friendIconManifestData from "../constants/friend-icons.json";
 
 const getFriendHostname = (url: string) => new URL(url).hostname;
-const getFriendFavicon = (url: string) => new URL("/favicon.ico", url).href;
-const getFriendFaviconFallback = (url: string) =>
-	`https://www.google.com/s2/favicons?domain=${encodeURIComponent(getFriendHostname(url))}&sz=64`;
+
+const normalizeFriendUrl = (value: unknown) => {
+	if (typeof value !== "string" || !value.trim()) return null;
+	try {
+		const parsed = new URL(value.trim());
+		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+			return null;
+		}
+		parsed.protocol = parsed.protocol.toLowerCase();
+		parsed.hostname = parsed.hostname.toLowerCase();
+		if (
+			(parsed.protocol === "http:" && parsed.port === "80") ||
+			(parsed.protocol === "https:" && parsed.port === "443")
+		) {
+			parsed.port = "";
+		}
+		parsed.hash = "";
+		if (!parsed.pathname) parsed.pathname = "/";
+		return parsed.href;
+	} catch {
+		return null;
+	}
+};
+
+const isRootRelativePath = (value: unknown): value is string =>
+	typeof value === "string" &&
+	value.startsWith("/") &&
+	!value.startsWith("//") &&
+	!value.includes("://");
+
+const friendIconPaths = new Map<string, string>();
+const rawManifest: unknown = friendIconManifestData;
+if (
+	rawManifest &&
+	typeof rawManifest === "object" &&
+	"schemaVersion" in rawManifest &&
+	rawManifest.schemaVersion === 1 &&
+	"entries" in rawManifest &&
+	Array.isArray(rawManifest.entries)
+) {
+	for (const entry of rawManifest.entries) {
+		if (!entry || typeof entry !== "object") continue;
+		const friendUrl = normalizeFriendUrl(
+			"friendUrl" in entry ? entry.friendUrl : null,
+		);
+		const localPath = "localPath" in entry ? entry.localPath : null;
+		if (friendUrl && isRootRelativePath(localPath)) {
+			friendIconPaths.set(friendUrl, localPath);
+		}
+	}
+}
+
+const getFriendIconPath = (url: string) =>
+	friendIconPaths.get(normalizeFriendUrl(url) ?? "");
 ---
 
 <MainGridLayout title="友情链接" description="我的友情链接" showSidebar={false}>
@@ -46,18 +98,15 @@ const getFriendFaviconFallback = (url: string) =>
 									<span class="friend-card-avatar-fallback">
 										{f.name.slice(0, 1)}
 									</span>
-									<img
-										src={
-											f.avatar || getFriendFavicon(f.url)
-										}
-										data-fallback-src={getFriendFaviconFallback(
-											f.url,
-										)}
-										alt=""
-										loading="lazy"
-										decoding="async"
-										onerror="if (this.dataset.fallbackSrc && this.getAttribute('src') !== this.dataset.fallbackSrc) { this.setAttribute('src', this.dataset.fallbackSrc); } else { this.remove(); }"
-									/>
+									{getFriendIconPath(f.url) && (
+										<img
+											src={getFriendIconPath(f.url)}
+											alt=""
+											loading="lazy"
+											decoding="async"
+											onerror="this.remove()"
+										/>
+									)}
 								</span>
 								<span class="friend-card-heading">
 									<span class="fname">{f.name}</span>

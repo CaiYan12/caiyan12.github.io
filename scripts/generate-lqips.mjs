@@ -27,6 +27,7 @@ const IGNORE_DIRS = [
 	"src/content",
 	"public/fonts",
 	"public/pio",
+	"public/friend-icons",
 	"public/images/_variants",
 ];
 

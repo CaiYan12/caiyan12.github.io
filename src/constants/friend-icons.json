@@ -1,4 +1,21 @@
 {
 	"schemaVersion": 1,
-	"entries": []
+	"entries": [
+		{
+			"friendUrl": "https://myhkw.cn/",
+			"localPath": "/friend-icons/fba7eab7cda000b4.ico",
+			"sourceUrl": "https://myhkw.cn/favicon.ico",
+			"contentType": "image/x-icon",
+			"byteSize": 67646,
+			"lastSuccessfulAt": "2026-09-14T12:23:03.675Z"
+		},
+		{
+			"friendUrl": "https://www.luogu.com.cn/",
+			"localPath": "/friend-icons/1493330d8467e169.ico",
+			"sourceUrl": "https://fecdn.luogu.com.cn/favicon.ico",
+			"contentType": "image/vnd.microsoft.icon",
+			"byteSize": 4286,
+			"lastSuccessfulAt": "2026-09-14T12:23:09.274Z"
+		}
+	]
 }
