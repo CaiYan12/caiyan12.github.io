@@ -215,12 +215,14 @@ async function validLocalAsset(publicRoot, localPath) {
 async function readManifest(manifestPath) {
 	let text;
 	try { text = await fs.readFile(manifestPath, "utf8"); } catch (error) {
-		if (error.code === "ENOENT") return { schemaVersion: FRIEND_ICON_SCHEMA_VERSION, entries: [] };
+		if (error.code === "ENOENT") return { schemaVersion: FRIEND_ICON_SCHEMA_VERSION, entries: [], negativeEntries: [] };
 		throw error;
 	}
 	let manifest;
 	try { manifest = JSON.parse(text); } catch (error) { throw new Error(`corrupt friend icon manifest: ${error.message}`); }
 	if (manifest?.schemaVersion !== FRIEND_ICON_SCHEMA_VERSION || !Array.isArray(manifest.entries)) throw new Error("corrupt friend icon manifest schema");
+	if (manifest.negativeEntries === undefined) manifest.negativeEntries = [];
+	if (!Array.isArray(manifest.negativeEntries)) throw new Error("corrupt friend icon negative cache schema");
 	return manifest;
 }
 
@@ -357,6 +359,7 @@ export async function fetchFriendIcons(options = {}) {
 	};
 	const manifest = await readManifest(context.manifestPath);
 	const byUrl = new Map(manifest.entries.map((entry) => [entry.friendUrl, entry]));
+	const negativeByUrl = new Map(manifest.negativeEntries.map((entry) => [entry.friendUrl, entry]));
 	const entries = [];
 	const fallbacks = [];
 	const seen = new Set();
@@ -372,8 +375,15 @@ export async function fetchFriendIcons(options = {}) {
 		const oldEntry = byUrl.get(normalized);
 		const oldAsset = oldEntry ? await validLocalAsset(context.publicRoot, oldEntry.localPath) : null;
 		if (!options.refresh && oldAsset) {
+			negativeByUrl.delete(normalized);
 			entries.push(oldEntry);
 			logLine(context.logger, "CACHED", friend, normalized);
+			continue;
+		}
+		const negativeEntry = negativeByUrl.get(normalized);
+		if (!options.refresh && negativeEntry && !oldAsset) {
+			fallbacks.push({ friend, reason: negativeEntry.status });
+			logLine(context.logger, "FALLBACK", friend, normalized);
 			continue;
 		}
 		const result = await processFriend(friend, context);
@@ -385,6 +395,7 @@ export async function fetchFriendIcons(options = {}) {
 				delete entry.bytes;
 			}
 			byUrl.set(normalized, entry);
+			negativeByUrl.delete(normalized);
 			entries.push(entry);
 			logLine(context.logger, "FETCHED", friend, entry.sourceUrl);
 		} else if (oldEntry && oldAsset) {
@@ -392,6 +403,11 @@ export async function fetchFriendIcons(options = {}) {
 			context.logger?.warn?.(`friend icon fetch failed for ${normalized}: ${result.reason}`);
 			logLine(context.logger, "KEPT OLD", friend, normalized);
 		} else {
+			negativeByUrl.set(normalized, {
+				friendUrl: normalized,
+				lastAttemptedAt: timestamp(context.now),
+				status: String(result.reason || "no valid icon candidate").slice(0, 120),
+			});
 			context.logger?.warn?.(`friend icon fetch failed for ${normalized}: ${result.reason}`);
 			fallbacks.push({ friend, reason: result.reason });
 			logLine(context.logger, "FALLBACK", friend, normalized);
@@ -400,7 +416,7 @@ export async function fetchFriendIcons(options = {}) {
 	const retained = manifest.entries.filter((entry) => !seen.has(entry.friendUrl));
 	const manifestEntries = entries.map(({ status: _status, ...entry }) => entry);
 	const allEntries = [...retained, ...manifestEntries.filter((entry) => !retained.some((old) => old.friendUrl === entry.friendUrl))];
-	const nextManifest = { schemaVersion: FRIEND_ICON_SCHEMA_VERSION, entries: allEntries };
+	const nextManifest = { schemaVersion: FRIEND_ICON_SCHEMA_VERSION, entries: allEntries, negativeEntries: [...negativeByUrl.values()] };
 	const previous = JSON.stringify(manifest, null, "\t");
 	const next = JSON.stringify(nextManifest, null, "\t");
 	if (previous !== next) await atomicWrite(context.manifestPath, `${next}\n`,);
