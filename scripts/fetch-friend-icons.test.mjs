@@ -451,6 +451,10 @@ test("malformed negative cache entries are fatal", async () => {
 test("malformed positive cache entries are fatal before any fetch", async () => {
 	const fixture = await tempFixture();
 	const valid = { friendUrl: "https://example.test/", localPath: "/friend-icons/existing.png", sourceUrl: "https://cdn.test/icon.png", contentType: "image/png", byteSize: 9, lastSuccessfulAt: "2026-01-01T00:00:00.000Z" };
+	const friend = { name: "A", url: "https://example.test/", description: "", tags: [] };
+	const assetPath = path.join(fixture.publicRoot, valid.localPath.slice(1));
+	await fs.mkdir(path.dirname(assetPath), { recursive: true });
+	await fs.writeFile(assetPath, pngBytes());
 	const malformed = [
 		null,
 		{ ...valid, extra: true },
@@ -466,6 +470,12 @@ test("malformed positive cache entries are fatal before any fetch", async () => 
 	for (const entry of malformed) {
 		const entries = entry === valid ? [valid, { ...valid }] : [entry];
 		await fs.writeFile(fixture.manifestPath, JSON.stringify({ schemaVersion: 1, entries, negativeEntries: [] }));
-		await assert.rejects(fetchFriendIcons({ friends: [], publicRoot: fixture.publicRoot, manifestPath: fixture.manifestPath, fetchImpl: async () => { throw new Error("must not fetch"); } }), /corrupt friend icon positive cache entry|duplicate friend icon positive cache entry/);
+		const manifestBefore = await fs.readFile(fixture.manifestPath);
+		const assetBefore = await fs.readFile(assetPath);
+		let calls = 0;
+		await assert.rejects(fetchFriendIcons({ friends: [friend], publicRoot: fixture.publicRoot, manifestPath: fixture.manifestPath, fetchImpl: async () => { calls += 1; throw new Error("must not fetch"); } }), /corrupt friend icon positive cache entry|duplicate friend icon positive cache entry/);
+		assert.equal(calls, 0);
+		assert.deepEqual(await fs.readFile(fixture.manifestPath), manifestBefore);
+		assert.deepEqual(await fs.readFile(assetPath), assetBefore);
 	}
 });
