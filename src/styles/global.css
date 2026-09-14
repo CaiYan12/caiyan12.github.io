@@ -4235,7 +4235,7 @@ img:hover {
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  min-height: 188px;
+  height: 220px;
   padding: 16px;
   border: 1px solid #dbdbdb;
   border-left: 5px solid #0089fa;
@@ -4340,6 +4340,7 @@ img:hover {
 .link-content .fdes {
   display: -webkit-box;
   overflow: hidden;
+  height: 3.4em;
   margin: 16px 0 10px;
   color: #666;
   font-size: 13px;
@@ -5170,7 +5171,7 @@ body,
 .link-content {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .link-content a {
