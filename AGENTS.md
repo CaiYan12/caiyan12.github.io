@@ -286,7 +286,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 | 主页吐槽水军 | 构建期从 guestbook Discussion 同步最多 20 条顶层留言到 `guestbookComments`，侧栏单条展示并复用“最新评论—换一批”系统，不在浏览器请求 GitHub/Giscus |
 | 图片灯箱 | Fancybox（`src/utils/theme-script.ts` 的 `initFancybox()` 懒加载绑定） |
 | GitHub 仓库卡片 | 构建期渲染：`scripts/fetch-github-repos.mjs` 拉取元数据缓存到 `src/constants/github-repos.json`，`remark-extended.mjs` 直接输出完整卡片 HTML；卡片左侧使用 `https://github.com/<owner>.png?size=128` owner 头像（桌面 `48×48`，移动 `40×40`），右侧为名称/描述/star/fork/语言；**客户端零 GitHub API 请求**（规避访客 IP 匿名 API 60 次/小时限流），令牌解析 `GITHUB_TOKEN`/`GH_TOKEN` → `gh auth token` → 匿名，拉取失败渲染回退链接不阻塞构建 |
-| 友链图标 | `scripts/fetch-friend-icons.mjs` 构建期维护 `src/constants/friend-icons.json` 与 `public/friend-icons/`；普通模式只补缺，`--refresh` 手动刷新当前友链，成功写入本地缓存，失败保留旧缓存或记录负缓存并显示首字占位，删除友链不清理历史记录；页面运行时只请求本地路径，CI 生成的缓存仅随当次部署 artifact，长期复用需本地生成并提交资产和清单 |
+| 友链图标 | `scripts/fetch-friend-icons.mjs` 构建期维护 `src/constants/friend-icons.json` 与 `public/friend-icons/`；普通模式只补缺，`--refresh` 手动刷新当前友链并重试负缓存条目，成功写入本地缓存，失败保留旧缓存或记录受控的负缓存状态并显示首字占位，删除友链不清理历史记录；页面运行时只请求本地路径，CI 生成的缓存仅随当次部署 artifact，长期复用需本地生成并提交资产和清单 |
 | Markdown 表格 | Markdown 表格经 `rehype-table-wrapper.mjs` 包裹 `.table-scroll`，原生 HTML 表格由 `remark-extended.mjs` 包裹；`global.css` 统一提供满宽、居中、边框和单元格上下居中样式，过宽表格仅在自身容器内滚动 |
 | 代码高亮/公式 | Expressive Code + KaTeX（KaTeX CSS 按需动态导入；`expressiveCode` 必须保持 `useDarkModeMediaQuery: false`，否则系统暗色访客的代码块变暗色） |
 | Mermaid 图表 | 客户端懒加载渲染（`theme-script.ts` 的 `renderMermaid()`，仅页面存在 `pre.mermaid` 时 `import("mermaid")`）。**体积治理已评估关闭（2026-09-04）**：mermaid 11 对全部 38 种 diagram 均为动态 import，访客只下载实际用到的类型（实测约 450KB gzip），未用 chunk 是 dist 死产物但无访客成本；注册表硬编码在 `mermaid.core.mjs` 不可外部裁剪；预渲染（rehype-mermaid + playwright）需引入 Chromium 构建依赖性价比不足。构建期 3 个大 chunk 警告（cynefin/core/cytoscape）为已知问题保留，勿重新评估 |
