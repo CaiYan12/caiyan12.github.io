@@ -104,6 +104,33 @@ function validIsoTimestamp(value) {
 	return Number.isFinite(parsed.getTime()) && parsed.toISOString() === value;
 }
 
+const ALLOWED_CONTENT_TYPES = new Set(Object.values(MIME_BY_KIND).flat());
+
+function validRootRelativePath(value) {
+	return typeof value === "string" && value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") && !value.includes("\0") && !value.split("/").some((segment) => segment === "." || segment === "..");
+}
+
+function validSourceUrl(value) {
+	if (typeof value !== "string") return false;
+	if (validRootRelativePath(value)) return true;
+	try {
+		const parsed = new URL(value);
+		return (parsed.protocol === "http:" || parsed.protocol === "https:") && normalizeFriendUrl(value) === value;
+	} catch {
+		return false;
+	}
+}
+
+function validatePositiveEntry(entry, index, seenUrls) {
+	const allowedKeys = ["friendUrl", "localPath", "sourceUrl", "contentType", "byteSize", "lastSuccessfulAt"];
+	let normalizedUrl;
+	try { normalizedUrl = typeof entry?.friendUrl === "string" ? normalizeFriendUrl(entry.friendUrl) : null; } catch { normalizedUrl = null; }
+	const valid = entry && typeof entry === "object" && !Array.isArray(entry) && Object.keys(entry).length === allowedKeys.length && allowedKeys.every((key) => Object.prototype.hasOwnProperty.call(entry, key)) && normalizedUrl === entry.friendUrl && validRootRelativePath(entry.localPath) && (entry.localPath.startsWith("/friend-icons/") || validRootRelativePath(entry.localPath)) && validSourceUrl(entry.sourceUrl) && ALLOWED_CONTENT_TYPES.has(entry.contentType) && Number.isSafeInteger(entry.byteSize) && entry.byteSize > 0 && entry.byteSize <= DEFAULT_MAX_BYTES && validIsoTimestamp(entry.lastSuccessfulAt);
+	if (!valid) throw new Error(`corrupt friend icon positive cache entry at index ${index}`);
+	if (seenUrls.has(entry.friendUrl)) throw new Error(`duplicate friend icon positive cache entry: ${entry.friendUrl}`);
+	seenUrls.add(entry.friendUrl);
+}
+
 function detectKind(bytes) {
 	if (bytes.length >= 8 && bytes.slice(0, 8).every((v, i) => v === [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a][i])) return "png";
 	if (bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "jpeg";
@@ -238,12 +265,17 @@ async function readManifest(manifestPath) {
 	if (manifest?.schemaVersion !== FRIEND_ICON_SCHEMA_VERSION || !Array.isArray(manifest.entries)) throw new Error("corrupt friend icon manifest schema");
 	if (manifest.negativeEntries === undefined) manifest.negativeEntries = [];
 	if (!Array.isArray(manifest.negativeEntries)) throw new Error("corrupt friend icon negative cache schema");
+	const positiveUrls = new Set();
+	manifest.entries.forEach((entry, index) => validatePositiveEntry(entry, index, positiveUrls));
+	const negativeUrls = new Set();
 	manifest.negativeEntries.forEach((entry, index) => {
 		let normalizedUrl;
 		try { normalizedUrl = typeof entry?.friendUrl === "string" ? normalizeFriendUrl(entry.friendUrl) : null; } catch { normalizedUrl = null; }
 		if (!entry || typeof entry !== "object" || Array.isArray(entry) || Object.keys(entry).some((key) => !["friendUrl", "lastAttemptedAt", "status"].includes(key)) || normalizedUrl !== entry.friendUrl || !validIsoTimestamp(entry.lastAttemptedAt) || !NEGATIVE_STATUSES.includes(entry.status)) {
 			throw new Error(`corrupt friend icon negative cache entry at index ${index}`);
 		}
+		if (negativeUrls.has(entry.friendUrl)) throw new Error(`duplicate friend icon negative cache entry: ${entry.friendUrl}`);
+		negativeUrls.add(entry.friendUrl);
 	});
 	return manifest;
 }
@@ -393,6 +425,7 @@ export async function fetchFriendIcons(options = {}) {
 	const manifest = await readManifest(context.manifestPath);
 	const byUrl = new Map(manifest.entries.map((entry) => [entry.friendUrl, entry]));
 	const negativeByUrl = new Map(manifest.negativeEntries.map((entry) => [entry.friendUrl, entry]));
+	for (const entry of manifest.entries) negativeByUrl.delete(entry.friendUrl);
 	const entries = [];
 	const fallbacks = [];
 	const seen = new Set();
