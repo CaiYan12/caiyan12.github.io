@@ -3049,15 +3049,20 @@ img:hover {
 }
 
 .post-context ul:not([class]) > li {
+  position: relative;
   margin: 0.3em 0;
-  list-style-position: outside;
-  list-style-type: disc;
+  list-style: none;
 }
 
-.post-context ul:not([class]) > li::marker {
-  content: "◆  ";
-  color: var(--colorful-green);
-  font-size: 0.65em;
+.post-context ul:not([class]) > li::before {
+  position: absolute;
+  top: calc(0.5lh - 0.225em);
+  left: -1.15em;
+  width: 0.45em;
+  height: 0.45em;
+  background: var(--colorful-green);
+  content: "";
+  transform: rotate(45deg);
 }
 
 .post-context img,
