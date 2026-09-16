@@ -38,7 +38,7 @@ jobs:
           # remark 插件逻辑变更时会复用旧渲染结果导致产物陈旧，故关闭（正确性优先）
           cache: false
         env:
-          # 供构建期 fetch-github-repos 脚本拉取新增仓库元数据（Actions 自动提供）
+          # 供构建期项目目录、仓库卡片与贡献日历读取 GitHub 数据（Actions 自动提供）
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         # 默认 node-version 24（与本机构建环境 v24.18.0 一致）；
         # package-manager 由 pnpm-lock.yaml 自动检测；build-cmd 默认执行 pnpm run build

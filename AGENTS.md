@@ -233,8 +233,10 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 ```bash
 pnpm install     # 安装依赖（中国网络需先设 registry 为 https://registry.npmmirror.com）
 pnpm dev         # 本地开发 http://localhost:4321
-pnpm build       # 构建 dist/（LQIP 生成 + GitHub 仓库/贡献数据拉取 + astro build + Pagefind，已串联）
+pnpm build       # 构建 dist/（项目目录 + LQIP + GitHub 仓库/贡献数据 + astro build + Pagefind，已串联）
 pnpm new-post -- <yyyymmddhhmmss> [标题]  # 按强制 URL 规范创建文章
+pnpm fetch-projects        # 刷新“我的项目”GitHub 仓库与 Pinned 快照
+pnpm test:projects         # 项目同步、缓存、合并与排序测试
 pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存（默认增量只拉缺失）
 pnpm fetch-friend-icons     # 增量补齐缺失的友链图标缓存
 pnpm fetch-friend-icons --refresh  # 手动刷新当前友链图标缓存
@@ -286,6 +288,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 | 主页吐槽水军 | 构建期从 guestbook Discussion 同步最多 20 条顶层留言到 `guestbookComments`，侧栏单条展示并复用“最新评论—换一批”系统，不在浏览器请求 GitHub/Giscus |
 | 图片灯箱 | Fancybox（`src/utils/theme-script.ts` 的 `initFancybox()` 懒加载绑定） |
 | GitHub 仓库卡片 | 构建期渲染：`scripts/fetch-github-repos.mjs` 拉取元数据缓存到 `src/constants/github-repos.json`，`remark-extended.mjs` 直接输出完整卡片 HTML；卡片左侧使用 `https://github.com/<owner>.png?size=128` owner 头像（桌面 `48×48`，移动 `40×40`），右侧为名称/描述/star/fork/语言；**客户端零 GitHub API 请求**（规避访客 IP 匿名 API 60 次/小时限流），令牌解析 `GITHUB_TOKEN`/`GH_TOKEN` → `gh auth token` → 匿名，拉取失败渲染回退链接不阻塞构建 |
+| “我的项目”目录 | `scripts/fetch-github-projects.mjs` 构建期通过 GitHub GraphQL 分页读取 `CaiYan12` 的公开仓库与 Profile Pinned 顺序，排除 fork/归档仓库，写入 `src/constants/github-projects.json`；`src/data/projects.ts` 以大小写精确的 `nameWithOwner` 叠加人工字段与私有项目。已收录 Pinned 按 GitHub 顺序置顶，外部 Pinned 不扩张收录范围，其余按开始时间倒序；无人工状态不显示徽章。刷新失败复用有效缓存，无有效缓存则构建失败；**客户端零 GitHub API 请求** |
 | 友链图标 | `scripts/fetch-friend-icons.mjs` 构建期维护 `src/constants/friend-icons.json` 与 `public/friend-icons/`；普通模式只补缺，`--refresh` 手动刷新当前友链并重试负缓存条目，成功写入本地缓存，失败保留旧缓存或记录受控的负缓存状态并显示首字占位，删除友链不清理历史记录；页面运行时只请求本地路径，CI 生成的缓存仅随当次部署 artifact，长期复用需本地生成并提交资产和清单 |
 | Markdown 表格 | Markdown 表格经 `rehype-table-wrapper.mjs` 包裹 `.table-scroll`，原生 HTML 表格由 `remark-extended.mjs` 包裹；`global.css` 统一提供满宽、居中、边框和单元格上下居中样式，过宽表格仅在自身容器内滚动 |
 | 代码高亮/公式 | Expressive Code + KaTeX（KaTeX CSS 按需动态导入；`expressiveCode` 必须保持 `useDarkModeMediaQuery: false`，否则系统暗色访客的代码块变暗色） |

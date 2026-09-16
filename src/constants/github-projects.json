@@ -1,0 +1,137 @@
+{
+	"schemaVersion": 1,
+	"generatedAt": "2026-09-16T03:32:39.518Z",
+	"login": "CaiYan12",
+	"pinnedRepositories": [
+		"CaiYan12/caiyan12.github.io",
+		"CaiYan12/opia-rss-reader",
+		"CaiYan12/windy-project-mgr"
+	],
+	"repositories": [
+		{
+			"name": "windy-concert",
+			"nameWithOwner": "CaiYan12/windy-concert",
+			"description": "Local-first Windows music player (Electron + TypeScript + SQLite)",
+			"url": "https://github.com/CaiYan12/windy-concert",
+			"homepageUrl": null,
+			"primaryLanguage": "TypeScript",
+			"topics": [],
+			"createdAt": "2026-09-10T00:48:49Z"
+		},
+		{
+			"name": "caiyan12.github.io",
+			"nameWithOwner": "CaiYan12/caiyan12.github.io",
+			"description": "WindowsIt(CaiYan12) Public Static Blog",
+			"url": "https://github.com/CaiYan12/caiyan12.github.io",
+			"homepageUrl": "https://caiyan12.github.io/",
+			"primaryLanguage": "TypeScript",
+			"topics": [
+				"blog"
+			],
+			"createdAt": "2026-08-31T07:10:28Z"
+		},
+		{
+			"name": "windy-project-mgr",
+			"nameWithOwner": "CaiYan12/windy-project-mgr",
+			"description": null,
+			"url": "https://github.com/CaiYan12/windy-project-mgr",
+			"homepageUrl": null,
+			"primaryLanguage": "TypeScript",
+			"topics": [],
+			"createdAt": "2026-08-27T07:43:35Z"
+		},
+		{
+			"name": "opia-rss-reader",
+			"nameWithOwner": "CaiYan12/opia-rss-reader",
+			"description": "专门为橘鸦Juya RSS订阅设计的专用阅读器",
+			"url": "https://github.com/CaiYan12/opia-rss-reader",
+			"homepageUrl": null,
+			"primaryLanguage": "TypeScript",
+			"topics": [
+				"electron",
+				"rss",
+				"rss-reader"
+			],
+			"createdAt": "2026-08-19T07:48:02Z"
+		},
+		{
+			"name": "WindyPics",
+			"nameWithOwner": "CaiYan12/WindyPics",
+			"description": "一个轻量的本地图片查看器，基于 Qt 6.8 + C++17",
+			"url": "https://github.com/CaiYan12/WindyPics",
+			"homepageUrl": null,
+			"primaryLanguage": "C++",
+			"topics": [
+				"cpp",
+				"qt",
+				"qt6"
+			],
+			"createdAt": "2026-06-22T07:15:51Z"
+		},
+		{
+			"name": "WindyColourPicker",
+			"nameWithOwner": "CaiYan12/WindyColourPicker",
+			"description": "A lightweight, Fluent-styled colour picker for Windows built with Qt 6.",
+			"url": "https://github.com/CaiYan12/WindyColourPicker",
+			"homepageUrl": null,
+			"primaryLanguage": "C++",
+			"topics": [],
+			"createdAt": "2026-04-26T07:22:52Z"
+		},
+		{
+			"name": "WindyNotePad",
+			"nameWithOwner": "CaiYan12/WindyNotePad",
+			"description": "一款基于 Qt 的轻量级文本编辑器，采用暗色主题，专注于简洁与实用。",
+			"url": "https://github.com/CaiYan12/WindyNotePad",
+			"homepageUrl": null,
+			"primaryLanguage": "C++",
+			"topics": [],
+			"createdAt": "2026-04-25T14:11:27Z"
+		},
+		{
+			"name": "StudentMsgMgr",
+			"nameWithOwner": "CaiYan12/StudentMsgMgr",
+			"description": null,
+			"url": "https://github.com/CaiYan12/StudentMsgMgr",
+			"homepageUrl": null,
+			"primaryLanguage": "C++",
+			"topics": [],
+			"createdAt": "2026-04-25T07:55:07Z"
+		},
+		{
+			"name": "WindyQtMediaPlayer",
+			"nameWithOwner": "CaiYan12/WindyQtMediaPlayer",
+			"description": "一个简单的使用Qt6编写的媒体播放器",
+			"url": "https://github.com/CaiYan12/WindyQtMediaPlayer",
+			"homepageUrl": null,
+			"primaryLanguage": "C++",
+			"topics": [
+				"media",
+				"player",
+				"qt",
+				"qt6"
+			],
+			"createdAt": "2026-03-28T12:21:22Z"
+		},
+		{
+			"name": "my-astro-blog",
+			"nameWithOwner": "CaiYan12/my-astro-blog",
+			"description": "My \"Mizuki\" Astro Blog, build by model \"mizuki\"",
+			"url": "https://github.com/CaiYan12/my-astro-blog",
+			"homepageUrl": "https://my-astro-blog-flame.vercel.app",
+			"primaryLanguage": "Astro",
+			"topics": [],
+			"createdAt": "2025-12-26T11:35:07Z"
+		},
+		{
+			"name": "linear_sheet",
+			"nameWithOwner": "CaiYan12/linear_sheet",
+			"description": null,
+			"url": "https://github.com/CaiYan12/linear_sheet",
+			"homepageUrl": null,
+			"primaryLanguage": "C++",
+			"topics": [],
+			"createdAt": "2025-02-23T08:43:54Z"
+		}
+	]
+}

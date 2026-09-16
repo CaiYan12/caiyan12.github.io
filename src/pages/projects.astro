@@ -41,15 +41,26 @@ const statusLabels = {
 						<div class="personal-card-heading">
 							<>
 								<h3>{project.title}</h3>
-								<span class={`status status-${project.status}`}>
-									{statusLabels[project.status]}
-								</span>
+								{project.status && (
+									<span
+										class={`status status-${project.status}`}
+									>
+										{statusLabels[project.status]}
+									</span>
+								)}
 							</>
 						</div>
 						<p>{project.description}</p>
 						<p class="personal-meta">
 							<i class="fa fa-calendar" aria-hidden="true" />{" "}
-							{project.startDate} — {project.endDate ?? "至今"}
+							{project.dateDisplay === "created" ? (
+								<>创建于 {project.startDate}</>
+							) : (
+								<>
+									{project.startDate} —{" "}
+									{project.endDate ?? "至今"}
+								</>
+							)}
 						</p>
 						<ul class="personal-tags" aria-label="技术栈">
 							{project.techStack.map((tech) => (

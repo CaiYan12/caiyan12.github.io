@@ -4,3 +4,5 @@ src/styles/colorful-original.css
 src/styles/font-awesome.css
 # 构建期生成产物（scripts/generate-lqips.mjs 输出，不参与格式检查）
 src/constants/image-manifest.json
+# GitHub 项目同步生成的版本化快照（JSON.stringify 稳定输出）
+src/constants/github-projects.json
