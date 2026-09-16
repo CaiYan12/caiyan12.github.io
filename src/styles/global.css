@@ -3043,6 +3043,23 @@ img:hover {
   margin: 0 0 15px;
 }
 
+.post-context ul:not([class]) {
+  margin: 0.8em 0;
+  padding-left: 1.4em;
+}
+
+.post-context ul:not([class]) > li {
+  margin: 0.3em 0;
+  list-style-position: outside;
+  list-style-type: disc;
+}
+
+.post-context ul:not([class]) > li::marker {
+  content: "◆  ";
+  color: var(--colorful-green);
+  font-size: 0.65em;
+}
+
 .post-context img,
 .post-context video,
 .post-context audio {
