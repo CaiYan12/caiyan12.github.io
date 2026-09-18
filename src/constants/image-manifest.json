@@ -117,6 +117,45 @@
 			720
 		]
 	},
+	"public:images/posts/20260909092113/image-20260909095035846.png": {
+		"width": 2048,
+		"height": 1218,
+		"variants": [
+			480,
+			720,
+			1080,
+			1440
+		]
+	},
+	"public:images/posts/20260909092113/image-20260909095518808.png": {
+		"width": 2035,
+		"height": 1346,
+		"variants": [
+			480,
+			720,
+			1080,
+			1440
+		]
+	},
+	"public:images/posts/20260909092113/image-20260909100843063.png": {
+		"width": 1890,
+		"height": 1260,
+		"variants": [
+			480,
+			720,
+			1080,
+			1440
+		]
+	},
+	"public:images/posts/20260909092113/qscrollarea-mica-cover.jpg": {
+		"width": 1320,
+		"height": 880,
+		"variants": [
+			480,
+			720,
+			1080
+		]
+	},
 	"public:images/posts/fee-depreciation-cover.jpg": {
 		"width": 1125,
 		"height": 750,
@@ -133,6 +172,15 @@
 			720,
 			1080,
 			1440
+		]
+	},
+	"public:images/posts/nyarch-cover.jpg": {
+		"width": 1600,
+		"height": 1000,
+		"variants": [
+			480,
+			720,
+			1080
 		]
 	},
 	"public:images/posts/PRO4.png": {
