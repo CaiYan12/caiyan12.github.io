@@ -29,7 +29,7 @@
 - [x] 2.5 补单测："空内容评论/留言（纯表情空白）跳过本条而不阻塞整批同步"（覆盖 recent + guestbook 两条路径）
 - 注：readPostTitles 只读 index.md 是 slug 规范契约，不做防御性扩展（不可达分支）
 - [x] 验证：node --test 15/15 全过；沙箱实测损坏缓存（备份+重建+exit 0）；pnpm check 0 错、build 成功（137 条 LQIP 迁移新格式、变体 0 生成 52 复用）；contributions 独立运行 OK；dist 文章页 LQIP 渐变正常渲染
-- [ ] commit 2
+- [x] commit 2
 
 ## 阶段 3：客户端逻辑 bug 批次（清单 #8 及逻辑轴小项）
 

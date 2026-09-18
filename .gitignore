@@ -7,6 +7,8 @@ public/images/_variants/
 
 # dependencies
 node_modules/
+# local pnpm store (project-scoped install cache)
+.pnpm-store/
 
 # logs
 npm-debug.log*
