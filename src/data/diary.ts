@@ -10,6 +10,10 @@ export interface DiaryItem {
 
 export const diary: DiaryItem[] = [
 	{
+		date: "2026-09-19 07:13",
+		content: "哦对了，Z八分钱。",
+	},
+	{
 		date: "2026-09-04 22:51",
 		content: "两个月的实习结束了，该收拾收拾回学校了。",
 	},
