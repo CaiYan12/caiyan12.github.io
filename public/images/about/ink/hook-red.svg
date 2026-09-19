@@ -1,0 +1,8 @@
+<!-- ↘ 斜钩箭头（红笔）。主笔带拖拽弧（斜线最容易被手带弯），
+     箭羽改成一笔不抬的回头弯：从左羽尾划到尖、在尖上转个圆角、再划到上羽尾，
+     所以尖端是"圆"的而不是两条线对接；主笔终点故意落在尖之外一点。
+     viewBox 100×100 对应 CSS 渲染 23.1px（1.05em × font-size 22px），stroke-width 7.8 ≈ 1.8px。 -->
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='#cd3c3c' stroke-opacity='.55' stroke-width='7.8' stroke-linecap='round' stroke-linejoin='round'>
+  <path d='M8,7 C26,21 45,41 63,61 C73,72 83,83 91,93'/>
+  <path d='M62,91 C73,94 84,93 92,89 C93,79 90,69 85,60'/>
+</svg>

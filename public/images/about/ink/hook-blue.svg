@@ -1,0 +1,9 @@
+<!-- ↳ 竖钩（蓝笔批注）。与 hook-ink.svg 分家：蓝笔随手，钩底更平（笔在纸面拖过去），
+     两片箭羽张角大、长短不一，且起点不共尖。
+     viewBox 70×100 对应 CSS 渲染 19.2×27.6px（0.8em/1.15em × font-size 24px），
+     stroke-width 6.6 ≈ 1.8px。 -->
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 100' fill='none' stroke='#346292' stroke-opacity='.6' stroke-width='6.6' stroke-linecap='round' stroke-linejoin='round'>
+  <path d='M22,6 C12,28 9,54 17,74 C24,88 36,92 50,92'/>
+  <path d='M52,90 C44,84 38,76 34,67'/>
+  <path d='M52,95 C43,98 34,99 26,97' stroke-width='5.4'/>
+</svg>

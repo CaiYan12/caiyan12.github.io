@@ -1,0 +1,9 @@
+<!-- ↳ 竖钩（墨色，便签指引行内）。比蓝笔那枚收敛：竖笔更直、钩更急，
+     上羽短而下羽长（手写箭头常见的一半重描），尖端同样不汇聚。
+     viewBox 70×100 对应 CSS 渲染 11.84×16.8px（0.74em/1.05em × font-size 16px），
+     stroke-width 10.6 ≈ 1.8px——此件渲染尺寸最小，笔画数值因此最大，勿照抄到其他文件。 -->
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 70 100' fill='none' stroke='#29343a' stroke-linecap='round' stroke-linejoin='round'>
+  <path d='M20,4 C11,26 9,52 16,72 C22,86 34,93 50,94' stroke-width='10.6'/>
+  <path d='M51,92 C45,85 41,77 39,67' stroke-width='8.4'/>
+  <path d='M53,96 C45,99 37,99 30,96' stroke-width='11.8'/>
+</svg>

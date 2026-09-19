@@ -23,13 +23,13 @@ updated: 2026-08-31
 
 :::letter-paper
 <div class="paper-doodles" aria-hidden="true">
-<span class="paper-doodle paper-doodle-blue d-blue-star">✦</span>
-<span class="paper-doodle paper-doodle-blue d-blue-hook">↳</span>
-<span class="paper-doodle paper-doodle-blue d-blue-wave">⌁</span>
+<span class="paper-doodle d-blue-star"></span>
+<span class="paper-doodle d-blue-hook"></span>
+<span class="paper-doodle d-blue-wave"></span>
 <div class="paper-margin-note">保持一点好奇，<br>事情就不会太无聊。</div>
-<span class="paper-doodle paper-doodle-red d-red-star">☆</span>
-<span class="paper-doodle paper-doodle-red d-red-dots">· · ·</span>
-<span class="paper-doodle paper-doodle-red d-red-hook">↘</span>
+<span class="paper-doodle d-red-star"></span>
+<span class="paper-doodle d-red-dots"></span>
+<span class="paper-doodle d-red-hook"></span>
 </div>
 <div class="paper-hero">
 <div class="paper-hero-topbar"><span>PERSONAL NOTEBOOK / 2026</span><span class="paper-hero-pill">ABOUT ME</span></div>
@@ -46,7 +46,7 @@ updated: 2026-08-31
 <div class="paper-note-label">/ 写在前面</div>
 <p>本站为非营利性网站，外部资源转载均来自于互联网，若侵犯了您的合法权益，请联系我删除。<strong>本站无任何充值、打赏、捐赠及其他行为</strong>，请谨慎判断信息来源的真实性，科学上网，理智浏览。</p>
 <p>本博客基于 <strong>Astro</strong> 框架构建，主题视觉与结构源自 Emlog 的 <strong>Colorful-Pjax</strong> 主题，由<a href="https://myhkw.cn/" target="_blank" rel="noopener noreferrer">明月浩空</a>制作。特别感谢 Emlog 与 Colorful 项目的贡献者。</p>
-<div class="paper-note-hand">↳ 继续往下看吧</div>
+<div class="paper-note-hand"><span class="paper-arrow-ink" aria-hidden="true"></span>继续往下看吧</div>
 </div>
 
 <div class="paper-section-head"><em>✎</em> 一些关于我的碎碎念</div>

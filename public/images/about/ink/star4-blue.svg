@@ -1,0 +1,11 @@
+<!-- 四角星（蓝笔）。第一版画成两笔交叉，结果读起来是"十字"——✦ 的辨识度在
+     "四臂向中心收拢"，而 stroke 无法做笔画收尖。改成人画火花的实际笔顺：
+     四笔各自甩出去，都不落到中心（中心留白即高光），四臂长短与弯曲方向都不同。
+     viewBox 100×100 对应 CSS 渲染 26.4px（1.2em × font-size 22px），stroke-width 6.2 ≈ 1.6px。 -->
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' fill='none' stroke='#346292' stroke-opacity='.6' stroke-width='6.2' stroke-linecap='round'>
+  <path d='M49,3 C45,19 46,33 48,44'/>
+  <path d='M53,97 C56,80 54,65 51,56'/>
+  <path d='M3,53 C19,49 33,50 43,51'/>
+  <path d='M97,45 C81,47 68,50 58,51'/>
+  <path d='M48,50 C49,49 51,50 50,52' stroke-width='4.6' stroke-opacity='.45'/>
+</svg>

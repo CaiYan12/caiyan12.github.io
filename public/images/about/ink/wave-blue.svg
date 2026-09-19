@@ -1,0 +1,7 @@
+<!-- ⌁ 波浪（蓝笔）。基线整体下坠（手从左到右会往下压），波峰一个比一个矮、
+     间距不等，最后一个爬不上去直接拖成尾巴；第二个峰叠一道半透明复描。
+     viewBox 100×47 对应 CSS 渲染 30×14px（1.5em/0.7em × font-size 20px），stroke-width 6 ≈ 1.8px。 -->
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 47' fill='none' stroke='#346292' stroke-opacity='.6' stroke-width='6' stroke-linecap='round'>
+  <path d='M3,20 C10,4 19,3 25,15 C30,26 35,33 42,26 C48,20 53,11 60,13 C66,15 68,26 74,29 C81,33 88,30 96,38'/>
+  <path d='M30,26 C35,33 40,32 45,24' stroke-width='4' stroke-opacity='.4'/>
+</svg>
