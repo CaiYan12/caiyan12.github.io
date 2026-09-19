@@ -173,49 +173,17 @@ public/
 
 ## TODO:
 
-### Nice Books 私人藏书桌升级（2026-09-07）
+以下条目为历史排行的销项索引，编号保持不变；完成记录已按惯例清理，实现细节见 git history 与 AGENTS.md 对应维护约束：优化项排行第 1–7 项于 2026-09-04 销项；内容扩充第 10 项（标签云集 `/tag/`，2026-09-04）、第 11 项（分类云集 `/category/`，2026-09-05）、第 12 项（热门页 `/hot/`，2026-09-05）、第 13 项（全站字体策略，2026-09-05）已完成；Nice Books「私人藏书桌」升级（2026-09-07）已交付，视觉契约见 `docs/nice-books-design.md`、验收记录见 `docs/nice-books-design-test.md`。
 
-- [x] **视觉系统**：字体映射、可读性、三页布局和响应式网格；保留独立书房气质。
-- [x] **立体质感**：四套原创生成书封；Book3D 复刻 CodePen `xxqVdxM` 的前封、双倍厚度书口与后封透视框架；精选腰封贴合前封并只绕过硬壳右缘，不遮盖白色书页。
-- [x] **动画交互**：GSAP 主书换书、同步忙碌状态、Swup 清理、书库失败重试与减少动态效果。
+### 待办（未完成项）
 
-当前本地工作区已通过45项单测、1239项Book3D几何QA、56项smoke、65项设计QA、Astro check、生产构建及真实200%缩放检查，交付人工审查。执行状态见 [分阶段计划](docs/plans/2026-09-07-nice-books-design-upgrade.md)，视觉契约见 [设计说明](docs/nice-books-design.md)，检查证据见 [验收记录](docs/nice-books-design-test.md)。升级不包含 Astro/Tailwind 迁移或自动发布。
+- [ ] **稿纸横线贯穿整纸**（TODO 13「全站字体策略」遗留的配套需求，2026-09-05 确认）：`/about/` 信纸的横线目前只覆盖 `letter-paper-body` 区块，未贯穿含头部的整张纸。阻塞点：头部高度随视口浮动，容器级网格锚定须与头部尺寸确定化一并设计；`--lp-shift` 与字体度量耦合，改动后须实测复调。
 
-### 待办（优化项排行，2026-09-04 与 Firefly AB 对比制定）
+### 评估已完成、明确不实施（保留结论以防重复评估）
 
-排行依据：必要性 ×2 + 进步大小 ×1.5 + 易于修改 ×1（各 5 分制）；必要性对齐站点实际内容需求，权重最高。原第 1–7 项已于 2026-09-04 全部销项，完成记录已从本节清理，详见 git history 与 AGENTS.md 中的对应维护约束；第 8、9 项已完成评估并移入"远期规划"；第 10 项为 limh.me 移植评估（2026-09-04）产生的新待办，已于同日完成；编号保持与原排行一致。
+- [x] **纯 HTML 页面资源移植**（2026-09-19 完成评估；结论：全部候选不移植，本项关闭）：源为 2020–2022 的手写多页站，实际路径 `C:\Users\Einn Tzai\Documents\HTML5网页`（本条目旧写法「文档\HTML5页面」按字面搜不到），入口 `index.html`（"WindowsIt's Music Site"）链向 `about/`、`login/`、`quesion/` 与 5 个 `tools/` 子页，全站 25 个 HTML 已逐一核对。排除理由分四类：**第三方「另存为」产物**（版权与外部依赖风险）——`!downloaded/`（Google 翻译镜像、jQuery MP4 播放器、css3 3D 翻牌）、`tools/eeslap`、`tools/burymewithmymoney`、`tools/smashthewalls`，特征为 `*_files/` 子目录 + 脚本文件名带 `.下载` + 内嵌 analytics/firebase/three.js，`login/index.html` 标题本身即下载代码片段且静态站无鉴权场景；**已被本站取代的前代模板残留**——`myblog/`、`HACKEREMPIER/`、`officialblog/`、`about/index.html`、需后端的 `_UNUSED TESTED PAGE/` 留言表单；**纯 CSS 演示无内容增量**——`tools/chemicals`（诞生石药水瓶）、`tools/newtonbai`（牛顿摆）、`tools/moonnight`（星空月景）虽零依赖可搬，但属装饰性 demo；`tools/makebridge` 系 freeCodeCamp "Santa's Helper" 教程复刻（`santaX`/`perfectAreaSize` 变量名原样），移植需去圣诞主题化并注明来源，收益不抵成本；`tools/daojishi` 倒计时硬编码 `12/31/2020 23:59:59`，原样移植即死页；**原创文字资产不宜沿用页面形态**——`quesion/`（恶搞产品文案）与 `slide/`（"HOT IDEAS" 卡片）为站主 2020 年的吐槽，若将来启用应以重新撰写的文章呈现，旧页面不搬。`MainSources/` 仅字体与两个未核授权的音视频，同样不动。
 
-### 待办（内容扩充，既有事项）
-
-- [x] **10. 标签云集独立页**（2026-09-04 完成；limh.me 移植评估得分 13.75，唯一过 10 分项）
-
-  实现形态（grill 后定稿）：新增 `/tag/` 标签云集页（`src/pages/tag/index.astro`，骨架复刻 `archive.astro`：`.page` + `post-header` h2"标签云集" + `post-metaa` 面包屑；初版为 `/tags/`，2026-09-04 按路由层级逻辑改为 `/tag/` 索引 + `/tag/xxx/` 详情，与 `/archive/` 模式一致）；数据复用 `getTagList()` 按文章数降序，统计行"共 N 个标签 · 收录 M 篇文章"置于 `.post-context`（M=全部公开文章数，与归档页同口径），空标签数组渲染空态；标签列表复用 `#blogtags` 药丸（6 色轮换，DOM 与侧栏 WidgetTag 一致），药丸内全部追加 `×N` 数字（唯一新增样式 `#blogtags a .tag-count`，11px 白色，零动画）。导航"文章归档"平铺项改为下拉组 `navBarConfig.archiveSite`（全部文章 `/archive/` + 标签分类 `/tag/`），Navbar 桌面下拉与 MMenu 移动端菜单同步渲染，父项按既有 `some()` 模式高亮；顺带修复既有 bug：`theme-script.ts` 的 `syncNavHighlight()` 会因 `javascript:void(0)` 锚点把构建期写入的下拉父项 current 抹掉（影响全部下拉与移动端菜单），现跳过 void 锚点并按子链接统一计算父项高亮。侧栏 WidgetTag 未动。
-
-  后续优化（同日）：`×N` 数字由灰色 `#999` 改白色；单标签页 `/tag/xxx/`（含 `page/[page]` 第 2+ 页）头部复刻 `/tag/` 标签云集页形态——h2"标签：xxx" + 面包屑"首页 » 标签云集 » 标签名"（补齐返回标签云集入口）+ `.post-context` 统计行 + 全量 `#blogtags` 药丸云，当前标签 `is-current` 品牌绿高亮（`--colorful-green`，含三角，`aria-current="page"`），文章列表与分页维持主页同款机制（`Pagination` 组件 + `tag/[tag]/page/[page]/` 路由）；新增 `siteConfig.tagPostsPerPage: 5`（标签页独立于主页的每页 6 篇；当前最大标签 3 篇暂无分页，阈值远期随标签增长调整）。路由改 `/tag/` 后单标签页命中前缀匹配，导航"文章归档"下拉及"标签分类"子项在 /tag/xxx/ 页呈 current（语义正确：当前处于标签栏目）。
-
-- [x] **11. 分类云集页**（2026-09-05 完成；与 TODO 10 配套，分类侧对齐标签体系）
-
-  实现形态：新增 `/category/` 分类云集页（`src/pages/category/index.astro`，逐行镜像 `tag/index.astro`：h2"分类云集"（`fa-folder-open-o`）+ 面包屑 + `.post-context` 统计行"共 N 个分类 · 收录 M 篇文章" + 空态"暂无分类。"）；单分类页 `/category/xxx/`（含 `page/[page]` 第 2+ 页）头部同步复刻 `/tag/xxx/` 形态——去掉旧式 h2 内嵌计数，补面包屑"首页 » 分类云集 » 分类名"（补齐返回分类云集入口）+ `.post-context` 统计行 + 全量分类药丸云，当前分类 `is-current` 品牌绿高亮 + `aria-current="page"`。药丸复用 `#blogtags` 共享样式（含 `.tag-count` ×N），零新增 CSS；每页条数维持 `siteConfig.postsPerPage: 6` 不另设配置。导航 `archiveSite` 下拉追加"文章分类 `/category/`"（Navbar/MMenu 均遍历 config 渲染，仅改 config 一处即两端同步）；`syncNavHighlight()` 前缀匹配自动覆盖 /category/xxx/，无客户端脚本改动。侧栏 WidgetSort 未动。
-
-- [x] **12. 热门文章页**（2026-09-05 完成）
-
-  实现形态：新增 `/hot/` 热门推荐页（`src/pages/hot/index.astro` + `hot/page/[page]/` 分页，双文件模式与 tag/category 一致）；数据复用 `getHotPosts(allPosts, Infinity)` 取全量排序（hotness×100 + 有效评论数，同分按发布时间倒序；评论数来自构建期 `site-stats.json` 快照，客户端零请求），每页维持 `siteConfig.postsPerPage: 6`。头部对齐列表页形态：h2"热门推荐"（`fa-fire`，与侧栏热门部件同图标）+ 面包屑 + `.post-context` 统计行"共 N 篇文章"；正文用 `PostCard` 标准卡片而非复制侧栏 `#hotlog` 排行元件（侧栏部件不动、仍仅首页显示）。导航 `archiveSite` 下拉追加"热门推荐 `/hot/`"（第 4 项，config 一处改 Navbar/MMenu 两端同步）；`syncNavHighlight()` 前缀匹配自动覆盖 `/hot/` 与 `/hot/page/N/`，无客户端脚本改动、零新增 CSS。
-
-- [x] **13. 全站字体策略**（2026-09-05 完成；速度优先、多方案并存、全免费许可）
-
-  实现形态：`:root` 四 token 收敛全站字体——`--font-body` 思源黑体（`@fontsource-variable/noto-sans-sc` 可变字重 100–900 自托管分包，Layout 全站引入，**微软雅黑从所有主栈退场**消除版权风险，兜底苹方/文泉驿）、`--font-mono`（JetBrains Variable 栈，统一 `.prose code`/`.friend-domain`/稿纸小标签等 6 处散落声明）、`--font-serif`（方正书宋，token 就位暂无主用场景）、`--font-hand`（/about/ 稿纸手写体）。三方交付按可用性定制：思源黑体与霞鹜文楷系走 fontsource/cn-fontsource 自托管分包；方正书宋走 jsDelivr CDN（`cn-fontsource-fz-shu-song-z-01-regular/font.css`）+ 本地 `public/fonts/方正书宋-简体.ttf` 回退；平方时光体走 ZeoSeven FontsAPI CDN（`fontsapi.zeoseven.com/156/main/result.css`，src 含 `local()` 本机优先）。稿纸手写体决策链：霞鹜文楷 → 智勇手书体 → 平方乔木体 → **平方时光体**（用户定稿；方正书宋交付后无现成 CDN 的行楷字体，最终在 ZeoSeven 目录选定）。逐字符微随机由 `theme-script.ts` 的 `initPaperHandwriting()` 补齐（信纸正文切 span 施加静态微变换，无动画）。
-  
-  实施要点：global.css 的元素级 reset（`p/div { font-family: var(--font-body) }`）会切断稿纸继承，稿纸内文字容器必须显式重声明 `var(--font-hand)`；字体切换后横线对齐偏移 `--lp-shift` 已实测无需调整；思源黑体首访分包下载数百 KB～1MB（swap 不阻塞），dist 增量约 11MB（noto 分包 98 文件 + 书宋回退 TTF）。spec 见 GitHub Issue #8。**遗留**：稿纸横线贯穿整纸（含头部区，此前确认的配套需求）仍未实施——头部高度随视口浮动，容器级网格锚定需与头部尺寸确定化一并设计。
-
-- [ ] **纯 HTML 页面资源移植**
-
-  详细需求：将其他项目“文档\HTML5页面”下的纯 HTML 页面适配为本站资源页（静态路由或文章形式），样式融入 Colorful 视觉体系。
-
-  验收结果：移植页面站内样式协调、移动端无横向溢出、`pnpm build` 通过。
-
-  预期：充实站内资源内容。
-
-- [x] **原模板未移植页面评估**（2026-09-04 完成）：对 `../limh.me` 全部 12 个 page-*.php / t.php / reg.php / function/*.php 逐一核对，与 myblog 现有 14 个路由 + sidebarConfig 侧栏清单对齐。结论：已移植清单（log_list/echo_log/header/footer/side/options→config.ts/归档/微语/留言板/关于/友链/图片墙/相册/404/全部侧栏 widget/文章尾部表情/吐槽水军）无遗漏。未移植 9 项取舍：**标签云集页**转为 TODO 10（移植）；**读者墙**与**微语分页+[F*]表情码解析**移入远期规划（触发条件见该节）；分享组件（分享目标大半死链）、日历 widget（Emlog ajax 依赖，交互已被归档/时间线替代）、读者等级（Giscus 无访客邮箱数据源）不移植；前台注册（需后端写库+验证码）、评论 UA/IP 属地（Giscus 不提供该数据）、通用页面模板变体 page-test/page1/page-colorful（已被 `spec` collection 的 `[...slug]` 覆盖）为架构性/数据源排除项，永久排除。原 `module.php`（eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）维持严禁搬运。
+- [x] **原模板未移植页面评估**（2026-09-04 完成）：对 `../limh.me` 全部 12 个 page-*.php / t.php / reg.php / function/*.php 逐一核对，与 myblog 现有 14 个路由 + sidebarConfig 侧栏清单对齐。结论：已移植清单（log_list/echo_log/header/footer/side/options→config.ts/归档/微语/留言板/关于/友链/图片墙/相册/404/全部侧栏 widget/文章尾部表情/吐槽水军）无遗漏。未移植 9 项取舍：**标签云集页**已作为 TODO 10 落地为 `/tag/`（2026-09-04 完成）；**读者墙**与**微语分页+[F*]表情码解析**移入远期规划（触发条件见该节）；分享组件（分享目标大半死链）、日历 widget（Emlog ajax 依赖，交互已被归档/时间线替代）、读者等级（Giscus 无访客邮箱数据源）不移植；前台注册（需后端写库+验证码）、评论 UA/IP 属地（Giscus 不提供该数据）、通用页面模板变体 page-test/page1/page-colorful（已被 `spec` collection 的 `[...slug]` 覆盖）为架构性/数据源排除项，永久排除。原 `module.php`（eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）维持严禁搬运。
 
 ### 远期规划（观望项，均已完成评估、明确触发条件，未触发不排期）
 
