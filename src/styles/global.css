@@ -1555,6 +1555,9 @@
     height: auto;
     border: 1px solid var(--line);
     border-radius: 3px;
+  }
+  /* 只对真正的灯箱触发图给放大指针：仓库卡片头像、表格行内头像、二维码不是触发图 */
+  .prose img[data-fancybox] {
     cursor: zoom-in;
   }
   .prose ul,
@@ -5249,7 +5252,6 @@ body,
   display: block;
   box-sizing: border-box;
   width: 182px;
-  height: 122px;
   padding: 5px;
   border: 1px solid #fff;
   border-radius: 5px;
@@ -5260,8 +5262,10 @@ body,
 
 .album-grid .album-card .album-cover img {
   display: block;
+  /* 与图片墙/相册网格共用 3:2 裁切：卡片等高，原图比例不一也不会参差 */
   width: 170px;
-  height: 110px;
+  height: auto;
+  aspect-ratio: 3 / 2;
   border-radius: 5px;
   object-fit: cover;
 }
@@ -5316,9 +5320,19 @@ body,
 
 .photo-grid img {
   display: block;
+  /* 与图片墙同款 3:2 裁切：桌面宽度固定，高度由比例给出，卡片不再随原图参差 */
   width: 175px;
   height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
   margin: 0 auto;
+}
+
+/* 灯箱顶部为工具栏（46px 按钮 + 上下 8px 内距 = 62px）留常置净空：
+   适配态大图顶边不再被左上 X/X 计数与右上按钮压住，放大态该带也保持空白（工具栏透明底），
+   两种状态共用同一可视高度，避免按留白前盒子计算的放大目标过冲 */
+.fancybox__container .fancybox__slide {
+  padding-top: calc(var(--f-button-height, 46px) + 16px);
 }
 
 .imageswall .grid {
@@ -5425,6 +5439,7 @@ body,
     width: 100%;
     height: auto;
     aspect-ratio: 3 / 2;
+    object-fit: cover;
   }
 
   .post-related li {

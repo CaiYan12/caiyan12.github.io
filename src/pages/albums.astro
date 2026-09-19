@@ -2,6 +2,7 @@
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { scanAlbums } from "../utils/album-scanner";
 import { getLqipProps } from "../utils/lqip-utils";
+import ResponsiveImage from "../components/control/ResponsiveImage.astro";
 import { siteConfig } from "../config";
 
 const albums = scanAlbums();
@@ -42,10 +43,11 @@ const albums = scanAlbums();
 										style={getLqipProps(album.cover).style}
 										aria-hidden="true"
 									/>
-									<img
+									<ResponsiveImage
 										src={album.cover}
 										alt={album.name}
 										loading="lazy"
+										sizes="(max-width: 680px) 50vw, 170px"
 									/>
 									<span class="album-count">
 										{album.photos.length} 张
