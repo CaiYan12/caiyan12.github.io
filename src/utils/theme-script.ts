@@ -1052,8 +1052,18 @@ function initMMenu() {
  */
 function initPaperHandwriting() {
 	const paperBody = document.querySelector<HTMLElement>(".letter-paper-body");
-	if (!paperBody || paperBody.dataset.handwriting === "true") return;
+	const panel = paperBody?.closest<HTMLElement>(".letter-paper");
+	if (!paperBody || !panel || paperBody.dataset.handwriting === "true")
+		return;
 	paperBody.dataset.handwriting = "true";
+	syncPaperRulePhase(panel, paperBody);
+	if (!panel.dataset.rulePhaseBound) {
+		panel.dataset.rulePhaseBound = "true";
+		// 字体 swap、换行、缩放都会挪动正文首行，网格相位必须跟随
+		new ResizeObserver(() => syncPaperRulePhase(panel, paperBody)).observe(
+			panel,
+		);
+	}
 	const walker = document.createTreeWalker(paperBody, NodeFilter.SHOW_TEXT);
 	const textNodes: Text[] = [];
 	for (let node = walker.nextNode(); node; node = walker.nextNode()) {
@@ -1081,6 +1091,24 @@ function initPaperHandwriting() {
 		}
 		textNode.replaceWith(fragment);
 	}
+}
+
+/** 整张稿纸的横线网格画在面板层，其相位需按正文首行基线反推：面板网格线落在
+ *  padding box 顶 + shift - 1 + k*cycle 处，令其等于正文首行基线 y 即得下式。
+ *  头部高度因此不必确定化（巨型标题是流式 clamp 字号，便签换行数随宽度变化） */
+function syncPaperRulePhase(panel: HTMLElement, body: HTMLElement) {
+	const style = getComputedStyle(panel);
+	const cycle = parseFloat(style.getPropertyValue("--lp-cycle"));
+	const baseline = parseFloat(style.getPropertyValue("--lp-baseline"));
+	if (!cycle || !baseline) return;
+	const originTop =
+		panel.getBoundingClientRect().top +
+		(parseFloat(style.borderTopWidth) || 0);
+	const offset = body.getBoundingClientRect().top - originTop + baseline;
+	panel.style.setProperty(
+		"--lp-shift",
+		`${((offset % cycle) + cycle) % cycle}px`,
+	);
 }
 
 /** 头部微言轮播：机制复刻原版 AutoScroll（limh.me global-pjax.js）——滚完把首条 li
