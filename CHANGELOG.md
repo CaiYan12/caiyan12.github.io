@@ -1,5 +1,16 @@
 # 更新日志
 
+## 2026-09-19：相册内容改版与灯箱交互修正
+
+- 相册改版为文件夹驱动的三册结构（日常随手拍 32 / 背景收藏 11 / 轻松一刻 47，共 90 张）：一张 11.9MB 的 13624×2936 全景截图压到 3000×646 / 324KB，一张 425×10000 的超长图移出站点；补齐两篇文章与全部相册图此前缺失的 LQIP/manifest 条目（相册 LQIP 74 条、变体 53 条，零指向已删文件的残留）。
+- **缩略图统一 3:2 裁切**：`.photo-grid img` 与相册索引封面 `.album-cover img` 改为 `height: auto` + `aspect-ratio: 3 / 2` + `object-fit: cover`，与图片墙同一套范式；此前桌面端按原图比例出图，全景图会塌成 174×39 的细条并让网格参差。`/albums/` 索引页封面由裸 `<img>` 改为 `ResponsiveImage`，三张合计约 2.9MB 的原图直出改走 WebP 变体。
+- **灯箱关闭不再跳位**：`placeFocusBack: false` 取消 Fancybox 默认的"关闭时把页面滚到当前图"，改由 `on.destroy` 手动 `focus({preventScroll:true})` 归还键盘焦点（正文 `<img>` 不可聚焦，实际受益的是相册与二维码的 `<a>` 触发元素）。
+- **灯箱新增「定位到文章位置」按钮**：位于右上角下载之后，仅 `post-gallery`（文内图）组出现——按 `triggerEl` 的 `data-fancybox` 用函数型 `Carousel` 选项决定工具栏；点击后关闭灯箱再把该图滚到视口居中（灯箱开启期间 `body` 锁滚动，故必须"先关后滚"），`prefers-reduced-motion` 下降级为瞬时。
+- 灯箱工具栏文案中文化：引入官方 `zh_CN` 语言包并在本地合并扩展新按钮文案；右上角「下载」按钮改为捕获阶段拦截并在新标签页打开图片文件链接（库默认直接落盘保存）。
+- **灯箱顶部净空**：`.fancybox__slide` 常置 `padding-top` 62px（等于绝对定位工具栏高度），此前库默认内边距为 0，够大的图片顶边会被左上 X/X 计数与右上按钮压住、视觉中心偏低；实测适配态重叠由 62px 降为 0，放大态仍按原图自然尺寸呈现（曾尝试用 `:has(.will-zoom-out)` 在放大时释放留白，会让放大目标过冲，故弃用）。
+- **指针样式与触发状态同源**：`global.css` 的 `.prose img{cursor:zoom-in}` 收窄为 `.prose img[data-fancybox]{cursor:zoom-in}`，仓库卡片头像、表格行内头像、二维码不再显示放大指针；`.post-context .github-card-link` 显式 `cursor: pointer`，整张卡片（头像/名称/描述）统一手型。
+- 新增常驻回归 `pnpm test:fancybox`（`scripts/fancybox-smoke.mjs`，Playwright 27 项：关闭不跳位含"触发图确已离屏"的有效性前置、焦点归还、定位按钮分组与位置、点定位生效、reduced-motion、下载新标签页、中文文案无 `{{KEY}}` 残留、卡片/表格/二维码图标不计入文内图、卡片手型与正文放大指针的同源断言、顶部净空（适配态零重叠 + 放大态按原图自然尺寸呈现）、Escape 关闭、本地资源零失败零报错）；需先 `pnpm build && pnpm preview`，与 `smoke:nice-books` 同层级，不进 `build` 链与 CI。验证：`pnpm check` 0 errors、`pnpm build` 通过、相册视觉验收 90 项与灯箱 27 项全绿。
+
 ## 2026-09-08：标签云集/分类云集 3D 标签云上线
 
 - 新增 `src/components/layout/TagCloud3D.astro`：基于 svg3dtagcloud（vendored `public/vendor/svg3dtagcloud/`，npm `svg-3d-tag-cloud@0.0.20`，MIT，LICENSE 随附）的 3D 旋转标签/分类云，`/tag/` 与 `/category/` 云集页调用；数据与 `#blogtags` 药丸云同源（药丸云保留：当前项高亮 + 无动画回退），空数据自隐藏。

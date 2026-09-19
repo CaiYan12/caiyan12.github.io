@@ -33,6 +33,7 @@ pnpm smoke:nice-books  # Nice Books 三页全链路 Smoke（随机/换一换/书
 pnpm qa:nice-books-geometry  # Nice Books 统一3D几何运行时检查（需先启动 pnpm dev）
 pnpm test:utils  # src/utils 纯函数单测（content-utils 排序/评分/邻篇 + pagination canonical）
 pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/六字段搜索/SVG 封面，node --test）
+pnpm test:fancybox  # 灯箱 Smoke（关闭不跳位/焦点归还/定位到文章位置/下载新标签页/中文文案，需先 pnpm build && pnpm preview）
 pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scripts/tailwind.config）
 ```
 
