@@ -3105,6 +3105,24 @@ img:hover {
   white-space: pre-wrap;
 }
 
+/* 行内代码字号：随所在文字等比缩放（标题与正文同一倍率，故各级标题内的 code 不再
+   忽大忽小），max() 兜住下限以免 13px 正文里缩到看不清。
+   只命中 :not(pre) > code，代码块仍归 Expressive Code 管。
+   注意 .post-context code（本块下方）是 0,1,1，这里 0,1,2 才压得住；
+   字体走 --font-mono，不再用 Arial/微軟正黑體（字体策略见 README TODO 13 与 AGENTS.md） */
+.post-context :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: max(12px, 0.9em);
+}
+
+/* @tailwindcss/typography 默认给行内 code 前后各加一个反引号（content: "`"），
+   本站 code 已有边框与底色，那对反引号会被读成"markdown 符号漏渲染"，一律关掉。
+   选择器必须排除 pre code，否则会连带抹掉 Expressive Code 自己的 ::before 标记 */
+.prose :not(pre) > code::before,
+.prose :not(pre) > code::after {
+  content: none;
+}
+
 .post-context code {
   padding: 2px 4px;
   border: 1px solid #d6d6d6;

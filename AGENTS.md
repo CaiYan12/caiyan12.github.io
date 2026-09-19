@@ -224,6 +224,22 @@ Your agent and bash are running on:
 
 
 
+## Agent skills
+
+工程技能（`grill-with-docs` / `to-spec` / `to-tickets` / `triage` / `wayfinder` 等）从下面三份配置读取本仓库约定，改配置即改技能行为，无需重跑 setup。
+
+### Issue tracker
+
+本仓库（`CaiYan12/caiyan12.github.io`）的 issue 与 spec 记在 GitHub Issues，一律用 `gh` CLI 读写；PR 不作为需求入口。见 `docs/agents/issue-tracker.md`。
+
+### Triage labels
+
+沿用五个默认标签串（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`），与角色名一一对应，不另设映射。见 `docs/agents/triage-labels.md`。
+
+### Domain docs
+
+单上下文布局：根 `CONTEXT.md` 术语表 + `docs/adr/`（现仅 0001）。探索、命名或写 issue 前先取用 `CONTEXT.md` 的既定称呼；ADR 只记「难以回退、有真实取舍、令人意外」的决策。见 `docs/agents/domain.md`。
+
 ## 项目背景
 
 WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月浩空）主题迁移而来的纯静态 Astro 博客。视觉必须还原 Colorful 原版（海洋绿 `#00c000` 主色、白底圆角卡片、自定义光标），技术栈对齐 `D:\pages\mizuki`。迁移任务的完整背景与取舍见 `D:\pages\emlog-to-astro-migration-prompt.md`。
@@ -342,6 +358,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - GitHub 卡片的结构由 `remark-extended.mjs` 生成：`.github-card-link` 使用两列 grid，`.github-card-avatar` 为装饰性图片（`alt=""` + `aria-hidden="true"`），`.github-card-body` 必须 `min-width: 0`，仓库名允许任意位置换行，避免长仓库名撑破正文。
 - 表格通用规则位于 `global.css`：`.prose table`/`.prose th`/`.prose td` 提供 `#c4c4c4` 边框、`vertical-align: middle` 和表头底色；`.post-context table` 统一 `width: 100%`，`.table-scroll` 负责过宽表格的局部横向滚动。新增表格不要在文章内另写宽度或滚动容器样式。
 - `src/styles/global.css`：Tailwind 指令 + 大量自定义 class（`.post-list`、`.tw`、`.widget`、`.pagenavi` 等，命名直接对应原主题 CSS），**视觉还原以 custom class 为主、utility 为辅**
+- 正文行内代码（2026-09-19 定）：字号 `max(12px, 0.9em)` 随所在文字等比缩放，**各级标题共用同一倍率**，字体走 `var(--font-mono)`；规则写在 `global.css` 的 `.post-context code` 附近，选择器必须是 `.post-context :not(pre) > code`（0,1,2 才压得住 legacy 的 `.post-context code`，同时避开 Expressive Code 的 `PRE.wrap > CODE`，代码块仍归它自己的 14px mono）。**必须同时关掉 `@tailwindcss/typography` 给行内 code 前后注入的反引号伪元素**（`.prose :not(pre) > code::before/::after { content: none }`）——该插件默认把行内代码画成 markdown 源码模样，与本站已有的边框+底色芯片叠加后被访客读成「反引号漏渲染」；选择器不排除 `pre code` 会连带抹掉 Expressive Code 自己的 `code::before` diff 标记。另注意 `.prose code { font-size:13px; font-family:var(--font-mono) }` 整条被关在 `@media (max-width:680px)` 内（桌面永不生效），legacy `.post-context code { font:12px Arial,"Microsoft JhengHei" }` 因此仍是行内代码的兜底来源，改字号/字体要改上面那条新规则而不是它
 - 分页控件（`src/components/layout/Pagination.astro` / `.pagenavi`）统一使用无圆角 40×40 方块；正常态为品牌色边框，当前/禁用态为深灰边框，跳转输入框为 120×40 且隐藏数字微调箭头；导航符号为 `<<`、`<`、`>`、`>>`、`→`，移动端仅保留首、前、当前、后、末五项。
 - `src/styles/colorful-original.css`：原主题 73KB 原始样式表，仅作对照参考，**不要直接引入**（路径基于 Emlog 模板目录）
 - `public/giscus-theme.css`：Giscus iframe 的 Colorful 主题覆盖；评论卡沿用白底、细边框、圆角和海洋绿 hover 阴影，头像框无阴影，站长徽标复用 `public/images/admin.png` 并显示“站长”
