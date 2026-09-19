@@ -13,6 +13,19 @@
 		"avatar": "/friend-icons/c39de4e6a0f74e59.png"
 	},
 	{
+		"name": "YHY Study Website",
+		"url": "https://ryan.0412.online/",
+		"description": "笔记、项目与学习文档站。",
+		"tags": ["Blog", "Study"],
+		"avatar": "https://ryan.0412.online/apple-touch-icon.png"
+	},
+	{
+		"name": "MIUMA",
+		"url": "https://www.miuma.top/",
+		"description": "个人博客，收录笔记、碎碎念与小作品。",
+		"tags": ["Blog", "Design"]
+	},
+	{
 		"name": "JUFE Offer",
 		"url": "https://jufe.woodfish.site/",
 		"description": "实习、竞赛和学习资料交流，打破信息差。",
