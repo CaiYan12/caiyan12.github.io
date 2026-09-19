@@ -611,6 +611,15 @@
 			1080
 		]
 	},
+	"public:images/posts/20260919135000/matt-pocock-workflow-cover.jpg": {
+		"width": 1320,
+		"height": 743,
+		"variants": [
+			480,
+			720,
+			1080
+		]
+	},
 	"public:images/posts/fee-depreciation-cover.jpg": {
 		"width": 1125,
 		"height": 750,
