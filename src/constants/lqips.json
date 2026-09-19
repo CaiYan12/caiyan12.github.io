@@ -846,5 +846,25 @@
 	"public:images/posts/20260919135000/matt-pocock-workflow-cover.jpg": {
 		"g": "1d1e213b312c666363",
 		"bytes": 64460
+	},
+	"public:images/posts/20220514182600/sylenth1-amp-env-adsr.png": {
+		"g": "38363a37373b3f3b40",
+		"bytes": 41394
+	},
+	"public:images/posts/20220514182600/sylenth1-filter-lowcut.png": {
+		"g": "3d39393c3a3e39363d",
+		"bytes": 36669
+	},
+	"public:images/posts/20220514182600/sylenth1-mod-env-cutoff.png": {
+		"g": "3935373835372f2c31",
+		"bytes": 27195
+	},
+	"public:images/posts/20220514182600/sylenth1-mod-env-pitch.png": {
+		"g": "3b36343835362f2d30",
+		"bytes": 27060
+	},
+	"public:images/posts/20220514182600/sylenth1-mod-env-volume.png": {
+		"g": "3c36353735382f2e35",
+		"bytes": 25708
 	}
 }
