@@ -280,7 +280,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - Astro 6 已把 `markdown.remarkPlugins` / `rehypePlugins` / `remarkRehype` / `gfm` / `smartypants` 标记为 deprecated（每次构建都打印告警），但仍生效。迁到 `markdown.processor: unified({...})` 需把 `@astrojs/markdown-remark` 作为直接依赖并**精确对齐 astro 自身解析到的版本**（当前 7.2.0，装成 6.x 会拿到另一份副本），故留到 6→7 一并处理；届时以文章正文 HTML 逐字节比对为验收（本次三篇文章正文 HTML 与 Astro 5 完全一致，含 73KB 的 Markdown 语法示例文）。
 - `getTagList()` / `getCategoryList()` **必须保持全序**（文章数倒序 → 最早引入该标签/分类的文章时间 → 名称）。原因：并列名次若只靠 `Array.prototype.sort` 的稳定性，顺序取决于 `getCollection()` 的遍历顺序，而 Astro 5 与 6 定义不同——升级实测会让侧栏标签云 32 个药丸重排，并连带改变 `#blogtags` 的 nth-child 六色轮换归属。任何新增的"按计数排序"列表同理。
 - 本地安装须带项目内 store：`pnpm add --store-dir .pnpm-store <pkg>`（`node_modules/.modules.yaml` 记录 `storeDir: <repo>/.pnpm-store/v10`，全局配置已不指向它，裸跑 add 会报 store 版本不匹配）。
-- 升级验证方法保留在 git history：逐元素计算样式指纹（24 页 × 关键页，含 `::before/::after`，排除播放器/看板娘/轮播/3D 标签云等时序件），配合 `Last-Modified` 与内容断言。`deploy.yml` 的 `cache: false` 仍不得回退。
+- 升级回归验证脚本 `scripts/upgrade-style-audit.mjs`（Astro 6→7 时复用）：`capture` 用 Playwright 对 24 个关键页逐元素采集计算样式指纹（含 `::before/::after`），`diff` 支持顺序无关比对。采集前必须冻结动画、种子化 `Math.random`（否则稿纸逐字符抖动不可复现），并排除明月浩空播放器（远端异步、含 `#myhk*` 的 id 选择器，`[class*=]` 抓不到）、看板娘、轮播、3D 标签云、swup 瞬时类名与带端口的绝对 url——这些都是实测过的假阳性来源。**同数据的新旧构建 A/B 才是有效比对**；线上产物与本地基线必然存在差异（CI 会重新生成 GitHub 快照与贡献日历、幻灯片当前帧与播放器歌单属异步状态），不要拿线上比对当样式结论。配合 `Last-Modified` 与内容断言使用。`deploy.yml` 的 `cache: false` 仍不得回退。
 
 ### 配置驱动（改配置 = 改站点）
 `src/config.ts` 是所有站点行为的控制中心：
