@@ -4039,6 +4039,13 @@ img:hover {
   box-shadow: none;
 }
 
+/* 灯箱打开时 fancybox 把根滚动条收掉（本站 ::-webkit-scrollbar 固定 10px）。
+   .backtop 的 left:50% 相对 fixed 包含块计算，跟着右移半格；正文列有 fancybox 自己的
+   padding 补偿并不动，差值就显形成按钮偏移。按同样的半格补回去，间距保持不变。 */
+html.with-fancybox .backtop {
+  margin-left: -619px;
+}
+
 .backtop:hover {
   background-color: transparent;
   opacity: 0.8;
