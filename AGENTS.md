@@ -263,6 +263,7 @@ pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/搜索/封
 pnpm test:site-stats # Giscus 同步单测（fetchImpl/输出路径全注入，无需令牌、0.6s，已串入 build 链头部）
 pnpm smoke:nice-books  # Nice Books 三页 Playwright Smoke；支持 NICE_BOOKS_BASE_URL 指向 build + preview
 pnpm test:fancybox     # 灯箱 Playwright Smoke（关闭不跳位/焦点归还/定位按钮/下载新标签页/中文文案，需先 build + preview；FANCY_BASE_URL 可覆盖地址）
+pnpm test:fancybox 打线上时 FANCY_BASE_URL 传的是**站点根**（脚本自己拼 /posts/... 与 /albums/...），而 NICE_BOOKS_BASE_URL / AI_NEWS_BASE_URL 传的是**完整页面地址** —— 三者形态不同，传错会表现为「选择器等不到」的假失败。2026-09-20 起放大两项改为等原图解码 + 轮询到高度稳定，本地与线上均 27/27
 pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ```
 
@@ -357,6 +358,7 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 - **SSR/客户端标记单源**：凡会被客户端 innerHTML 重渲染的片段（hero 卡/网格卡/便签/标签药丸/列表行）一律由 `lib/render.ts` 字符串构造器输出（.astro 侧 `set:html` 引用同一函数），禁止在 .astro 里另写一份标记。
 - 样式：`styles/books.css` 是 books 页面唯一样式源（含 `@tailwind` 三指令 → 有 preflight）；2026-09-07 用户批准「私人藏书桌」设计升级，`docs/nice-books-design.md` 替代旧 handoff §5–§8 的固定视觉值。继续使用 `--nb-*` token、Tailwind v3 `nb.` 命名空间（勿与 ai-news 色板混淆），`font-nb-body` 映射正文思源黑体。网格 `<360px` 单列、`360–759px` 两列、`>=760px` 三列，同架图书 `>=1080px` 四列。**坑：Tailwind utility 的 display 会覆盖 `[hidden]` 属性**，books.css @layer base 的 `[hidden]{display:none!important}` 勿删。
 - swup 协议（模块脚本）：顶层直接 init（首次整页加载）+ `document.addEventListener("astro:page-load", init)`（swup 导航进入时重跑）+ main 内 `dataset.nbInit` 守卫 + 目标元素缺失早退；document 级监听（archive 的「/」快捷键、封面 onerror）只在模块顶层注册一次。注意 `@swup/astro` 默认 `loadOnIdle`——swup 实例在页面空闲后才存在（`window.swup` 需等待），未就绪窗口内点击链接无害降级为整页加载。
+- 两套 Playwright Smoke 的**计时与等待不能用固定毫秒数**（2026-09-20 线上实测教训）：`test:fancybox` 的放大两项原先点完死等 1500ms，远端 4608×3072 的原图还没解码，量出来「放大后仍等于适配态」，改为 `waitForFunction(complete && naturalHeight>0)` + 轮询到高度连续一致；`smoke:nice-books` 的「主书换书约 420ms」原先把计时起点放在 `page.click()` 之前，于是 Playwright 的可操作性等待与后续四次 `getAttribute` 往返全被算进动画窗口（本地约 +40ms、远端 +400ms 以上），改为在按钮的 capture 监听里打 `performance.now()` 戳、settle 后先在页面内取差值再做其它跨进程调用 —— 修好后本地读数 422ms，正对设计值 240+170=410ms。**但 `smoke:nice-books` 仍以本地 build+preview 为权威**：打线上时该项仍会到 ~996ms，而单独隔离测量线上换书只花 428–482ms 且期间零请求，差值来自该 smoke 自身在同一个 context 里开的一堆远端页面对主线程与网络的挤占，不是站点缺陷。
 - books 全部页面 main 带 `data-pagefind-ignore="all"`（决策：博客全局搜索只搜正式文章，详情页也不进索引）；导航入口在 `navBarConfig.resourceSite`「每日好书」（`noSwup: true`，Navbar/MMenu 数据驱动自动渲染）；`pnpm smoke:nice-books` 覆盖三页业务、Swup 切页/后退/重复初始化与忙碌中断；`node scripts/nice-books-design-qa.mjs` 补充设计、响应式及故障检查（先 build + preview，默认4322端口）。实际项目数与截图见 `docs/nice-books-design-test.md`；字体 CDN 的网络层失败单独统计。
 - 2026-09-07 书封展示：`lib/display.ts` 按 ID 确定四种原创 SVG 家族，未知 ID 回退文学；不往 `Book` 加展示字段。`coverHTML` 支持 `hero/card/list`，精选书主图和卡片带腰封，列表省略腰封，普通书裸封。封面硬壳最大、纸块内缩、右侧书口、左侧装订；外壳允许厚度和胶带外伸，图像内层独立裁切，真实图片 `object-contain`。腰封只引用现有荐语，禁止编造奖项或销量。
 - 2026-09-07 动效生命周期：GSAP 按需用于 books 主书时间线，常规反馈用 CSS/WAAPI；两个今日换书入口共享全周期忙碌状态并在 finally 恢复。`shared.ts` 统一注册 `astro:before-swap` 清理，页面卸载取消请求/计时器/动画并 settle 未完成的换书 Promise。书库失败必须解除初始化守卫并显示重试；搜索输入不重播入场，标签/视图短过渡可中断。不要恢复额外240ms模拟等待或旧 Hero CSS 动画。

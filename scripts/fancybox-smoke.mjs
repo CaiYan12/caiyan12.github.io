@@ -314,6 +314,18 @@ await padPost.locator('a[data-fancybox="album"]').nth(2).click();
 await padPost.waitForSelector(".fancybox__container.is-ready", {
 	timeout: 15000,
 });
+// 原图可能有好几 MB：等它真正解码完再量适配态，否则放大没有目标尺寸
+await padPost.waitForFunction(
+	() => {
+		const imgs = document.querySelectorAll(
+			".fancybox__slide.is-selected .f-panzoom__content",
+		);
+		const img = imgs[imgs.length - 1];
+		return !!(img && img.complete && img.naturalHeight > 0);
+	},
+	undefined,
+	{ timeout: 30000 },
+);
 await padPost.waitForTimeout(1500);
 const padSnap = () =>
 	padPost.evaluate(() => {
@@ -340,7 +352,16 @@ check(
 await padPost
 	.locator('.fancybox__container [data-panzoom-action="toggleFull"]')
 	.click();
-await padPost.waitForTimeout(1500);
+// 放大是带过渡的，且远端首帧更慢：轮询到连续两次高度一致再取数
+{
+	let prevH = -1;
+	let h = (await padSnap()).h;
+	for (let i = 0; i < 24 && h !== prevH; i++) {
+		prevH = h;
+		await padPost.waitForTimeout(250);
+		h = (await padSnap()).h;
+	}
+}
 const zoomed = await padSnap();
 check(
 	"点击放大仍然生效（放大后高度大于适配态）",

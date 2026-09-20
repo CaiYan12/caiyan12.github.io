@@ -121,7 +121,19 @@ try {
 	// 注意 handoff §10 时序：按钮 loading 240ms → 卡片淡出 170ms → 换书 → 淡入；
 	// 按钮解锁早于内容替换约 170ms（与原型一致），故以「内容实际变化」为等待条件。
 	const beforeId = await heroId();
-	const swapStartedAt = Date.now();
+	// 计时起点必须落在页面内：page.click() 的可操作性等待、以及紧随其后的
+	// 四次 getAttribute 往返都会被算进 Date.now() 的差值里 —— 本地约多算 40ms，
+	// 远端能多算 400ms 以上，那就不是在量动画而是在量测试自己。
+	await page.evaluate(() => {
+		window.__swapT0 = 0;
+		document.querySelector("#nb-today-shuffle").addEventListener(
+			"click",
+			() => {
+				window.__swapT0 = performance.now();
+			},
+			{ capture: true, once: true },
+		);
+	});
 	await page.click("#nb-today-shuffle");
 	const loadingDisabled = await page.getAttribute(
 		"#nb-today-shuffle",
@@ -159,8 +171,11 @@ try {
 		beforeId,
 		{ timeout: 5000 },
 	);
+	// 先取耗时再做其它跨进程调用，避免把往返算进动画窗口
+	const swapElapsed = await page.evaluate(
+		() => performance.now() - window.__swapT0,
+	);
 	const afterId = await heroId();
-	const swapElapsed = Date.now() - swapStartedAt;
 	check(
 		"主书换书为真实双阶段时序（约 420ms）",
 		swapElapsed >= 380 && swapElapsed <= 760,
