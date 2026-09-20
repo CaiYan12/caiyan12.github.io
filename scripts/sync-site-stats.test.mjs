@@ -24,6 +24,33 @@ const slugs = (
 	.sort();
 const slugA = slugs[0];
 const slugB = slugs[1];
+assert.ok(slugA && slugB, "src/content/posts 至少要有两篇文章目录才能作夹具");
+
+// 标题与被测脚本同源但独立解析：脚本从 frontmatter 的 title 行取值，这里自己再读一遍。
+// 文章改标题不会再误伤断言（旧写法硬编码「草稿示例」，换文后即失效），
+// 而 slug 与标题错位、或脚本根本没去查标题，仍然会失败。
+async function readTitle(slug) {
+	const source = await fs.readFile(
+		path.resolve(
+			import.meta.dirname,
+			"..",
+			"src",
+			"content",
+			"posts",
+			slug,
+			"index.md",
+		),
+		"utf-8",
+	);
+	const line = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/
+		.exec(source)?.[1]
+		?.match(/^title:\s*(.+?)\s*$/m);
+	if (!line) throw new Error(`夹具文章缺少 title：${slug}`);
+	const raw = line[1];
+	return /^".*"$/.test(raw) ? JSON.parse(raw) : raw.replace(/^'(.*)'$/, "$1");
+}
+
+const titleA = await readTitle(slugA);
 
 function gqlOk(data) {
 	return {
@@ -287,7 +314,7 @@ test("Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标�
 			content: "新评论",
 			date: "2026-09-03T00:00:00Z",
 			postSlug: slugA,
-			postTitle: "草稿示例",
+			postTitle: titleA,
 		},
 		{
 			author: "old-user",
@@ -295,7 +322,7 @@ test("Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标�
 			content: "旧评论",
 			date: "2026-09-01T00:00:00Z",
 			postSlug: slugA,
-			postTitle: "草稿示例",
+			postTitle: titleA,
 		},
 	]);
 	assert.deepEqual(snapshot.guestbookComments, [
