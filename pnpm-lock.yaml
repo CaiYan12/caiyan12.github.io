@@ -132,6 +132,9 @@ importers:
         specifier: 5.0.15
         version: 5.0.15(@types/react@19.2.18)(react@19.2.8)
     devDependencies:
+      '@astrojs/markdown-remark':
+        specifier: 7.2.0
+        version: 7.2.0
       '@astrojs/ts-plugin':
         specifier: ^1.10.6
         version: 1.10.10

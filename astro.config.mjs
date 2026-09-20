@@ -1,3 +1,4 @@
+import { unified } from "@astrojs/markdown-remark";
 import sitemap from "@astrojs/sitemap";
 import react from "@astrojs/react";
 import svelte, { vitePreprocess } from "@astrojs/svelte";
@@ -107,41 +108,43 @@ export default defineConfig({
 		}),
 	],
 	markdown: {
-		remarkPlugins: [
-			remarkCjkFriendly, // 解析层扩展，须紧跟 Astro 内置 remark-gfm 之后、其余插件之前
-			remarkMath,
-			remarkDirective,
-			remarkImageGrid, // [grid]...[/grid] 图片网格（移植自 Firefly）
-			remarkExtended,
-			remarkReadingTime,
-			remarkExcerpt,
-		],
-		rehypePlugins: [
-			rehypeKatex,
-			rehypeSlug,
-			// 外链新窗口打开 + 邮箱地址防爬虫混淆（移植自 Firefly）
-			[rehypeExternalLinks, { siteUrl: siteConfig.siteURL }],
-			[rehypeEmailProtection, { method: "base64" }],
-			rehypeTableWrapper,
-			[
-				rehypeAutolinkHeadings,
-				{
-					behavior: "append",
-					properties: {
-						className: ["anchor"],
-					},
-					content: {
-						type: "element",
-						tagName: "span",
-						properties: {
-							className: ["anchor-icon"],
-							"data-pagefind-ignore": true,
-						},
-						children: [{ type: "text", value: "#" }],
-					},
-				},
+		processor: unified({
+			remarkPlugins: [
+				remarkCjkFriendly, // 解析层扩展，须紧跟 Astro 内置 remark-gfm 之后、其余插件之前
+				remarkMath,
+				remarkDirective,
+				remarkImageGrid, // [grid]...[/grid] 图片网格（移植自 Firefly）
+				remarkExtended,
+				remarkReadingTime,
+				remarkExcerpt,
 			],
-		],
+			rehypePlugins: [
+				rehypeKatex,
+				rehypeSlug,
+				// 外链新窗口打开 + 邮箱地址防爬虫混淆（移植自 Firefly）
+				[rehypeExternalLinks, { siteUrl: siteConfig.siteURL }],
+				[rehypeEmailProtection, { method: "base64" }],
+				rehypeTableWrapper,
+				[
+					rehypeAutolinkHeadings,
+					{
+						behavior: "append",
+						properties: {
+							className: ["anchor"],
+						},
+						content: {
+							type: "element",
+							tagName: "span",
+							properties: {
+								className: ["anchor-icon"],
+								"data-pagefind-ignore": true,
+							},
+							children: [{ type: "text", value: "#" }],
+						},
+					},
+				],
+			],
+		}),
 	},
 	vite: {
 		build: {

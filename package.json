@@ -73,6 +73,7 @@
 		"zustand": "5.0.15"
 	},
 	"devDependencies": {
+		"@astrojs/markdown-remark": "7.2.0",
 		"@astrojs/ts-plugin": "^1.10.6",
 		"@types/node": "^24.0.0",
 		"@types/qrcode": "^1.5.6",
