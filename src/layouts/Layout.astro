@@ -111,12 +111,16 @@ const myhkwScriptAttributes: Record<string, string> = {
 			myhkwPlayerConfig.enable && (
 				<>
 					{/* 明月浩空播放器要求 jQuery 先于播放器脚本加载 */}
+					{/* 播放器常驻 swup 容器外、切页后并未被换掉；标记 ignore 阻止
+					    ScriptsPlugin 重建这两个 script，否则重跑抛"禁止重复添加"。 */}
 					<script
 						is:inline
+						data-swup-ignore-script=""
 						src="https://myhkw.cn/player/js/jquery.min.js"
 					/>
 					<script
 						is:inline
+						data-swup-ignore-script=""
 						src={`https://myhkw.cn/api/player/${myhkwPlayerConfig.playerId}`}
 						{...myhkwScriptAttributes}
 					/>
