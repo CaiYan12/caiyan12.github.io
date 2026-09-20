@@ -122,9 +122,9 @@ async function inspectBooks(page, label) {
 			!book.obi ||
 				Boolean(
 					book.obi.front &&
-						book.obi.frontFold &&
-						book.obi.backReturn &&
-						!book.obi.frontOverflows,
+					book.obi.frontFold &&
+					book.obi.backReturn &&
+					!book.obi.frontOverflows,
 				),
 			`${prefix}: 腰封缺少前封/前封折边/背封回折或文字溢出`,
 		);
@@ -144,11 +144,11 @@ async function inspectBooks(page, label) {
 			!book.obi ||
 				Boolean(
 					book.obi.frontFold &&
-						book.obi.backReturn &&
-						book.fore &&
-						book.obi.backReturn.x - book.obi.frontFold.right > 1 &&
-						book.fore.x < book.obi.backReturn.x &&
-						book.fore.right > book.obi.frontFold.right,
+					book.obi.backReturn &&
+					book.fore &&
+					book.obi.backReturn.x - book.obi.frontFold.right > 1 &&
+					book.fore.x < book.obi.backReturn.x &&
+					book.fore.right > book.obi.frontFold.right,
 				),
 			`${prefix}: 腰封投影遮住白色书口，前封折边与背封回折之间没有可见页块`,
 		);
