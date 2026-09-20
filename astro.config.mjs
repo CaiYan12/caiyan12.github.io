@@ -21,6 +21,13 @@ import rehypeEmailProtection from "./src/plugins/rehype-email-protection.mjs";
 import rehypeExternalLinks from "./src/plugins/rehype-external-links.mjs";
 import rehypeTableWrapper from "./src/plugins/rehype-table-wrapper.mjs";
 
+// dev 下 Vite 把懒加载的第三方 CSS（fancybox、katex）以运行时注入的 <style> 挂进 head。
+// swup 的 updateHead 按"新页面没有此节点"把它删掉，而模块已在 Vite 图里、不会再注入一次，
+// 于是客户端切页后灯箱与公式失去全部样式（灯箱容器从视口尺寸塌成文档高度）。
+// persistAssets 让 head 同步跳过 style/link/script；生产构建里各页 CSS 是独立 <link>，
+// 必须照常增删以免跨页样式泄漏，所以只在 dev 开启。
+const isDev = process.argv.slice(2).includes("dev");
+
 // https://astro.build/config
 export default defineConfig({
 	site: siteConfig.siteURL,
@@ -39,7 +46,7 @@ export default defineConfig({
 			preload: true, // swup 默认鼠标悬停预加载
 			ignore: ["[data-fancybox]"],
 			accessibility: true,
-			updateHead: true,
+			updateHead: isDev ? { persistAssets: true } : true,
 			updateBodyClass: false,
 			globalInstance: true,
 			animateHistoryBrowsing: false,
