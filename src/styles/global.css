@@ -3113,6 +3113,12 @@ img:hover {
 .post-context :not(pre) > code {
   font-family: var(--font-mono);
   font-size: max(12px, 0.9em);
+  /* .post-context 的 word-break: break-all（原主题为中文排版所加）会让长命令在任意
+     字符处断开，实测把 `setup-matt-pocock-skills` 切到只剩一个字母（行宽 166/7）。
+     行内代码退回 normal：仍会断，但只在连字符/斜杠这类有意义的边界上断（130/43）；
+     overflow-wrap 兜住真正超长的 token，避免撑破版面 */
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 
 /* @tailwindcss/typography 默认给行内 code 前后各加一个反引号（content: "`"），
