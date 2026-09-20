@@ -23,17 +23,29 @@ export function getSortedPosts(posts: Post[]): Post[] {
 }
 
 /** 获取全部标签（按文章数倒序） */
+/* 并列名次必须显式兜底：只按 count 排序时，并列项顺序取决于 getCollection() 的
+   返回顺序，而 Astro 5 与 6 的集合遍历顺序不同，会让侧栏标签云静默重排。
+   这里用「最早引入该标签的文章时间 + 名称」构成全序，与遍历顺序无关 */
 export function getTagList(posts: Post[]): { name: string; count: number }[] {
 	const map = new Map<string, number>();
+	const firstSeen = new Map<string, number>();
 	for (const post of posts) {
 		if (!isPublicPost(post)) continue;
+		const at = dayjs(post.data.published).valueOf();
 		for (const tag of post.data.tags) {
 			map.set(tag, (map.get(tag) ?? 0) + 1);
+			const prev = firstSeen.get(tag);
+			if (prev === undefined || at < prev) firstSeen.set(tag, at);
 		}
 	}
 	return [...map.entries()]
 		.map(([name, count]) => ({ name, count }))
-		.sort((a, b) => b.count - a.count);
+		.sort(
+			(a, b) =>
+				b.count - a.count ||
+				firstSeen.get(a.name)! - firstSeen.get(b.name)! ||
+				(a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
+		);
 }
 
 /** 获取全部分类 */
@@ -41,15 +53,25 @@ export function getCategoryList(
 	posts: Post[],
 ): { name: string; count: number }[] {
 	const map = new Map<string, number>();
+	const firstSeen = new Map<string, number>();
 	for (const post of posts) {
 		if (!isPublicPost(post)) continue;
 		const cat = post.data.category;
 		if (!cat) continue;
+		const at = dayjs(post.data.published).valueOf();
 		map.set(cat, (map.get(cat) ?? 0) + 1);
+		const prev = firstSeen.get(cat);
+		if (prev === undefined || at < prev) firstSeen.set(cat, at);
 	}
+	// 同 getTagList：并列分类需要全序，否则顺序随 getCollection() 遍历顺序漂移
 	return [...map.entries()]
 		.map(([name, count]) => ({ name, count }))
-		.sort((a, b) => b.count - a.count);
+		.sort(
+			(a, b) =>
+				b.count - a.count ||
+				firstSeen.get(a.name)! - firstSeen.get(b.name)! ||
+				(a.name < b.name ? -1 : a.name > b.name ? 1 : 0),
+		);
 }
 
 /** 按年月归档（对应 Emlog record 缓存）。输入直接复用 getSortedPosts 的过滤与排序 */

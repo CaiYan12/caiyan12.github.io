@@ -274,6 +274,14 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 
 ## 架构要点
 
+### 构建链与依赖约束（2026-09-20 起 Astro 6）
+
+- 版本：astro 6.4.8 / @astrojs/react 5.0.7 / @astrojs/svelte 8.1.2 / astro-expressive-code 0.43.1（`^0.43` 而非 0.44）/ @swup/astro 1.8.0 / tailwindcss 3.4.x。**Tailwind 不再经 @astrojs/tailwind**——该集成 peer 只到 Astro 5，是当初升级的硬阻碍；现由根 `postcss.config.mjs` 直连 `[tailwindcss/nesting, tailwindcss, autoprefixer]`，顺序照集成原先的实际产出，`autoprefixer` 已转为直接依赖。原配置文件里 import 的 `postcss-import` 既非声明依赖、全站 CSS 又零 `@import`，会让该文件在集成内静默加载失败，已移除；**不要再加回 @astrojs/tailwind**。
+- Astro 6 已把 `markdown.remarkPlugins` / `rehypePlugins` / `remarkRehype` / `gfm` / `smartypants` 标记为 deprecated（每次构建都打印告警），但仍生效。迁到 `markdown.processor: unified({...})` 需把 `@astrojs/markdown-remark` 作为直接依赖并**精确对齐 astro 自身解析到的版本**（当前 7.2.0，装成 6.x 会拿到另一份副本），故留到 6→7 一并处理；届时以文章正文 HTML 逐字节比对为验收（本次三篇文章正文 HTML 与 Astro 5 完全一致，含 73KB 的 Markdown 语法示例文）。
+- `getTagList()` / `getCategoryList()` **必须保持全序**（文章数倒序 → 最早引入该标签/分类的文章时间 → 名称）。原因：并列名次若只靠 `Array.prototype.sort` 的稳定性，顺序取决于 `getCollection()` 的遍历顺序，而 Astro 5 与 6 定义不同——升级实测会让侧栏标签云 32 个药丸重排，并连带改变 `#blogtags` 的 nth-child 六色轮换归属。任何新增的"按计数排序"列表同理。
+- 本地安装须带项目内 store：`pnpm add --store-dir .pnpm-store <pkg>`（`node_modules/.modules.yaml` 记录 `storeDir: <repo>/.pnpm-store/v10`，全局配置已不指向它，裸跑 add 会报 store 版本不匹配）。
+- 升级验证方法保留在 git history：逐元素计算样式指纹（24 页 × 关键页，含 `::before/::after`，排除播放器/看板娘/轮播/3D 标签云等时序件），配合 `Last-Modified` 与内容断言。`deploy.yml` 的 `cache: false` 仍不得回退。
+
 ### 配置驱动（改配置 = 改站点）
 `src/config.ts` 是所有站点行为的控制中心：
 - `siteConfig` — 标题、作者、URL、每页文章数、备案号等
