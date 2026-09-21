@@ -8,6 +8,8 @@ body {
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-size: cover;
+    /* 独立壳拿不到主站的 --font-body token，这里逐字抄 global.css 里该 token 的同一条栈 */
+    font-family: "Noto Sans SC Variable", "Source Han Sans SC", "思源黑体", "PingFang SC", "Hiragino Sans GB", "WenQuanYi Micro Hei", sans-serif;
 }
 
 #box {
@@ -37,6 +39,7 @@ body {
 }
 
 .headPhoto {
+    display: block;
     width: 8rem;
     height: 8rem;
     background: url(../img/windowsiticon.png) no-repeat;
@@ -58,6 +61,11 @@ body {
 
 .headPhoto:hover {
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.headPhoto:focus-visible {
+    outline: 3px solid #00c000;
+    outline-offset: 3px;
 }
 
 .meBox-title {

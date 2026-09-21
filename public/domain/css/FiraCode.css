@@ -1,4 +1,13 @@
-* {
+/* FiraCode 只用于终端窗格与打字机行；原先的 `*` 会把正文中文也拖进等宽字体。
+   按钮行与弹窗挂在 body 下、不在 #cmdBox 之内，必须一起点名，否则它们跟着 `*` 一起掉字体。 */
+#cmdBox,
+#cmdBox *,
+#footer,
+.meBox-title,
+.meBox-Button,
+.meBox-Button *,
+#site-modal,
+#site-modal * {
     font-family: FiraCode;
 }
 
