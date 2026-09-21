@@ -88,9 +88,14 @@ const PSEUDO_PROPS = [
 	"inset",
 ];
 // 播放器 / 看板娘 / 轮播 / 微言轮播：布局与时序相关，纳入会产生假阳性
+// giscus 的 iframe 由远端 postMessage 改 class 与高度，同一份代码两次采集也会不一致
+// 轮播真实类名是 .carousel（Slideshow.astro:23），原先写的 .slideshow 全站零命中、从未真的排除过；
+// 它会自动换帧（两次采集间隔内当前帧就会不同），不排就会每次比对多出十来条帧差异。
+// 指示点几何改由 ui 冒烟断言，不靠这里
 const WIDGET_ROOTS =
-	"[class*='myhk'], [class*='music'], [class*='pio'], .pio, #pio, .slideshow, " +
-	"#header .text, .bg-image, [id^='live2'], .hide, .tag3d-stage svg, .toast, .toast *";
+	"[class*='myhk'], [class*='music'], [class*='pio'], .pio, #pio, .carousel, " +
+	"#header .text, .bg-image, [id^='live2'], .hide, .tag3d-stage svg, .toast, .toast *, " +
+	"iframe.giscus-frame";
 const FREEZE =
 	"*, *::before, *::after { transition: none !important; animation: none !important; " +
 	"caret-color: transparent !important; scroll-behavior: auto !important; }";

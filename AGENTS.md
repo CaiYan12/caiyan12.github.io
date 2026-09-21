@@ -264,6 +264,7 @@ pnpm test:site-stats # Giscus 同步单测（fetchImpl/输出路径全注入，�
 pnpm smoke:nice-books  # Nice Books 三页 Playwright Smoke；支持 NICE_BOOKS_BASE_URL 指向 build + preview
 pnpm test:fancybox     # 灯箱 Playwright Smoke（关闭不跳位/焦点归还/定位按钮/下载新标签页/中文文案，需先 build + preview；FANCY_BASE_URL 可覆盖地址）
 pnpm test:fancybox 打线上时 FANCY_BASE_URL 传的是**站点根**（脚本自己拼 /posts/... 与 /albums/...），而 NICE_BOOKS_BASE_URL / AI_NEWS_BASE_URL 传的是**完整页面地址** —— 三者形态不同，传错会表现为「选择器等不到」的假失败。2026-09-20 起放大两项改为等原图解码 + 轮询到高度稳定，本地与线上均 27/27
+pnpm smoke:ui           # 主站 UI 缺陷修复实机烟测（UI 整改票册的缝隙 A，需先 build + preview）；UI_SMOKE_BASE_URL 传**站点根**，与 FANCY_BASE_URL 同形。断言只落在计算值/几何/键盘结果/ARIA 属性上，绝不锁 CSS 源文本、类名字符串或行号；相对判据（"只有预期项变化"与"零差异"）由 scripts/upgrade-style-audit.mjs 的 24 页指纹 capture/diff 承担，其采集排除表现含 iframe.giscus-frame（远端 postMessage 改 class 与高度，否则同码连采两遍也会翻脸）
 pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ```
 
