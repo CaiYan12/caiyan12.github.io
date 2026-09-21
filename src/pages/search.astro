@@ -20,7 +20,22 @@ import Search from "../components/control/Search.svelte";
 			</address>
 
 			<div class="post-context">
-				<Search client:only="svelte" />
+				<Search client:only="svelte">
+					<div slot="fallback">
+						<p>
+							站内搜索需要浏览器启用
+							JavaScript：检索索引在构建期生成，由浏览器在本地匹配。
+						</p>
+						<p>
+							也可以先从这些地方找内容：
+							<a href="/tag/">标签云集</a>
+							·
+							<a href="/category/">文章分类</a>
+							·
+							<a href="/archive/">全部文章</a>
+						</p>
+					</div>
+				</Search>
 			</div>
 		</article>
 	</div>

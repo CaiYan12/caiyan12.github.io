@@ -20,7 +20,13 @@ const pageTitle = `AI 日报 - ${siteConfig.title}`;
 	</head>
 	<body>
 		<main id="ai-news-root" data-pagefind-ignore="all">
-			<AiNewsApp client:only="react" />
+			<AiNewsApp client:only="react">
+				<p slot="fallback">
+					载入中…… AI
+					日报的条目由浏览器读取构建期生成的离线快照渲染，需要启用
+					JavaScript 才能阅读。
+				</p>
+			</AiNewsApp>
 		</main>
 	</body>
 </html>
