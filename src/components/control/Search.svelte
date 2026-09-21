@@ -40,6 +40,9 @@
 	}
 
 	async function doSearch() {
+		// 忙碌期忽略再次提交：回车路径不受按钮 disabled 保护，必须在这里挡住，
+		// 否则后发先至会让结果与最后一次输入不一致
+		if (searching) return;
 		const kw = keyword.trim();
 		if (!kw) {
 			results = [];
@@ -96,11 +99,13 @@
 			bind:value={keyword}
 			aria-label="搜索关键词"
 			placeholder="搜搜更健康"
-			class="h-9 flex-1 rounded border border-line bg-white px-3 text-sm outline-none focus:border-primary"
+			class="h-9 flex-1 rounded border border-line bg-white px-3 text-sm focus:border-primary"
 		/>
 		<button
 			type="submit"
-			class="h-9 rounded border border-black bg-primary px-4 text-sm text-white hover:bg-primarydark"
+			disabled={searching}
+			aria-disabled={String(searching)}
+			class="h-9 rounded border border-black bg-primary px-4 text-sm text-white hover:bg-primarydark disabled:cursor-not-allowed disabled:opacity-60"
 		>
 			搜索
 		</button>
