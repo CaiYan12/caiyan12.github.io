@@ -4587,6 +4587,16 @@ html.with-fancybox .backtop {
   text-indent: 40px;
 }
 
+/* 移动菜单当前页态：图案照抄原版桌面菜单 #menu-index li.current a
+   （2px 品牌绿下边框 + 绿字，见 colorful-original.css:86）。
+   选择器必须带上 li.current 才比上面那条 #mmenu .submenu a 更特异，
+   否则被压住的会是绿边而不是那条浅灰 1px。 */
+#mmenu > ul > li.current > a,
+#mmenu .submenu li.current > a {
+  border-bottom: 2px solid var(--colorful-green);
+  color: var(--colorful-green);
+}
+
 #mmenu .close-nav {
   position: fixed;
   top: 0;

@@ -142,7 +142,16 @@ const isCurrent = (url: string) =>
 
 			{
 				navBarConfig.extra.length > 0 && (
-					<li class="dropdown">
+					<li
+						class:list={[
+							"dropdown",
+							{
+								current: navBarConfig.extra.some((item) =>
+									isCurrent(item.url),
+								),
+							},
+						]}
+					>
 						<a class="catbtns" href="javascript:void(0)">
 							附加功能
 							<i class="arrow" />

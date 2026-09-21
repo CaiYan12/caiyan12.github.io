@@ -91,13 +91,28 @@ const isCurrent = (url: string) =>
 				}
 			</ul>
 		</li>
-		<li>
+		<li
+			class:list={[
+				{
+					current: navBarConfig.extra.some((item) =>
+						isCurrent(item.url),
+					),
+				},
+			]}
+		>
 			<a href="javascript:void(0)">附加功能</a>
 			<ul class="submenu">
 				{
 					navBarConfig.extra.map((item) => (
-						<li>
-							<a href={item.url}>{item.name}</a>
+						<li class:list={[{ current: isCurrent(item.url) }]}>
+							<a
+								href={item.url}
+								aria-current={
+									isCurrent(item.url) ? "page" : undefined
+								}
+							>
+								{item.name}
+							</a>
 						</li>
 					))
 				}
