@@ -2,7 +2,7 @@
  * remark-extended：为 Markdown 提供博客扩展语法（由 Mizuki 模板测试帖引入）。
  * - `:::note/tip/important/warning/caution` 容器指令 → admonition 提示块
  * - `> [!NOTE]` 等 GitHub 风格 alerts → markdown-alert 提示块
- * - `:spoiler[内容]` 文本指令 → 可点击显示/隐藏的 spoiler
+ * - `:spoiler[内容]` 文本指令 → 黑幕（heimu）式遮盖，纯 CSS 悬停淡出，无脚本无点击
  * - `::github{repo="user/repo"}` 叶子指令 → GitHub 仓库卡片（构建期渲染，
  *   元数据来自 scripts/fetch-github-repos.mjs 缓存的 src/constants/github-repos.json）
  * - ```mermaid 代码块 → 交由客户端 mermaid.js 渲染为图表
@@ -158,7 +158,7 @@ export function remarkExtended() {
 				return;
 			const htmlOpen = {
 				type: "html",
-				value: '<span class="spoiler" tabindex="0" role="button">',
+				value: '<span class="spoiler" title="你知道的太多了">',
 			};
 			const htmlClose = { type: "html", value: "</span>" };
 			parent.children.splice(

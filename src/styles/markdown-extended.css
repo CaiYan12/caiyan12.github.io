@@ -130,30 +130,31 @@
   color: #cf222e;
 }
 
-/* ---------- Spoiler（点击显示/隐藏） ---------- */
+/* ---------- Spoiler（黑幕 heimu：纯 CSS 淡出，无脚本、无点击） ----------
+   字色与底色同为黑即隐身；hover 只把底色淡出、字色回继承，展开后与正文无异。
+   不加边框、面板、内距、圆角与手型光标——它就是一段被黑条盖住的普通文字。
+   参考萌娘百科 .heimu 的做法。 */
 .post-context .spoiler {
-  display: inline-block;
-  padding: 0 0.35em;
-  border-radius: 4px;
-  background: #2f2f2f;
-  color: transparent;
-  cursor: pointer;
-  user-select: none;
+  color: #000;
+  background-color: #000;
   transition:
-    color 0.2s ease,
-    background-color 0.2s ease;
+    color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+/* 子元素会带自己的颜色（实测 .prose :where(strong) 给 #111827，特异性 (0,1,1)，
+   本条 (0,2,0) 压得住），不显式跟随就会先露出加粗那几个字。
+   底色取 transparent 而非 inherit：黑条只由父元素铺一层，子元素再铺一层的话，
+   淡出途中会叠成双层半透明黑——实测半程两区亮度差 34.5，而加粗本身的基线差只有 13.1，
+   看着就是「惊喜」比「隐藏的」褪得慢。子元素自带底色（如 code 芯片）也一并压掉。 */
+.post-context .spoiler :is(*) {
+  color: inherit;
+  background-color: transparent;
 }
 
 .post-context .spoiler:hover {
-  outline: 1px dashed #00c000;
-  outline-offset: 1px;
-}
-
-.post-context .spoiler.revealed {
-  background: #f1f3f4;
   color: inherit;
-  cursor: text;
-  user-select: text;
+  background-color: transparent;
 }
 
 /* ---------- GitHub 仓库卡片（::github{repo=...}） ---------- */

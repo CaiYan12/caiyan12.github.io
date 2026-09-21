@@ -653,17 +653,6 @@ async function renderMermaid() {
 	}
 }
 
-/** spoiler 点击显示/隐藏（事件委托，Swup 切页后依然生效） */
-function initSpoiler() {
-	document.addEventListener("click", (e) => {
-		const target = e.target as HTMLElement | null;
-		const spoiler = target?.closest?.(".spoiler");
-		if (spoiler) {
-			spoiler.classList.toggle("revealed");
-		}
-	});
-}
-
 /** 点击特效：社会主义核心价值观词组顺序循环（参考 zcjun.com，已去除其末尾的站点名），彩虹色上浮渐隐 */
 const CLICK_EFFECT_WORDS = [
 	"富强",
@@ -1197,7 +1186,6 @@ export function pagefindReady() {
 	initDblClickScroll();
 	initMMenu();
 	initHeaderTicker();
-	initSpoiler();
 	initLqipFade();
 	initClickEffect();
 	initCanvasBoomEffect();
