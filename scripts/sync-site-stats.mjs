@@ -17,6 +17,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveGitHubToken } from "./lib/github-token.mjs";
+import { formatJson } from "./lib/write-json.mjs";
 
 const SLUG_RE = /^\d{14}$/;
 const DISCUSSION_TITLE_RE = /^posts\/(\d{14})\/$/;
@@ -677,11 +678,7 @@ export async function syncSiteStats({
 	// 原子写：tmp + rename；rename 失败时清理 tmp
 	const tmp = `${output}.tmp`;
 	try {
-		await fs.writeFile(
-			tmp,
-			`${JSON.stringify(snapshot, null, "\t")}\n`,
-			"utf-8",
-		);
+		await fs.writeFile(tmp, await formatJson(output, snapshot), "utf-8");
 		await fs.rename(tmp, output);
 	} catch (err) {
 		await fs.rm(tmp, { force: true });

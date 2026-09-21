@@ -13,6 +13,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { resolveGitHubToken } from "./lib/github-token.mjs";
+import { formatJson } from "./lib/write-json.mjs";
 
 const CONTENT_DIR = "src/content";
 const OUTPUT_FILE = "src/constants/github-repos.json";
@@ -138,7 +139,7 @@ async function main() {
 	);
 	await fs.writeFile(
 		OUTPUT_FILE,
-		JSON.stringify(sorted, null, "\t") + "\n",
+		await formatJson(OUTPUT_FILE, sorted),
 		"utf-8",
 	);
 	console.log(

@@ -1,8 +1,2 @@
-# 仅作为视觉对照参考的原始主题样式，不做格式化（保持与 Emlog 原版逐字节一致）
-src/styles/colorful-original.css
 # vendored 第三方库（Font Awesome 4）
 src/styles/font-awesome.css
-# 构建期生成产物（scripts/generate-lqips.mjs 输出，不参与格式检查）
-src/constants/image-manifest.json
-# GitHub 项目同步生成的版本化快照（JSON.stringify 稳定输出）
-src/constants/github-projects.json

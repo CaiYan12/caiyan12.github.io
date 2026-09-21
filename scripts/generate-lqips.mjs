@@ -16,6 +16,7 @@
 import sharp from "sharp";
 import fs from "fs/promises";
 import path from "path";
+import { formatJson } from "./lib/write-json.mjs";
 
 const SRC_DIR = "src";
 const PUBLIC_DIR = "public";
@@ -194,7 +195,7 @@ async function main() {
 	await fs.mkdir(dir, { recursive: true });
 	await fs.writeFile(
 		OUTPUT_FILE,
-		JSON.stringify(lqips, null, "\t") + "\n",
+		await formatJson(OUTPUT_FILE, lqips),
 		"utf-8",
 	);
 
@@ -339,7 +340,7 @@ async function generateVariants() {
 	await fs.mkdir(path.dirname(MANIFEST_FILE), { recursive: true });
 	await fs.writeFile(
 		MANIFEST_FILE,
-		JSON.stringify(manifest, null, "\t") + "\n",
+		await formatJson(MANIFEST_FILE, manifest),
 		"utf-8",
 	);
 

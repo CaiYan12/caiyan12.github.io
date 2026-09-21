@@ -10,6 +10,7 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { resolveGitHubToken } from "./lib/github-token.mjs";
+import { formatJson } from "./lib/write-json.mjs";
 
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
 const DEFAULT_OUTPUT = path.join(
@@ -309,7 +310,7 @@ export async function fetchGitHubProjects(options = {}) {
 	try {
 		await fs.writeFile(
 			temporaryPath,
-			`${JSON.stringify(snapshot, null, "\t")}\n`,
+			await formatJson(outputPath, snapshot),
 			"utf-8",
 		);
 		await fs.rename(temporaryPath, outputPath);

@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"generatedAt": "2026-09-19T09:27:46.753Z",
+	"generatedAt": "2026-09-21T00:52:28.630Z",
 	"login": "CaiYan12",
 	"pinnedRepositories": [
 		"CaiYan12/caiyan12.github.io",
@@ -25,9 +25,7 @@
 			"url": "https://github.com/CaiYan12/caiyan12.github.io",
 			"homepageUrl": "https://caiyan12.github.io/",
 			"primaryLanguage": "TypeScript",
-			"topics": [
-				"blog"
-			],
+			"topics": ["blog"],
 			"createdAt": "2026-08-31T07:10:28Z"
 		},
 		{
@@ -47,11 +45,7 @@
 			"url": "https://github.com/CaiYan12/opia-rss-reader",
 			"homepageUrl": null,
 			"primaryLanguage": "TypeScript",
-			"topics": [
-				"electron",
-				"rss",
-				"rss-reader"
-			],
+			"topics": ["electron", "rss", "rss-reader"],
 			"createdAt": "2026-08-19T07:48:02Z"
 		},
 		{
@@ -61,11 +55,7 @@
 			"url": "https://github.com/CaiYan12/WindyPics",
 			"homepageUrl": null,
 			"primaryLanguage": "C++",
-			"topics": [
-				"cpp",
-				"qt",
-				"qt6"
-			],
+			"topics": ["cpp", "qt", "qt6"],
 			"createdAt": "2026-06-22T07:15:51Z"
 		},
 		{
@@ -105,12 +95,7 @@
 			"url": "https://github.com/CaiYan12/WindyQtMediaPlayer",
 			"homepageUrl": null,
 			"primaryLanguage": "C++",
-			"topics": [
-				"media",
-				"player",
-				"qt",
-				"qt6"
-			],
+			"topics": ["media", "player", "qt", "qt6"],
 			"createdAt": "2026-03-28T12:21:22Z"
 		},
 		{

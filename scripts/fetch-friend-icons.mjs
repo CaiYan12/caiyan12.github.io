@@ -3,6 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { parse } from "parse5";
 import { pathToFileURL } from "node:url";
+import { formatJson } from "./lib/write-json.mjs";
 import defaultFriends from "../src/data/friends.json" with { type: "json" };
 
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
@@ -789,9 +790,12 @@ export async function fetchFriendIcons(options = {}) {
 		entries: allEntries,
 		negativeEntries: [...negativeByUrl.values()],
 	};
-	const previous = JSON.stringify(manifest, null, "\t");
-	const next = JSON.stringify(nextManifest, null, "\t");
-	if (previous !== next) await atomicWrite(context.manifestPath, `${next}\n`);
+	// 比较数据而不是排版：排版由 formatJson 统一负责，否则每次运行都会因格式不同而重写
+	if (JSON.stringify(manifest) !== JSON.stringify(nextManifest))
+		await atomicWrite(
+			context.manifestPath,
+			await formatJson(context.manifestPath, nextManifest),
+		);
 	return { entries, fallbacks, manifest: nextManifest };
 }
 
