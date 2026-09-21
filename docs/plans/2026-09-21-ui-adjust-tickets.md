@@ -470,7 +470,10 @@
 
 **Delivers**：本地全链绿、远程部署可证生效、票册状态全部回填。
 
-> 状态：未开始
+> 状态：未开始（T0 段已完成，本票随整轮收尾）
+
+**T0 段进度（2026-09-21）**：T0 全批已 commit 并 push（`3a798dc..df2e43c`）；三条工作流在 `df2e43c` 上全绿（Lint 26s / Build and Check 31s / Deploy 1m54s），站点 `Last-Modified: Mon, 21 Sep 2026 11:50:08 GMT` 与部署完成时刻对齐；整套冒烟以**线上**为基准复跑 43/43（含 nav 底线的像素判据）。镜像 issue #18-#24 已逐条留言并关闭，父票 #17 未动。
+**「收尾一次全链」目前由 CI 覆盖**：`deploy.yml` 的 `withastro/action` 执行 `pnpm build` 全链且 `cache:false` 保证 content layer 不陈旧。本地未重复跑全链 —— 会弄脏 `src/constants/*.json` 与 `site-stats.json` 并与并发会话撞车；票 23 关闭前若需本地产物级证明，再单独跑一次并回收数据文件改动。
 
 - [ ] 删 content layer 缓存后完整 `pnpm build` 通过
 - [ ] `pnpm check` 零错误、`prettier --check ./src` 通过
