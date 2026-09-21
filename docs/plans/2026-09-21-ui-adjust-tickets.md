@@ -23,16 +23,20 @@
 
 **Delivers**：访客在任意宽度下都能看到完整文章标题；同时把后续所有票共用的两条验收缝隙打通——这是第一颗贯穿「构建 → 预览 → 浏览器断言」的 tracer bullet。
 
-> 状态：未开始
+> 状态：已验收（8dd329f）@2026-09-21
 
-- [ ] 在工作树干净状态下采集**改前**样式指纹基线（24 页逐元素，含 `::before/::after`；采集前冻结动画、种子化构建期随机，并按既有排除表跳过播放器、看板娘、轮播、3D 标签云、切页瞬时类名与带端口绝对 url）
-- [ ] 新建冒烟脚本（形态与 base URL 环境变量约定照现有灯箱冒烟），并在 `package.json` 注册入口
-- [ ] 第一条断言：最长标题那篇在 1440/1100/860/680/390 五档下 `scrollWidth` 不再超出可视宽，且渲染为多行
-- [ ] 把 `.post-header h1` 从与列表卡共享的组合规则中摘出（自适应高度、允许换行、行高约 1.34、字号沿用实测生效值、`text-wrap: balance`）
-- [ ] 列表卡 `.post-list .post-header h2` 仍保持单行省略（ADR-0003 的故意分叉，断言其仍被裁切）
-- [ ] 文章页标题元素补 `title` 属性作为桌面 hover 兜底
-- [ ] `.post-header` 左侧黑色标记条本轮不动，仅记录其随标题变长的事实
-- [ ] 冒烟脚本入 CI 可选（不强制，本地跑）
+- [x] 在工作树干净状态下采集**改前**样式指纹基线（24 页逐元素，含 `::before/::after`；采集前冻结动画、种子化构建期随机，并按既有排除表跳过播放器、看板娘、轮播、3D 标签云、切页瞬时类名与带端口绝对 url）
+- [x] 新建冒烟脚本（形态与 base URL 环境变量约定照现有灯箱冒烟），并在 `package.json` 注册入口
+- [x] 第一条断言：最长标题那篇在 1440/1100/860/680/390 五档下 `scrollWidth` 不再超出可视宽，且渲染为多行
+- [x] 把 `.post-header h1` 从与列表卡共享的组合规则中摘出（自适应高度、允许换行、行高约 1.34、字号沿用实测生效值、`text-wrap: balance`）
+- [x] 列表卡 `.post-list .post-header h2` 仍保持单行省略（ADR-0003 的故意分叉，断言其仍被裁切）
+- [x] 文章页标题元素补 `title` 属性作为桌面 hover 兜底
+- [x] `.post-header` 左侧黑色标记条本轮不动，仅记录其随标题变长的事实
+- [x] 冒烟脚本入 CI 可选（不强制，本地跑）→ 定为**不入 CI**，按 Q15 只本地跑
+
+**证据**：基线 `output/fp-before-0921`（24 页，工作树干净、`HEAD`=`origin/main`=`3a798dc`）；`pnpm smoke:ui` 改前 6 FAIL / 改后 9 PASS（最长标题 1440px 由 905/711 单行 → 711/711 两行，390px 三行）；全量指纹差异清单 `output/fp-scan-t01b.txt` = 18 处 `h1`（17 处单行 25→27px、1 处长标题 25→53.5px）+ 15 处标题内 `<i>` 仅继承 `white-space` 无几何变化，其余全为祖先容器高度传播；`astro check` 0 errors / 0 warnings；`prettier --check` 全绿。
+**顺带修缝隙 B（两处）**：`iframe.giscus-frame` 加入采集排除表——同一份 dist 连采两次除该 iframe 的 `--loading` class 外**逐行一致**（`output/verify-harness.json`：非 giscus 差异 0）；另把排除表里从不命中的 `.slideshow` 纠正为轮播的真实类名 `.carousel`（它会自动换帧，不排则每次比对多几十条伪差异；比对时端口也必须固定，自定义光标是带端口的绝对 url）。不排除这两项，T1/T2 的「零差异」门禁会随机翻脸。
+**已接受副作用（记录，不追改）**：单行 h1 线高 25px → 26.8px（18×1.34），列出页页标题容器 25→27px；`.post-header` 黑条随标题由 45px 长到 74px（390px 下 100px）。
 
 ## T0 · 功能与可达性
 
@@ -43,13 +47,59 @@
 
 **Delivers**：键盘用户能用 Enter/Space 开合剧透块，读屏能播报展开状态；按下时拿到原版钦定的红色反馈。
 
-> 状态：未开始
+> 状态：已验收（b223518）@2026-09-21
 
-- [ ] 键盘激活与现有点击共用同一处事件委托（遵守 Swup 重初始化协议，不新增第四种初始化轨道）
-- [ ] 展开态同步 `aria-expanded`，收起态回写
-- [ ] 按下态使用原版红色值，且**仅**作用于剧透块（正文真按钮留给票 12）
-- [ ] 断言：Tab 聚焦剧透块 → 按 Enter → 内容可见性与 `aria-expanded` 同步；再按 Space → 复原
-- [ ] 确认未改 Markdown 插件的 DOM 契约（因此无需删 content layer 缓存）；若实施中改为真按钮，则必须补删缓存步骤并回到 ADR 讨论
+- [x] 键盘激活与现有点击共用同一处事件委托（遵守 Swup 重初始化协议，不新增第四种初始化轨道）
+- [x] 展开态同步 `aria-expanded`，收起态回写
+- [x] 按下态使用原版红色值，且**仅**作用于剧透块（正文真按钮留给票 12）
+- [x] 断言：Tab 聚焦剧透块 → 按 Enter → 内容可见性与 `aria-expanded` 同步；再按 Space → 复原
+- [x] 确认未改 Markdown 插件的 DOM 契约（因此无需删 content layer 缓存）；若实施中改为真按钮，则必须补删缓存步骤并回到 ADR 讨论
+
+**证据**：`pnpm smoke:ui` 本票红时 4 FAIL（该刻共 14 项，随后续票增至 38，见批次汇总）。读数细节：收起态 `rgba(0,0,0,0)` on `rgb(47,47,47)`、按下态 `rgb(255,38,46)` 且本体文字仍透明（不泄字）、展开态 `rgb(55,65,81)` on `rgb(241,243,244)` 且 `aria-expanded="true"`；Space 与 Enter 均与点击共用 `initSpoiler()` 内那一处 document 委托（该函数仍只在 `pagefindReady()` 里调用一次，未新增轨道）。宿主仍是 `span[role=button][tabindex=0]`，`src/plugins/remark-extended.mjs` 零改动 → 不触发 content layer 缓存问题。`aria-expanded` 由首次切换起写入（未切换时缺席＝隐式收起），刻意不在插件里预写 `="false"`，以免改动 DOM 契约。
+**缝隙自身修正**：剧透块 color/background-color 带 0.2s 过渡，首版断点点完立即读计算值 → 读到中间帧。改为轮询到 `getAnimations()` 为空再判定（与 `smoke:nice-books` 同一类修正）。评审后又补两刀：判据从 `tabIndex===0` + 脚本 `focus()` 换成**真实 Tab 走位**（实测第 52 次 Tab 停在剧透块上），因为属性在不代表取不到焦点；且走位会把元素顶到视口上沿、被吸顶导航挡住鼠标事件（表现为只有键盘生效），点击前必须先 `scrollIntoView({block:"center"})` 并用条件等待。
+**评审改判（两处）**：(1) keydown 原用 `closest(".spoiler")`，会连带劫持已展开块内**子元素**的 Enter/Space（两条轴各自独立指出）→ 收窄为「焦点落在剧透块本体才动作」；(2) 票 04 的上色面实测大于一组（见下）。
+**残留（未改，非本票范围）**：点击路径仍用 `closest`，所以已展开块里的子链接被点击时，事件冒泡仍会把剧透块翻回收起——这是改动前的既有行为，票面只要求「键盘与现有点击共用同一处委托」，未授权改点击语义。
+**顺带查出的新缺陷（→ 已在下面「第二次改写」里一并修掉）**：`.post-context .spoiler{color:transparent}` 藏不住**子元素**——剧透块里的 `<strong>` 实测恒为 `rgb(17,24,39)`（正文 strong 有自己的颜色规则），即未展开时加粗部分本来就露着字。
+
+#### 站长预览后追加裁决（2026-09-21）：改为悬停即预览、不用手型、带 tooltip 文案〔已被下面「第二次改写」取代，保留以记录决策过程〕
+
+原话：「改为 hover 时显示内部内容（双击容易回到顶部），hover 展现时鼠标不展现手型，且鼠标显示消息『你知道的太多了』」。
+
+**为什么他的抱怨成立**：`initDblClickScroll()` 的双击回顶只排除 `a, button, input`，`span[role=button].spoiler` 不在名单里 → 在剧透块上连点两下真的会跳到页首（读码核实，非推测）。
+
+**改成的语义**：悬停 = **临时预览**（纯 CSS `:hover`，不加类名、不碰 `aria-expanded`，移开即收回）；点击 / Enter / Space = **钉住**（`.revealed` + `aria-expanded` 照旧）。钉住这条路必须留着：触屏没有 hover，键盘用户也没有 hover。字色规则因此拆成 `.revealed:active, :hover:active { color:#fff }` —— 触屏点按那一刻既无 `:hover` 也未钉住，仍得保持藏字。光标由 `pointer` 改 `default`（悬停本身就是预览，不需要手型暗示可点），钉住后仍是 `text`（可选字）。tooltip 走 `title="你知道的太多了"`。
+
+**判据 5 被这次裁决推翻一半**：`title` 只能加在 `remark-extended.mjs` 的输出里（JS 运行时补会让无 JS 访客看不到），于是**确实改了插件的 DOM 契约** → 按 AGENTS.md 大坑规程先 `rm -rf node_modules/.astro .astro/data-store.json` 再构建；产物已核 `<span class="spoiler" tabindex="0" role="button" title="你知道的太多了">`。
+
+**验收**：`pnpm smoke:ui` 现 **45 项全绿**，票 02 段重写为 8 条 —— 悬停展现且 `revealed:false`+`aria-expanded:"false"`（不落状态）、光标 `default`、移开收回、按下红底+已展现字翻白、点击/Enter/Space 钉住与解除、`title` 文案、键盘可达（改为「从前一个可聚焦项按一次 Tab 必落在它上」，不再数总步数：清缓存重渲染后剧透块位次变成第 54 项，且大步走位会掉进 giscus 跨源 iframe）。**红证据取自带改前线上产物**：`title:null`、`cursor:"pointer"`、悬停后 `color` 仍 `rgba(0,0,0,0)` 且不落 `revealed`。
+
+#### 站长第二次改写（同日，取代上一条的交互模型）：改成萌百 heimu 式黑幕，彻底去掉点击
+
+原话要点：「不要有点击事件」「鼠标在上面就和普通文本一样是选文本光标」「展开后里面的内容也不要别的样式，看上去就是一串普通文本被一个黑框盖住」「hover 就很快淡出展开」，实现参考萌娘百科 `span.heimu`。
+
+**最终形态**：`color:#000` + `background-color:#000` 即隐身；`:hover` 只把底色淡成 `transparent`、字色回 `inherit`，过渡 0.15s。展开后没有任何装饰 —— 绿虚线描边、浅灰面板、内距、圆角、原版红按下态**全部删除**。
+
+**代码净删除**：`theme-script.ts` 里 `initSpoiler()` / `toggleSpoiler()` 及 `pagefindReady()` 中的那一行调用整体移除（剧透块从此无客户端逻辑）；`.revealed`、`:active` 两组规则一并删。上一条裁决里的「点击/键盘钉住」随之作废。
+
+**顺带把既存缺陷修掉了**：子元素显式 `color: inherit` + `background-color: inherit`。特异性实测：本条 (0,2,0) 压得住 `.prose :where(strong):not(:where(...))` 的 (0,1,1)（`:where()` 与 `:not(:where())` 都记 0），所以**不需要 `!important`**；实测藏字态 `<strong>` 由 `rgb(17,24,39)` 变 `rgb(0,0,0)`、展现态回正文色 `rgb(55,65,81)`。
+
+**光标实测**：本站所有正文都被自定义光标接管，剧透块与所在段落计算值完全相同 = `url("/style/default.cur"), default`（只有链接是 `link.cur` + `pointer`），且 `user-select: auto` 可选中 —— 「和普通文本一样」是字面成立，不是 I 束光标。
+
+**插件契约第二次变更**：`<span class="spoiler" tabindex="0" role="button">` → `<span class="spoiler">`（伪按钮语义必须去掉：既无激活行为又留着 `role=button` 是 WCAG 4.1.2 失败）。再次按大坑规程 `rm -rf node_modules/.astro .astro/data-store.json` 后重建，产物核对为 `<span class="spoiler" title="你知道的太多了">`。
+
+**有意的可达性取舍（记录，非缺陷）**：内容一直在 DOM 里，读屏与查看源码不受影响；但黑幕没有 hover 也没有焦点目标，**纯键盘的视觉展现没有了**。若日后想补，一行 CSS 即可：保留 `tabindex="0"` 并加 `.spoiler:focus{color:inherit;background:none}`，不需要任何 JS。
+
+**验收**：票 02 段重写为 8 条（无 role / 不进 Tab 序、title 文案、藏字态含子元素全黑且无描边、悬停展现不落状态、展开后与正文同色同底、光标与手型无关、移开收回、**点击后无任何 class/aria 变化**）；`pnpm smoke:ui` 42 项全绿，`test:fancybox` 27/27、`smoke:nice-books` 72/72、`smoke:ai-news` 9/9、单测 51+14 全 0 fail，`astro check` 0 error / 0 warning。
+
+#### 站长实机再纠一处：两段淡出不同步（黑幕双层叠加）
+
+**现象**：`隐藏的 <strong>惊喜</strong>` 里，「隐藏的」与「惊喜」褪得不一样快。
+
+**为什么计算值查不出来**：逐帧采父与子的 `color` / `background-color`，两者**全程完全相同**（亮度 0→36.7→59.2→64；alpha 1→0.655→0.26→0）。问题不在时间轴，在**绘制层数**：我给子元素写了 `background-color: inherit`，于是父层黑条之上又铺一层，淡出途中两层半透明黑相叠（0.26 叠 0.26 ≈ 有效 0.45），「惊喜」那块自然更暗、褪得更慢。
+
+**像素实证**（过渡临时拉到 2s、在半程取样、用 sharp 读两块平均亮度）：静止两区差 **0.0**，半程差 **−34.5**，完全展现差 **−13.1**（后者是加粗本身占墨多的基线）。半程是基线的 2.6 倍 → 判因坐实。**修法**：子元素底色改 `background-color: transparent` —— 黑条只由父元素铺一层，子层既要有压掉自带亮底（`code` 之类）的能力，就不能再叠一层黑。改后半程差降到 −12.0 / −10.5，与基线同量级。
+
+**判据升级（`pnpm smoke:ui` 现 43 项全绿）**：冒烟加一条**像素判据**（`|半程差| ≤ |展现后差| + 5` 且静止差 ≈ 0），并在同一构建上做变异验证：把 `background-color: inherit` 注回去，半程差立刻变 **−35.6** 判据翻红，而静止差与展现后差两种情况下都不动 —— 这条独独测到了层数。**教训入规程**：computed style 与像素不是一回事；凡多层绘制/叠加类视觉缺陷，缝隙 A 必须有像素采样这一路，光读 `getComputedStyle` 永远看不见。
 
 ### 03. 无 JS 地板线：两个岛屿的静态说明层
 > Issue: #20
@@ -58,14 +108,16 @@
 
 **Delivers**：禁用 JS 或水合完成前，搜索页与日报页给出可读说明与站内入口，不再呈现整块空白（术语「无 JS 地板线」：只承诺说明，不承诺降级功能）。
 
-> 状态：未开始
+> 状态：已验收（008cbf0）@2026-09-21
 
-- [ ] 搜索页岛屿加 `slot="fallback"` 层：说明需 JS + 标签/分类/归档三条入口
-- [ ] 日报页岛屿加 `slot="fallback"` 层：载入中说明 + 离线快照提示
-- [ ] 使用 `slot="fallback"` 而非已被移除的 `fallback` prop（Astro 6 语义）
-- [ ] 断言：`javaScriptEnabled: false` 的浏览器上下文中两个页面的说明文字存在
-- [ ] 断言：开 JS 时说明被岛屿内容替换且不残留（Svelte/React 两条路径都验）
-- [ ] 明确不实现真·降级搜索（静态托管无服务端 Pagefind），并在票内注明该排除依据
+- [x] 搜索页岛屿加 `slot="fallback"` 层：说明需 JS + 标签/分类/归档三条入口
+- [x] 日报页岛屿加 `slot="fallback"` 层：载入中说明 + 离线快照提示
+- [x] 使用 `slot="fallback"` 而非已被移除的 `fallback` prop（Astro 6 语义）
+- [x] 断言：`javaScriptEnabled: false` 的浏览器上下文中两个页面的说明文字存在
+- [x] 断言：开 JS 时说明被岛屿内容替换且不残留（Svelte/React 两条路径都验）
+- [x] 明确不实现真·降级搜索（静态托管无服务端 Pagefind），并在票内注明该排除依据
+
+**证据**：改前 2 FAIL（`javaScriptEnabled:false` 下两页正文全空）→ 改后 18/18 PASS。搜索页无 JS 实测文案「站内搜索需要浏览器启用 JavaScript：检索索引在构建期生成，由浏览器在本地匹配。」+ 链接 `/tag/`、`/category/`、`/archive/`；日报页实测「载入中…… AI 日报的条目由浏览器读取构建期生成的离线快照渲染，需要启用 JavaScript 才能阅读。」。开 JS 侧：搜索页输入框出现且说明与 `/archive/` 入口均消失；日报页等 React 自绘 header 出现后正文不再含该串。**排除依据**：Pagefind 只有浏览器侧运行时（`--serve` 是开发预览、Node API 只建索引），GitHub Pages 无服务端可跑查询，故只做「可读说明」不承诺降级功能（= 术语「无 JS 地板线」）。**缝隙自查**：首版用「`astro-island` 有子节点」判接管，被本票刚加的 fallback 立刻满足 → 假绿；改为等岛屿自己的 `header` 出现。
 
 ### 04. 当前页态：附加功能组补算 + 移动菜单上色
 > Issue: #21
@@ -74,14 +126,16 @@
 
 **Delivers**：访客在移动端全屏菜单里能看见自己在哪一页；「附加功能」这一组与同文件其余三组行为一致（术语「当前页态」：算了就必须有人画）。
 
-> 状态：未开始
+> 状态：已验收（dacf42d）@2026-09-21
 
-- [ ] 「附加功能」父项在桌面下拉中按子链接 `some()` 判定 current（沿用既有协议）
-- [ ] 移动菜单该组子项补 `current` 与 `aria-current`
-- [ ] 新增消费 `.current` 的移动菜单样式，图案照抄原版桌面菜单当前项（绿色下边框 + 绿色文字）
-- [ ] 绿边必须压得住既有的浅灰 1px 下边框（实测层叠，非推断）
-- [ ] 断言：相册页上「附加功能」父项呈 current；390px 下移动菜单当前项计算色为品牌绿
-- [ ] 副作用记录：图片墙/相册/好书/日报页会开始出现 current，属预期语义
+- [x] 「附加功能」父项在桌面下拉中按子链接 `some()` 判定 current（沿用既有协议）
+- [x] 移动菜单该组子项补 `current` 与 `aria-current`
+- [x] 新增消费 `.current` 的移动菜单样式，图案照抄原版桌面菜单当前项（绿色下边框 + 绿色文字）
+- [x] 绿边必须压得住既有的浅灰 1px 下边框（实测层叠，非推断）
+- [x] 断言：相册页上「附加功能」父项呈 current；390px 下移动菜单当前项计算色为品牌绿
+- [x] 副作用记录：图片墙/相册页会开始出现 current，属预期语义
+
+**证据**：改前 3 FAIL → 改后 21/21 PASS。桌面 `/albums/` 上「附加功能」锚点计算色 `rgb(0, 192, 0)`；390px 展开移动菜单后「相册图库」子项实测 `color rgb(0,192,0)`、`border-bottom 2px solid rgb(0,192,0)`（原 `#mmenu .submenu a` 的浅灰 1px 已被压住——新选择器带 `li.current` 才比它特异）、`aria-current="page"`、所属组父项同为品牌绿。图案照抄原版 `colorful-original.css:86`。**上色面比票面措辞更宽（预览时请留意）**：`.current` 此前在移动菜单里只算不画，一旦开画，指纹比对显示全站 24 页里有 27 个锚点变了色与下边框——包含首页/微言碎语/留言板这些顶级项和其余三组的当前子项，不只是「附加功能」。这正是「算了就必须有人画」的语义，但视觉面积确实比单看判据时大。**副作用实测更正**：票面原写「好书/日报页会开始出现 current」不成立——`/books/`、`/ai-news/` 为独立壳、根本不渲染 `#head-nav`（构建产物里查无该锚点）；真正新出现 current 的是主站壳内的 `/albums/` 与 `/images/`。
 
 ### 05. 搜索框焦点环与重复提交防护
 > Issue: #22
@@ -90,13 +144,15 @@
 
 **Delivers**：键盘用户能看到搜索框焦点；搜索进行中无法二次提交，结果不再乱序。
 
-> 状态：未开始
+> 状态：已验收（8a973ba）@2026-09-21
 
-- [ ] 移除组件内对全局焦点环的抑制，让站点统一 `:focus-visible` 生效
-- [ ] 搜索中禁用提交入口并提供禁用态样式与 `aria-disabled`
-- [ ] 断言：Tab 到搜索框存在可见焦点指示（不依赖颜色变化单一通道）
-- [ ] 断言：连点两次只发起一次查询，忙碌期按钮不可操作
-- [ ] 记录该模块其余状态（pending / error / empty / live region）已具备，不需改动
+- [x] 移除组件内对全局焦点环的抑制，让站点统一 `:focus-visible` 生效
+- [x] 搜索中禁用提交入口并提供禁用态样式与 `aria-disabled`
+- [x] 断言：Tab 到搜索框存在可见焦点指示（不依赖颜色变化单一通道）
+- [x] 断言：连点两次只发起一次查询，忙碌期按钮不可操作
+- [x] 记录该模块其余状态（pending / error / empty / live region）已具备，不需改动
+
+**证据**：改前 2 FAIL → 改后 24/24 PASS。忙碌期实测 `{disabled:true, ariaDisabled:"true", cursor:"not-allowed"}`；忙碌期把关键词换成一串不可能命中的词再按回车（回车走表单隐式提交，`disabled` 按钮挡不住，只有 `doSearch()` 顶部的 `if (searching) return` 能挡），落定后结果仍为第一次查询的 2 条、空态文案未串入。**焦点环一项的实测与票面预期不符**：改动前未聚焦是 `outline: 2px solid rgba(0,0,0,0)`、键盘聚焦后已是 `rgb(0, 122, 0)`——`global.css` 的 `:where(a,button,input,textarea,select):focus-visible` 特异性与 `.outline-none` 打平、靠源顺序获胜，所以抑制从未真的生效，删掉 `outline-none` 属无视觉变化的清理（断言保留作回归护栏，Tab 32 次可达搜索框）。**为何不用请求计数判「只发起一次查询」**：实测冷/热关键词的 `/pagefind/` 请求数为 10 与 9，属逐词差异而非逐查询差异，做不了判据（避免写出永远为真的断言）。其余状态齐备未改：`{#if searching}` 载入文案、`{#if error}` 错误文案、空结果文案、`aria-live="polite"` 常驻区域。
 
 ### 06. 独立壳导航站页最小修正 + 头像块返回入口
 > Issue: #23
@@ -105,15 +161,18 @@
 
 **Delivers**：桌面 logo 的落点页可缩放、语言标注正确、有地标与返回主站入口，且保持其伪终端个性（ADR-0002：继续做独立壳，不纳入主站布局）。
 
-> 状态：未开始
+> 状态：已验收（8d83fcb）@2026-09-21
 
-- [ ] 语言标注改为中文
-- [ ] 解除禁缩放（去掉最大/最小缩放与 `user-scalable=no`）
-- [ ] 全局 `* { font-family }` 收窄到终端风格元素，正文容器补主站正文字体
-- [ ] 内联品牌色统一到站点 token 值
-- [ ] 头像块外包一层 `<a>` 指向首页并补可见焦点样式；favicon 两处一律不动
-- [ ] 断言：该页无禁缩放声明、语言为 zh、点击头像块抵达首页且键盘可达
-- [ ] 断言：该页原有满屏终端动画与弹窗样式未被上述改动波及
+- [x] 语言标注改为中文
+- [x] 解除禁缩放（去掉最大/最小缩放与 `user-scalable=no`）
+- [x] 全局 `* { font-family }` 收窄到终端风格元素，正文容器补主站正文字体
+- [x] 内联品牌色统一到站点 token 值
+- [x] 头像块成为指向首页的返回入口并补可见焦点样式；favicon 两处一律不动
+- [x] 断言：该页无禁缩放声明、语言为 zh、点击头像块抵达首页且键盘可达
+- [x] 断言：该页原有满屏终端动画与弹窗样式未被上述改动波及
+
+**证据**：30/30 PASS（本票改前 5 项 FAIL）。`lang="zh-CN"`、viewport 仅剩 `width=device-width,initial-scale=1.0`；5 处内联 `rgb(0, 190, 0)` → `#00c000`（实测计算色 `rgb(0, 192, 0)`）；`FiraCode.css` 的 `*` 收窄为 `#cmdBox(+*) / #footer / .meBox-title / .meBox-Button(+*) / #site-modal(+*)`，正文段落改用主站 `--font-body` 同一条栈（独立壳拿不到 token，逐字抄 `global.css` 里该 token 的值），打字机行仍 FiraCode。**做法偏离票面（有意）**：Q10-A 原写「外面包一层 `<a>`」，实测包一层会让 `.headPhoto` 的 `top:-15%` 改以新父盒（128px 高）解析、头像会上移约 41px，故改为把该 `div` 直接换成 `<a class="headPhoto" href="/">`（补 `display:block` 保持盒模型）；断言用 `closest("a")` 不锁机制，几何按改动前实测基线逐像素锁住：`.headPhoto 224/104/128/128`、`.meBox 128/164/320/400`、`#box 0/0/1280/164` 三项零差异；`.meBox-text p` 行盒 25→23px 是换正文字体的预期结果，已从几何断言名单里移出、改由字体断言覆盖。键盘：Tab 走位可抵达头像并出现 3px 实线焦点环（脚本 `focus()` 不保证触发 `:focus-visible`，故用真实走位）。favicon 两处未动。
+**评审改判（判据 7 原来没被真的覆盖）**：`*` 第一版只点名 `#cmdBox / #footer / .meBox-title`，而 `.meBox-Button`（联系按钮行）与 `#site-modal`（由 `src/pages/domain/index.astro` 注入 site-modal.css + `initSiteModal()`、运行时挂到 body 下的 `<dialog>`）都不在那三个子树里 → 它们的字体跟着从 FiraCode 掉进正文栈，而冒烟当时根本没开弹窗，这条判据在改坏的情况下也会显示绿。现已把两处一起点名，并补三条真测：按钮行计算字体仍 FiraCode、`.meBox-title p` 的 `animation-name` 仍是 `typing, blink-caret`（打字机动效未断）、**点开弹窗后** `#site-modal` 与其 message 仍 FiraCode 且内容高度 > 0。
 
 ### 07. 备案链接域名更正
 > Issue: #24
@@ -122,10 +181,27 @@
 
 **Delivers**：一旦站长填入备案号，页脚链接即指向现行官方域名而非已停用域名。
 
-> 状态：未开始
+> 状态：已验收（11ea0d3）@2026-09-21
 
-- [ ] 页脚备案域名更正
-- [ ] 记录当前备案号为空、该块不渲染，属预防性修复（不作为视觉验收项）
+- [x] 页脚备案域名更正
+- [x] 记录当前备案号为空、该块不渲染，属预防性修复（不作为视觉验收项）
+
+**证据**：`Footer.astro` 的 `http://www.miibeian.gov.cn`（拼错的停用域名，`miibeian` 双 i）→ `https://beian.miit.gov.cn`。`src/config.ts:36` 实测 `icp: ""` → 该条件块根本不渲染，故无视觉验收项，纯预防性更正。
+
+> 预览：**通过**（站长 2026-09-21 确认），并追加一条裁决改写票 02 的交互（悬停即预览 / 不用手型 / tooltip「你知道的太多了」）；另插入一项 nav 底线修复（见文末「批次外的插入修复」）。`pnpm smoke:ui` 现 43/43。
+> 已按票拆 commit：`3a798dc..bd9ee72` 共 8 个 —— 票 01 `8dd329f`（含冒烟与指纹采集器整体落地）、02 `b223518`、03 `008cbf0`、04 `dacf42d`、05 `8a973ba`、06 `8d83fcb`、07 `11ea0d3`、插-1 `bd9ee72`。切分代价已认并记录：冒烟脚本随票 01 一次性带入后续票的断言，因此在票 02-07 各自的历史检出点上该脚本会报红（它不入 CI，三条工作流不受影响）。
+
+**T0 批次验证汇总（改前 `HEAD`=`origin/main`=`3a798dc`，工作树干净时采的基线）**
+- 缝隙 A `pnpm smoke:ui`：38 项全绿（逐项先红后绿；红态记录见各票证据行）；console 报错按票分账，不再让票 01 的报错记到票 06 头上
+- 缝隙 B 指纹比对 `output/fp-before-0921` → `output/fp-after-t0-fixed`（清单 `output/fp-scan-t0-fixed.txt`）：真实差异只有三类——① 18 处 `h1`（17 处单行 25→27px、1 处长标题 25→53.5px，票 01）② 15 处标题内 `<i>` 仅继承 `white-space`、无几何变化 ③ 27 个移动菜单 `a` 变色+下边框（票 04）；`/search/` 那 4 条只是指纹以类名作键导致的输入框/按钮改键，逐项比对 58 个属性零差异；其余全为祖先容器高度传播。基线本身经一次连采两遍逐行一致的确定性验证
+- **基线吃过陈旧渲染，操作规程要改（重要）**：`output/fp-before-0921` 是在**未清 content-layer 缓存**的 `pnpm exec astro build` 上采的。票 02 加 `title` 时按 AGENTS.md 大坑规程删掉 `node_modules/.astro/` 重建，该文章页可聚焦项位次由 52 变 **54**，与线上（CI 强制 `cache:false`）实测逐项目视一致（54、正文内 37；总数 178 vs 177 差的那 1 项是侧栏「手气不错」构建期随机）→ 旧基线确实在比缓存而非代码。**今后每一轮指纹采集前必须先 `rm -rf node_modules/.astro`（及存在的 `.astro/data-store.json`）再 build**，缝隙 B 才名副其实
+- **缝隙 B 本轮修掉两处会让门禁随机翻脸的来源**：(1) `iframe.giscus-frame`（远端 postMessage 改 class 与高度）加入排除表；(2) 排除表里原写的 `.slideshow` **全站零命中**——首页轮播真实类名是 `.carousel`（`Slideshow.astro:23`），即 AGENTS/审计记录里「轮播已排除」是假的，它会自行换帧，不排就每次多出几十条当前帧差异（比对端口也得固定：自定义光标是带端口的绝对 url，换端口＝数千条 `cursor` 假差异）。两处都只动采集脚本、不动站点；因此 T0 这份比对里 52 条轮播行与 4 条 giscus 行表现为「仅基线有」——基线早于排除表变更，一次性伪影，之后每票自带的成对比对不再受影响。轮播指示点几何按票 10 判据改由冒烟承担
+- 两轴评审（Standards / Spec 并行子代理）后回收四项：keydown 收窄到剧透块本体、票 06 补弹窗与动效判据、`global.css` 行号引用改回 token 锚点、`smoke:ui` 写入 AGENTS.md 常用命令。评审认定无 AGENTS.md/ADR 硬违反（Swup 单轨协议、Navbar/MMenu 双处同步、ADR-0003 分叉、锁定项均未破）
+- 既有套件：`astro check` 0 error / 0 warning、`test:fancybox` 27/27、`smoke:nice-books` 72/72、`smoke:ai-news` 9/9、六组 `node --test` 单测 0 fail、`prettier --check ./src ./scripts` 全绿（`public/domain/css/*` 不在 prettier 扫描范围，保持其自身 4 空格风格，勿顺手 `--write`）
+- 一次 `astro build` 因 `fonts.googleapis.com` TLS 抖动失败（AGENTS.md 已记录该现象），重跑即全绿；本轮验证走 `pnpm exec astro build`，`src/constants/*` 未被弄脏
+- **缝隙查出的既存缺陷（新，不在 T0 任何一票内）**：`private: true` 的文章页（实测 `/posts/20240501000000/`，category 示例）仍渲染指向 `/category/示例/` 的面包屑，而 `getCategoryList()` 走 `isPublicPost` 过滤、该分类页根本不生成 → 本地 404 死链。冒烟里按名白名单放行（`KNOWN_DEAD`，写明理由），只为让新出现的死链仍然报红；修法（私有页隐分类链接 or 为其生成分类页）→ **已开 issue #41**（贴 `bug`；`needs-triage` 在本仓库并不存在，见下条）。补测确认标签侧同源：该文自己链出的 `/tag/示例/`、`/tag/Markdown/`、`/tag/扩展/` 也都 404，`getTagList()` 同样走 `isPublicPost` 过滤，所以两种修法必须同一判据一起处理，否则又只剩一半。**顺带查出一处标签词表漂移（归票 19 更正）**：`docs/agents/triage-labels.md` 声称沿用五个默认标签串，仓库实际只存在 `wontfix` 与 `ready-for-agent` —— `needs-triage` / `needs-info` / `ready-for-human` 从未创建，`gh issue create --label needs-triage` 直接报 not found，故 #41 只能贴现实存在的 `bug`
+- **未验证项**：真机触屏与读屏软件下的命中区/播报（冒烟只覆盖计算值与 ARIA 属性）；`.post-header h1` 在超长不可断西文 token 下的表现（当前无此类标题）；剧透块点击路径仍会被子链接冒泡翻转（既有行为，本批未授权改）
+- **已知会过时的断言**：票 01 的「最长标题那篇」把 slug 写死在 `/posts/20260831000000/`（89 半角单位）。将来若发布更长标题，该组「不被裁切」断言会停止覆盖最坏情形而不报错——届时需换 slug 或改为从归档页动态取最长者
 
 **T0 批次停止点** → 交站长本地预览，通过后才允许按票拆 commit；未通过项退回原票，不进入 T1。
 
@@ -368,6 +444,23 @@
 
 **T3 批次停止点** → 预览；三项中任何一项被否决都不影响已合并批次。
 
+## 批次外的插入修复
+
+### 插-1. nav 右侧社交链接的底线：从「伪单向展开」改为真向上长
+> 不在 23 张票内，站长 2026-09-21 预览期间口头插入
+
+**现象（站长报）**：hover 时线看起来是上下双向展开 + 中心上移凑出的「向上展开」，实际线的底边会向上微小移动。
+
+**实测根因**：`#head-nav .m-nav li a` 基态 `border-bottom:3px` + `padding:10px 0`，hover 改 `border-bottom-width:6px` + `padding-bottom:7px` 凑总高不变。逐帧采样（rAF 读 `getBoundingClientRect`）显示：锚点底边在 700ms 过渡里取 **14 个不同值**（229 → 228.94 → 228.83 → 228.66 → 228.97 → … 回落 229），盒高 43 → 42.14。原因是 Chrome 把 `border-width` 的插值**取整到整像素**（3→4→5→6），而 `padding` 是连续插值，两者中途对不上；又因 `li` 是 `align-items:center`，盒高每掉 1px，底边就被抬 0.5px。首末两端其实对齐（都 229），抖的是中间过程。
+
+**改法**：线不再由 `border-bottom` 画，改 `::after`（绝对定位、`bottom:0`、`height:3px`、`transform-origin:bottom`），hover 用 `scaleY(2)` 长到 6px——不触发布局，底边由 `bottom:0` 天然钉住；锚点 `padding-bottom` 由 10 改 13（10 视觉内距 + 3 线高）以保持盒高与原来逐像素一致；链接色从 `border-color` 改为 `--mnav-line` 自定义属性（基态海洋绿 + 四家品牌色各一条）；`transition` 由 `all` 收窄为 `color`（`all` 正是把几何一起插值的源头）。
+
+**连带必改的两处**：① 二维码弹层的 `top: calc(100% + 16px)` 原本含「+6px 边框补偿」（`100%` 当时是 padding box 底＝线顶），现在 padding box 底＝线底，改成 `calc(100% + 10px)`，实测 hover 时弹层与线底间隙仍是 10px；② 三条媒体查询里的 `#head-nav .m-nav li a { padding: 10px 0 }`（≤1100 / ≤980 / ≤860）原先与基态等值、纯冗余，如今会盖掉那 3px 线位，已同步为 `10px 0 13px`——这三条本身归票 13 的死规则清理另议。
+
+**验收**：冒烟新增一条逐帧断言（`pnpm smoke:ui` 现 40 项全绿）——45 帧里底边唯一值 `229`、盒高唯一值 `43`、线高 `3→6`。红证据 = 同一测量通道对旧产物的采样（14 个底边值 / 盒高掉到 42.14）。原版对照：`colorful-original.css:109-110` 只改 `border-bottom-width`、不补 padding（靠 `float:left` 向下长），我们的居中盒不能照抄，故取其「线厚 3→6、颜色随品牌」的意图、换实现。
+
+**指纹门禁的连带项**：该改动让 T0 比对多出 4 个链接 × 20 个主站壳页（`border-bottom-width 3px→0`、`padding-bottom 10→13`、新增 `::after` 背景为品牌色）；`output/fp-scan-navdelta.txt` 为改前/改后两次采集的差量清单。注：我的临时比对脚本把伪元素属性并进同一行，输出的 `a.bilibili background-color` 实为 `::after` 的值——浏览器直读已确认锚点本身 `rgba(0,0,0,0)`、仅伪元素着色。
+
 ## 收尾
 
 ### 23. 全链验证与交付
@@ -385,3 +478,5 @@
 - [ ] 改后指纹与基线比对报告归档到证据登记册
 - [ ] 一项一 commit 已按票序落地；push 与 Pages 部署验证按站长指示执行（线上以 `Last-Modified` 或 Actions artifact 判定，勿凭刷新可见）
 - [ ] `.design-flow.json` stage 与 next 更新
+
+> 状态：已验收（bd9ee72）@2026-09-21
