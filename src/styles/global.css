@@ -2226,7 +2226,11 @@ img:hover {
 }
 
 #head-nav .m-nav li a {
-  /* 等宽链接：内容居中，左右留呼吸空间；hover 用 padding 补偿边框增粗，避免下溢 */
+  /* 等宽链接：内容居中，左右留呼吸空间。
+     底线由 ::after 画（见下），底部 13px 内距 = 原 10px 内距 + 3px 线高，盒高与换法前一致。
+     过渡只动颜色：all 会把几何一起插值，正是底边抖动的来源 */
+  position: relative;
+  --mnav-line: #70b90d;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2235,17 +2239,35 @@ img:hover {
   /* 覆盖 .head-nav .m-nav li 的 line-height:55px 继承，防止行盒撑爆导航条 */
   line-height: normal;
   width: 64px;
-  padding: 10px 0;
-  border-bottom: 3px solid #70b90d;
+  padding: 10px 0 13px;
+  border: 0;
   color: #000;
   white-space: nowrap;
-  transition: all 0.3s ease;
+  transition: color 0.3s ease;
+}
+
+/* 底线用绝对定位伪元素 + scaleY 长高，而不是 hover 改 border-bottom-width：
+   Chrome 把 border-width 的插值取整到整像素（3→4→5→6），而 padding 补偿是连续插值，
+   两者中途对不齐 → 盒高从 43 掉到 42.1，而 li 是 align-items:center，底边因此先上抬约 0.5px
+   再回落，看着就不是真正的单向展开。scaleY 不触发布局，底边由 bottom:0 天然钉住。 */
+#head-nav .m-nav li a::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--mnav-line);
+  transform-origin: bottom;
+  transition: transform 0.3s ease;
 }
 
 #head-nav .m-nav li a:hover {
-  padding-bottom: 7px;
-  border-bottom-width: 6px;
   color: #70b90d;
+}
+
+#head-nav .m-nav li a:hover::after {
+  transform: scaleY(2);
 }
 
 /* B站图标（内联 SVG，尺寸对齐 .fa 14px；固定 px 不受 ≤860px font-size:0 影响） */
@@ -2261,7 +2283,7 @@ img:hover {
    B站粉 / QQ 蓝 / 微信 绿 / RSS 橙（色值取自 simple-icons 官方品牌数据；
    B站取其另一官方色粉红，避免与相邻 QQ 蓝混淆）；默认仍为海洋绿 */
 #head-nav .m-nav li a.bilibili {
-  border-color: #fb7299;
+  --mnav-line: #fb7299;
 }
 
 #head-nav .m-nav li a.bilibili:hover {
@@ -2269,7 +2291,7 @@ img:hover {
 }
 
 #head-nav .m-nav li a.qq {
-  border-color: #1ebafc;
+  --mnav-line: #1ebafc;
 }
 
 #head-nav .m-nav li a.qq:hover {
@@ -2277,7 +2299,7 @@ img:hover {
 }
 
 #head-nav .m-nav li a.wechat {
-  border-color: #07c160;
+  --mnav-line: #07c160;
 }
 
 #head-nav .m-nav li a.wechat:hover {
@@ -2285,7 +2307,7 @@ img:hover {
 }
 
 #head-nav .m-nav li a.rss {
-  border-color: #ffa500;
+  --mnav-line: #ffa500;
 }
 
 #head-nav .m-nav li a.rss:hover {
@@ -2300,8 +2322,9 @@ img:hover {
 #head-nav .m-nav li a.qrcode .qrcode-pop {
   position: absolute;
   left: 50%;
-  /* 100% 是链接 padding box（不含 hover 时 6px 下边框），+16 = 10px 视觉间隙 + 6px 边框补偿 */
-  top: calc(100% + 16px);
+  /* 底线改由 ::after 画之后，链接的 padding box 底边就等于线的底边，
+     所以这里只需要原本那 10px 视觉间隙，不再另补边框厚度 */
+  top: calc(100% + 10px);
   z-index: 999;
   padding: 10px;
   border-radius: 8px;
@@ -4753,7 +4776,7 @@ html.with-fancybox .backtop {
   }
 
   #head-nav .m-nav li a {
-    padding: 10px 0;
+    padding: 10px 0 13px;
   }
 }
 
@@ -4768,14 +4791,14 @@ html.with-fancybox .backtop {
   }
 
   #head-nav .m-nav li a {
-    padding: 10px 0;
+    padding: 10px 0 13px;
   }
 }
 
 @media screen and (max-width: 860px) {
   #head-nav .m-nav li a {
     width: 40px;
-    padding: 10px 0;
+    padding: 10px 0 13px;
     font-size: 0;
   }
 
