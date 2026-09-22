@@ -29,10 +29,6 @@
     --shadow-wrapper: 0 2px 6px rgba(100, 100, 100, 0.3);
   }
 
-  html {
-    font-size: 13px;
-  }
-
   body {
     background-color: var(--page-bg);
     background-size: cover;
@@ -1750,6 +1746,8 @@
   --colorful-muted: #667a8a;
 }
 
+/* 根字号基线：本站根字号 = 浏览器默认（实测 16px）。早期那条从未生效的
+   `html{font-size:13px}` 已删；为何不启用 13px 见 AGENTS.md「根字号基线」。 */
 html {
   font-size: 100%;
   -webkit-text-size-adjust: 100%;

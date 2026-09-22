@@ -1428,6 +1428,15 @@ check(
 );
 checkClean("票 14");
 
+// ---------------- T2：死规则、断点、404 标题与分页元数据 ----------------
+// 票 15：根字号基线（删掉从未生效的 13px 后，实测必须仍是浏览器默认 16px）
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.goto(base + "/", { waitUntil: "load" });
+const rootFont = await page.evaluate(
+	() => getComputedStyle(document.documentElement).fontSize,
+);
+check("票 15：根字号仍为浏览器默认 16px", rootFont === "16px", rootFont);
+
 await browser.close();
 
 const failed = results.filter((r) => !r.ok);
