@@ -1709,6 +1709,161 @@ check(
 );
 checkClean("插-2");
 
+// ---------------- T3 票 20：绿色瞬时态补非颜色辅助 ----------------
+// 缝隙 B 只读静息计算值、不驱动 hover，所以这一票的判据必须全在这里做实机悬停。
+// 两条同时成立才算过：① 非颜色通道上可感知（下划线出现 / 线展开）② 悬停不产生布局位移。
+const SCALE_X1 = "matrix(1, 0, 0, 1, 0, 0)";
+const hoverProbe = async (path, sel, { trigger } = {}) => {
+	await page.goto(base + path, { waitUntil: "load" });
+	const el = page.locator(sel).first();
+	if (!(await el.count())) return { missing: true, sel, path };
+	if (trigger) {
+		// 下拉子项静息时整条面板 display:none，必须先悬停外层父项把它显形；
+		// 注意不能 hover 子项自己的 li（它在隐藏面板内，本身不可见）
+		await page.locator(trigger).first().hover();
+		await page.waitForTimeout(320);
+	}
+	const geom = async () =>
+		el.evaluate((node) => {
+			const cs = getComputedStyle(node);
+			const r = node.getBoundingClientRect();
+			const p = node.parentElement;
+			return {
+				deco: cs.textDecorationLine,
+				color: cs.color,
+				w: Math.round(r.width * 100) / 100,
+				h: Math.round(r.height * 100) / 100,
+				top: Math.round(r.top * 100) / 100,
+				left: Math.round(r.left * 100) / 100,
+				line: getComputedStyle(node, "::after").transform,
+				lineBg: getComputedStyle(node, "::after").backgroundColor,
+				pw: p
+					? Math.round(p.getBoundingClientRect().width * 100) / 100
+					: null,
+				psw: p ? p.scrollWidth : null,
+			};
+		});
+	const idle = await geom();
+	await el.hover();
+	await page.waitForTimeout(320); // 越过 0.2s 过渡，避免取到中途插值
+	const hot = await geom();
+	return { idle, hot, sel, path };
+};
+
+const ULINE = (d) => d === "underline" || d.includes("underline");
+const DE = (x, y) => Math.abs(x - y);
+const SHIFT = (g) =>
+	DE(g.idle.w, g.hot.w) +
+	DE(g.idle.h, g.hot.h) +
+	DE(g.idle.left, g.hot.left) +
+	DE(g.idle.pw ?? 0, g.hot.pw ?? 0) +
+	DE(g.idle.psw ?? 0, g.hot.psw ?? 0);
+
+const side = await hoverProbe("/", "#sidebar a:not(#blogtags a)");
+check(
+	"票 20：侧栏链接悬停时出现下划线（不只靠变色）",
+	!side.missing && !ULINE(side.idle.deco) && ULINE(side.hot.deco),
+	side.missing ? "选择器未命中" : `${side.idle.deco} → ${side.hot.deco}`,
+);
+check(
+	"票 20：侧栏悬停零布局位移",
+	!side.missing && SHIFT(side) === 0,
+	side.missing ? "" : `合计位移 ${SHIFT(side)}`,
+);
+
+const card = await hoverProbe("/", ".post-list .post-header h2 a");
+check(
+	"票 20：卡片标题悬停时出现下划线",
+	!card.missing && !ULINE(card.idle.deco) && ULINE(card.hot.deco),
+	card.missing ? "选择器未命中" : `${card.idle.deco} → ${card.hot.deco}`,
+);
+check(
+	"票 20：卡片标题悬停零布局位移",
+	!card.missing && SHIFT(card) === 0,
+	card.missing ? "" : `合计位移 ${SHIFT(card)}`,
+);
+check(
+	"票 20：卡片标题悬停时颜色仍变（补的是辅助，不是替换原有颜色线索）",
+	!card.missing && card.idle.color !== card.hot.color,
+	card.missing ? "" : `${card.idle.color} → ${card.hot.color}`,
+);
+
+// 首页上第一项是 .current，它的线本来就常开；必须取非当前项才测得到 hover
+const nav = await hoverProbe("/", "#menu-index > li:not(.current) > a");
+check(
+	"票 20：主菜单项悬停时既有线展开（复用站内已有的 ::after 线，而非新造机制）",
+	!nav.missing && nav.idle.line !== SCALE_X1 && nav.hot.line === SCALE_X1,
+	nav.missing ? "" : `静息 ${nav.idle.line} → 悬停 ${nav.hot.line}`,
+);
+check(
+	"票 20：主菜单悬停零布局位移",
+	!nav.missing && SHIFT(nav) === 0,
+	nav.missing ? "" : `合计位移 ${SHIFT(nav)}`,
+);
+check(
+	"票 20：品牌绿未被改动（悬停线色仍为 #00c000 = rgb(0, 192, 0)）",
+	!nav.missing && nav.hot.lineBg === "rgb(0, 192, 0)",
+	nav.missing ? "" : nav.hot.lineBg,
+);
+
+const drop = await hoverProbe("/", "#menu-index > li > ul > li > a", {
+	trigger: "#menu-index > li:has(ul) > a",
+});
+check(
+	"票 20：下拉子项悬停时线展开",
+	!drop.missing && drop.idle.line !== SCALE_X1 && drop.hot.line === SCALE_X1,
+	drop.missing ? "" : `静息 ${drop.idle.line} → 悬停 ${drop.hot.line}`,
+);
+check(
+	"票 20：下拉子项悬停零布局位移",
+	!drop.missing && SHIFT(drop) === 0,
+	drop.missing ? "" : `合计位移 ${SHIFT(drop)}`,
+);
+
+const inline = await hoverProbe("/posts/20260919135000/", ".post-context a");
+check(
+	"票 20：正文内联链接悬停仍有下划线（既有 .prose a:hover 未被我改坏）",
+	!inline.missing && ULINE(inline.hot.deco),
+	inline.missing
+		? "选择器未命中"
+		: `${inline.idle.deco} → ${inline.hot.deco}`,
+);
+
+const pill = await hoverProbe("/", "#sidebar #blogtags a");
+check(
+	"票 20：侧栏六色药丸不被那条 hover 划线（药丸的颜色就是它的身份，票面未要求加线）",
+	!pill.missing && !ULINE(pill.hot.deco),
+	pill.missing ? "选择器未命中" : `悬停 ${pill.hot.deco}`,
+);
+
+const focus = await (async () => {
+	await page.goto(base + "/", { waitUntil: "load" });
+	// 盲按固定次数会落在 skip link 或 logo 上，必须按到菜单锚点为止（有界）
+	let hit = null;
+	for (let i = 0; i < 12 && !hit; i++) {
+		await page.keyboard.press("Tab");
+		hit = await page.evaluate(() => {
+			const el = document.activeElement;
+			if (!el || !el.closest("#menu-index")) return null;
+			return {
+				line: getComputedStyle(el, "::after").transform,
+				ring: `${getComputedStyle(el).outlineStyle} ${getComputedStyle(el).outlineWidth}`,
+				isCurrent: !!el.closest("li.current"),
+				text: (el.textContent ?? "").trim().slice(0, 10),
+			};
+		});
+	}
+	return hit ? hit : { notReached: true };
+})();
+check(
+	"票 20：键盘到达菜单项时同时有线与焦点环（非颜色辅助双保险，WCAG 2.4.7 不回退）",
+	!focus.notReached &&
+		focus.line === SCALE_X1 &&
+		/^solid \d/.test(focus.ring),
+	JSON.stringify(focus),
+);
+checkClean("T3 票 20");
+
 await browser.close();
 
 const failed = results.filter((r) => !r.ok);

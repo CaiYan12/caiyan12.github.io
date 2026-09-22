@@ -2031,6 +2031,7 @@ img:hover {
 }
 
 #menu-index li.current > a::after,
+#menu-index > li > a:hover::after,
 #menu-index > li > a:focus-visible::after {
   transform: scaleX(1);
 }
@@ -2101,6 +2102,7 @@ img:hover {
   color: var(--colorful-green);
 }
 
+#nav li ul a:hover::after,
 #nav li ul a:focus-visible::after {
   transform: scaleX(1);
 }
@@ -2494,7 +2496,9 @@ img:hover {
 }
 
 .post-header h2 a:hover {
+  /* hover 不能只靠变色传达（WCAG 1.4.1）；下划线不改盒宽也不改行盒 */
   color: var(--colorful-green);
+  text-decoration: underline;
 }
 
 .good-label,
@@ -5130,6 +5134,14 @@ body,
 .goon a:hover,
 #footer a:hover {
   color: var(--colorful-green-accessible);
+  text-decoration: underline;
+}
+
+/* 上面那条 #sidebar a:hover 同样命中医药丸（#blogtags 就在 #sidebar 内）。
+   六色药丸的颜色本身就是它的身份，票 20 未要求给它加线，这里显式挡掉。
+   双 id 选择器特异性高于 #sidebar a:hover，无需 !important。 */
+#sidebar #blogtags a:hover {
+  text-decoration: none;
 }
 
 .search-panel button,
