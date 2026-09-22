@@ -854,7 +854,7 @@
   /* 标签 nowrap 的可见溢出会计入祖先滚动区，裁在网格边缘避免 5px 级假横滚 */
   overflow: hidden;
   color: var(--colorful-text-secondary);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1;
 }
 
@@ -881,7 +881,7 @@
   align-items: center;
   justify-content: flex-end;
   color: var(--colorful-text-secondary);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .gh-calendar-col {
@@ -1009,7 +1009,7 @@
 
   .gh-calendar-months,
   .gh-calendar-wd {
-    font-size: 9px;
+    font-size: 10px;
   }
 }
 
