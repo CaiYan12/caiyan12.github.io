@@ -131,7 +131,7 @@ const myhkwScriptAttributes: Record<string, string> = {
 		<style is:inline>
 			/* myhkw 与 Pio 同在左下角：播放器必须覆盖 Pio，避免控制面板被模型遮挡。 */
 			#myhkplayer {
-				z-index: 10000000000 !important;
+				z-index: 900000 !important; /* 原值 10000000000 被钳到 int32 上限，与 skip-link 撞成同一个数 */
 			}
 		</style>
 

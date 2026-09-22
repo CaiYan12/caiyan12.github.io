@@ -1964,6 +1964,154 @@ check(
 );
 checkClean("T3 票 20");
 
+// ---------------- T3 票 22：z-index 三处真实关系 ----------------
+// 一律读**计算值**。源里 10000000001 与 10000000000 看着差 1，浏览器却把两者都钳到
+// int32 上限 2147483647 —— 实为同值，谁盖谁只剩绘制顺序侥幸。读源文本永远发现不了这件事。
+const INT32_MAX = 2147483647;
+const zn = (v) => (v === null || v === "auto" ? NaN : Number(v));
+const zs = await page.evaluate(() => {
+	const g = (sel) => {
+		const el = document.querySelector(sel);
+		return el ? getComputedStyle(el).zIndex : null;
+	};
+	return {
+		skip: g(".skip-link"),
+		player: g("#myhkplayer"),
+		mask: g(".colorful_loading_frame"),
+	};
+});
+check(
+	"票 22：跳过链接与播放器都落在可表示区间内（不再被 int32 钳成同一个数）",
+	!Number.isNaN(zn(zs.skip)) &&
+		!Number.isNaN(zn(zs.player)) &&
+		zs.skip !== zs.player &&
+		Number(zs.skip) < INT32_MAX &&
+		Number(zs.player) < INT32_MAX,
+	`skip=${zs.skip} player=${zs.player}（int32 上限 ${INT32_MAX}）`,
+);
+check(
+	"票 22：跳过链接确实高于常驻播放器，且余量为正",
+	zn(zs.skip) > zn(zs.player) && zn(zs.skip) - zn(zs.player) >= 1000,
+	`${zs.skip} vs ${zs.player}，余量 ${zn(zs.skip) - zn(zs.player)}`,
+);
+
+// 提示是按需创建的，静息不在 DOM 里——先真点一次带 data-copy-message 的入口把 toast 唤出来
+await page.goto(base + "/", { waitUntil: "load" });
+const copyEntry = page.locator("[data-copy-message]").first();
+const hasCopyEntry = (await copyEntry.count()) > 0;
+if (hasCopyEntry) await copyEntry.click({ force: true }).catch(() => {});
+const toastShown = await page
+	.waitForSelector(".site-toast", { timeout: 6000 })
+	.catch(() => null);
+const toastZ = toastShown
+	? await toastShown.evaluate((el) => getComputedStyle(el).zIndex)
+	: null;
+check(
+	"票 22：toast 确被真实唤出（否则下一条无从比较）",
+	!!toastZ,
+	hasCopyEntry ? `z=${toastZ}` : "页面上找不到 data-copy-message 入口",
+);
+check(
+	"票 22：提示高于加载遮罩（切页期间的反馈不会被吃掉）",
+	!!toastZ && zn(toastZ) > zn(zs.mask),
+	`toast=${toastZ} mask=${zs.mask}`,
+);
+
+// 灯箱是模态 <dialog>，走顶层层：任何 z-index 都盖不住它。判据用命中测试而非比数值——
+// 数值上 .fancybox__container 算出来是 auto，比大小会得出完全错误的结论。
+await page.goto(base + "/posts/20260909092113/", { waitUntil: "load" });
+await page.waitForTimeout(600);
+const opened = await page.evaluate(() => {
+	const img = document.querySelector(".prose img[data-fancybox]");
+	if (!img) return false;
+	img.click();
+	return true;
+});
+await page
+	.waitForSelector(".fancybox__container", { timeout: 15000 })
+	.catch(() => {});
+const cover = await page.evaluate(() => {
+	const c = document.querySelector(".fancybox__container");
+	if (!c) return { missing: true };
+	const r = c.getBoundingClientRect();
+	// 在灯箱界面内放一个特效字与一个提示，再做命中测试
+	const w = document.createElement("span");
+	w.className = "click-word";
+	w.textContent = "测试";
+	w.style.left = Math.round(r.left + r.width / 2) + "px";
+	w.style.top = Math.round(r.top + 40) + "px";
+	const t = document.createElement("div");
+	t.className = "site-toast";
+	t.textContent = "提示";
+	t.style.left = Math.round(r.left + r.width / 2) + "px";
+	t.style.top = Math.round(r.top + r.height - 40) + "px";
+	document.body.append(w, t);
+	const hit = (x, y) => document.elementFromPoint(x, y);
+	const at = (el) => {
+		const b = el.getBoundingClientRect();
+		return hit(
+			Math.round(b.left + b.width / 2),
+			Math.round(b.top + b.height / 2),
+		);
+	};
+	const overW = at(w);
+	const overT = at(t);
+	const z = {
+		container: getComputedStyle(c).zIndex,
+		click: getComputedStyle(w).zIndex,
+		toast: getComputedStyle(t).zIndex,
+	};
+	w.remove();
+	t.remove();
+	const inside = (el) => !!el && !!el.closest?.(".fancybox__container");
+	return {
+		missing: false,
+		z,
+		wCovered: inside(overW) || overW?.tagName === "DIALOG",
+		tCovered: inside(overT) || overT?.tagName === "DIALOG",
+		wHit: overW
+			? overW.tagName + "." + String(overW.className).slice(0, 20)
+			: null,
+	};
+});
+check(
+	"票 22：灯箱确实打开",
+	opened && !cover.missing,
+	cover.missing ? "容器未出现" : "已开",
+);
+check(
+	"票 22：灯箱打开时，特效字与提示都不覆盖其界面（顶层层保证，非数值侥幸）",
+	!cover.missing && cover.wCovered && cover.tCovered,
+	JSON.stringify(cover.z) + " 特效字命中=" + cover.wHit,
+);
+await page.keyboard.press("Escape");
+await page.waitForTimeout(400);
+
+// Tab 首站：必须等 0.2s 过渡走完再量几何，否则会读到 translateY(-200%) 的起点（本轮踩过）
+await page.goto(base + "/", { waitUntil: "load" });
+await page.keyboard.press("Tab");
+await page.waitForTimeout(400);
+const tabFirst = await page.evaluate(() => {
+	const el = document.activeElement;
+	const r = el.getBoundingClientRect();
+	return {
+		cls: el.className,
+		top: Math.round(r.top),
+		h: Math.round(r.height),
+		z: getComputedStyle(el).zIndex,
+		player: getComputedStyle(document.querySelector("#myhkplayer")).zIndex,
+	};
+});
+check(
+	"票 22：键盘 Tab 首站仍是跳过链接，聚焦后真的露出且未被播放器压住",
+	tabFirst.cls.includes("skip-link") &&
+		zn(tabFirst.z) > zn(tabFirst.player) &&
+		tabFirst.top >= 0 &&
+		tabFirst.h > 0,
+	JSON.stringify(tabFirst),
+);
+checkClean("T3 票 22");
+
 await browser.close();
 
 const failed = results.filter((r) => !r.ok);

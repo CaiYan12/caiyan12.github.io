@@ -12,7 +12,9 @@
   position: fixed;
   top: 24px;
   left: 50%;
-  z-index: 10000;
+  /* 原值 10000 低于加载遮罩 .colorful_loading_frame(99999)，
+     「已复制」这类反馈会在切页期间被遮罩吃掉 */
+  z-index: 100100;
   box-sizing: border-box;
   max-width: calc(100vw - 32px);
   border: 1px solid rgba(255, 255, 255, 0.45);

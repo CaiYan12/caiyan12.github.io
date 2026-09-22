@@ -5950,7 +5950,7 @@ body,
   position: fixed;
   top: 10px;
   left: 10px;
-  z-index: 10000000001;
+  z-index: 1000000; /* 原值 10000000001 超出 int32，浏览器钳到 2147483647，与播放器算成同一个数 */
   padding: 8px 16px;
   border-radius: 6px;
   background: #00c000;
