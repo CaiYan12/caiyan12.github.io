@@ -4570,7 +4570,8 @@ html.with-fancybox .backtop {
 }
 
 .photo-grid img {
-  border-radius: 10px;
+  /* 图片圆角不得大于其卡片（`.photo-grid a`）的 5px，否则图角会从卡片圆角里露出来 */
+  border-radius: 5px;
 }
 
 #mmenu {
@@ -5119,6 +5120,17 @@ html.with-fancybox .backtop {
   --font-mono: "JetBrains Mono Variable", Consolas, "Courier New", monospace;
   --font-serif: "FZShuSong-Z01S", "方正书宋", "FangZheng ShuSong", "Noto Serif SC", "Source Han Serif SC", serif;
   --font-hand: "平方时光体", "KaiTi", "STKaiti", "楷体", "FZShuSong-Z01S", "方正书宋", serif;
+}
+
+/* 数字等宽保险（票 14）：本站现用字体下西文数字本来就等宽（实测 14px 下 "1111111"
+   与 "0000000"、"1472580" 同为 54.39px），所以这条声明**当前是空操作**，
+   写下来只为将来更换正文字体时日期/计数列不再因比例数字参差。不作为验收判据。
+   贡献日历的对应声明在 markdown-extended.css 里它自己的规则处。 */
+.archive-entry-date,
+.archive-year-count,
+#newcomment .time,
+.guestbook-meta time {
+  font-variant-numeric: tabular-nums;
 }
 
 html,

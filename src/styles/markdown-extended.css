@@ -824,6 +824,8 @@
   margin: 0 0 10px;
   color: var(--colorful-text-secondary);
   font-size: 13px;
+  /* 换字体保险：当前字体的西文数字本就等宽，详见 global.css「数字等宽保险」处注释 */
+  font-variant-numeric: tabular-nums;
 }
 
 .gh-calendar-stats strong {
