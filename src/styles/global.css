@@ -3837,6 +3837,29 @@ img:hover {
   border-right-color: var(--colorful-green);
 }
 
+/* 触屏命中区（票 10）：窄屏下药丸垂直内距 3→5px，命中高从原版 20px 抬到 24px。
+   装饰件必须跟着盒高走，否则左侧三角短于色带、白点偏离中线：
+   三角上下边框 10→12（合计等于盒高），圆点 top 8→10（保持居中）。
+   桌面盒值一个字节都不动——它与原版逐字节相同且被五处 DOM 共用。 */
+@media screen and (max-width: 680px) {
+  #blogtags a,
+  .post-tags a {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  #blogtags a::before,
+  .post-tags a::before {
+    border-top-width: 12px;
+    border-bottom-width: 12px;
+  }
+
+  #blogtags a::after,
+  .post-tags a::after {
+    top: 10px;
+  }
+}
+
 #sidebar .tab_nav ul {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -4258,8 +4281,23 @@ html.with-fancybox .backtop {
 }
 
 .carousel-indicators li {
+  position: relative;
   display: inline-block;
   margin: 15px 5px 0 0;
+}
+
+/* 触屏命中区（票 10）：视觉点保持原版 10×10，热区用伪元素扩到 15×24。
+   横向只能到 15px——原版点距就是 10px 点 + 5px 右外距，越过相邻点中线后
+   重叠区按绘制顺序归后者，反而会把「点左边那个」变成误触，故 24×24 在该间距下不可达。
+   上下非对称（-10 / -4）是为了把盒子完全留在 .carousel-indicators 自己的 40px 带内：
+   再多 1px 就会压到下方幻灯片链接的可点区。 */
+.carousel-indicators li::before {
+  position: absolute;
+  top: -10px;
+  right: -2.5px;
+  bottom: -4px;
+  left: -2.5px;
+  content: "";
 }
 
 /* 指示点改为 li 内原生 button（键盘可达）；圆点样式随之移到 button 上 */
