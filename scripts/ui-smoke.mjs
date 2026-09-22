@@ -65,10 +65,11 @@ const PROBE = (sel) => {
 
 const clipped = (p) => p.scrollWidth > p.clientWidth + 1;
 
-// 既有死链白名单：private:true 的文章页仍渲染分类面包屑，而 getCategoryList 走
-// isPublicPost 过滤、根本不生成该分类页（票 02 的 Tab 走位查出的既存缺陷，
-// 不在 T0 范围，见票册 T0 汇总）。列名而非放宽检查，是为了新出现的死链仍能报红。
-const KNOWN_DEAD = ["/category/%E7%A4%BA%E4%BE%8B/"];
+// 已知应放行的两类：① private:true 的文章页仍渲染分类面包屑，而 getCategoryList 走
+// isPublicPost 过滤、根本不生成该分类页（既存缺陷，见 issue #41）；② 票 18 自己故意
+// 访问的 404 哨兵路径——`page.goto` 到 404 文档必然产生一条本地 console 错误。
+// 按名前缀列名而非放宽整条检查，是为了让新出现的死链仍然报红。
+const KNOWN_DEAD = ["/category/%E7%A4%BA%E4%BE%8B/", "/this-page-should-404/"];
 const isKnownDead = (url) => KNOWN_DEAD.some((p) => url.startsWith(base + p));
 
 const browser = await chromium.launch();
@@ -1547,6 +1548,71 @@ check(
 		? `display=${gridProof.display} 宽 ${gridProof.w.join("/")} 占满=${gridProof.fit}`
 		: "缺 .main-grid / #content",
 );
+
+// 票 18：404 页有真标题；分页标题与描述带页码
+const notFound = await (async () => {
+	const resp = await page.goto(base + "/this-page-should-404/", {
+		waitUntil: "load",
+	});
+	await page.waitForTimeout(300);
+	return page.evaluate((status) => {
+		const h1 = [...document.querySelectorAll("h1")].filter((e) => {
+			const cs = getComputedStyle(e);
+			return cs.display !== "none" && cs.visibility !== "hidden";
+		});
+		return {
+			status,
+			h1: h1.map((e) => e.textContent.trim()),
+			inMain: h1.some((e) => !!e.closest("#main")),
+		};
+	}, resp?.status() ?? 0);
+})();
+check(
+	"票 18：404 页恰好一个可见 h1 且在正文容器内",
+	notFound.status === 404 &&
+		notFound.h1.length === 1 &&
+		notFound.inMain === true,
+	`status=${notFound.status} h1=${JSON.stringify(notFound.h1)} inMain=${notFound.inMain}`,
+);
+const readMeta = async (path) => {
+	const resp = await page.goto(base + path, { waitUntil: "load" });
+	return {
+		status: resp?.status() ?? 0,
+		...(await page.evaluate(() => ({
+			t: document.title,
+			d:
+				document.querySelector('meta[name="description"]')?.content ??
+				"",
+		}))),
+	};
+};
+const metaPairs = [];
+for (const [p1, p2] of [
+	["/", "/page/2/"],
+	["/hot/", "/hot/page/2/"],
+]) {
+	const a = await readMeta(p1);
+	const b = await readMeta(p2);
+	metaPairs.push({ p1, p2, a, b, live: b.status === 200 });
+}
+check(
+	"票 18：第 2 页确为 200（不是落 404 造成的假性「标题不同」）",
+	metaPairs.every((m) => m.a.status === 200 && m.live),
+	metaPairs
+		.map((m) => `${m.p1}=${m.a.status} ${m.p2}=${m.b.status}`)
+		.join(" | "),
+);
+check(
+	"票 18：第 2 页的标题与描述都与第 1 页不同",
+	metaPairs.every((m) => m.live && m.a.t !== m.b.t && m.a.d !== m.b.d),
+	metaPairs
+		.map(
+			(m) =>
+				`${m.p2} 标题${m.a.t === m.b.t ? "重复" : "已区分"}/描述${m.a.d === m.b.d ? "重复" : "已区分"}：“${m.b.t}”`,
+		)
+		.join(" | "),
+);
+checkClean("T2");
 
 await browser.close();
 

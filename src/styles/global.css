@@ -1164,6 +1164,15 @@
     padding: 60px 20px;
     text-align: center;
   }
+  .error-404 .title {
+    /* 404 页原本没有任何标题元素，读屏用户无法用标题导航定位本页状态。
+       UA 默认的 h1 上下外距会顶开这块居中版面，故压成只剩 10px 下距。 */
+    margin: 0 0 10px;
+    color: var(--text);
+    font-size: 24px;
+    font-weight: 700;
+    line-height: 1.3;
+  }
   .error-404 .code {
     font-size: 72px;
     font-weight: bold;

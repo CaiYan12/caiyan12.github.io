@@ -8,7 +8,7 @@ import {
 	getSortedPosts,
 	isPublicPost,
 } from "../../../../utils/content-utils";
-import { getPaginationUrl } from "../../../../utils/pagination";
+import { getPaginationUrl, getPageMeta } from "../../../../utils/pagination";
 import { siteConfig } from "../../../../config";
 
 export const getStaticPaths = (async ({ paginate }) => {
@@ -31,11 +31,15 @@ export const getStaticPaths = (async ({ paginate }) => {
 const { page, categories } = Astro.props;
 const name = Astro.params.category;
 const rootUrl = `/category/${encodeURIComponent(name)}/`;
+const meta = getPageMeta(
+	{ title: `分类：${name}`, description: `分类 ${name} 下的全部文章` },
+	page.currentPage,
+);
 ---
 
 <MainGridLayout
-	title={`分类：${name}`}
-	description={`分类 ${name} 下的全部文章`}
+	title={meta.title}
+	description={meta.description}
 	canonicalUrl={getPaginationUrl(rootUrl, page.currentPage)}
 	prevUrl={page.currentPage > 1
 		? getPaginationUrl(rootUrl, page.currentPage - 1)

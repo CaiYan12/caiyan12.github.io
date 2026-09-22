@@ -8,7 +8,7 @@ import {
 	getSortedPosts,
 	isPublicPost,
 } from "../../../../../utils/content-utils";
-import { getPaginationUrl } from "../../../../../utils/pagination";
+import { getPaginationUrl, getPageMeta } from "../../../../../utils/pagination";
 import dayjs from "dayjs";
 import { siteConfig } from "../../../../../config";
 
@@ -41,11 +41,15 @@ const label = `${year}年${Number(month)}月`;
 const rootUrl = `/archive/${year}/${month}/`;
 const current = page.currentPage;
 const total = page.lastPage;
+const meta = getPageMeta(
+	{ title: `归档：${label}`, description: `${label} 的文章归档` },
+	current,
+);
 ---
 
 <MainGridLayout
-	title={`归档：${label}`}
-	description={`${label} 的文章归档`}
+	title={meta.title}
+	description={meta.description}
 	canonicalUrl={getPaginationUrl(rootUrl, current)}
 	prevUrl={current > 1 ? getPaginationUrl(rootUrl, current - 1) : undefined}
 	nextUrl={current < total

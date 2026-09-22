@@ -6,7 +6,7 @@ import Slideshow from "../../components/control/Slideshow.astro";
 import { getCollection } from "astro:content";
 import type { GetStaticPaths } from "astro";
 import { getSortedPosts, isPublicPost } from "../../utils/content-utils";
-import { getPaginationUrl } from "../../utils/pagination";
+import { getPaginationUrl, getPageMeta } from "../../utils/pagination";
 import { siteConfig } from "../../config";
 
 export const getStaticPaths = (async ({ paginate }) => {
@@ -19,11 +19,17 @@ const { page } = Astro.props;
 const rootUrl = "/";
 const current = page.currentPage;
 const total = page.lastPage;
+// base.title 不能填 siteConfig.title：Layout 会再拼一次「 - 站名」，
+// 第 2 页就成了「站名 · 第 2 页 - 站名」。首页仍留空（getPageMeta 对 ≤1 页原样返回）。
+const meta = getPageMeta(
+	{ title: "最新文章", description: siteConfig.subtitle },
+	current,
+);
 ---
 
 <MainGridLayout
-	title={current > 1 ? `第 ${current} 页` : undefined}
-	description={siteConfig.subtitle}
+	title={current > 1 ? meta.title : undefined}
+	description={meta.description}
 	canonicalUrl={getPaginationUrl(rootUrl, current)}
 	prevUrl={current > 1 ? getPaginationUrl(rootUrl, current - 1) : undefined}
 	nextUrl={current < total
