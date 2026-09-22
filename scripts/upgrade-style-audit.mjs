@@ -133,7 +133,12 @@ const PAGES = [
 	"/books/",
 	"/books/archive/",
 	"/books/01/",
-	"/ai-news/",
+	// /ai-news/ 不参与指纹比对：它的内容是运行时从按日更新的远端 feed
+	// （daily.juya.uk/rss.xml）拉取，同一份 dist 同一天连采两遍会完全一致（2026-09-22 实测
+	// 24 页零差异，含此页 277 元素同 sha），但跨天采集必然合法地不同——顶栏翻页按钮与日期
+	// 徽章会随 feed 成败或条目数增删。采集脚本的 Math.random 种子只能压住客户端随机
+	// （/books/ 的当日选书就属这类），压不住网络，所以这里按页排除而非按子树排除。
+	// 本票册 T3 三票均不触碰该独立壳（它不引 Layout 与 global.css），排除它不损失覆盖面。
 	"/this-page-should-404/",
 ];
 
