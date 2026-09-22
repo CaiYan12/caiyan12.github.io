@@ -5146,6 +5146,23 @@ body,
   border-color: var(--colorful-green-accessible);
 }
 
+/* 搜索框的选中线：贴着原边框画，不要浮在框外。
+   全局环是 `outline: 2px + outline-offset: 2px`，落在框外 2px，与输入框自己的
+   1px 边框叠成「两条框」；主页右侧搜索框的做法是关掉环、改由容器 `::after`
+   以 `inset: 0` 画 2px 实线（实测：环 none，after 为 2px solid 且 inset 0），
+   等价于把环收到边框位置，故这里用 outline-offset: -2px 复现同一几何。
+   按钮按站长要求不出这条线，但仍保留可见焦点态（同侧栏按钮：底色转深）。 */
+.search-panel input:focus-visible,
+.error-404 .search-box input[type="text"]:focus-visible {
+  outline-offset: -2px;
+}
+
+.search-panel button:focus-visible,
+.error-404 .search-box input[type="submit"]:focus-visible {
+  outline: 0;
+  background: var(--primary-dark);
+}
+
 .post-header h2,
 .post-excerpt,
 .post-context,

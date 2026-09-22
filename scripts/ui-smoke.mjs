@@ -1614,6 +1614,101 @@ check(
 );
 checkClean("T2");
 
+// ---------------- 插入项 插-2：搜索框选中线贴回原边框 ----------------
+// 站长要求：线要「就在原边框上面」，参照主页右侧搜索框；按钮不要这条线。
+// 参考实现的几何实测为：input 环 none + 容器 ::after 以 inset:0 画 2px，
+// 即线带落在 [edge-2px, edge]；等价于 outline-offset: -2px。
+// 判据落在计算值上：环必须仍实心且 ≥2px（票 05 不回退），且 offset 不得为正值
+// （正值就是「浮在框外」，正是本次要消灭的观感）。
+const FOCUS_BOXES = [
+	["/search/", ".search-panel input"],
+	["/this-page-should-404/", '.error-404 .search-box input[type="text"]'],
+];
+const focusLines = [];
+for (const [path, sel] of FOCUS_BOXES) {
+	await page.setViewportSize({ width: 1280, height: 900 });
+	await page.goto(base + path, { waitUntil: "load" });
+	await page.waitForSelector(sel, { timeout: 15000 });
+	await page.waitForTimeout(600);
+	await page.mouse.move(5, 5); // 排除 hover 通道
+	await page.focus(sel);
+	focusLines.push({
+		path,
+		...(await page.evaluate((s) => {
+			const cs = getComputedStyle(document.querySelector(s));
+			return {
+				style: cs.outlineStyle,
+				w: parseFloat(cs.outlineWidth) || 0,
+				off: parseFloat(cs.outlineOffset),
+				focused: document.activeElement === document.querySelector(s),
+			};
+		}, sel)),
+	});
+}
+check(
+	"插-2：搜索框选中线贴在原边框位置（不再浮在框外），且环仍可见",
+	focusLines.every(
+		(l) =>
+			l.focused &&
+			l.style === "solid" &&
+			l.w >= 2 &&
+			Number.isFinite(l.off) &&
+			l.off <= 0,
+	),
+	focusLines
+		.map((l) => `${l.path} ${l.w}px ${l.style} offset=${l.off}px`)
+		.join(" | "),
+);
+// 按钮：不要环，但键盘焦点必须仍然可见（底色转深），否则就是删掉焦点指示的可达性回退
+const btnStates = [];
+for (const [path, sel, btn] of [
+	["/search/", ".search-panel input", ".search-panel button"],
+	[
+		"/this-page-should-404/",
+		'.error-404 .search-box input[type="text"]',
+		'.error-404 .search-box input[type="submit"]',
+	],
+]) {
+	await page.goto(base + path, { waitUntil: "load" });
+	await page.waitForTimeout(600);
+	await page.mouse.move(5, 5);
+	const idle = await page.evaluate(
+		(s) => getComputedStyle(document.querySelector(s)).backgroundColor,
+		btn,
+	);
+	await page.focus(sel);
+	await page.keyboard.press("Tab"); // 从输入框 Tab 一步到按钮
+	const onBtn = await page.evaluate(
+		([s, bs]) => document.activeElement === document.querySelector(bs),
+		[sel, btn],
+	);
+	const st = await page.evaluate((s) => {
+		const cs = getComputedStyle(document.querySelector(s));
+		return {
+			bg: cs.backgroundColor,
+			ring: `${cs.outlineStyle} ${cs.outlineWidth}`,
+		};
+	}, btn);
+	btnStates.push({ path, onBtn, idle, ...st });
+}
+check(
+	"插-2：按钮不出选中线，但 Tab 到时底色转深（焦点仍可见）",
+	btnStates.every(
+		(s) =>
+			s.onBtn &&
+			/^none/.test(s.ring) &&
+			s.bg !== s.idle &&
+			s.bg !== "rgba(0, 0, 0, 0)",
+	),
+	btnStates
+		.map(
+			(s) =>
+				`${s.path} 抵达=${s.onBtn} ${s.idle} → ${s.bg}（环 ${s.ring}）`,
+		)
+		.join(" | "),
+);
+checkClean("插-2");
+
 await browser.close();
 
 const failed = results.filter((r) => !r.ok);
