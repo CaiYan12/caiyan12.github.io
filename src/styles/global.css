@@ -2031,7 +2031,6 @@ img:hover {
 }
 
 #menu-index li.current > a::after,
-#menu-index > li > a:hover::after,
 #menu-index > li > a:focus-visible::after {
   transform: scaleX(1);
 }
@@ -2102,7 +2101,6 @@ img:hover {
   color: var(--colorful-green);
 }
 
-#nav li ul a:hover::after,
 #nav li ul a:focus-visible::after {
   transform: scaleX(1);
 }

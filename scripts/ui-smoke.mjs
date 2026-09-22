@@ -1891,7 +1891,7 @@ check(
 // 首页上第一项是 .current，它的线本来就常开；必须取非当前项才测得到 hover
 const nav = await hoverProbe("/", "#menu-index > li:not(.current) > a");
 check(
-	"票 20：主菜单项悬停时既有线展开（复用站内已有的 ::after 线，而非新造机制）",
+	"票 20：主菜单项悬停时线展开（由既有 @media (hover:hover) and (pointer:fine) 规则保证，本票不重复声明）",
 	!nav.missing && nav.idle.line !== SCALE_X1 && nav.hot.line === SCALE_X1,
 	nav.missing ? "" : `静息 ${nav.idle.line} → 悬停 ${nav.hot.line}`,
 );
@@ -1910,7 +1910,7 @@ const drop = await hoverProbe("/", "#menu-index > li > ul > li > a", {
 	trigger: "#menu-index > li:has(ul) > a",
 });
 check(
-	"票 20：下拉子项悬停时线展开",
+	"票 20：下拉子项悬停时线展开（同上，既有守卫规则已覆盖，作为回归护栏保留）",
 	!drop.missing && drop.idle.line !== SCALE_X1 && drop.hot.line === SCALE_X1,
 	drop.missing ? "" : `静息 ${drop.idle.line} → 悬停 ${drop.hot.line}`,
 );
