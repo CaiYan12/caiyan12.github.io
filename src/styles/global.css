@@ -313,15 +313,6 @@
   .post-list:hover {
     box-shadow: 0 2px 8px rgba(100, 100, 100, 0.25);
   }
-  .post-list .post-header {
-    padding: 5px 0;
-  }
-  .post-list .post-header h2 {
-    display: inline;
-    margin: 0;
-    font-size: 19px;
-    line-height: 1.4;
-  }
   .post-list .post-header h2 a {
     color: #000;
   }
@@ -430,15 +421,11 @@
   }
 
   /* ---------- 分页（对应 .pagenavi） ---------- */
-  .pagenavi {
-    float: right;
-    margin-top: 10px;
-    text-align: center;
-    font-size: 13px;
-  }
+  /* `.pagenavi` 容器自身的 float/margin/text-align/font-size 已由下面「.pagenavi」定义处
+     整体接管（同选择器、更靠后的源顺序），此处不再重复；`.pagenavi em` 分支已删——
+     翻页控件从不输出 <em>（206 页产物零命中）。 */
   .pagenavi a,
-  .pagenavi span,
-  .pagenavi em {
+  .pagenavi span {
     float: left;
     margin-left: 5px;
     padding: 2px 6px;
@@ -458,9 +445,6 @@
   .pagenavi a:hover {
     background: var(--primary);
     color: #fff;
-  }
-  .pagenavi em {
-    font-style: normal;
   }
 
   /* ---------- 独立页面（对应 .page） ---------- */
