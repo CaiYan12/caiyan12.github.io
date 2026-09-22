@@ -153,7 +153,7 @@ export function renderContributionsCalendar(data: ContributionsData): string {
 	const columns = toColumns(data.days);
 	const login = escapeHtml(data.login);
 	const ariaLabel = `${login} 过去一年 GitHub 贡献日历，共 ${data.totals.total} 次贡献`;
-	return `<section class="widget gh-calendar"><span class="icon"><i class="fa fa-github" aria-hidden="true"></i></span><h3>${CALENDAR_TITLE}</h3><div class="gh-calendar-body"><p class="gh-calendar-stats">过去一年共 <strong>${data.totals.total}</strong> 次贡献，最长连续 <strong>${data.totals.longestStreak}</strong> 天，当前连续 <strong>${data.totals.currentStreak}</strong> 天。</p><div class="gh-calendar-scroll"><div class="gh-calendar-grid" style="--gh-cols:${columns.length}"><div class="gh-calendar-months" aria-hidden="true">${renderMonthLabels(columns)}</div><div class="gh-calendar-cols" role="img" aria-label="${escapeHtml(ariaLabel)}">${WEEKDAY_LABELS}${renderColumns(columns)}</div></div></div>${renderLegend()}</div></section>`;
+	return `<section class="widget gh-calendar"><span class="icon"><i class="fa fa-github" aria-hidden="true"></i></span><h2>${CALENDAR_TITLE}</h2><div class="gh-calendar-body"><p class="gh-calendar-stats">过去一年共 <strong>${data.totals.total}</strong> 次贡献，最长连续 <strong>${data.totals.longestStreak}</strong> 天，当前连续 <strong>${data.totals.currentStreak}</strong> 天。</p><div class="gh-calendar-scroll"><div class="gh-calendar-grid" style="--gh-cols:${columns.length}"><div class="gh-calendar-months" aria-hidden="true">${renderMonthLabels(columns)}</div><div class="gh-calendar-cols" role="img" aria-label="${escapeHtml(ariaLabel)}">${WEEKDAY_LABELS}${renderColumns(columns)}</div></div></div>${renderLegend()}</div></section>`;
 }
 
 /** 缓存缺失或损坏时的回退卡片 */
@@ -161,5 +161,5 @@ export function renderContributionsFallback(
 	profileUrl = `https://github.com/${siteConfig.githubUser}`,
 ): string {
 	const url = escapeHtml(profileUrl);
-	return `<section class="widget gh-calendar gh-calendar-fallback"><span class="icon"><i class="fa fa-github" aria-hidden="true"></i></span><h3>${CALENDAR_TITLE}</h3><div class="gh-calendar-body"><p class="gh-calendar-fallback-text">日历数据暂时不可用，可前往 <a href="${url}" target="_blank" rel="noopener noreferrer">GitHub 主页</a> 查看贡献记录。</p></div></section>`;
+	return `<section class="widget gh-calendar gh-calendar-fallback"><span class="icon"><i class="fa fa-github" aria-hidden="true"></i></span><h2>${CALENDAR_TITLE}</h2><div class="gh-calendar-body"><p class="gh-calendar-fallback-text">日历数据暂时不可用，可前往 <a href="${url}" target="_blank" rel="noopener noreferrer">GitHub 主页</a> 查看贡献记录。</p></div></section>`;
 }

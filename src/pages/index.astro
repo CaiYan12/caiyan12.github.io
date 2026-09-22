@@ -20,6 +20,8 @@ const pagePosts = posts.slice(0, siteConfig.postsPerPage);
 	nextUrl={pages > 1 ? getPaginationUrl(rootUrl, 2) : undefined}
 	description={siteConfig.subtitle}
 >
+	<h1 class="sr-only" slot="heading">最新文章 · {siteConfig.title}</h1>
+
 	<Slideshow />
 
 	{

@@ -126,17 +126,17 @@
     display: inline-block;
     vertical-align: middle;
   }
-  .site-header h1 {
+  .site-header .site-title {
     display: inline-block;
     margin: 0 0 0 10px;
     vertical-align: middle;
     font-size: 26px;
     line-height: 1.2;
   }
-  .site-header h1 a {
+  .site-header .site-title a {
     color: #000;
   }
-  .site-header h1 a:hover {
+  .site-header .site-title a:hover {
     color: var(--primary);
   }
 
@@ -714,13 +714,13 @@
     border-radius: 5px;
     overflow: hidden;
   }
-  .widget h3 {
+  .widget h2 {
     margin: 0;
     padding: 5px 8px;
     border-bottom: 1px solid var(--border);
     font-size: 14px;
   }
-  .widget h3 i {
+  .widget h2 i {
     margin-right: 3px;
   }
   .widget .widget-body {
@@ -1295,7 +1295,7 @@
     align-items: center;
   }
 
-  .archive-year-heading h3 {
+  .archive-year-heading h2 {
     grid-column: 1;
     margin: 0;
     color: #333;
@@ -1445,7 +1445,7 @@
       margin-left: 0;
     }
 
-    .archive-year-heading h3 {
+    .archive-year-heading h2 {
       font-size: 24px;
     }
 
@@ -1688,7 +1688,7 @@
   .wrapper-box::before {
     display: none;
   }
-  .site-header h1 {
+  .site-header .site-title {
     font-size: 20px;
   }
   .header-ticker {
@@ -1961,7 +1961,7 @@ img:hover {
   transform: scale(1);
 }
 
-#header h1 {
+#header .site-title {
   overflow: hidden;
   width: 980px;
   margin: 0;
@@ -1969,7 +1969,7 @@ img:hover {
   white-space: nowrap;
 }
 
-#header h1 a {
+#header .site-title a {
   margin-left: 15px;
   color: #fff;
   font-size: 30px;
@@ -3358,7 +3358,7 @@ img:hover {
   background: var(--content-surface-nested);
 }
 
-.widget > h3 {
+.widget > h2 {
   box-sizing: border-box;
   height: 30px;
   margin: 0;
@@ -3369,7 +3369,7 @@ img:hover {
   line-height: 30px;
 }
 
-.widget > .icon + h3 {
+.widget > .icon + h2 {
   text-indent: 10px;
 }
 
@@ -5166,11 +5166,11 @@ body,
 /* 标题需与左侧 100px 浮动 logo 并排：max-width 必须扣除 logo 宽度，
    否则在 .box 收缩为 calc(100% - 40px) 时标题无法容纳于浮动旁，
    会被挤到 logo 下方并落入 #header(overflow:hidden) 裁切区，与 #head-nav 重叠 */
-#header h1 {
+#header .site-title {
   max-width: calc(100% - 100px);
 }
 
-#header h1 a,
+#header .site-title a,
 #header .text a {
   display: block;
   overflow: hidden;
