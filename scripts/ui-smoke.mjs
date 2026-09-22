@@ -862,6 +862,56 @@ check(
 	distinct.length === 1 && ratio >= 4.5,
 	`${distinct[0]} = ${ratio.toFixed(2)}:1`,
 );
+// 上面那份清单只能覆盖「我想到的落点」——#777 就是这么漏掉的（推上线后核验线上才抓到，
+// 本地冒烟一路绿）。反向扫描才是会自己长大的门禁：任何可见元素的计算文字色，
+// 都不许等于改版前那几组灰。新增落点无需改本断言即被覆盖。
+const LEGACY_GREYS = {
+	"rgb(119, 119, 119)": "#777",
+	"rgb(136, 136, 136)": "#888",
+	"rgb(118, 118, 118)": "#767676",
+	"rgb(153, 154, 170)": "#999aaa",
+	"rgb(102, 122, 138)": "#667a8a",
+};
+const strays = [];
+for (const path of [
+	"/",
+	"/archive/",
+	"/friends/",
+	"/guestbook/",
+	"/skills/",
+	"/about/",
+	"/albums/",
+	"/tag/",
+	"/search/",
+	"/posts/20260919135000/",
+]) {
+	await page.goto(base + path, { waitUntil: "load" });
+	await page.waitForTimeout(400);
+	const found = await page.evaluate((map) => {
+		const out = [];
+		for (const el of document.querySelectorAll("body *")) {
+			// 隐藏子树不参与「可见灰值」判定（display 在祖先上，故查 offsetParent）
+			if (!el.offsetParent && getComputedStyle(el).position !== "fixed")
+				continue;
+			const c = getComputedStyle(el).color;
+			if (!map[c]) continue;
+			const cls =
+				typeof el.className === "string" && el.className.trim()
+					? "." + el.className.trim().split(/\s+/).join(".")
+					: "";
+			out.push(
+				`${el.tagName.toLowerCase()}${cls}${el.id ? "#" + el.id : ""} = ${map[c]}`,
+			);
+		}
+		return [...new Set(out)].slice(0, 6);
+	}, LEGACY_GREYS);
+	strays.push(...found.map((f) => `${path} ${f}`));
+}
+check(
+	"反向扫描：全站不再出现改版前那几组灰（#777/#888/#767676/#999aaa/#667a8a）",
+	strays.length === 0,
+	strays.join(" | ") || "零命中",
+);
 checkClean("票 08");
 
 // ---------------- 每页恰好一个可见顶级标题、部件标题不跳级（票 09） ----------------

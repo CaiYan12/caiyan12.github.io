@@ -532,7 +532,7 @@
     padding: 12px;
     border: 1px dashed var(--line);
     background: #f9f9f9;
-    color: #777;
+    color: var(--colorful-text-secondary);
     font-size: 12px;
     line-height: 2;
   }
@@ -920,7 +920,7 @@
     padding: 2px 5px;
     border-radius: 3px;
     background-color: #fff;
-    color: #777;
+    color: var(--colorful-text-secondary);
     font-size: 12px;
   }
 
@@ -1323,7 +1323,7 @@
   .archive-entry-date {
     grid-column: 1;
     padding-right: 14px;
-    color: #777;
+    color: var(--colorful-text-secondary);
     font-size: 14px;
     line-height: 1.4;
     text-align: right;
@@ -2766,7 +2766,7 @@ img:hover {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #777;
+  color: var(--colorful-text-secondary);
   line-height: 1;
   transition: none;
 }
@@ -3880,7 +3880,7 @@ img:hover {
 #sidebar .tab_nav li.hover {
   border-bottom-color: #fff;
   background: #fff;
-  color: #666;
+  color: var(--colorful-text-secondary);
   font-weight: bold;
 }
 
@@ -4485,7 +4485,7 @@ html.with-fancybox .backtop {
   overflow: hidden;
   height: 3.4em;
   margin: 16px 0 10px;
-  color: #666;
+  color: var(--colorful-text-secondary);
   font-size: 13px;
   line-height: 1.7;
   -webkit-box-orient: vertical;
@@ -5768,7 +5768,7 @@ body,
   border-radius: 2px;
   background: #f8f8f8;
   padding: 3px 7px;
-  color: #666;
+  color: var(--colorful-text-secondary);
   font-size: 11px;
 }
 
