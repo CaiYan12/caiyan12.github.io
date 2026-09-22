@@ -553,6 +553,8 @@
 - 切分保真证明：三份跨票文件（`global.css` / `AGENTS.md` / `scripts/ui-smoke.mjs`）按 hunk 与票内注释边界重建逐票中间态，`output/t2-split.mjs` 三闸全过（hunk 归属唯一、末态逐字节复现工作树、每份 ui-smoke 中间态 `node --check` 合法）；提交后工作区只剩本票册，且 `git diff` 对修正前那组 commit 的树**零差异**
 - **拆 commit 自己踩过的一次错分（记录）**：首版驱动把 `ui-smoke.mjs` 当「整文件 add」处理，于是票 15 的 commit 带走了 16/17/18/插-2 的断言，后续四票里该文件反而零改动。内容无误、只是历史切分错位，`git reset --mixed`（不动工作树）后改走中间态重跑，六票边界复验为「每票只含本票断言」。教训：**跨票共享文件一律走重建中间态，`git add <file>` 只适用于与单票 1:1 的文件**
 - 中间 commit 的一致性是按构造保证的（累计态 + 语法合法），并未逐票 checkout 跑构建；实际执行过的绿判据是整个批次末态那一份
+- **上线生效核验（对产物而非对本地）**：三条工作流在 `00dcaf9` 全绿（Lint / Build and Check / Deploy），`Last-Modified: Tue, 22 Sep 2026 09:19:48 GMT` 与部署完成时刻对齐。逐页抓 `/_astro/*.css` 与 HTML 做内容断言 **15/15**：CSS 内 `html{font-size:13px}` 与 `header-ticker`、`ticker-scroll` 命中均为 0、`100%` 基线仍在、`.main-grid` 网格声明已删、404 文档确为 404 且 h1 唯一、`/page/2/` 与 `/hot/page/2/` 标题描述均带页码且区别于第 1 页、搜索框 `outline-offset:-2px` 与按钮关环转深在产物里都在。随后把整条缝隙 A 冒烟以**线上**为基准复跑 **81/81**
+
 
 
 **T2 批次停止点** → 代码票交预览、文档票单独交审阅。**站长 2026-09-22 判「通过」**（含插-2 与票 17 的桌面阈值外扩），已按票拆 commit 并 push。
