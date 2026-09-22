@@ -894,6 +894,10 @@ for (const path of [
 			// 隐藏子树不参与「可见灰值」判定（display 在祖先上，故查 offsetParent）
 			if (!el.offsetParent && getComputedStyle(el).position !== "fixed")
 				continue;
+			// 明月浩空播放器是远端注入、样式也归它自己（#888 出现在 li.myhknow /
+			// span.index）。它不在票 08 的收敛范围内——指纹排除表早已排掉 myhk*，
+			// 反向扫描此前漏了这一步，只在播放器真加载成功的场合才暴露。
+			if (el.closest("[id^='myhk'], [class*='myhk']")) continue;
 			const c = getComputedStyle(el).color;
 			if (!map[c]) continue;
 			const cls =
@@ -1821,7 +1825,33 @@ const hoverProbe = async (path, sel, { trigger } = {}) => {
 		// 下拉子项静息时整条面板 display:none，必须先悬停外层父项把它显形；
 		// 注意不能 hover 子项自己的 li（它在隐藏面板内，本身不可见）
 		await page.locator(trigger).first().hover();
-		await page.waitForTimeout(320);
+		// 等面板真的可命中再取值。固定毫秒数在生产上会取到「尚未显形」的瞬间，
+		// 于是同一条判据本地稳、线上偶发翻红。
+		await el.waitFor({ state: "visible", timeout: 10000 });
+		await page.waitForFunction(
+			(sel) => {
+				const n = document.querySelector(sel);
+				return !!n && n.getClientRects().length > 0;
+			},
+			sel,
+			{ timeout: 10000 },
+		);
+		// 面板自带 dropdown-in 入场动画（transform-origin: top center），
+		// 刚显形时几何还在变，会把动画位移误读成 hover 造成的布局位移。
+		// 等到自身几何连续两次一致再取 idle。
+		await page.waitForFunction(
+			(sel) => {
+				const n = document.querySelector(sel);
+				if (!n) return false;
+				const k = "__settle";
+				const now = JSON.stringify(n.getBoundingClientRect());
+				const prev = n[k];
+				n[k] = now;
+				return prev === now;
+			},
+			sel,
+			{ timeout: 10000, polling: 120 },
+		);
 	}
 	const geom = async () =>
 		el.evaluate((node) => {
