@@ -1467,6 +1467,87 @@ check(
 	`引用数=${ticker.deadAnims}（被删的是零标记匹配的 CSS-only 块，改前改后都采不到动画，此条不会变红）`,
 );
 
+// 票 17：移动端视口下弹窗底部控件必须落在可视区内（vh 被地址栏吃掉的场景）。
+// 注意判据形态：390×640 下弹窗内容只有约 224px，`max-height` 根本不参与布局——
+// 只量「面板是否溢出」的断言把修复改回去也照样绿。所以真正的判别力来自
+// max-height 的计算值本身：它必须已经小于旧 `calc(100vh - 32px)` 的阈值。
+await page.setViewportSize({ width: 390, height: 640 });
+await page.goto(base + "/domain/", { waitUntil: "load" });
+await page.waitForTimeout(900);
+const modalBox = await (async () => {
+	const btn = page.locator(".meBox-Button a[data-site-modal]").first();
+	if (!(await btn.count())) return null;
+	await btn.click();
+	await page.waitForSelector("#site-modal[open]", { timeout: 5000 });
+	return page.evaluate(() => {
+		const panel = document.querySelector("#site-modal .site-modal__panel");
+		if (!panel) return null;
+		const r = panel.getBoundingClientRect();
+		// 取几何上最低的那个控件，而不是 DOM 末位
+		const ctl = [...panel.querySelectorAll("a,button,input")].reduce(
+			(best, e) => {
+				const b = e.getBoundingClientRect().bottom;
+				return !best || b > best.bottom
+					? { bottom: b, tag: e.tagName }
+					: best;
+			},
+			null,
+		);
+		return {
+			panelBottom: Math.round(r.bottom),
+			innerH: window.innerHeight,
+			maxH: Number.parseFloat(getComputedStyle(panel).maxHeight) || null,
+			ctlBottom: ctl ? Math.round(ctl.bottom) : null,
+			ctlTag: ctl?.tag ?? "无控件",
+		};
+	});
+})();
+const oldVhThreshold = modalBox ? modalBox.innerH - 32 : 0;
+check(
+	"票 17：弹窗 max-height 已改用动态视口单位（低于旧的 calc(100vh-32px) 阈值）",
+	!!modalBox &&
+		modalBox.maxH !== null &&
+		modalBox.maxH <= modalBox.innerH * 0.8 + 1 &&
+		modalBox.maxH < oldVhThreshold,
+	modalBox
+		? `max-height=${modalBox.maxH}px，旧阈值=${oldVhThreshold}px，80%=${Math.round(modalBox.innerH * 0.8)}px`
+		: "没找到弹窗",
+);
+check(
+	"票 17：390×640 下弹窗面板与最靠下的控件都在可视区内",
+	!!modalBox &&
+		modalBox.panelBottom <= modalBox.innerH + 1 &&
+		modalBox.ctlBottom !== null &&
+		modalBox.ctlBottom <= modalBox.innerH + 1,
+	modalBox
+		? `面板底边=${modalBox.panelBottom}、${modalBox.ctlTag} 底边=${modalBox.ctlBottom} vs 视口高=${modalBox.innerH}`
+		: "-",
+);
+// 票 17 那条被删的网格声明：判据不是「源码里没这行」，而是宿主确实用不上它——
+// `.main-grid` 的计算 display 必须是 block（因此任何 grid-template-columns 都无效），
+// 且正文列在窄屏仍占满其容器。
+await page.goto(base + "/", { waitUntil: "load" });
+await page.waitForTimeout(400);
+const gridProof = await page.evaluate(() => {
+	const g = document.querySelector(".main-grid");
+	const c = document.querySelector("#content");
+	if (!g || !c) return null;
+	const gr = g.getBoundingClientRect();
+	const cr = c.getBoundingClientRect();
+	return {
+		display: getComputedStyle(g).display,
+		fit: Math.abs(cr.width - gr.width) <= 1,
+		w: [Math.round(cr.width), Math.round(gr.width)],
+	};
+});
+check(
+	"票 17：.main-grid 计算 display 为 block（被删的网格列声明对其无效）且正文列占满容器",
+	!!gridProof && gridProof.display === "block" && gridProof.fit === true,
+	gridProof
+		? `display=${gridProof.display} 宽 ${gridProof.w.join("/")} 占满=${gridProof.fit}`
+		: "缺 .main-grid / #content",
+);
+
 await browser.close();
 
 const failed = results.filter((r) => !r.ok);

@@ -34,7 +34,11 @@
   left: 50%;
   box-sizing: border-box;
   width: min(420px, calc(100vw - 32px));
-  max-height: calc(100vh - 32px);
+  /* 移动端地址栏会吃掉 `100vh` 的一截，把弹窗底部控件推出可视区（Q42-B 裁决定为 dvh）。
+     前一条 `vh` 声明是刻意保留的回落：`min(80vh, 80dvh)` 在不认识 dvh 的旧引擎里
+     整条失效（min() 含未知单位即无效），那样就完全没有 max-height 了。 */
+  max-height: 80vh;
+  max-height: min(80vh, 80dvh);
   overflow: auto;
   border: 1px solid var(--border, rgba(0, 0, 0, 0.14));
   border-radius: 8px;

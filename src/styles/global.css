@@ -1602,9 +1602,9 @@
 
 /* ---------- 响应式断点（对应原主题移动端） ---------- */
 @media (max-width: 768px) {
-  .main-grid {
-    grid-template-columns: 1fr;
-  }
+  /* 原先此处的 `.main-grid{grid-template-columns:1fr}` 是 no-op，已删：
+     `.main-grid` 的基础声明是 `display:block`（见下面「.main-grid」定义处，
+     源顺序晚于层内那条 `display:grid`，同特异性因此胜出），网格列对它无效。 */
   #sidebar {
     display: none;
   }
