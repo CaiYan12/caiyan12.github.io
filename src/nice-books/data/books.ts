@@ -2,8 +2,9 @@
  * Nice Books V1 数据层（单一真相源）
  * ------------------------------------------------------------
  * 书目为公知信息，版次年份取常见通行版本，仅作排版演示，见
- * design-handoff.md §12.2。V1 fixture 22 本（01–22）迁移自原型
- * prototype/assets/js/data.js，01–70 为扩充后的完整书单。
+ * design-handoff.md §12.2。**当前书单为 70 本（id 01–70）**：其中 01–22 是最早从
+ * 原型 prototype/assets/js/data.js 迁来的 V1 fixture，其后逐批扩充到 70；文档若引用
+ * 书目数应取 70，不要停在「22 本」。
  *
  * 校验策略（主提示词 §44：build/dev 期尽早失败）：
  * 模块顶层执行断言，任何字段不合法直接抛错 —— dev 启动、astro build（getStaticPaths

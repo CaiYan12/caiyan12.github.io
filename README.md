@@ -4,7 +4,7 @@
 
 ## 技术栈
 
-- **Astro 5.16** + TypeScript + Svelte 5（搜索组件）
+- **Astro 6.4.8** + TypeScript + Svelte 5（搜索组件）
 - **React 19 + @astrojs/react** — 独立 AI 日报阅读页
 - **Tailwind CSS 3**（样式重写，视觉还原 Colorful 海洋绿主题）
 - **Swup.js** — 无刷新页面切换（替代原 Pjax）
@@ -28,16 +28,20 @@ pnpm fetch-friend-icons     # 增量补齐缺失的友链图标缓存
 pnpm fetch-friend-icons --refresh  # 手动刷新当前友链图标缓存
 pnpm preview     # 预览构建产物
 pnpm check       # 类型检查
-pnpm smoke:ai-news  # AI 日报入口、详情、返回与离线快照 Smoke（需先启动 pnpm dev）
-pnpm smoke:nice-books  # Nice Books 三页全链路 Smoke（随机/换一换/书库/详情/swup，需先启动 pnpm dev）
-pnpm qa:nice-books-geometry  # Nice Books 统一3D几何运行时检查（需先启动 pnpm dev）
+pnpm smoke:ai-news  # AI 日报入口、详情、返回与离线快照 Smoke（默认 127.0.0.1:4321 dev；AI_NEWS_BASE_URL 传**完整页面地址**）
+pnpm smoke:nice-books  # Nice Books 三页全链路 Smoke（随机/换一换/书库/详情/swup；默认 4321，但**权威环境是 build + preview**，用 NICE_BOOKS_BASE_URL 指过去）
+pnpm qa:nice-books-geometry  # Nice Books 统一3D几何运行时检查（默认 127.0.0.1:4321，BASE_URL 可覆盖）
+pnpm smoke:ui      # 主站 UI 缺陷修复实机烟测（UI 整改票册的缝隙 A；**需先 build + preview**，UI_SMOKE_BASE_URL 传站点根）
 pnpm test:utils  # src/utils 纯函数单测（content-utils 排序/评分/邻篇 + pagination canonical）
+pnpm test:contributions  # 贡献日历数据脚本离线单测（注入 fetchImpl，不访问真实网络）
+pnpm test:site-stats  # Giscus 同步单测（fetchImpl/输出路径全注入，无需令牌，已串入 build 链头部）
+pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl）
 pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/六字段搜索/SVG 封面，node --test）
-pnpm test:fancybox  # 灯箱 Smoke（关闭不跳位/焦点归还/定位到文章位置/下载新标签页/中文文案，需先 pnpm build && pnpm preview）
+pnpm test:fancybox  # 灯箱 Smoke（关闭不跳位/焦点归还/定位到文章位置/下载新标签页/中文文案，需先 pnpm build && pnpm preview；默认 4322，FANCY_BASE_URL 传**站点根**）
 pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scripts/tailwind.config）
 ```
 
-> ⚠️ **踩坑警告**：修改 Markdown 渲染插件（remark/rehype）后构建产物没变化？Astro 5 content layer 可能复用旧渲染结果——先删除 `node_modules/.astro/`，并在存在时删除 `.astro/data-store.json`，再构建；touch 文件无效。CI 侧 `deploy.yml` 已对 `withastro/action` 传 `cache: false` 关闭同类缓存，任何 workflow 改动勿恢复。
+> ⚠️ **踩坑警告**：修改 Markdown 渲染插件（remark/rehype）后构建产物没变化？Astro 的 content layer 会复用旧渲染结果（Astro 5 与 6 皆有此行为，本站实测在 6.4.8 上复现）——先删除 `node_modules/.astro/`，并在存在时删除 `.astro/data-store.json`，再构建；touch 文件无效。CI 侧 `deploy.yml` 已对 `withastro/action` 传 `cache: false` 关闭同类缓存，任何 workflow 改动勿恢复。
 
 ## 测试与生产环境
 

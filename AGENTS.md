@@ -234,11 +234,17 @@ Your agent and bash are running on:
 
 ### Triage labels
 
-沿用五个默认标签串（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`），与角色名一一对应，不另设映射。见 `docs/agents/triage-labels.md`。
+五个默认标签串（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`）是技能侧的**约定词表**，与角色名一一对应，不另设映射；但本仓库 GitHub 端实际只存在 `wontfix` 与 `ready-for-agent` 两个（`needs-triage`/`needs-info`/`ready-for-human` 从未创建，`gh issue create --label needs-triage` 会直接报 not found）。贴标签前先 `gh label list` 核可用值，或先建再用。见 `docs/agents/triage-labels.md`。
+
+### 文档写作约定（2026-09-22 立，Q45-B）
+
+- **约束以「选择器 + 文件路径」为锚点**，行号只作辅助且必须写「约」。本轮 UI 整改里三次误判的根源都是拿旧行号当现值（药丸样式记录漂了约 220 行、`.prose code` 的定位两次都错）。
+- 带日期的历史实测数字**保留原样**（它们是那次测量的记录，不是当前事实）；需要当前值就重新测。
+- 无法本地复核的数字（第三方图种数量、历史构建文件数）标 `UNKNOWN` 或明确写「未复核」，不得当作改动依据。
 
 ### Domain docs
 
-单上下文布局：根 `CONTEXT.md` 术语表 + `docs/adr/`（现仅 0001）。探索、命名或写 issue 前先取用 `CONTEXT.md` 的既定称呼；ADR 只记「难以回退、有真实取舍、令人意外」的决策。见 `docs/agents/domain.md`。
+单上下文布局：根 `CONTEXT.md` 术语表 + `docs/adr/`（0001–0004 共四份）。探索、命名或写 issue 前先取用 `CONTEXT.md` 的既定称呼；ADR 只记「难以回退、有真实取舍、令人意外」的决策。见 `docs/agents/domain.md`。
 
 ## 项目背景
 
@@ -261,6 +267,10 @@ pnpm check       # astro check 类型检查
 pnpm test:contributions  # 贡献日历数据脚本离线单测（node --test，注入 fetchImpl 不访问真实网络）
 pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/搜索/封面，node --test，已串入 build 链头部）
 pnpm test:site-stats # Giscus 同步单测（fetchImpl/输出路径全注入，无需令牌、0.6s，已串入 build 链头部）
+pnpm test:utils      # src/utils 纯函数单测（content-utils 排序/评分/邻篇 + pagination canonical）
+pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl，不访问真实网络）
+pnpm smoke:ai-news   # AI 日报入口/详情/返回/离线快照 Playwright Smoke；AI_NEWS_BASE_URL 传**完整页面地址**
+pnpm qa:nice-books-geometry  # Nice Books 统一 3D 几何运行时检查（默认 127.0.0.1:4321；NICE_BOOKS_BASE_URL 可覆盖。注意另一个 `scripts/nice-books-design-qa.mjs` 默认才是 4322 preview）
 pnpm smoke:nice-books  # Nice Books 三页 Playwright Smoke；支持 NICE_BOOKS_BASE_URL 指向 build + preview
 pnpm test:fancybox     # 灯箱 Playwright Smoke（关闭不跳位/焦点归还/定位按钮/下载新标签页/中文文案，需先 build + preview；FANCY_BASE_URL 可覆盖地址）
 pnpm test:fancybox 打线上时 FANCY_BASE_URL 传的是**站点根**（脚本自己拼 /posts/... 与 /albums/...），而 NICE_BOOKS_BASE_URL / AI_NEWS_BASE_URL 传的是**完整页面地址** —— 三者形态不同，传错会表现为「选择器等不到」的假失败。2026-09-20 起放大两项改为等原图解码 + 轮询到高度稳定，本地与线上均 27/27
@@ -357,8 +367,8 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 - myhkw 播放器以 `z-index` 压制 Pio（Layout.astro 内联样式）；Pio 的按钮/消息框位置调整需同时考虑播放器展开面板与底部歌词框的遮挡。
 
 ### Nice Books 每日好书（src/nice-books/ + src/pages/books/，2026-09-06 移植）
-- **独立壳**模块（仿 ai-news 先例）：`/books/`（今日好书随机 + 换一换 + 站长推荐 + 探索更多）、`/books/archive/`（书库：六字段搜索 × 标签叠加 × 双视图 × 载入更多 × `?q=`/`?tag=` 直达）、`/books/:id/`（getStaticPaths 22 静态页 + 同架 top4；无效 id 自然落站级 404）。不加载博客 Layout/global.css/Pio/播放器；产品契约=访问级随机（禁日期映射）、无评论/评分/购买。
-- 数据单一真相源 `src/nice-books/data/books.ts`（22 本 V1 fixture + 顶层运行时断言 fail-fast，build 链头部 `pnpm test:nice-books` 把关）；查询函数纯函数化（`lib/random.ts` RNG 可注入、`lib/search.ts` 六字段、`lib/cover.ts` 确定性 SVG 书封兜底——`coverUrl` 非空走 `<img>`、onerror 由 shared 的捕获监听重建 SVG）。
+- **独立壳**模块（仿 ai-news 先例）：`/books/`（今日好书随机 + 换一换 + 站长推荐 + 探索更多）、`/books/archive/`（书库：六字段搜索 × 标签叠加 × 双视图 × 载入更多 × `?q=`/`?tag=` 直达）、`/books/:id/`（getStaticPaths **70** 静态页，与 `books.ts` 条目数一致 + 同架 top4；无效 id 自然落站级 404）。不加载博客 Layout/global.css/Pio/播放器；产品契约=访问级随机（禁日期映射）、无评论/评分/购买。
+- 数据单一真相源 `src/nice-books/data/books.ts`（**70 条书目**，`id:`/`author:`/收尾 `},` 三向计数一致；早期 V1 fixture 为 01–22，其后逐批扩充，文档曾长期停在「22 本」——改动时一并核对文件头注释与 `/books/:id/` 的 getStaticPaths 页数 + 顶层运行时断言 fail-fast，build链头部 `pnpm test:nice-books` 把关）；查询函数纯函数化（`lib/random.ts` RNG 可注入、`lib/search.ts` 六字段、`lib/cover.ts` 确定性 SVG 书封兜底——`coverUrl` 非空走 `<img>`、onerror 由 shared 的捕获监听重建 SVG）。
 - **SSR/客户端标记单源**：凡会被客户端 innerHTML 重渲染的片段（hero 卡/网格卡/便签/标签药丸/列表行）一律由 `lib/render.ts` 字符串构造器输出（.astro 侧 `set:html` 引用同一函数），禁止在 .astro 里另写一份标记。
 - 样式：`styles/books.css` 是 books 页面唯一样式源（含 `@tailwind` 三指令 → 有 preflight）；2026-09-07 用户批准「私人藏书桌」设计升级，`docs/nice-books-design.md` 替代旧 handoff §5–§8 的固定视觉值。继续使用 `--nb-*` token、Tailwind v3 `nb.` 命名空间（勿与 ai-news 色板混淆），`font-nb-body` 映射正文思源黑体。网格 `<360px` 单列、`360–759px` 两列、`>=760px` 三列，同架图书 `>=1080px` 四列。**坑：Tailwind utility 的 display 会覆盖 `[hidden]` 属性**，books.css @layer base 的 `[hidden]{display:none!important}` 勿删。
 - swup 协议（模块脚本）：顶层直接 init（首次整页加载）+ `document.addEventListener("astro:page-load", init)`（swup 导航进入时重跑）+ main 内 `dataset.nbInit` 守卫 + 目标元素缺失早退；document 级监听（archive 的「/」快捷键、封面 onerror）只在模块顶层注册一次。注意 `@swup/astro` 默认 `loadOnIdle`——swup 实例在页面空闲后才存在（`window.swup` 需等待），未就绪窗口内点击链接无害降级为整页加载。
@@ -378,7 +388,7 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 - 表格通用规则位于 `global.css`：`.prose table`/`.prose th`/`.prose td` 提供 `#c4c4c4` 边框、`vertical-align: middle` 和表头底色；`.post-context table` 统一 `width: 100%`，`.table-scroll` 负责过宽表格的局部横向滚动。新增表格不要在文章内另写宽度或滚动容器样式。
 - **根字号基线：本站根字号 = 浏览器默认（`html{font-size:100%}`，实测 16px）**。主题尺寸全靠 `px` 书写，`rem` 只出现在 Tailwind 的间距与字号工具类里——所以"把根字号改成 13px 以贴近原版"这类想法**已明确否决**：那会让全部 rem 工具类集体缩放，等同全站重排。源码里曾长期存在一条从未生效的 `html{font-size:13px}`（写在 `@layer base` 内，被更靠后源顺序的同特异性 `100%` 压掉），2026-09-22 已删除；不要按它的存在推断任何度量。
 - `src/styles/global.css`：Tailwind 指令 + 大量自定义 class（`.post-list`、`.tw`、`.widget`、`.pagenavi` 等，命名直接对应原主题 CSS），**视觉还原以 custom class 为主、utility 为辅**
-- 正文行内代码（2026-09-19 定）：字号 `max(12px, 0.9em)` 随所在文字等比缩放，**各级标题共用同一倍率**，字体走 `var(--font-mono)`；规则写在 `global.css` 的 `.post-context code` 附近，选择器必须是 `.post-context :not(pre) > code`（0,1,2 才压得住 legacy 的 `.post-context code`，同时避开 Expressive Code 的 `PRE.wrap > CODE`，代码块仍归它自己的 14px mono）。**必须同时关掉 `@tailwindcss/typography` 给行内 code 前后注入的反引号伪元素**（`.prose :not(pre) > code::before/::after { content: none }`）——该插件默认把行内代码画成 markdown 源码模样，与本站已有的边框+底色芯片叠加后被访客读成「反引号漏渲染」；选择器不排除 `pre code` 会连带抹掉 Expressive Code 自己的 `code::before` diff 标记。另注意 `.prose code { font-size:13px; font-family:var(--font-mono) }` 整条被关在 `@media (max-width:680px)` 内（桌面永不生效），legacy `.post-context code { font:12px Arial,"Microsoft JhengHei" }` 因此仍是行内代码的兜底来源，改字号/字体要改上面那条新规则而不是它。**折行**：`.post-context { word-break: break-all }`（原主题为中文排版所加，global.css ~3042 行）会被行内代码继承，长命令在任意字符处断——实测把 `setup-matt-pocock-skills` 切到第二行只剩 1 个字母（两行宽 166/7）；故同一条 `:not(pre) > code` 规则里必须带 `word-break: normal` + `overflow-wrap: break-word`，让断点回到连字符/斜杠边界（同处实测 130/43）且超长 token 仍不撑破版面。中文正文的 `break-all` 保持原样，只有行内代码退出
+- 正文行内代码（2026-09-19 定）：字号 `max(12px, 0.9em)` 随所在文字等比缩放，**各级标题共用同一倍率**，字体走 `var(--font-mono)`；规则写在 `global.css` 的 `.post-context code` 附近，选择器必须是 `.post-context :not(pre) > code`（0,1,2 才压得住 legacy 的 `.post-context code`，同时避开 Expressive Code 的 `PRE.wrap > CODE`，代码块仍归它自己的 14px mono）。**必须同时关掉 `@tailwindcss/typography` 给行内 code 前后注入的反引号伪元素**（`.prose :not(pre) > code::before/::after { content: none }`）——该插件默认把行内代码画成 markdown 源码模样，与本站已有的边框+底色芯片叠加后被访客读成「反引号漏渲染」；选择器不排除 `pre code` 会连带抹掉 Expressive Code 自己的 `code::before` diff 标记。另注意 `.prose code { font-size:13px; font-family:var(--font-mono) }` **在桌面一直是生效的**（它位于源码 `@layer components` 块内；Tailwind v3 的 `@layer` 是构建期指令，产物里没有级联层，所以不存在"被层压住"的机制——旧记录曾把它误写成"关在 `@media (max-width:680px)` 内、桌面永不生效"，两条都是错的：该文件里它之前的两个 media 块都已闭合）。它之所以盖不住行内代码：覆盖关系由**特异性**决定，`.post-context :not(pre) > code` 是 `(0,1,2)` > `.prose code` 的 `(0,1,1)`（此前写成"靠源顺序"也不准确）。legacy `.post-context code { font:12px Arial,"Microsoft JhengHei" }` 因此不是行内代码的兜底来源，改字号/字体要改上面那条新规则而不是它。**折行**：`.post-context { word-break: break-all }`（原主题为中文排版所加，global.css ~3042 行）会被行内代码继承，长命令在任意字符处断——实测把 `setup-matt-pocock-skills` 切到第二行只剩 1 个字母（两行宽 166/7）；故同一条 `:not(pre) > code` 规则里必须带 `word-break: normal` + `overflow-wrap: break-word`，让断点回到连字符/斜杠边界（同处实测 130/43）且超长 token 仍不撑破版面。中文正文的 `break-all` 保持原样，只有行内代码退出
 - 返回顶部按钮与灯箱（2026-09-20 定）：`.backtop` 以 `left:50%; margin-left:-614px` 相对视口居中锚定。Fancybox 打开时给 `html` 加 `with-fancybox`、给 `body` 加 `hide-scrollbar{overflow:hidden}`，把本站固定 10px 的根滚动条（`::-webkit-scrollbar{width:10px}`）收掉，fixed 元素的包含块因此从 1430 变 1440 → 按钮右移半格；正文列有 Fancybox 自身的 padding 补偿并不动，差值就是访客看到的「开灯箱后按钮偏移」。修法是 `global.css` 里 `html.with-fancybox .backtop{margin-left:-619px}`（紧跟 `.backtop:hover` 之前，实测 1440 视口下位移从 +4.9px 收敛到 -0.1px）。**勿改成 `html{scrollbar-gutter:stable}`**——实测那样灯箱容器只盖到 1430，右缘会露出一条未变暗的页面；也不要用「开灯箱就藏掉按钮」绕过去（`.backtop` 的 display 由 JS 内联样式切换，得写 `!important` 且会闪）。量测这条改动只能用真实浏览器，且要避开两个**测量陷阱**：其一，headless Chromium 走 overlay 滚动条（`innerWidth === clientWidth`），滚动条宽度类问题完全量不出来，必须 `chromium.launch({ headless:false, channel:"msedge" })`；其二，Playwright 的 `locator.click()` 会先把目标滚进视口，于是量到 12～3244px 不等的 `scrollTop` 变化 —— 那是自动化工具在滚页面，不是站点缺陷（曾被误判成「开灯箱后页面跳位」，实测图已在视口内时用 `page.mouse.click(x,y)` 或合成 `el.click()`，Δ 均为 0）。
 - 分页控件（`src/components/layout/Pagination.astro` / `.pagenavi`）统一使用无圆角 40×40 方块；正常态为品牌色边框，当前/禁用态为深灰边框，跳转输入框为 120×40 且隐藏数字微调箭头；导航符号为 `<<`、`<`、`>`、`>>`、`→`，移动端仅保留首、前、当前、后、末五项。
 - `docs/reference/colorful-original.css`：原主题 73KB 原始样式表，仅作对照参考，**不要直接引入**（路径基于 Emlog 模板目录）。放在 `src/` 外是为了让它自然脱离 `prettier --check ./src` 的扫描范围（它必须与 Emlog 原版逐字节一致，不能格式化），也不再混进源码样式目录
@@ -392,7 +402,7 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 - 相册缩略图与索引封面沿用图片墙同一套 **3:2 裁切**：`.photo-grid img`（桌面 `175px` 宽）与 `.album-grid .album-card .album-cover img`（`170px` 宽）均为 `height: auto` + `aspect-ratio: 3 / 2` + `object-fit: cover`，`max-width: 680px` 的共享规则同样带 `object-fit: cover`。相册原图比例不可控（全景图 4.6:1、竖拍 2:3 都有），去掉 `aspect-ratio` 或 `object-fit` 任一者都会让卡片高度参差或把图拉扁。`/albums/` 索引页封面必须用 `ResponsiveImage`（原图常 1MB+，裸 `<img>` 会绕过 WebP 变体）。注意 `@layer components` 里的同名旧规则（`.photo-grid img{height:130px}`）会被无层级规则逐条覆盖，改这里要看非层级那处。
 - 顶部二维码弹层：`src/components/layout/Navbar.astro` 中 QQ/微信共用 `.qrcode-frame`；`src/styles/global.css` 保持弹层四周 `10px` 内距、内部裁切框 `140×140`。由于 `public/images/qq-qrcode.jpg` 与 `public/images/wechat-qrcode.jpg` 的原图留白比例不同，两者使用独立的绝对定位裁切参数；更换资源后必须重新做真实 hover 视觉检查。
 - 桌面头部标题：`#header` 固定 `height:180px; overflow:hidden`，`#header h1` 与左侧 `100px` 浮动 logo 并排，其 `max-width` 必须为 `calc(100% - 100px)` 扣除 logo 占位；否则 `.box` 在 ≤1100px 收缩为 `calc(100% - 40px)` 时标题会被挤到 logo 下方落入裁切区并与 `#head-nav` 重叠（2026-09-04 实测修复）。改头部布局后须在 681–1100px 各断点复查标题位置。
-- 标签药丸 `#blogtags`（global.css 约 3477 行起，源自原版 colorful-original.css）：6 色轮换 + `::before` 三角 + `::after` 圆点，`/tag/` 两类标签页、`/category/` 两类分类页、侧栏 WidgetTag **五处共用**同一 DOM 结构，勿另写药丸样式；`.tag-count`（×N 数字，11px 白色）与 `a.is-current`（当前标签/分类品牌绿 `--colorful-green` 底 + 三角同色）为仅有的两处新增规则，**必须保持在 nth-child 轮换规则之后**（同 specificity 靠源顺序覆盖），移动位置会丢失高亮。
+- 标签药丸 `#blogtags`（锚点是选择器 `#blogtags a` 与 `#blogtags a::before/::after` 那一组规则，源自原版 colorful-original.css；行号会随编辑漂移，上一版记录就漂了约 220 行，故一律以选择器定位）：6 色轮换 + `::before` 三角 + `::after` 圆点，`/tag/` 两类标签页、`/category/` 两类分类页、侧栏 WidgetTag **五处共用**同一 DOM 结构，勿另写药丸样式；`.tag-count`（×N 数字，11px 白色）与 `a.is-current`（当前标签/分类品牌绿 `--colorful-green` 底 + 三角同色）为仅有的两处新增规则，**必须保持在 nth-child 轮换规则之后**（同 specificity 靠源顺序覆盖），移动位置会丢失高亮。窄屏（`max-width:680px`）另有一条命中区放宽（垂直内距 3→5px，三角与圆点随盒高走），桌面盒值不动。
 - 3D 标签/分类云（2026-09-08）：`src/components/layout/TagCloud3D.astro`（Props `items: {name,count}[]` + `base: "tag"|"category"`，空数组自隐藏），仅 `/tag/` 与 `/category/` 云集页调用，药丸云保留（当前项高亮 + `prefers-reduced-motion` 回退）；单标签/单分类页与侧栏 WidgetTag 不加。库为 vendored `public/vendor/svg3dtagcloud/SVG3DTagCloud.global.js`（npm `svg-3d-tag-cloud@0.0.20`，MIT，LICENSE 随附；标签颜色走库内置 10 色调色板，`fontColor` 设置不生效；`isDrawSvgBg` 默认黑底必须显式关）。加载按 Pio 先例运行时注入 `<script>`（Vite 禁止 ESM import public/ 内 JS，dev 500），组件脚本必须置于 swup 容器内（dev 下容器外脚本换页即丢）；实例挂 `window.__tagCloud3D` 跨页交接，init 在"新容器+守卫未设置"先 destroy 残留（rAF/resize 监听），切往无云页面由无容器分支销毁。hover 动效：标签 scale(1.15)/150ms（`(hover:hover)+(pointer:fine)` 门控）、tooltip 上浮由库写死的 `opacity="1.0"/"0.0"` 属性选择器驱动——CSS 必须放 `<style is:global>`（scoped 管线会转义坏 `:global()` 内属性选择器引号致永不匹配）；禁 `transition: all`（会缓动库逐帧写的 x/y 产生拖影）；reduced-motion 去位移保淡入。生产构建时组件脚本内联进 `<main>` 内 HTML，swup scripts-plugin 每次进入克隆重执行，靠注册表+守卫收敛（已实测）。
 - 首页右侧文章推荐固定为“最新 / 手气不错”两栏：两者使用普通箭头＋日期列表；“手气不错”仅在构建期随机抽取。首页下方只保留一个“热门推荐”，按 `getHotPosts` 的既有排序输出旗帜形序号标记；禁止复制热门元件或在浏览器端请求评论/文章数据。例外：`/hot/` 热门页（2026-09-05 经用户批准）为构建期渲染的独立列表页，正文用 `PostCard`，不复制 `#hotlog` 元件；侧栏热门部件仍仅首页显示。
 
