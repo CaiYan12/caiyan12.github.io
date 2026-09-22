@@ -22,8 +22,9 @@
     --border: #eaeaea;
     --line: #ddd;
     --text: #000;
-    /* #767676：正文级灰字达 WCAG AA（4.54:1）；装饰/边框不走此 token */
-    --text-light: #767676;
+    /* 次要文字只认一个来源：--colorful-text-secondary（#666，对白底实测 5.74:1）。
+       旧值 #767676 实测 4.54:1，虽刚过 AA 线却与其它灰值不同源，故并轨为别名 */
+    --text-light: var(--colorful-text-secondary);
     --text-gray: #505050;
     --shadow-wrapper: 0 2px 6px rgba(100, 100, 100, 0.3);
   }
@@ -1318,7 +1319,7 @@
 
   .archive-year-count {
     grid-column: 3 / -1;
-    color: #888;
+    color: var(--colorful-text-secondary);
     font-size: 15px;
     line-height: 1.2;
   }
@@ -1760,7 +1761,8 @@
 :root {
   --colorful-green: #00c000;
   --colorful-line: #ddd;
-  /* #667a8a：文本用例达 AA（≈4.65:1），保留原 #999aaa 的蓝灰调；边框用例随之略深 */
+  /* 更正：#667a8a 对白底实测 4.45:1，未达 AA（原注释自称 ≈4.65 达标为误记）。
+     因此本 token 现只供描边与装饰使用；文字一律走 --colorful-text-secondary */
   --colorful-muted: #667a8a;
 }
 
@@ -2601,7 +2603,7 @@ img:hover {
 .post-meta a {
   padding: 3px 0;
   border: 0;
-  color: var(--colorful-muted);
+  color: var(--colorful-text-secondary);
   font-size: 12px;
 }
 
@@ -2660,7 +2662,7 @@ img:hover {
   border: 1px solid var(--colorful-line);
   border-radius: 0;
   background: transparent;
-  color: #767676;
+  color: var(--colorful-text-secondary);
   font-size: 12px;
   line-height: 24px;
 }
@@ -2897,14 +2899,14 @@ img:hover {
   margin-bottom: 10px;
   padding: 10px 0 1px;
   border-bottom: 1px dotted var(--colorful-line);
-  color: #767676;
+  color: var(--colorful-text-secondary);
   font-size: 12px;
   font-style: normal;
 }
 
 .post-metaa a,
 .entry-meta a {
-  color: var(--colorful-muted);
+  color: var(--colorful-text-secondary);
 }
 
 .post-metaa a:hover,
@@ -3059,7 +3061,7 @@ img:hover {
 }
 
 .font-size-pop output {
-  color: var(--colorful-muted);
+  color: var(--colorful-text-secondary);
   font-size: 11px;
   text-align: center;
 }
@@ -3394,7 +3396,7 @@ img:hover {
   padding: 0;
   border: 0;
   background: transparent;
-  color: #999aaa;
+  color: var(--colorful-text-secondary);
   cursor: pointer;
   font: inherit;
   font-size: 12px;
@@ -3495,7 +3497,7 @@ img:hover {
 
 #newcomment .time {
   margin: 2px 0 11px 43px;
-  color: #999aaa;
+  color: var(--colorful-text-secondary);
   font-size: 12px;
   line-height: 16px;
 }
@@ -3688,7 +3690,7 @@ img:hover {
 
 .guestbook-meta time {
   flex: none;
-  color: #999aaa;
+  color: var(--colorful-text-secondary);
   font-size: 11px;
   line-height: 16px;
 }
@@ -4448,7 +4450,7 @@ html.with-fancybox .backtop {
   display: block;
   overflow: hidden;
   margin-top: 4px;
-  color: #888;
+  color: var(--colorful-text-secondary);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.4;
@@ -5577,7 +5579,7 @@ body,
 
 .post-toc summary span {
   margin-left: auto;
-  color: #767676;
+  color: var(--colorful-text-secondary);
   font-size: 12px;
   font-weight: 400;
 }
@@ -5615,7 +5617,7 @@ body,
   margin: 28px 0 0 !important;
   border-top: 1px dashed #ddd;
   padding-top: 12px;
-  color: #888;
+  color: var(--colorful-text-secondary);
   font-size: 12px;
   text-align: right;
 }
@@ -5682,7 +5684,7 @@ body,
 }
 
 .personal-meta {
-  color: #888;
+  color: var(--colorful-text-secondary);
   font-size: 12px;
 }
 
@@ -5767,7 +5769,7 @@ body,
 
 .skill-section > h3 span {
   margin-left: 8px;
-  color: #767676;
+  color: var(--colorful-text-secondary);
   font-size: 12px;
   font-weight: 400;
 }

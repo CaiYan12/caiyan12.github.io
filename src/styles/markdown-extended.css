@@ -822,7 +822,7 @@
 
 .gh-calendar-stats {
   margin: 0 0 10px;
-  color: var(--colorful-muted);
+  color: var(--colorful-text-secondary);
   font-size: 13px;
 }
 
@@ -853,7 +853,7 @@
   margin-bottom: 4px;
   /* 标签 nowrap 的可见溢出会计入祖先滚动区，裁在网格边缘避免 5px 级假横滚 */
   overflow: hidden;
-  color: var(--colorful-muted);
+  color: var(--colorful-text-secondary);
   font-size: 10px;
   line-height: 1;
 }
@@ -880,7 +880,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  color: var(--colorful-muted);
+  color: var(--colorful-text-secondary);
   font-size: 10px;
 }
 
@@ -936,7 +936,7 @@
   justify-content: flex-end;
   margin-top: 8px;
   gap: 3px;
-  color: var(--colorful-muted);
+  color: var(--colorful-text-secondary);
   font-size: 11px;
 }
 
@@ -953,7 +953,7 @@
 
 .gh-calendar-fallback-text {
   margin: 0;
-  color: var(--colorful-muted);
+  color: var(--colorful-text-secondary);
   font-size: 13px;
 }
 

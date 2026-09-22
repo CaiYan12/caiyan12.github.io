@@ -799,6 +799,585 @@ checkClean("插入项 nav 底线");
 
 checkClean("票 06");
 
+// ---------------- 次要文字单源化（票 08） ----------------
+const SECONDARY_SPOTS = [
+	".newcomment-refresh",
+	"#newcomment .time",
+	".guestbook-meta time",
+	".goon a",
+	".post-meta",
+	".post-metaa",
+	".post-toc summary span",
+	".skill-section > h3 span",
+	".archive-year-count",
+	".friend-domain",
+	".post-last-updated",
+	".personal-meta",
+	".gh-calendar-stats",
+	".gh-calendar-months",
+	".gh-calendar-wd",
+	".gh-calendar-legend",
+	".gh-calendar-fallback-text",
+];
+await page.setViewportSize({ width: 1440, height: 900 });
+const seen = new Map();
+for (const path of [
+	"/",
+	"/archive/",
+	"/friends/",
+	"/guestbook/",
+	"/skills/",
+	"/about/",
+	"/posts/20260919135000/",
+]) {
+	await page.goto(base + path, { waitUntil: "load" });
+	const hits = await page.evaluate((sels) => {
+		const out = [];
+		for (const s of sels) {
+			const el = document.querySelector(s);
+			if (el) out.push({ s, c: getComputedStyle(el).color });
+		}
+		return out;
+	}, SECONDARY_SPOTS);
+	for (const h of hits) if (!seen.has(h.s)) seen.set(h.s, h.c);
+}
+const distinct = [...new Set(seen.values())];
+const relLum = ([r, g, b]) => {
+	const f = (c) => {
+		c /= 255;
+		return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+	};
+	return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+};
+const nums = (distinct[0] || "").match(/[\d.]+/g) || [];
+const ratio =
+	nums.length >= 3 ? 1.05 / (relLum(nums.slice(0, 3).map(Number)) + 0.05) : 0;
+check(
+	"次要文字落点全部收敛到同一色值",
+	seen.size >= 13 && distinct.length === 1,
+	`命中 ${seen.size}/${SECONDARY_SPOTS.length} 处，distinct=${distinct.join(" | ")}`,
+);
+check(
+	"该色对白底达 4.5:1 以上",
+	distinct.length === 1 && ratio >= 4.5,
+	`${distinct[0]} = ${ratio.toFixed(2)}:1`,
+);
+checkClean("票 08");
+
+// ---------------- 每页恰好一个可见顶级标题、部件标题不跳级（票 09） ----------------
+const OUTLINE_PAGES = [
+	"/",
+	"/posts/20260919135000/",
+	"/about/",
+	"/albums/",
+	"/archive/",
+	"/guestbook/",
+	"/tag/",
+	"/friends/",
+	"/skills/",
+	"/diary/",
+	"/search/",
+	"/projects/",
+	"/timeline/",
+];
+await page.setViewportSize({ width: 1440, height: 900 });
+const outlines = [];
+for (const path of OUTLINE_PAGES) {
+	await page.goto(base + path, { waitUntil: "load" });
+	const seq = await page.evaluate(() =>
+		Array.from(document.querySelectorAll("h1,h2,h3,h4,h5,h6"))
+			.filter((e) => e.getClientRects().length > 0)
+			.map((e) => e.tagName.toLowerCase())
+			.join(">"),
+	);
+	outlines.push({ path, seq });
+}
+const h1Counts = outlines.map((o) => ({
+	path: o.path,
+	n: o.seq.split(">").filter((t) => t === "h1").length,
+}));
+check(
+	"每张主站页面恰好一个可见 h1",
+	h1Counts.every((r) => r.n === 1),
+	h1Counts.map((r) => `${r.path}=${r.n}`).join(" "),
+);
+const widgetLevels = await (async () => {
+	await page.goto(base + "/archive/", { waitUntil: "load" });
+	return page.evaluate(() => ({
+		h3: document.querySelectorAll(".widget h3").length,
+		h2: document.querySelectorAll(".widget h2").length,
+	}));
+})();
+check(
+	"侧栏部件标题已并到 h2（不再有任何部件 h3）",
+	widgetLevels.h3 === 0 && widgetLevels.h2 > 0,
+	JSON.stringify(widgetLevels),
+);
+// 跳级残留：部分列表页自身的内容标题从 h3 起（不是侧栏部件，属票 09 命名范围之外）
+const skips = outlines
+	.map((o) => ({ path: o.path, seq: o.seq }))
+	.filter((o) => /h1>h3/.test(o.seq.replace(/h1>h1>/, "h1>")));
+console.log(
+	`NOTE  内容级跳级残留（未修，待站长定）: ${skips.map((s) => s.path).join(" ") || "无"}`,
+);
+
+// 头部几何与计算值逐档基线（票 09 的「视觉逐像素不变」锁；数字取自改动前实测，
+// 用 output/head-baseline.mjs 在 4399 上采的，含 681–1100 这条文档锁定的脆弱带）
+const HEAD_BASE = [
+	[1440, 270, 45, 980, 60, "26px", "400", "31.2px"],
+	[1100, 120, 45, 960, 60, "26px", "400", "31.2px"],
+	[980, 120, 45, 840, 60, "26px", "400", "31.2px"],
+	[860, 120, 45, 720, 60, "26px", "400", "31.2px"],
+	[770, 120, 45, 630, 60, "26px", "400", "31.2px"],
+	[681, 120, 45, 541, 60, "20px", "400", "24px"],
+];
+const headRows = [];
+for (const [w, x, y, wid, h, fs, fw, lh] of HEAD_BASE) {
+	await page.setViewportSize({ width: w, height: 900 });
+	await page.goto(base + "/posts/20260919135000/", { waitUntil: "load" });
+	const got = await page.evaluate(() => {
+		const el =
+			document.querySelector("#header .site-title") ||
+			document.querySelector("#header h1");
+		if (!el) return null;
+		const bx = el.getBoundingClientRect();
+		const cs = getComputedStyle(el);
+		return {
+			r: [bx.x, bx.y, bx.width, bx.height].map((n) => Math.round(n)),
+			fs: cs.fontSize,
+			fw: cs.fontWeight,
+			lh: cs.lineHeight,
+			text: (el.textContent || "").trim(),
+		};
+	});
+	headRows.push({
+		w,
+		want: [x, y, wid, h],
+		got,
+		wantStyle: `${fs}/${fw}/${lh}`,
+	});
+}
+check(
+	"头部标题在五档下几何与计算值逐项不变（681–1100 为锁定脆弱带）",
+	headRows.every(
+		(row) =>
+			row.got &&
+			row.got.r.every((v, i) => Math.abs(v - row.want[i]) <= 1) &&
+			`${row.got.fs}/${row.got.fw}/${row.got.lh}` === row.wantStyle,
+	),
+	headRows
+		.map(
+			(row) =>
+				`${row.w}px: ${row.got ? row.got.r.join("/") : "缺失"} 期望 ${row.want.join("/")} ${row.got ? row.got.fs + "/" + row.got.fw + "/" + row.got.lh : ""} 期望 ${row.wantStyle}`,
+		)
+		.join(" | "),
+);
+checkClean("票 09");
+
+// ---------------- 命中区：药丸窄屏放宽 + 幻灯片点扩热区（票 10） ----------------
+// 判据全部落在渲染几何与 elementFromPoint 的命中结果上：
+// 「外观不动」= 按钮盒与桌面药丸盒逐项等于改动前实测；「热区扩大」= 命中扫描的真实范围。
+const PILL_DESKTOP_BASE = {
+	// /tag/ 改动前实测（1440 与 681 两档）：盒高 20、内距 3/7、外距 4/5/0/8、行距 26；
+	// 行数按宽度自然不同（1440→4 行、681→5 行），故逐档比对而非共用一个行数
+	h: 20,
+	padding: "3px 7px 3px 7px",
+	margin: "4px 5px 0px 8px",
+	pitch: 26,
+	rows: { 1440: 4, 681: 5 },
+};
+const readPills = async (width) => {
+	await page.setViewportSize({ width, height: 900 });
+	await page.goto(base + "/tag/", { waitUntil: "load" });
+	await page.waitForTimeout(400);
+	const read = await page.evaluate(() => {
+		const cloud = document.querySelector("#blogtags");
+		const a = cloud.querySelector("a");
+		const cs = getComputedStyle(a);
+		const rects = [...cloud.querySelectorAll("a")].map((x) =>
+			x.getBoundingClientRect(),
+		);
+		const tops = [...new Set(rects.map((r) => Math.round(r.y)))].sort(
+			(x, y) => x - y,
+		);
+		const tri = getComputedStyle(a, "::before");
+		const dot = getComputedStyle(a, "::after");
+		const num = (v) => Number.parseFloat(v) || 0;
+		return {
+			h: +rects[0].height.toFixed(2),
+			padding: `${cs.paddingTop} ${cs.paddingRight} ${cs.paddingBottom} ${cs.paddingLeft}`,
+			margin: `${cs.marginTop} ${cs.marginRight} ${cs.marginBottom} ${cs.marginLeft}`,
+			count: rects.length,
+			rows: tops.length,
+			pitch: tops.length > 1 ? +(tops[1] - tops[0]).toFixed(2) : null,
+			// 左侧三角的边框盒高、以及圆点盒中心相对药丸中心的偏差
+			triH: num(tri.borderTopWidth) + num(tri.borderBottomWidth),
+			dotOff: Math.abs(
+				num(dot.top) + num(dot.height) / 2 - rects[0].height / 2,
+			),
+		};
+	});
+	return { ...read, w: width };
+};
+const pillDesktop = await readPills(1440);
+const pillWide = await readPills(681);
+const pillNarrow = await readPills(390);
+check(
+	"桌面药丸盒值与色带几何逐档等于改前（含 681px 断点上沿）",
+	[pillDesktop, pillWide].every(
+		(p) =>
+			p.h === PILL_DESKTOP_BASE.h &&
+			p.padding === PILL_DESKTOP_BASE.padding &&
+			p.margin === PILL_DESKTOP_BASE.margin &&
+			p.pitch === PILL_DESKTOP_BASE.pitch &&
+			p.rows === PILL_DESKTOP_BASE.rows[p.w],
+	),
+	`1440: h=${pillDesktop.h} pad=${pillDesktop.padding} rows=${pillDesktop.rows}/${pillDesktop.count} 距=${pillDesktop.pitch} | 681: h=${pillWide.h} rows=${pillWide.rows} 距=${pillWide.pitch}`,
+);
+check(
+	"窄屏药丸命中高 ≥24（触屏底线）",
+	pillNarrow.h >= 24,
+	`390px 命中高=${pillNarrow.h}（改前 20）`,
+);
+check(
+	"窄屏放宽后左侧三角仍满高、圆点仍居中（装饰不随内距脱节）",
+	Math.abs(pillNarrow.triH - pillNarrow.h) <= 0.5 && pillNarrow.dotOff <= 0.5,
+	`三角盒高=${pillNarrow.triH} vs 药丸高=${pillNarrow.h}，圆点偏心=${pillNarrow.dotOff}`,
+);
+
+// 幻灯片指示点：视觉盒 10×10 不动，热区靠 elementFromPoint 实测上下 reach
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(base + "/", { waitUntil: "load" });
+await page.waitForTimeout(900);
+const dots = await page.evaluate(() => {
+	const lis = [...document.querySelectorAll(".carousel-indicators li")];
+	if (!lis.length) return null;
+	const reach = (li) => {
+		const btn = li.querySelector("button");
+		const r = btn.getBoundingClientRect();
+		const cx = r.x + r.width / 2;
+		const cy = r.y + r.height / 2;
+		// 命中判定含后代：点中心落在内部的原生 button 上，同样属于这一枚指示点
+		const hits = (dx, dy) => {
+			const el = document.elementFromPoint(cx + dx, cy + dy);
+			return !!el && (el === li || li.contains(el));
+		};
+		const span = (dir) => {
+			let n = 0;
+			while (n < 40 && hits(0, dir * (n + 1))) n++;
+			return n;
+		};
+		const lat = (dir) => {
+			let n = 0;
+			while (n < 20 && hits(dir * (n + 1), 0)) n++;
+			return n;
+		};
+		// 误触保证（对称）：本点的邻点中心仍各自归邻点、且邻点中心不被本点吞掉。
+		// 相邻两点的间距是 10px 点 + 5px 外边距 = 15px，热区横向只到 ±2.5px，
+		// 因此任何一点的中心都不会被别人的热区抢走——这才是「扩热区不制造误触」。
+		const ownsCenterOf = (other) => {
+			const or = other.querySelector("button").getBoundingClientRect();
+			const el = document.elementFromPoint(
+				or.x + or.width / 2,
+				or.y + or.height / 2,
+			);
+			return {
+				mine: el === li || li.contains(el),
+				theirs: el === other || other.contains(el),
+			};
+		};
+		const idx = lis.indexOf(li);
+		const prev = lis[idx - 1];
+		const next = lis[idx + 1];
+		let neighbourCentresSafe = null;
+		const safe = [];
+		if (prev) safe.push(ownsCenterOf(prev));
+		if (next) safe.push(ownsCenterOf(next));
+		if (safe.length)
+			neighbourCentresSafe = safe.every((s) => !s.mine && s.theirs);
+		return {
+			visual: [Math.round(r.width), Math.round(r.height)],
+			own: hits(0, 0),
+			up: span(-1),
+			down: span(1),
+			left: lat(-1),
+			right: lat(1),
+			neighbourCentresSafe,
+		};
+	};
+	return { n: lis.length, items: lis.map(reach) };
+});
+check(
+	"幻灯片点外观盒仍是原版 10×10",
+	!!dots && dots.items.every((d) => d.visual.join("×") === "10×10" && d.own),
+	dots ? dots.items.map((d) => d.visual.join("×")).join(" ") : "无指示点",
+);
+check(
+	"幻灯片点垂直热区 ≥24（原版仅 10）",
+	!!dots && dots.items.every((d) => d.up + d.down + 1 >= 24),
+	dots
+		? dots.items
+				.map((d) => `上${d.up}/点10/下${d.down}=${d.up + d.down + 1}`)
+				.join(" ")
+		: "-",
+);
+check(
+	"热区不吞掉相邻点中心（扩热区不制造误触）",
+	!!dots &&
+		dots.items.every((d) => d.own && d.neighbourCentresSafe !== false),
+	dots
+		? dots.items
+				.map(
+					(d) =>
+						`自身=${d.own} 邻点安全=${d.neighbourCentresSafe} 左${d.left}/右${d.right}`,
+				)
+				.join(" | ")
+		: "-",
+);
+checkClean("票 10");
+
+// ---------------- 贡献日历标签字号（票 11） ----------------
+// 三处联动：月标 + 周几两处字号、首列宽变量、以及 .gh-calendar-grid min-width 里
+// 那条 --gh-wd 的硬编码副本。同时把 AGENTS.md 锁死的几何做成回归护栏：
+// 格子方形性、53/7 整体比例、subgrid 构造、滚动容器内距、入场位移方向。
+const readCalendar = async (width) => {
+	await page.setViewportSize({ width, height: 900 });
+	await page.goto(base + "/about/", { waitUntil: "load" });
+	await page.waitForTimeout(1200);
+	return page.evaluate(() => {
+		const months = document.querySelector(".gh-calendar-months");
+		const cols = document.querySelector(".gh-calendar-cols");
+		const wd = document.querySelector(".gh-calendar-wd");
+		const cell = document.querySelector(".gh-calendar-cell");
+		const col = document.querySelector(".gh-calendar-col");
+		const scroll = document.querySelector(".gh-calendar-scroll");
+		if (!months || !cols || !wd || !cell || !col || !scroll) return null;
+		const cs = (e, p) => getComputedStyle(e)[p];
+		const mRect = months.getBoundingClientRect();
+		const labels = [...months.querySelectorAll("span")].filter((s) =>
+			s.textContent.trim(),
+		);
+		const cRect = cols.getBoundingClientRect();
+		const cellR = cell.getBoundingClientRect();
+		return {
+			monthFS: cs(months, "fontSize"),
+			wdFS: cs(wd, "fontSize"),
+			firstCol: cs(months, "gridTemplateColumns").split(" ")[0],
+			// 周几标签右对齐：scrollWidth>clientWidth 即字形被挤到列外
+			wdSpill: Math.max(
+				0,
+				...[...document.querySelectorAll(".gh-calendar-wd")].map(
+					(e) => e.scrollWidth - e.clientWidth,
+				),
+			),
+			// 月标 nowrap 溢出会被 .gh-calendar-months{overflow:hidden} 裁掉
+			clipWorst: Math.max(
+				0,
+				...labels.map(
+					(s) => s.getBoundingClientRect().right - mRect.right,
+				),
+			),
+			labels: labels.length,
+			cell: [+cellR.width.toFixed(1), +cellR.height.toFixed(1)],
+			colsRatio: +(cRect.width / cRect.height).toFixed(3),
+			subgrid: cs(col, "gridTemplateRows"),
+			scrollPad: `${cs(scroll, "paddingTop")} ${cs(scroll, "paddingRight")} ${cs(scroll, "paddingBottom")} ${cs(scroll, "paddingLeft")}`,
+			gridW: Math.round(
+				document
+					.querySelector(".gh-calendar-grid")
+					.getBoundingClientRect().width,
+			),
+		};
+	});
+};
+const cal1440 = await readCalendar(1440);
+const cal681 = await readCalendar(681);
+const cal390 = await readCalendar(390);
+check(
+	"日历标签桌面 11px、窄屏 10px（月标与周几同源）",
+	!!cal1440 &&
+		!!cal681 &&
+		!!cal390 &&
+		[cal1440, cal681].every(
+			(c) => c.monthFS === "11px" && c.wdFS === "11px",
+		) &&
+		cal390.monthFS === "10px" &&
+		cal390.wdFS === "10px",
+	`1440=${cal1440?.monthFS}/${cal1440?.wdFS} 681=${cal681?.monthFS} 390=${cal390?.monthFS}/${cal390?.wdFS}`,
+);
+check(
+	"字号上调后周几列不外溢、月份行不被裁切（三档）",
+	[cal1440, cal681, cal390].every(
+		(c) => c && c.wdSpill <= 0 && c.clipWorst <= 0.5 && c.labels === 12,
+	),
+	[cal1440, cal681, cal390]
+		.map((c) =>
+			c
+				? `外溢=${c.wdSpill} 裁切=${c.clipWorst.toFixed(1)} 月标=${c.labels}`
+				: "缺失",
+		)
+		.join(" | "),
+);
+check(
+	"AGENTS.md 锁定项未动：格子方形性、53/7 比例、subgrid、滚动内距",
+	[cal1440, cal681, cal390].every(
+		(c) =>
+			c &&
+			Math.abs(c.cell[0] - c.cell[1]) <= 1 &&
+			Math.abs(c.colsRatio - 53 / 7) <= 0.25 &&
+			/^subgrid/.test(c.subgrid) &&
+			c.scrollPad === "0px 3px 4px 0px",
+	),
+	[cal1440, cal681, cal390]
+		.map(
+			(c) =>
+				c &&
+				`格=${c.cell.join("×")} 比例=${c.colsRatio}(53/7=7.571) rows=${c.subgrid} 内距=${c.scrollPad}`,
+		)
+		.join(" | "),
+);
+// 入场位移方向：从上方落下（-6px 起）是 AGENTS 锁死项，读运行时动画的关键帧而非源码
+// 首版在 `commit` 时刻读计算值：那时样式表尚未生效，animationName 恒为 none（假红）。
+// 改为等样式就位后运行时重启该列的动画，再读首帧关键帧。
+await page.goto(base + "/about/", { waitUntil: "load" });
+await page.waitForTimeout(1200);
+const entry = await page.evaluate(() => {
+	const col = document.querySelector(".gh-calendar-col");
+	if (!col) return null;
+	col.style.animation = "none";
+	void col.offsetWidth;
+	col.style.animation = "";
+	const anim = col.getAnimations?.()[0];
+	const frames = anim?.effect?.getKeyframes?.();
+	const tf = (f) => f?.transform ?? f?.computedOffset ?? null;
+	const first = frames?.[0] ? tf(frames[0]) : null;
+	return {
+		name: getComputedStyle(col).animationName,
+		from: first ?? (frames ? JSON.stringify(frames[0]).slice(0, 80) : null),
+		y: Number.parseFloat(
+			/translateY\(\s*(-?[\d.]+)px/.exec(String(first))?.[1] ?? "NaN",
+		),
+	};
+});
+check(
+	"列级入场仍从上方落下（首帧 translateY < 0）",
+	entry?.name === "gh-calendar-col-in" && Number(entry.y ?? 1) < 0,
+	JSON.stringify(entry),
+);
+// 窄屏本就是「格子触到 --gh-cell-min 下限后局部横滚」的设计（AGENTS 已述），
+// 所以不判有没有滚动条，改判网格整体宽度有没有因字号上调而变大——
+// 首列宽变量与其硬编码副本没动时，该读数必须钉在基线上。
+check(
+	"窄屏横滚范围未因字号上调而扩大（网格宽度锁基线）",
+	!!cal390 && Math.abs(cal390.gridW - 438) <= 1,
+	`390 网格宽=${cal390?.gridW}（基线 438；若同批改 --gh-wd 需一并更新此基线）`,
+);
+checkClean("票 11");
+
+// ---------------- 缩略图圆角与等宽数字保险（票 14） ----------------
+// 三族缩略图各自比较「图片圆角 vs 卡片圆角」：图角大于卡角就会从卡片圆角里露出来。
+// 宽度基线取自改动前实测（本地产物与线上产物当时逐项相同），用来证明本票只收圆角、不碰宽度。
+const FAMILIES = [
+	{
+		name: "相册详情 .photo-grid",
+		path: "/albums/%E6%97%A5%E5%B8%B8%E9%9A%8F%E6%89%8B%E6%8B%8D/",
+		card: ".photo-grid a",
+		img: ".photo-grid img",
+		cardW: 190,
+		imgW: 174,
+	},
+	{
+		name: "相册索引 .album-cover",
+		path: "/albums/",
+		card: ".album-card .album-cover",
+		img: ".album-card .album-cover img",
+		cardW: 182,
+		imgW: 170,
+	},
+	{
+		name: "图片墙 .imageswall",
+		path: "/images/",
+		card: ".imageswall .grid a",
+		img: ".imageswall .grid img",
+		cardW: 182,
+		imgW: 180,
+	},
+];
+const fam = [];
+for (const f of FAMILIES) {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto(base + f.path, { waitUntil: "load" });
+	await page.waitForTimeout(700);
+	const got = await page.evaluate(
+		([card, img]) => {
+			const c = document.querySelector(card);
+			const i = document.querySelector(img);
+			if (!c || !i) return null;
+			const num = (v) => Number.parseFloat(v) || 0;
+			return {
+				cardR: num(getComputedStyle(c).borderTopLeftRadius),
+				imgR: num(getComputedStyle(i).borderTopLeftRadius),
+				cardW: Math.round(c.getBoundingClientRect().width),
+				imgW: Math.round(i.getBoundingClientRect().width),
+			};
+		},
+		[f.card, f.img],
+	);
+	fam.push({ name: f.name, want: f, got });
+}
+check(
+	"三族缩略图圆角均不超过其卡片圆角",
+	fam.every((f) => f.got && f.got.imgR <= f.got.cardR),
+	fam
+		.map((f) => `${f.name} 图${f.got?.imgR} vs 卡${f.got?.cardR}`)
+		.join(" | "),
+);
+check(
+	"三族宽度逐项等于基线（本票只收圆角，不碰宽度）",
+	fam.every(
+		(f) =>
+			f.got && f.got.cardW === f.want.cardW && f.got.imgW === f.want.imgW,
+	),
+	fam
+		.map(
+			(f) =>
+				`${f.name} 卡${f.got?.cardW}/图${f.got?.imgW} 期望 ${f.want.cardW}/${f.want.imgW}`,
+		)
+		.join(" | "),
+);
+// 等宽数字：当前字体下是空操作，故只要求「声明落地」且「数字串宽度不变」。
+const tnum = await (async () => {
+	await page.goto(base + "/archive/", { waitUntil: "load" });
+	await page.waitForTimeout(500);
+	return page.evaluate(() => {
+		const el = document.querySelector(".archive-entry-date");
+		if (!el) return null;
+		const probe = (text) => {
+			const c = el.cloneNode(true);
+			c.textContent = text;
+			el.parentElement.appendChild(c);
+			const w = c.getBoundingClientRect().width;
+			c.remove();
+			return +w.toFixed(2);
+		};
+		return {
+			variant: getComputedStyle(el).fontVariantNumeric,
+			w1: probe("1111111"),
+			w0: probe("0000000"),
+			wm: probe("1472580"),
+		};
+	});
+})();
+check(
+	"日期类已落 tabular-nums 声明，且三种数字串等宽（保险不改变现状）",
+	!!tnum &&
+		/tabular-nums/.test(tnum.variant) &&
+		tnum.w1 === tnum.w0 &&
+		tnum.w1 === tnum.wm,
+	JSON.stringify(tnum),
+);
+checkClean("票 14");
+
 await browser.close();
 
 const failed = results.filter((r) => !r.ok);
