@@ -1437,6 +1437,36 @@ const rootFont = await page.evaluate(
 );
 check("票 15：根字号仍为浏览器默认 16px", rootFont === "16px", rootFont);
 
+// 票 16：头部轮播只剩一条实现——删掉死块后，活的轮播必须仍在滚，
+// 且全站不得有任何元素还在引用被删的关键帧（计算值层面证明副本真死）
+const ticker = await (async () => {
+	await page.goto(base + "/posts/20260919135000/", { waitUntil: "load" });
+	await page.waitForTimeout(300);
+	const first = await page.evaluate(() => {
+		const li = document.querySelector("#header .text li");
+		return li ? li.textContent.trim() : null;
+	});
+	await page.waitForTimeout(4800); // > 一个 4s 节奏
+	const after = await page.evaluate(() => {
+		const li = document.querySelector("#header .text li");
+		const dead = [...document.querySelectorAll("body *")].filter((e) =>
+			e.getAnimations().some((a) => /ticker/.test(a.animationName ?? "")),
+		).length;
+		return { li: li ? li.textContent.trim() : null, dead };
+	});
+	return { first, after: after.li, deadAnims: after.dead };
+})();
+check(
+	"票 16：头部微言轮播仍在轮转（唯一实现未受删除影响）",
+	!!ticker.first && !!ticker.after && ticker.first !== ticker.after,
+	`首条 "${ticker.first}" → 4.8s 后 "${ticker.after}"`,
+);
+check(
+	"票 16：全站没有任何元素还在跑被删的 ticker 关键帧（负向扫描，真正的守卫是下面的指纹零差异）",
+	ticker.deadAnims === 0,
+	`引用数=${ticker.deadAnims}（被删的是零标记匹配的 CSS-only 块，改前改后都采不到动画，此条不会变红）`,
+);
+
 await browser.close();
 
 const failed = results.filter((r) => !r.ok);
