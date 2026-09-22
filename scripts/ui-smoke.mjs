@@ -1709,6 +1709,106 @@ check(
 );
 checkClean("插-2");
 
+// ---------------- T3 票 21：药丸六色压暗（乙法）----------------
+// 判据只落在渲染出来的计算值上：抓六格药丸实际生效的 background-color 与 color，
+// 在 Node 侧离线算 WCAG 对比度与 CIE76 ΔE。绝不读 CSS 源文本、token 名或行号。
+const parseRgb = (s) => {
+	const m = /rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/.exec(s);
+	return m ? [+m[1], +m[2], +m[3]] : null;
+};
+const contrast = (a, b) => {
+	const [x, y] = [relLum(a), relLum(b)].sort((p, q) => q - p);
+	return (x + 0.05) / (y + 0.05);
+};
+const toLab = ([r, g, b]) => {
+	const [R, G, B] = [r, g, b].map((v) => {
+		const s = v / 255;
+		return s > 0.04045 ? ((s + 0.055) / 1.055) ** 2.4 : s / 12.92;
+	});
+	const f = (v) => (v > 0.008856 ? Math.cbrt(v) : 7.787 * v + 16 / 116);
+	const [fx, fy, fz] = [
+		f((0.4124 * R + 0.3576 * G + 0.1805 * B) / 0.95047),
+		f(0.2126 * R + 0.7152 * G + 0.0722 * B),
+		f((0.0193 * R + 0.1192 * G + 0.9505 * B) / 1.08883),
+	];
+	return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+};
+const deltaE = (a, b) => {
+	const [p, q] = [toLab(a), toLab(b)];
+	return Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+};
+const WHITE = [255, 255, 255];
+// 改前实测基线：原六色两两最小 ΔE = 41.29（第 2 与第 5 格）。判据写作「不劣于现状」
+// 而不是凭空一个绝对阈值——站长要保的是同一档可辨性。
+const BASELINE_MIN_DE = 41.29;
+
+const pillFaces = async (path, sel) => {
+	await page.goto(base + path, { waitUntil: "load" });
+	return page.evaluate((sel) => {
+		return [...document.querySelectorAll(sel)].slice(0, 6).map((el) => {
+			const badge = el.querySelector(".tag-count");
+			return {
+				bg: getComputedStyle(el).backgroundColor,
+				fg: getComputedStyle(el).color,
+				badge: badge ? getComputedStyle(badge).color : null,
+			};
+		});
+	}, sel);
+};
+
+const cloud = await pillFaces("/tag/", "#blogtags a");
+check("票 21：标签云集取到 6 格药丸参与比对", cloud.length === 6, cloud.length);
+const clouds = cloud.map((c) => parseRgb(c.bg));
+check(
+	"票 21：六格底色互不相同（六色轮换未塌成同色）",
+	clouds.every(Boolean) && new Set(clouds.map((c) => c.join())).size === 6,
+	clouds.map((c) => (c ? `rgb(${c.join()})` : "?")).join(" "),
+);
+check(
+	"票 21：六格文字均为白字（乙法前提）",
+	cloud.every((c) => parseRgb(c.fg)?.join() === WHITE.join()),
+	[...new Set(cloud.map((c) => c.fg))].join(" | "),
+);
+const crs = clouds.map((c) => contrast(c, WHITE));
+check(
+	"票 21：六格白字对比度均 ≥4.5:1（WCAG 1.4.3 AA 正文）",
+	crs.every((v) => v >= 4.5),
+	crs.map((v) => Math.round(v * 100) / 100).join(" "),
+);
+let minDe = Infinity;
+let minPair = "";
+for (let i = 0; i < 6; i++)
+	for (let j = i + 1; j < 6; j++) {
+		const v = deltaE(clouds[i], clouds[j]);
+		if (v < minDe) {
+			minDe = v;
+			minPair = `第${i + 1}与第${j + 1}格`;
+		}
+	}
+const round2 = (v) => Math.round(v * 100) / 100;
+// 基线是以两位小数记录的实测值（41.29），比较时两侧精度必须一致，
+// 否则未取整的 41.2899… 会让「与改前完全相同」这一事实被判成劣化。
+check(
+	`票 21：两两最小 ΔE 不劣于改前基线 ${BASELINE_MIN_DE}（CIE76）`,
+	round2(minDe) >= BASELINE_MIN_DE,
+	`最小 ΔE ${round2(minDe)}（${minPair}）`,
+);
+check(
+	"票 21：×N 计数徽标仍为白字（压暗后未被同色吞掉）",
+	cloud.every((c) => !c.badge || parseRgb(c.badge)?.join() === WHITE.join()),
+	[...new Set(cloud.map((c) => c.badge ?? "无徽标"))].join(" | "),
+);
+const articleTags = await pillFaces("/posts/20260919135000/", ".post-tags a");
+check(
+	"票 21：文章页标签与云页共用同一组底色（token 单源未破）",
+	articleTags.length > 0 &&
+		articleTags.every((a) =>
+			clouds.some((c) => c?.join() === parseRgb(a.bg)?.join()),
+		),
+	articleTags.map((a) => a.bg).join(" | "),
+);
+checkClean("T3 票 21");
+
 // ---------------- T3 票 20：绿色瞬时态补非颜色辅助 ----------------
 // 缝隙 B 只读静息计算值、不驱动 hover，所以这一票的判据必须全在这里做实机悬停。
 // 两条同时成立才算过：① 非颜色通道上可感知（下划线出现 / 线展开）② 悬停不产生布局位移。
