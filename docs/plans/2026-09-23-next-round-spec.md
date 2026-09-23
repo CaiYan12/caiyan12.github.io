@@ -1,6 +1,7 @@
 # Spec：UI 收口后续轮（2026-09-23 四项裁决）
 
 - 镜像 issue：**#42**（label `ready-for-agent`）
+- 拆票：`docs/plans/2026-09-23-next-round-tickets.md` = issue **#43–#48**（六张，`#42` 的 sub-issue，阻塞边为 tracker 原生链接）
 - 来源：`C:\Users\Einn Tzai\AppData\Local\Temp\myblog-handoff-20260923-next-round.md` 的 ①②③⑥，站长已于 2026-09-23 逐项裁决
 - 上位文档：`docs/plans/2026-09-21-ui-adjust-tickets.md`（上一轮票册，已收口）、`docs/ui-adjust-0921.md`（证据登记册）、`docs/adr/0002–0004`、`CONTEXT.md` 词汇表
 - 动工前边界：`HEAD` == `origin/main` == `03f42e7`，工作树干净，三条工作流全绿，开放 issue 0 个
@@ -120,6 +121,8 @@
 ## Further Notes（备注）
 
 **建议实现顺序**（①③⑥ 互不依赖，② 最重）：
+
+> **已被票册取代（2026-09-23）**：拆票时站长确认 T0 三票（③ 文档／⑥ 脚本／① 判据）与 ② 的 expand 票**并行开工、不设依赖边**，真实阻塞边只有「contract ← expand」与「收口 ← 全部」。执行顺序、预览点与 commit 节奏以 `docs/plans/2026-09-23-next-round-tickets.md`（镜像 issue #43–#48）的「本轮计划的五项已确认参数」为准；下面这段保留仅作当初推理的记录。
 
 1. ③ 文档（纯文本，单 commit）
 2. ⑥ 脚本搬迁 + `--offline` + 变异验证（单 commit）
