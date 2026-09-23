@@ -477,7 +477,7 @@
 | `prettier --check ./src ./scripts tailwind.config.cjs` | All matched files use Prettier code style! |
 | 离线单测 | 六个脚本共**七次 `node --test` 调用**（`test:projects` 内串了两组）：utils 16、contributions 11、friend-icons 32、projects 6＋7、nice-books 51、site-stats 15 ＝ **138 项 0 fail**。我第一版记成「六组 132 项」，起因是每个脚本我只取了 `tail -6`，把 projects 的第二组整个漏在读数外——**记总数要按调用次数逐组累加，不能信 tail** |
 | 缝隙 A `pnpm smoke:ui`（build + preview:4399） | **112/112**（111 → 112 见下） |
-| 其余浏览器套件（同端口） | `test:fancybox` 27/27、`smoke:nice-books` 72/72、`smoke:ai-news` 9/9；外部服务失败单独统计不计 FAIL |
+| 其余浏览器套件（同端口） | `test:fancybox` 27/27、`smoke:nice-books` 72/72、`smoke:ai-news` 9/9；外部服务失败单独统计不计 FAIL。**这三份读数今天在同一个 dist 上复跑过、结果一致，但归档的日志文件是 09-22 那一份**（`output/t3-fancy.log` / `t3-nb.log` / `t3-ainews.log`）——站长在我准备为它们另存日志时叫停了，所以别把那两个日期不同的文件当成本票的产物。缝隙 A 的 112 项有本票当日日志：`output/t23-smoke-ui-local.log`（本地）与 `output/t23-smoke-ui-prod.log`（线上） |
 
 ## 三、收口时把票 21 的最后一格判据补成了机检
 
