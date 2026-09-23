@@ -3,7 +3,14 @@ import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import Giscus from "../../components/comment/Giscus.astro";
 import dayjs from "dayjs";
 import { getCollection, render } from "astro:content";
-import { getHotPosts, getNeighbors, getCover } from "../../utils/content-utils";
+import {
+	getCategoryList,
+	getCover,
+	getHotPosts,
+	getNeighbors,
+	getTagList,
+	isPublicPost,
+} from "../../utils/content-utils";
 import { siteConfig } from "../../config";
 import { getEffectiveComments } from "../../utils/site-stats";
 import QRCode from "qrcode";
@@ -27,6 +34,16 @@ const { title, published, updated, category, tags, author } = post.data;
 const comments = getEffectiveComments(post);
 const { Content, headings } = await render(post);
 const allPosts = await getCollection("posts");
+// 只对**真的生成出来的路由**发链接（#41）：/tag/<x>/ 与 /category/<x>/ 的 getStaticPaths
+// 枚举的是 getTagList(publicPosts)／getCategoryList(publicPosts)，而这两个函数都先过
+// isPublicPost——私有文章独占的那一项从不生成页面，链过去就是 404。
+// 判据与路由生成端同源，因此逐项退化而不是整行抹掉：私有文章若用的是公开分类（例如
+// 「技术」）链接照常保留，只有无路由的那几项降成纯文字。
+const publicPosts = allPosts.filter(isPublicPost);
+const routedTags = new Set(getTagList(publicPosts).map(({ name }) => name));
+const routedCategories = new Set(
+	getCategoryList(publicPosts).map(({ name }) => name),
+);
 const { prev, next } = getNeighbors(allPosts, post.id);
 const hotPosts = getHotPosts(allPosts, 6).filter((p) => p.id !== post.id);
 const postUrl = new URL(`/posts/${post.id}/`, siteConfig.siteURL);
@@ -107,12 +124,16 @@ const starLevel = (comments: number) => {
 				<i class="fa fa-folder-open-o" aria-hidden="true"></i>
 				{
 					category ? (
-						<a
-							href={`/category/${encodeURIComponent(category)}/`}
-							title={`查看${category}下的全部文章`}
-						>
-							{category}
-						</a>
+						routedCategories.has(category) ? (
+							<a
+								href={`/category/${encodeURIComponent(category)}/`}
+								title={`查看${category}下的全部文章`}
+							>
+								{category}
+							</a>
+						) : (
+							<span>{category}</span>
+						)
 					) : (
 						"未分类"
 					)
@@ -182,14 +203,18 @@ const starLevel = (comments: number) => {
 						本文标签：
 						{
 							tags.length > 0 ? (
-								tags.map((tag) => (
-									<a
-										rel="tag"
-										href={`/tag/${encodeURIComponent(tag)}/`}
-									>
-										{tag}
-									</a>
-								))
+								tags.map((tag) =>
+									routedTags.has(tag) ? (
+										<a
+											rel="tag"
+											href={`/tag/${encodeURIComponent(tag)}/`}
+										>
+											{tag}
+										</a>
+									) : (
+										<span>{tag}</span>
+									),
+								)
 							) : (
 								<span>这篇文章木有标签</span>
 							)

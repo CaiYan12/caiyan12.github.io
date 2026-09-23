@@ -311,6 +311,7 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 ### 内容组织
 - 文章：`src/content/posts/<yyyymmddhhmmss>/index.md`（**目录名即 URL slug**，可放封面图在同目录），schema 在 `src/content.config.ts`（posts + spec 两个 collection）
 - frontmatter 字段：title/published/category/tags/description/image/pinned/views/comments/hotness(0-5)/draft 等，其中 comments/hotness 用于首页吐槽与热门展示；views 为迁移兼容字段，当前不渲染围观数
+- 文章页的分类/标签链接**只对真的生成出来的路由发**（`src/pages/posts/[...slug].astro`）：合法性判据与 `/tag/[tag]`、`/category/[category]` 的 `getStaticPaths` **同源**，即 `getTagList(publicPosts)`／`getCategoryList(publicPosts)` 的名字集合——这两个函数都先过 `isPublicPost`，所以 `private: true` 文章独占的那一项从不生成页面。无路由的项降为**纯文字 `<span>`**，不是整行删除：私有文章若用的是公开分类（实测 `技术` 就是有路由的），链接照常保留。勿改回无条件发 `<a>`，那会重新制造 404（GitHub issue #41）。冒烟 `pnpm smoke:ui` 的 `#41` 三项判据守着这条，**被检页面清单取自 sitemap** 而不是从站内链接爬——私有文章页不被任何公开页链出，爬是爬不到的
 - 特殊页面：`src/content/spec/about.md`（关于）
 - 数据文件：`src/data/diary.ts`（说说）、`friends.json`（友链单一数据源）+ `friends.ts`（`Friend` 类型与兼容导出）、`comments.ts`（开发环境最新评论 mock）、`guestbook.ts`（开发环境留言板单条换一批 mock）、`site-stats.json`（构建期同步快照）
 - 相册：**文件夹驱动**——`public/images/albums/<相册名>/` 下放图即自动生成相册（`src/utils/album-scanner.ts` 构建期扫描，中文目录名没问题，slug 用原始名不要预编码）

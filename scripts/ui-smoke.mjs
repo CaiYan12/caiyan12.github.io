@@ -65,11 +65,11 @@ const PROBE = (sel) => {
 
 const clipped = (p) => p.scrollWidth > p.clientWidth + 1;
 
-// 已知应放行的两类：① private:true 的文章页仍渲染分类面包屑，而 getCategoryList 走
-// isPublicPost 过滤、根本不生成该分类页（既存缺陷，见 issue #41）；② 票 18 自己故意
-// 访问的 404 哨兵路径——`page.goto` 到 404 文档必然产生一条本地 console 错误。
+// 已知应放行的一类：票 18 自己故意访问的 404 哨兵路径——`page.goto` 到 404 文档必然
+// 产生一条本地 console 错误。#41 的私有文章死链曾挂在这里被长期放行，现已删除：
+// 那条 404 不是「环境偶发」，是站点真发出的死链，白名单把它藏住了。
 // 按名前缀列名而非放宽整条检查，是为了让新出现的死链仍然报红。
-const KNOWN_DEAD = ["/category/%E7%A4%BA%E4%BE%8B/", "/this-page-should-404/"];
+const KNOWN_DEAD = ["/this-page-should-404/"];
 const isKnownDead = (url) => KNOWN_DEAD.some((p) => url.startsWith(base + p));
 
 const browser = await chromium.launch();
@@ -2201,6 +2201,104 @@ check(
 	JSON.stringify(tabFirst),
 );
 checkClean("T3 票 22");
+
+// ---------------- #41：文章页的分类/标签链接必须落在真的生成出来的路由上 ----------------
+// 根因是两端判据不同源：路由由 getTagList/getCategoryList 枚举，而这两个函数先过
+// isPublicPost，所以私有文章独占的分类/标签**从不生成页面**；文章页却照 frontmatter 发链接。
+// 判据不写死任何 slug：合法路由清单取 /tag/ 与 /category/ 自己渲染出的完整药丸云，
+// 被检页面清单取 sitemap（私有文章页也在里面），两端都是读产物，不读源码。
+const routeNames = async (path, kind) => {
+	await page.goto(base + path, { waitUntil: "load" });
+	return page.evaluate(
+		([kind]) => {
+			const out = new Set();
+			// 只认与本页同类的那一种 url：/category/ 上除了头部全量分类云，侧栏部件还会
+			// 再渲染一个 **标签** 药丸云（两者都用 #blogtags），混着收会把 32 个标签名也
+			// 算进合法分类集合，而「习题/试卷/技术架构」既是标签又是分类——泄漏就会漏判。
+			const re = new RegExp(`^\\/${kind}\\/(.+)\\/$`);
+			for (const a of document.querySelectorAll("#blogtags a")) {
+				const m = re.exec(a.getAttribute("href") ?? "");
+				if (m) out.add(decodeURIComponent(m[1]));
+			}
+			return [...out];
+		},
+		[kind],
+	);
+};
+const tagRoutes = new Set(await routeNames("/tag/", "tag"));
+const catRoutes = new Set(await routeNames("/category/", "category"));
+const sitemapIndex = await (await fetch(base + "/sitemap-index.xml")).text();
+const postPages = new Set();
+for (const f of [...sitemapIndex.matchAll(/<loc>(.*?)<\/loc>/g)]
+	.map((m) => m[1])
+	// sitemap 里写的是绝对 url（站点主域），本地跑时必须改指到 base，
+	// 否则子图会被去线上取，变成「本地页面 + 线上清单」的错配比对。
+	.map((u) => base + u.replace(/^https?:\/\/[^/]+/, ""))) {
+	const xml = await (await fetch(f)).text();
+	for (const u of xml.matchAll(/<loc>(.*?)<\/loc>/g)) {
+		const path = u[1].replace(/^https?:\/\/[^/]+/, "");
+		if (/^\/posts\/[^/]+\/$/.test(path)) postPages.add(path);
+	}
+}
+check(
+	"#41：比对前提成立（路由清单与非首页文章页都真拿到了）",
+	tagRoutes.size >= 6 && catRoutes.size >= 2 && postPages.size >= 10,
+	`标签路由 ${tagRoutes.size}／分类路由 ${catRoutes.size}／sitemap 文章页 ${postPages.size}`,
+);
+const deadLinks = [];
+for (const p of [...postPages].sort()) {
+	await page.goto(base + p, { waitUntil: "domcontentloaded" });
+	const out = await page.evaluate(() => {
+		const found = [];
+		for (const a of document.querySelectorAll(
+			".post-metaa a, .post-tags a",
+		)) {
+			const m = /^\/(tag|category)\/(.+)\/$/.exec(
+				a.getAttribute("href") ?? "",
+			);
+			if (m) found.push([m[1], decodeURIComponent(m[2])]);
+		}
+		return found;
+	});
+	for (const [kind, name] of out) {
+		const live = kind === "tag" ? tagRoutes.has(name) : catRoutes.has(name);
+		if (!live) deadLinks.push(`${p} → /${kind}/${name}/`);
+	}
+}
+check(
+	"#41：全站文章页发出的分类/标签链接都指向已生成的路由",
+	deadLinks.length === 0,
+	`扫 ${postPages.size} 篇，死链 ${deadLinks.length} 条` +
+		(deadLinks.length ? `：${deadLinks.slice(0, 8).join("、")}` : ""),
+);
+// 只查「没有死链」会被一种假绿骗过去：把整行分类/标签删掉也能通过。
+// 所以再看一眼 issue #41 里那篇三项全死的样本：三项必须**仍然看得见，只是不再是链接**。
+await page.goto(base + "/posts/20240501000000/", {
+	waitUntil: "domcontentloaded",
+});
+const witness = await page.evaluate(() => {
+	const row = (sel) => ({
+		text: (document.querySelector(sel)?.textContent ?? "")
+			.replace(/\s+/g, " ")
+			.trim(),
+		links: [...document.querySelectorAll(sel + " a")].map((a) =>
+			a.textContent.trim(),
+		),
+	});
+	return { meta: row(".post-metaa"), tags: row(".post-tags") };
+});
+const GONE = ["示例", "Markdown", "扩展"];
+const stillLinked = GONE.filter(
+	(t) => witness.meta.links.includes(t) || witness.tags.links.includes(t),
+);
+const stillVisible = GONE.filter(
+	(t) => witness.meta.text.includes(t) || witness.tags.text.includes(t),
+);
+check(
+	"#41：无路由的那几项降为纯文字而不是被删掉（样本篇 示例/Markdown/扩展 仍可见）",
+	stillLinked.length === 0 && stillVisible.length === GONE.length,
+	`仍成链接=[${stillLinked.join(",") || "无"}] 文字里仍在=[${stillVisible.join(",") || "无"}]`,
+);
 
 await browser.close();
 
