@@ -709,7 +709,7 @@
 
 **Delivers**：本地全链绿、远程部署可证生效、票册状态全部回填。
 
-> 状态：已验收（`10dcf3e` 缝隙 A 补格 + `5338128` 证据归档；push 与线上生效见下方交付块，随其后的 docs commit 回填）@2026-09-23
+> 状态：已验收（`10dcf3e` + `5338128` + `27c6b24` + `30a380b`，交付与线上生效见下方「票 23 交付」）@2026-09-23
 
 **T0 段进度（2026-09-21）**：T0 全批已 commit 并 push（`3a798dc..df2e43c`）；三条工作流在 `df2e43c` 上全绿（Lint 26s / Build and Check 31s / Deploy 1m54s），站点 `Last-Modified: Mon, 21 Sep 2026 11:50:08 GMT` 与部署完成时刻对齐；整套冒烟以**线上**为基准复跑 43/43（含 nav 底线的像素判据）。镜像 issue #18-#24 已逐条留言并关闭，父票 #17 未动。
 **「收尾一次全链」目前由 CI 覆盖**：`deploy.yml` 的 `withastro/action` 执行 `pnpm build` 全链且 `cache:false` 保证 content layer 不陈旧。本地未重复跑全链 —— 会弄脏 `src/constants/*.json` 与 `site-stats.json` 并与并发会话撞车；票 23 关闭前若需本地产物级证明，再单独跑一次并回收数据文件改动。
@@ -719,7 +719,14 @@
 - [x] `pnpm check` 零错误、`prettier --check ./src` 通过　〔`astro check` 159 files：**0 errors / 0 warnings**（2 hints 为既有第三方提示）；`prettier --check ./src ./scripts tailwind.config.cjs` → All matched files use Prettier code style!（收口时改过 `ui-smoke.mjs`，改后再跑一遍仍绿）〕
 - [x] 既有全部冒烟与单测绿（灯箱、好书、日报、工具函数、项目、书籍、统计、友链图标）　〔六个单测脚本共**七次 `node --test` 调用**（`test:projects` 一条命令里串了两组）＝ utils 16 / contributions 11 / friend-icons 32 / projects 6＋7 / nice-books 51 / site-stats 15 ＝ **138 项 0 fail**；我先前把它记成「六组 132 项」，是因为只看了 `tail -6`，把 projects 的第二组漏掉了——数字以 `output/t23-unittests.log` 为准。四套浏览器套件同一端口 4399 上跑（先 build 再 preview）：缝隙 A **112/112**、`test:fancybox` 27/27、`smoke:nice-books` 72/72、`smoke:ai-news` 9/9。外部服务失败按既有约定单独统计、不计 FAIL〕
 - [x] 改后指纹与基线比对报告归档到证据登记册　〔`output/fp-t3-base` → `output/fp-t3-final`：23 页、逐页元素总数 **15223 → 15223（零增删，T0–T3 没有任何一票动过 DOM 结构）**；变化 459 处、属性只有两种——439 处药丸 `background-color`（票 21）＋ 20 处 `a.skip-link` 的 `2147483647 → 1000000`（票 22，旧产物自己把 int32 钳位印了出来）；未变的三页正是 `/books/` 独立壳（不引 `Layout`，本就既无 skip link 也无药丸）；票 20 静息零漂移，与「缝隙 B 不驱动 hover」的前置一致。两端同端口、console 报错逐页对应相同。归因表与读数已落 `docs/ui-adjust-0921.md`「整轮收口」〕
-- [ ] 一项一 commit 已按票序落地；push 与 Pages 部署验证按站长指示执行（线上以 `Last-Modified` 或 Actions artifact 判定，勿凭刷新可见）→ 本票册内 23 票逐票 sha 齐全（票 01–22 各条状态行），push 与线上生效在部署完成后回填于下方
+- [x] 一项一 commit 已按票序落地；push 与 Pages 部署验证按站长指示执行（线上以 `Last-Modified` 或 Actions artifact 判定，勿凭刷新可见）　〔见下方「票 23 交付」〕
+
+**票 23 交付（2026-09-23）**
+- 逐笔 commit（一 ticket 一件事）：`10dcf3e` 缝隙 A 补第五处比对、`5338128` 证据登记册归档终版指纹、`27c6b24` 票册状态回填、`30a380b` 按 code-review 结果修我自己写错的判据与三处数字
+- **本票这四次改动没有动过任何一个站点文件**：`git diff --name-only ae07945..HEAD` 只有 `docs/**` 与 `scripts/ui-smoke.mjs`。所以线上生效的判据不能是产物内容差异（没有内容可差），而是这三条：三条工作流在 `30a380b` 全绿（`Prettier Check`／`Astro Check` success，`Astro Build` 按既定拓扑在 main push 跳过，`build` 与 `deploy` success）；站点根 `Last-Modified: Wed, 23 Sep 2026 05:32:32 GMT` 晚于本次部署完成时刻；缝隙 A **以线上为基准复跑 112/112**（五处读数与本地一致：32／31／6／5／32 格）
+- **收尾方式改了**：票册状态回填不再靠人眼。`output/t23-ledger-audit.mjs` 把本文件「本文件怎么用」的四条契约变成可跑判据（状态行唯一且终态／无未勾判据／引用的 sha 须在 HEAD 链上／编号票镜像须已关闭），并加了一条 R6：划掉（`~~…~~`）的判据必须写明「作废」，否则 `[x]` 与真达成在机器眼里没有区别。R6 会咬已用变异证明——把票 12 与票 22 那两行的「作废」二字删掉后重跑，正好报出这两条、其余不变。首跑 18 条不合规，收口后应为 0
+- 脚本在 gitignored 的 `output/` 下，只对本次收口负责；要长期守着票册，需提到 `scripts/` 并把读 issue 状态的 R5 与离线判据分开（已写进 `.design-flow.json` 的 next）
+- 遗留两条新测得、未修、已登记：`#header .text` 全族零 `:hover`（微言轮播链接无任何悬停反馈）与 `id="blogtags"` 在四类页面上重复出现（HTML id 唯一性问题）。两者都要动 DOM 或新增视觉行为，须过预览门禁，不属于本票
 - [x] `.design-flow.json` stage 与 next 更新　〔stage 记至 `verification`，next 改为下轮议题清单〕
 
 **另立了一条台账自检（本票的真实产出之一）**：`output/t23-ledger-audit.mjs` 把本文件「本文件怎么用」一节写给自身的四条契约变成可跑判据——状态行唯一且为终态、无未勾验收判据、状态里引用的 sha 必须在 HEAD 链上、编号票的镜像 issue 必须已关闭。首跑 **18 条不合规**，逐条都是真账：插-1 的状态行漂到了文件末尾（于是票 23 被读出两条状态、插-1 缺一条）、票 12/20/21/22 各有一条判据没结办、T2 镜像 #32–#36 五张未关、票 23 自身 7 条。sha 全部 `merge-base --is-ancestor` 通过，没有一票引用了不存在的 commit。
