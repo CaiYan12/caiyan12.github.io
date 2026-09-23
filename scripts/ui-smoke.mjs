@@ -1811,6 +1811,43 @@ check(
 		),
 	articleTags.map((a) => a.bg).join(" | "),
 );
+// 五处共用同一 DOM 结构（AGENTS.md 锁定项）：标签云集页、单标签页、分类云集页、
+// 单分类页、侧栏部件。单页入口不写死 slug——从云页自己渲染的第一个药丸链接取，
+// 否则标签一改判据就假红。当前项 a.is-current 按设计是品牌绿，不入六色比对。
+const pillColors = async (path, sel = "#blogtags a:not(.is-current)") => {
+	await page.goto(base + path, { waitUntil: "load" });
+	return page.evaluate((sel) => {
+		const colors = new Set();
+		let first = "";
+		for (const el of document.querySelectorAll(sel)) {
+			colors.add(getComputedStyle(el).backgroundColor);
+			if (!first) first = el.getAttribute("href") ?? "";
+		}
+		return { colors: [...colors], first };
+	}, sel);
+};
+const six = new Set(cloud.map((c) => c.bg));
+const tagCloud = await pillColors("/tag/");
+const catCloud = await pillColors("/category/");
+const faces = [
+	["标签云集页", tagCloud.colors],
+	["单标签页", (await pillColors(tagCloud.first)).colors],
+	["分类云集页", catCloud.colors],
+	["单分类页", (await pillColors(catCloud.first)).colors],
+	[
+		"侧栏部件",
+		(await pillColors("/", "#sidebar #blogtags a:not(.is-current)")).colors,
+	],
+];
+const offSix = faces
+	.map(([n, cs]) => [n, cs.filter((c) => !six.has(c))])
+	.filter(([, s]) => s.length);
+check(
+	"票 21：五处共用该 DOM 的页面都只出这六色（底色单源未破）",
+	offSix.length === 0 && faces.every(([, cs]) => cs.length === 6),
+	faces.map(([n, cs]) => `${n}=${cs.length}色`).join(" | ") +
+		(offSix.length ? ` 越界 ${JSON.stringify(offSix)}` : ""),
+);
 checkClean("T3 票 21");
 
 // ---------------- T3 票 20：绿色瞬时态补非颜色辅助 ----------------
