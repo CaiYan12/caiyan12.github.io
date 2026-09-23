@@ -497,3 +497,5 @@
 `#header .text a`（头部微言轮播里的日期链接）静息计算值为 `text-decoration-line: none` + `color: rgb(255,255,255)`，而 `global.css` 里 `#header .text` 全族**没有任何 `:hover` 规则**（`grep -n '#header .text[^{]*:hover' src/styles/global.css` 零命中，命中数 0）。也就是这族链接悬停时既不变色也不出线。它不在票 20 的缺陷面内——票 20 修的是「状态只靠颜色传达」，这里是**根本没有状态反馈**——且补它属于新增视觉行为、必须过预览门禁，故票 23 只登记不改码，留给下轮。
 
 **`id="blogtags"` 在四类页面上出现两次**：`src/components/layout/TagPillCloud.astro` 是唯一发射器（`<ul id="blogtags">`），但云集页与单页都要「头部全量云 + 侧栏部件」各一份。实测 `querySelectorAll('#blogtags').length`：`/tag/` = 2、`/category/` = 2、`/tag/xxx/` = 2、首页 = 1。CSS 不因此出错（选择器两处都命中），但 **HTML 的 id 必须全文唯一**，这属有效性／可访问性问题：锚点、`getElementById` 与辅助技术引用都只会指向第一处。本轮不修——换侧栏 id 等于动 AGENTS.md 锁定的「五处共用同一 DOM 结构」，参数化组件则是新增结构决策，两者都改 DOM 且要重开指纹基线。**顺带一条事实更正**：所谓「五处共用该 DOM」，在四类页面上其实是**同屏两处**；缝隙 A 那条新判据的第一版就是被这一点骗到的（裸 `#blogtags` 把两处并成一处）。
+
+**③ 私有文章页全部在 sitemap 里（2026-09-23 修 #41 时查出，待站长判）**。`astro.config.mjs` 的 `sitemap({ filter })` 只排除 `/page/1/` 与 books 数据，`dist/sitemap-0.xml` 里 21 篇 `/posts/…/` 一篇不少——包含 10 篇 `private: true`。这与 #41 里「私有内容不进公开索引」的既定语义相反：站内不链出，却主动向爬虫申报 URL。要处理得连 `noindex`／robots 说法与「冒烟用 sitemap 枚举私有文章页」这条依赖一起改（见 `scripts/ui-smoke.mjs` 的 `#41` 判据），所以属另一项裁决，未随 #41 动。
