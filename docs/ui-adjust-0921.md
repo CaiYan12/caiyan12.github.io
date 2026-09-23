@@ -436,3 +436,51 @@
 其余五色的同族压暗值（`#c9001f` `#00794a` `#8e1fd0` `#8f5a26` `#0066c9`，白字 5.48–6.45）不受此争议影响，六色可辨性 ΔE 由 61.6 降到 50.7，仍远高于易混阈值。
 
 **待你在两者间定**：① 六色统一压暗、白字不动（观感代价集中在琥珀一格变棕）；② 五色压暗 + 琥珀单独改黑字保留鲜亮（一处不一致换一处鲜艳）。改动都集中在 `--tag-c1..c6` 六个 token，不触碰 `nth-child` 轮换与 `a.is-current` 源顺序。
+
+---
+
+# 整轮收口 · 全链验证与指纹归档（票 23，2026-09-23）
+
+> 站长 2026-09-22 选乙法后落地的三票，与 T0–T2 合起来构成 23 票全数交付。本节是票册「改后指纹与基线比对报告归档」这一条的落点。
+
+## 一、终版指纹：基线 `output/fp-t3-base` → 末态 `output/fp-t3-final`
+
+两端同一端口（4399）、同一 23 页清单、同一构建输入（先还原被 `pnpm build` 改写的 GitHub 快照再重建，避免贡献日历随远端漂移），采集前照例删过 `node_modules/.astro`。
+
+| 项 | 读数 |
+|---|---|
+| 页面数 | 23 → 23 |
+| 逐页元素总数 | 15223 → **15223**（零增删，即没有一张票动过 DOM 结构） |
+| 变化元素 | **459**，分布在 20/23 页 |
+| 变化属性种类 | **2**：`background-color` 439 处、`z-index` 20 处，无第三种 |
+| 未变化的三页 | `/books/`、`/books/archive/`、`/books/01/`——独立壳不引 `Layout` 与 `global.css`，本就没有 skip link 与药丸，属预期 |
+| console 报错 | 两端各 5 条、逐页对应相同（远端资源加载失败，与样式无关） |
+
+归因到票：
+
+- **439 处 `background-color` = 票 21**。全部落在药丸锚点（叶标签 `a`），每处只差这一个属性——三角与圆点两个伪元素一条没变，证明六色确实只由 `--tag-c1..c6` 单源驱动，没有第二处硬编码。按页：`/tag/` 65、文章页 37–40（云 + 侧栏 + `.post-tags`）、主站壳页 33（侧栏 32 + skip link 1）、`/category/` 39。
+- **20 处 `z-index` = 票 22**。逐页一处，全是 `a.skip-link` 的 `2147483647 → 1000000`。旧产物算出的正是 int32 顶值——**缺陷本身被印在改前证据里**，这条是票 22「源文本看不出来」那两层陷阱（超界静默钳位、模态 `<dialog>` 走顶层层）的实物照。
+- **票 20 = 零漂移**。它只加 hover 态，而采集从不驱动 hover/focus，与 T3 前置结论一致：这一票的判据只能落在缝隙 A，写「指纹零差异」才是假绿。
+
+**归因脚本自己翻过一次车**：第一版按 `;` 直接拆属性，没先按 ` | ` 分段——一条记录里锚点与 `::before`/`::after` 有同名属性（`display`/`width`/`inset`…），于是拿锚点的值去比伪元素的值，虚报成 6166 处变化、多出六种「属性」。改成段感知后得 459，与指纹工具自报的数逐一对齐。**教训：归因表也要先证明它数对了，才能拿它当证据。**
+
+## 二、本地全链（2026-09-23，HEAD `ae07945`）
+
+| 环节 | 结果 |
+|---|---|
+| `rm -rf node_modules/.astro .astro/data-store.json` → `pnpm build` | exit 0（链头三组单测各 `fail 0`；validate-post-slugs / LQIP / GitHub 拉取 / astro build / 佛祖横幅 / Pagefind 全过） |
+| 构建改写的跟踪文件 | `github-contributions.json`、`github-projects.json` → `git checkout --` 还原；其余五个 constants 与 `site-stats.json` 零漂移 |
+| 确定性复检 `pnpm exec astro build` + banner + pagefind | exit 0。**第一次在 `/og/*.png` 处失败**：`fonts.googleapis.com` 连接超时 → `No fonts are loaded`，是 AGENTS.md 记录的已知网络抖动；curl 复探 200/0.99s 后原样重跑即过 |
+| `pnpm check` | 159 files，**0 errors / 0 warnings** / 2 hints |
+| `prettier --check ./src ./scripts tailwind.config.cjs` | All matched files use Prettier code style! |
+| 六组离线单测 | utils 16、contributions 11、friend-icons 32、projects 7、nice-books 51、site-stats 15 ＝ **132 项 0 fail** |
+| 缝隙 A `pnpm smoke:ui`（build + preview:4399） | **112/112**（111 → 112 见下） |
+| 其余浏览器套件（同端口） | `test:fancybox` 27/27、`smoke:nice-books` 72/72、`smoke:ai-news` 9/9；外部服务失败单独统计不计 FAIL |
+
+## 三、收口时把票 21 的最后一格判据补成了机检
+
+票 21 原文「预览：五处共用该 DOM 的页面同屏比对」长期没勾，因为缝隙 A 只机检了两面（`/tag/` 云与文章页 `.post-tags`）。现补一条判据：标签云集页、单标签页、分类云集页、单分类页、侧栏部件五处各自的 `#blogtags a` 计算底色**集合必须恰好等于云页那六色**（当前项 `a.is-current` 按设计是品牌绿，先排除）。两处细节是刻意的：单页入口的 slug 不写死，从云页自己渲染的第一个药丸链接里取，标签改名不会假红；判据比的是「集合相等」而非逐格顺序，所以 `nth-child` 轮换若被改动仍会翻红。实测五处各 6 色、零越界。
+
+## 四、收口期间新测得、未修、待站长定
+
+`#header .text a`（头部微言轮播里的日期链接）静息计算值为 `text-decoration-line: none` + `color: rgb(255,255,255)`，而 `global.css` 里 `#header .text` 全族**没有任何 `:hover` 规则**（`grep -n '#header .text[^{]*:hover' src/styles/global.css` 零命中，命中数 0）。也就是这族链接悬停时既不变色也不出线。它不在票 20 的缺陷面内——票 20 修的是「状态只靠颜色传达」，这里是**根本没有状态反馈**——且补它属于新增视觉行为、必须过预览门禁，故票 23 只登记不改码，留给下轮。
