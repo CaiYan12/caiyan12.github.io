@@ -1746,21 +1746,26 @@ const WHITE = [255, 255, 255];
 // 而不是凭空一个绝对阈值——站长要保的是同一档可辨性。
 const BASELINE_MIN_DE = 41.29;
 
-const pillFaces = async (path, sel) => {
+const pillsAt = async (path, sel) => {
 	await page.goto(base + path, { waitUntil: "load" });
 	return page.evaluate((sel) => {
-		return [...document.querySelectorAll(sel)].slice(0, 6).map((el) => {
+		return [...document.querySelectorAll(sel)].map((el) => {
 			const badge = el.querySelector(".tag-count");
 			return {
 				bg: getComputedStyle(el).backgroundColor,
 				fg: getComputedStyle(el).color,
 				badge: badge ? getComputedStyle(badge).color : null,
+				href: el.getAttribute("href") ?? "",
 			};
 		});
 	}, sel);
 };
+// 云集页上 #blogtags 有两个（正文云与侧栏部件同用 TagPillCloud.astro），所以选择器
+// 一律带容器前缀：裸写 #blogtags 会把两处并成一处，量到的就不是那一个界面。
+const CLOUD = "#content #blogtags a";
+const pillFaces = async (path, sel) => (await pillsAt(path, sel)).slice(0, 6);
 
-const cloud = await pillFaces("/tag/", "#blogtags a");
+const cloud = await pillFaces("/tag/", CLOUD);
 check("票 21：标签云集取到 6 格药丸参与比对", cloud.length === 6, cloud.length);
 const clouds = cloud.map((c) => parseRgb(c.bg));
 check(
@@ -1811,42 +1816,60 @@ check(
 		),
 	articleTags.map((a) => a.bg).join(" | "),
 );
-// 五处共用同一 DOM 结构（AGENTS.md 锁定项）：标签云集页、单标签页、分类云集页、
-// 单分类页、侧栏部件。单页入口不写死 slug——从云页自己渲染的第一个药丸链接取，
-// 否则标签一改判据就假红。当前项 a.is-current 按设计是品牌绿，不入六色比对。
-const pillColors = async (path, sel = "#blogtags a:not(.is-current)") => {
-	await page.goto(base + path, { waitUntil: "load" });
-	return page.evaluate((sel) => {
-		const colors = new Set();
-		let first = "";
-		for (const el of document.querySelectorAll(sel)) {
-			colors.add(getComputedStyle(el).backgroundColor);
-			if (!first) first = el.getAttribute("href") ?? "";
-		}
-		return { colors: [...colors], first };
-	}, sel);
-};
-const six = new Set(cloud.map((c) => c.bg));
-const tagCloud = await pillColors("/tag/");
-const catCloud = await pillColors("/category/");
+// 票 21 的「五处同屏比对」：标签云集页、单标签页、分类云集页、单分类页、侧栏部件。
+// 三条刻意设计：① 选择器带容器前缀（云集页上 #blogtags 有两个，见上）；② 单页入口的
+// slug 不写死，从该云页自己渲染的第一个药丸链接取，并当场核对它确属那一族——DOM 顺序
+// 一旦变化，缺这条校验就会让标签页冒充分类页而照样绿；③ 当前项 a.is-current 按设计是
+// 品牌绿，排除在六色比对之外。
+// 本判据比的是**颜色集合**而非逐格顺序：它守「底色单源」（另一处硬编码、或某处漏接
+// token 会变红），**守不住 nth-child 六色轮换被重排**——那条 AGENTS.md 锁由缝隙 B 的
+// 逐元素指纹负责（票 21 的 439 处差异全部是 background-color，逐格归属可见）。
+const FIVE = "#content #blogtags a:not(.is-current)";
+const tagCloudAt = await pillsAt("/tag/", FIVE);
+const catCloudAt = await pillsAt("/category/", FIVE);
+const tagOneHref = tagCloudAt[0]?.href ?? "";
+const catOneHref = catCloudAt[0]?.href ?? "";
 const faces = [
-	["标签云集页", tagCloud.colors],
-	["单标签页", (await pillColors(tagCloud.first)).colors],
-	["分类云集页", catCloud.colors],
-	["单分类页", (await pillColors(catCloud.first)).colors],
+	["标签云集页", tagCloudAt, true],
+	[
+		"单标签页",
+		await pillsAt(tagOneHref, FIVE),
+		tagOneHref.startsWith("/tag/"),
+	],
+	["分类云集页", catCloudAt, true],
+	[
+		"单分类页",
+		await pillsAt(catOneHref, FIVE),
+		catOneHref.startsWith("/category/"),
+	],
 	[
 		"侧栏部件",
-		(await pillColors("/", "#sidebar #blogtags a:not(.is-current)")).colors,
+		await pillsAt("/", "#sidebar #blogtags a:not(.is-current)"),
+		true,
 	],
 ];
-const offSix = faces
-	.map(([n, cs]) => [n, cs.filter((c) => !six.has(c))])
-	.filter(([, s]) => s.length);
+const six = new Set(cloud.map((c) => parseRgb(c.bg)?.join()));
+const problems = [];
+for (const [name, at, hrefOk] of faces) {
+	if (!hrefOk) problems.push(`${name}的入口不属该族`);
+	const keys = at.map((a) => parseRgb(a.bg)?.join() ?? a.bg);
+	const uniq = new Set(keys);
+	const out = keys.filter((k) => !six.has(k)).length;
+	if (out) problems.push(`${name}越界 ${out} 格`);
+	// 满 6 格才要求出满六色。全站分类一共 6 个，单分类页排掉当前项只剩 5 格，
+	// 硬写 === 6 会在那一处假红——本判据第一版跑出来翻红的正是这里，不是猜测。
+	if (at.length >= 6 && uniq.size < 6)
+		problems.push(`${name} ${at.length}格只出 ${uniq.size} 色（疑似塌色）`);
+}
 check(
 	"票 21：五处共用该 DOM 的页面都只出这六色（底色单源未破）",
-	offSix.length === 0 && faces.every(([, cs]) => cs.length === 6),
-	faces.map(([n, cs]) => `${n}=${cs.length}色`).join(" | ") +
-		(offSix.length ? ` 越界 ${JSON.stringify(offSix)}` : ""),
+	problems.length === 0,
+	faces
+		.map(
+			([n, at]) =>
+				`${n}=${new Set(at.map((a) => a.bg)).size}色/${at.length}格`,
+		)
+		.join(" | ") + (problems.length ? ` 问题：${problems.join("；")}` : ""),
 );
 checkClean("T3 票 21");
 

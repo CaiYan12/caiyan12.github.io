@@ -464,7 +464,9 @@
 
 **归因脚本自己翻过一次车**：第一版按 `;` 直接拆属性，没先按 ` | ` 分段——一条记录里锚点与 `::before`/`::after` 有同名属性（`display`/`width`/`inset`…），于是拿锚点的值去比伪元素的值，虚报成 6166 处变化、多出六种「属性」。改成段感知后得 459，与指纹工具自报的数逐一对齐。**教训：归因表也要先证明它数对了，才能拿它当证据。**
 
-## 二、本地全链（2026-09-23，HEAD `ae07945`）
+## 二、本地全链（2026-09-23 跑；起点 HEAD `ae07945`，缝隙 A 的那 1 项是本票未提交的改动）
+
+> 表头这一处我原先直接写「HEAD `ae07945`」而把 112 项塞进同一行——那是错的：112 项里有 1 项是收口时新加的，`ae07945` 上只有 111。带日期的读数属于**那一次运行**，运行时的树是什么就写什么。
 
 | 环节 | 结果 |
 |---|---|
@@ -473,14 +475,25 @@
 | 确定性复检 `pnpm exec astro build` + banner + pagefind | exit 0。**第一次在 `/og/*.png` 处失败**：`fonts.googleapis.com` 连接超时 → `No fonts are loaded`，是 AGENTS.md 记录的已知网络抖动；curl 复探 200/0.99s 后原样重跑即过 |
 | `pnpm check` | 159 files，**0 errors / 0 warnings** / 2 hints |
 | `prettier --check ./src ./scripts tailwind.config.cjs` | All matched files use Prettier code style! |
-| 六组离线单测 | utils 16、contributions 11、friend-icons 32、projects 7、nice-books 51、site-stats 15 ＝ **132 项 0 fail** |
+| 离线单测 | 六个脚本共**七次 `node --test` 调用**（`test:projects` 内串了两组）：utils 16、contributions 11、friend-icons 32、projects 6＋7、nice-books 51、site-stats 15 ＝ **138 项 0 fail**。我第一版记成「六组 132 项」，起因是每个脚本我只取了 `tail -6`，把 projects 的第二组整个漏在读数外——**记总数要按调用次数逐组累加，不能信 tail** |
 | 缝隙 A `pnpm smoke:ui`（build + preview:4399） | **112/112**（111 → 112 见下） |
 | 其余浏览器套件（同端口） | `test:fancybox` 27/27、`smoke:nice-books` 72/72、`smoke:ai-news` 9/9；外部服务失败单独统计不计 FAIL |
 
 ## 三、收口时把票 21 的最后一格判据补成了机检
 
-票 21 原文「预览：五处共用该 DOM 的页面同屏比对」长期没勾，因为缝隙 A 只机检了两面（`/tag/` 云与文章页 `.post-tags`）。现补一条判据：标签云集页、单标签页、分类云集页、单分类页、侧栏部件五处各自的 `#blogtags a` 计算底色**集合必须恰好等于云页那六色**（当前项 `a.is-current` 按设计是品牌绿，先排除）。两处细节是刻意的：单页入口的 slug 不写死，从云页自己渲染的第一个药丸链接里取，标签改名不会假红；判据比的是「集合相等」而非逐格顺序，所以 `nth-child` 轮换若被改动仍会翻红。实测五处各 6 色、零越界。
+票 21 原文「预览：五处共用该 DOM 的页面同屏比对」长期没勾，因为缝隙 A 只机检了两面（`/tag/` 云与文章页 `.post-tags`）。收口时补了一条判据，**而这条判据自己被抓出两个错——都是跑一遍才看得见的**：
+
+1. **第一版裸写 `#blogtags`，而云集页上这个 id 有两个元素。** `src/components/layout/TagPillCloud.astro` 是唯一发射器，但 `/tag/`、`/category/`、单标签页、单分类页上都同时渲染**正文云 + 侧栏部件**两份（实测 `document.querySelectorAll('#blogtags').length === 2`）。裸选择器把两处并成一处，于是「五处」其实不到五处。现按容器限定：正文侧 `#content #blogtags a:not(.is-current)`、侧栏 `#sidebar #blogtags a:not(.is-current)`，并在细节里打印每处的 `色数/格数`（实测 32／31／6／5／32 格，五个数各自独立，才证明真的分开读到了）。
+2. **第一版硬判「每处恰好 6 色」，第一次跑就在单分类页翻红。** 全站分类一共 6 个，单分类页排掉当前项只剩 5 格，永远凑不出 6 色。规则改为：越界（不在六色内）一律红；**格数 ≥6 时才要求出满六色**（防塌色），格数不足只报实际读数。这条不是设想出来的，是它自己报出来的。
+
+同时更正我在这条判据上说过的一句错话：原先写「比的是集合，所以 `nth-child` 轮换若被改动仍会翻红」——**恰好相反**，集合相等对换序不敏感，把六色轮换整个打乱它照样绿。这条判据守的是**底色单源**（另一处硬编码、或某个界面漏接 token 会变红）；`nth-child` 六色轮换那条 AGENTS.md 锁由**缝隙 B 的逐元素指纹**守（票 21 的 439 处差异逐格归属可见）。两件事必须分开说，之前那句把 B 的功劳记到了 A 头上。
+
+**这条判据会咬，做过变异验证**：给 `dist/_astro/*.css`（9 个文件）注入 `#sidebar #blogtags a{background-color:rgb(18,52,86)!important}` 后重跑，FAIL 明细为 `标签云集页=6色/32格 | 单标签页=6色/31格 | 分类云集页=6色/6格 | 单分类页=5色/5格 | 侧栏部件=1色/32格 问题：侧栏部件越界 32 格；侧栏部件 32格只出 1 色（疑似塌色）`——**只有被注入的那一处翻红，正文侧四处读数不变**，这既证明判据会咬，也反证容器限定真的把两处隔开了（若仍是裸 `#blogtags`，云页会跟着一起变红）。之后按备份还原 dist，九份 CSS 与还原前 `md5sum` 逐一相同，再跑 112/112。
+
+另有一处评审提出的重复：新加的 `pillsAt` 与上方既有的 `pillFaces` 是同一形状（goto + evaluate + 读底色）。已把 `pillFaces` 改成 `pillsAt` 之上的一行 `.slice(0, 6)`，两处比对也统一到同一个键形（都先 `parseRgb().join()`，不再一处比原始串一处比解析值）。`/tag/` 仍被取两次是**故意**的：两次的选择器不同（含当前项的六色基准 vs 排除当前项的五界面比对），不是同一份数据。
 
 ## 四、收口期间新测得、未修、待站长定
 
 `#header .text a`（头部微言轮播里的日期链接）静息计算值为 `text-decoration-line: none` + `color: rgb(255,255,255)`，而 `global.css` 里 `#header .text` 全族**没有任何 `:hover` 规则**（`grep -n '#header .text[^{]*:hover' src/styles/global.css` 零命中，命中数 0）。也就是这族链接悬停时既不变色也不出线。它不在票 20 的缺陷面内——票 20 修的是「状态只靠颜色传达」，这里是**根本没有状态反馈**——且补它属于新增视觉行为、必须过预览门禁，故票 23 只登记不改码，留给下轮。
+
+**`id="blogtags"` 在四类页面上出现两次**：`src/components/layout/TagPillCloud.astro` 是唯一发射器（`<ul id="blogtags">`），但云集页与单页都要「头部全量云 + 侧栏部件」各一份。实测 `querySelectorAll('#blogtags').length`：`/tag/` = 2、`/category/` = 2、`/tag/xxx/` = 2、首页 = 1。CSS 不因此出错（选择器两处都命中），但 **HTML 的 id 必须全文唯一**，这属有效性／可访问性问题：锚点、`getElementById` 与辅助技术引用都只会指向第一处。本轮不修——换侧栏 id 等于动 AGENTS.md 锁定的「五处共用同一 DOM 结构」，参数化组件则是新增结构决策，两者都改 DOM 且要重开指纹基线。**顺带一条事实更正**：所谓「五处共用该 DOM」，在四类页面上其实是**同屏两处**；缝隙 A 那条新判据的第一版就是被这一点骗到的（裸 `#blogtags` 把两处并成一处）。
