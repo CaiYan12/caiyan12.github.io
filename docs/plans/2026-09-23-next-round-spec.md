@@ -16,7 +16,7 @@
 
 1. **头部微言轮播的链接悬停时毫无反应。** 首页顶部那 4 条「日期 - 内容」链接可以点、鼠标形状会变，但悬停时既不变色也不出线——因为 `#header .text a{color:#fff}`（`src/styles/global.css`，约 1957 行，特异性 1,1,1）把通用 `a:hover{color:var(--colorful-green)}`（同文件，约 1770 行，0,1,1）吃掉了，而全族没有任何 `:hover` 的 `text-decoration` 规则。键盘访客反而**有**反馈（`:where(a,button,input,textarea,select):focus-visible` 的 2px 描边，约 5152 行）。
 2. **同一页面出现两个 `id="blogtags"`。** `/tag/`、`/category/`、单标签页、单分类页上正文全量云与侧栏部件同由 `src/components/layout/TagPillCloud.astro`（根标记 `<ul id="blogtags">`）发射，各出现 2 次；首页 1 次。页面看起来完全正常（CSS 两处都命中），但违反 HTML id 唯一性：锚点、`getElementById`、辅助技术引用永远指第一处，而冒烟脚本已被迫用容器前缀选择器绕开它（`scripts/ui-smoke.mjs` 约 1763-1765 行的注释就是这件事的记录）。
-3. **`docs/agents/triage-labels.md` 与现实不符。** 该表把五个 triage 角色 1:1 映射到五个标签串，但 2026-09-23 实测 `gh label list` 只有 12 条，其中 `wontfix` 与 `ready-for-agent` 存在，`needs-triage`／`needs-info`／`ready-for-human` **从未创建**（`AGENTS.md` 的「Triage labels」段已如实记录）。照着表贴标签会直接 not found。
+3. **`docs/agents/triage-labels.md` 与现实不符。** 该表把五个 triage 角色 1:1 映射到五个标签串，但 2026-09-23 实测 `gh label list` 有 13 条，其中 `wontfix` 与 `ready-for-agent` 存在，`needs-triage`／`needs-info`／`ready-for-human` **从未创建**（`AGENTS.md` 的「Triage labels」段已如实记录）。照着表贴标签会直接 not found。
 4. **票册自检脚本活在会被清掉的目录里。** 把票册「本文件怎么用」一节写给自身的 6 条契约变成可跑判据的脚本（82 行）当前在 gitignored 的 `output/t23-ledger-audit.mjs`，清工作区即丢，等于放弃这 6 条判据；而它读镜像票状态的那条规则依赖网络与令牌，直接串进构建链会在断网时假红。
 
 ## Solution（方案）
@@ -84,7 +84,7 @@
 
 ### ③ 标签文档对齐现实
 
-- 只改 `docs/agents/triage-labels.md`：五行为词表保留（它是技能侧约定词表），新增一段现状说明——GitHub 端现存 `wontfix` / `ready-for-agent` 两条（2026-09-23 `gh label list` 实测 12 条标签），另三条从未创建，`gh issue create --label needs-triage` 会直接 not found；贴标签前先 `gh label list` 核对，或先建再用。
+- 只改 `docs/agents/triage-labels.md`：五行为词表保留（它是技能侧约定词表），新增一段现状说明——GitHub 端现存 `wontfix` / `ready-for-agent` 两条（2026-09-23 `gh label list` 实测 13 条标签），另三条从未创建，`gh issue create --label needs-triage` 会直接 not found；贴标签前先 `gh label list` 核对，或先建再用。
 - 与 `AGENTS.md`「Triage labels」段互指，两处措辞不得再分叉；本轮以 `AGENTS.md` 为准（它是实测结论）。
 - **不**调用 `gh label create`（那是共享状态写入，需站长另行批准）。
 
