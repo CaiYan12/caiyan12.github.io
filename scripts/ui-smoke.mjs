@@ -1464,7 +1464,7 @@ const ticker = await (async () => {
 check(
 	"票 16：头部微言轮播仍在轮转（唯一实现未受删除影响）",
 	!!ticker.first && !!ticker.after && ticker.first !== ticker.after,
-	`首条 "${ticker.first}" → 4.8s 后 "${ticker.after}"`,
+	`首条 "${ticker.first}" → 5.2s 后 "${ticker.after}"`,
 );
 check(
 	"票 16：全站没有任何元素还在跑被删的 ticker 关键帧（负向扫描，真正的守卫是下面的指纹零差异）",
@@ -2024,6 +2024,91 @@ check(
 	"票 20：侧栏六色药丸不被那条 hover 划线（药丸的颜色就是它的身份，票面未要求加线）",
 	!pill.missing && !ULINE(pill.hot.deco),
 	pill.missing ? "选择器未命中" : `悬停 ${pill.hot.deco}`,
+);
+
+// ---------------- #45：微言轮播「悬停无视觉反馈」是既定设计，判据锁现状 ----------------
+// 2026-09-23 裁决：#header .text 那 4 条链接既不补下划线也不换色。
+// #header .text a{color:#fff}（id 特异性）压住通用 a:hover{color:品牌绿}，全族又没有任何
+// :hover 的 text-decoration 规则，于是静息态与悬停态计算值完全相同。
+// 判据断言的是「差值为零」这个级联事实，不锁 CSS 源文本：将来谁放开 hover、或把那条白字
+// 规则的特异性降下去，都会在这里翻红。
+// 取数前先冻结轮播：轮播每 4s 上滚一条并把首条 li 搬到末尾，真实鼠标悬停会在动画中途
+// 失去 :hover；initHeaderTicker() 在 prefers-reduced-motion: reduce 下根本不启动，
+// 于是链接静止，量到的就是级联本身。缝隙 B 的排除表显式含 #header .text 整族，
+// 这一族只能靠这里守。
+await page.emulateMedia({ reducedMotion: "reduce" });
+const tickerHover = await hoverProbe("/", "#header .text a");
+await page.emulateMedia({ reducedMotion: "no-preference" });
+check(
+	"#45：微言轮播链接悬停时颜色不变（无 hover 反馈属既定设计，锁现状）",
+	!tickerHover.missing && tickerHover.idle.color === tickerHover.hot.color,
+	tickerHover.missing
+		? "选择器未命中（链接被删或改名了，同样是破坏）"
+		: `静息 ${tickerHover.idle.color} → 悬停 ${tickerHover.hot.color}`,
+);
+check(
+	"#45：微言轮播链接悬停时不出下划线（该族零条 :hover 划线规则）",
+	!tickerHover.missing && tickerHover.idle.deco === tickerHover.hot.deco,
+	tickerHover.missing
+		? "选择器未命中"
+		: `静息 ${tickerHover.idle.deco} → 悬停 ${tickerHover.hot.deco}`,
+);
+
+// hover 暂停滚动是 initHeaderTicker() 的 JS 行为，与上面的「视觉无反馈」互不隶属：
+// 前者是设计裁决，后者是可达性下限，两者都得活着。暂停绑在 #header .text 容器上
+// （mouseenter 清定时器、mouseleave 重启），悬停容器即可复现。
+const tickerPause = await (async () => {
+	await page.goto(base + "/", { waitUntil: "load" });
+	await page.waitForTimeout(300);
+	const read = () =>
+		page.evaluate(
+			() =>
+				document
+					.querySelector("#header .text li")
+					?.textContent?.trim() ?? null,
+		);
+	const before = await read();
+	await page.locator("#header .text").first().hover();
+	await page.waitForTimeout(5200); // 4s 节奏 + 0.8s 过渡，留 400ms 余量
+	const during = await read();
+	await page.mouse.move(2, 2); // 移出容器，触发 mouseleave 恢复
+	await page.waitForTimeout(5200);
+	const after = await read();
+	return { before, during, after };
+})();
+check(
+	"#45：悬停期间轮播停住（一个节奏以上首条不变）",
+	!!tickerPause.before && tickerPause.before === tickerPause.during,
+	`悬停前 "${tickerPause.before}" → 5.2s 后 "${tickerPause.during}"`,
+);
+check(
+	"#45：移出悬停后轮播恢复（不是把动画整个删掉）",
+	!!tickerPause.during && tickerPause.during !== tickerPause.after,
+	`停住 "${tickerPause.during}" → 移出 5.2s 后 "${tickerPause.after}"`,
+);
+
+// 键盘可达性下限：Tab 走到那 4 条链接之一，必须拿到全站 :focus-visible 描边。
+const tickerFocus = await (async () => {
+	await page.goto(base + "/", { waitUntil: "load" });
+	let hit = null;
+	for (let i = 0; i < 12 && !hit; i++) {
+		await page.keyboard.press("Tab");
+		hit = await page.evaluate(() => {
+			const el = document.activeElement;
+			if (!el || !el.closest("#header .text")) return null;
+			const cs = getComputedStyle(el);
+			return {
+				ring: `${cs.outlineStyle} ${cs.outlineWidth}`,
+				tag: el.tagName.toLowerCase(),
+			};
+		});
+	}
+	return hit;
+})();
+check(
+	"#45：Tab 到微言链接时拿到站点焦点环（无 hover ≠ 无键盘可达）",
+	!!tickerFocus && /^solid \d/.test(tickerFocus.ring),
+	tickerFocus ? tickerFocus.ring : "12 次 Tab 内未走到 #header .text 的链接",
 );
 
 const focus = await (async () => {
