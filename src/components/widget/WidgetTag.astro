@@ -9,5 +9,5 @@ const tags = getTagList(allPosts);
 ---
 
 <WidgetLayout title="标签云" icon="fa-tags">
-	<TagPillCloud items={tags} base="tag" showCount={false} />
+	<TagPillCloud items={tags} base="tag" showCount={false} dedupeId />
 </WidgetLayout>

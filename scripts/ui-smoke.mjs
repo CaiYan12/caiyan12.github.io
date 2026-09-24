@@ -2314,6 +2314,9 @@ const tagRoutes = new Set(await routeNames("/tag/", "tag"));
 const catRoutes = new Set(await routeNames("/category/", "category"));
 const sitemapIndex = await (await fetch(base + "/sitemap-index.xml")).text();
 const postPages = new Set();
+// 票 05 的负扫要「每一个公开页」，所以同一个循环里顺手把全量路径也收下来，
+// 不再另开一次 sitemap 解析（两处解析会随 sitemap 结构变化各自漂移）。
+const allSitemapPaths = [];
 for (const f of [...sitemapIndex.matchAll(/<loc>(.*?)<\/loc>/g)]
 	.map((m) => m[1])
 	// sitemap 里写的是绝对 url（站点主域），本地跑时必须改指到 base，
@@ -2322,6 +2325,7 @@ for (const f of [...sitemapIndex.matchAll(/<loc>(.*?)<\/loc>/g)]
 	const xml = await (await fetch(f)).text();
 	for (const u of xml.matchAll(/<loc>(.*?)<\/loc>/g)) {
 		const path = u[1].replace(/^https?:\/\/[^/]+/, "");
+		allSitemapPaths.push(path);
 		if (/^\/posts\/[^/]+\/$/.test(path)) postPages.add(path);
 	}
 }
@@ -2383,6 +2387,51 @@ check(
 	"#41：无路由的那几项降为纯文字而不是被删掉（样本篇 示例/Markdown/扩展 仍可见）",
 	stillLinked.length === 0 && stillVisible.length === GONE.length,
 	`仍成链接=[${stillLinked.join(",") || "无"}] 文字里仍在=[${stillVisible.join(",") || "无"}]`,
+);
+
+// ---------------- #47：同一页面不得出现重复 id（全站负扫，常驻判据） ----------------
+// 判据形态是**负扫**而不是点名单：上一轮 #41 就是被「只查点名过的地方」藏住的。
+// 页面清单由 sitemap 枚举每一个公开页，再加 404 页本身（它不在 sitemap 里但真会发出去）。
+// 只解析 fetch 到的 HTML 文本（用浏览器自己的 DOMParser，不引第三方解析器）——
+// 这条契约的对象是「服务端写出的 HTML 里有没有两个同名 id」，运行时脚本注入的 id
+// （看板娘、3D 云）不在其列，把它们算进来会让判据随远端加载时机翻脸。
+const dupPages = [...new Set([...allSitemapPaths, "/this-page-should-404/"])];
+const dupReport = await page.evaluate(
+	async ({ base, paths }) => {
+		const offenders = [];
+		let scanned = 0;
+		for (let i = 0; i < paths.length; i += 8) {
+			await Promise.all(
+				paths.slice(i, i + 8).map(async (p) => {
+					const res = await fetch(base + p);
+					// 404 页的响应码就是 404，但它的 HTML 一样要扫
+					if (!res.ok && res.status !== 404) return;
+					const text = await res.text();
+					if (!text.includes("<")) return;
+					scanned++;
+					const doc = new DOMParser().parseFromString(
+						text,
+						"text/html",
+					);
+					const counts = new Map();
+					for (const el of doc.querySelectorAll("[id]"))
+						counts.set(el.id, (counts.get(el.id) ?? 0) + 1);
+					for (const [id, n] of counts)
+						if (n > 1) offenders.push(`${p} → #${id}×${n}`);
+				}),
+			);
+		}
+		return { offenders, scanned };
+	},
+	{ base, paths: dupPages },
+);
+check(
+	"#47：sitemap 每个页面的 id 都唯一（重复 id 负扫）",
+	dupReport.scanned >= 100 && dupReport.offenders.length === 0,
+	`扫 ${dupReport.scanned} 页，重复 ${dupReport.offenders.length} 条` +
+		(dupReport.offenders.length
+			? `：${dupReport.offenders.slice(0, 6).join("、")}${dupReport.offenders.length > 6 ? ` …等 ${dupReport.offenders.length} 条` : ""}`
+			: ""),
 );
 
 await browser.close();

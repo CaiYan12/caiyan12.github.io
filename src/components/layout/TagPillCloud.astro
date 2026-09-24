@@ -1,9 +1,9 @@
 ---
 /**
  * 标签/分类药丸云：标签云集、分类云集、单标签页、单分类页与侧栏 WidgetTag
- * 五处共用的同一 DOM 结构。样式挂点是 **类** `.blogtags`（不是 id）：本步（expand）两份仍各带
- * `id="blogtags"`，票 05 才把侧栏那份的 id 撤回——同一页面出现两个同名 id 会让锚点、
- * getElementById 与辅助技术引用只会指到第一处。药丸 6 色轮换/is-current/×N 样式全部
+ * 五处共用的同一 DOM 结构。样式挂点是 **类** `.blogtags`（不是 id）：`id="blogtags"` 只由
+ * 正文/云集页那一份发射（`dedupeId` 参数控制），侧栏 WidgetTag 那份不带——同一页面出现
+ * 两个同名 id 时，锚点、getElementById 与辅助技术引用只会指到第一处（issue #47）。药丸 6 色轮换/is-current/×N 样式全部
  * 收敛在 global.css（含 .tag-count 与 is-current 的源顺序约束），此处零样式。
  *
  * 空白陷阱：Astro compressHTML 会剥除相邻表达式之间的空白，×N 前后的空格
@@ -23,14 +23,22 @@ interface Props {
 	current?: string;
 	/** 侧栏 WidgetTag 不展示 ×N 计数 */
 	showCount?: boolean;
+	/** 侧栏那份置 true：不发射 id，避免与正文云在同页撞出两个 #blogtags */
+	dedupeId?: boolean;
 }
 
-const { items, base, current, showCount = true } = Astro.props;
+const {
+	items,
+	base,
+	current,
+	showCount = true,
+	dedupeId = false,
+} = Astro.props;
 
 const hrefFor = (name: string) => `/${base}/${encodeURIComponent(name)}/`;
 ---
 
-<ul id="blogtags" class="blogtags">
+<ul id={dedupeId ? undefined : "blogtags"} class="blogtags">
 	<li class="tag-cloud-items">
 		{
 			items.map((item) => (
