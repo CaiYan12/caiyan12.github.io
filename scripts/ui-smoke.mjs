@@ -1046,7 +1046,7 @@ const readPills = async (width) => {
 	await page.goto(base + "/tag/", { waitUntil: "load" });
 	await page.waitForTimeout(400);
 	const read = await page.evaluate(() => {
-		const cloud = document.querySelector("#blogtags");
+		const cloud = document.querySelector("#content .blogtags");
 		const a = cloud.querySelector("a");
 		const cs = getComputedStyle(a);
 		const rects = [...cloud.querySelectorAll("a")].map((x) =>
@@ -1760,9 +1760,9 @@ const pillsAt = async (path, sel) => {
 		});
 	}, sel);
 };
-// 云集页上 #blogtags 有两个（正文云与侧栏部件同用 TagPillCloud.astro），所以选择器
-// 一律带容器前缀：裸写 #blogtags 会把两处并成一处，量到的就不是那一个界面。
-const CLOUD = "#content #blogtags a";
+// 云集页上 .blogtags 有两个（正文云与侧栏部件同用 TagPillCloud.astro），所以选择器
+// 一律带容器前缀：裸写 .blogtags 会把两处并成一处，量到的就不是那一个界面。
+const CLOUD = "#content .blogtags a";
 const pillFaces = async (path, sel) => (await pillsAt(path, sel)).slice(0, 6);
 
 const cloud = await pillFaces("/tag/", CLOUD);
@@ -1817,14 +1817,14 @@ check(
 	articleTags.map((a) => a.bg).join(" | "),
 );
 // 票 21 的「五处同屏比对」：标签云集页、单标签页、分类云集页、单分类页、侧栏部件。
-// 三条刻意设计：① 选择器带容器前缀（云集页上 #blogtags 有两个，见上）；② 单页入口的
+// 三条刻意设计：① 选择器带容器前缀（云集页上 .blogtags 有两个，见上）；② 单页入口的
 // slug 不写死，从该云页自己渲染的第一个药丸链接取，并当场核对它确属那一族——DOM 顺序
 // 一旦变化，缺这条校验就会让标签页冒充分类页而照样绿；③ 当前项 a.is-current 按设计是
 // 品牌绿，排除在六色比对之外。
 // 本判据比的是**颜色集合**而非逐格顺序：它守「底色单源」（另一处硬编码、或某处漏接
 // token 会变红），**守不住 nth-child 六色轮换被重排**——那条 AGENTS.md 锁由缝隙 B 的
 // 逐元素指纹负责（票 21 的 439 处差异全部是 background-color，逐格归属可见）。
-const FIVE = "#content #blogtags a:not(.is-current)";
+const FIVE = "#content .blogtags a:not(.is-current)";
 const tagCloudAt = await pillsAt("/tag/", FIVE);
 const catCloudAt = await pillsAt("/category/", FIVE);
 const tagOneHref = tagCloudAt[0]?.href ?? "";
@@ -1844,7 +1844,7 @@ const faces = [
 	],
 	[
 		"侧栏部件",
-		await pillsAt("/", "#sidebar #blogtags a:not(.is-current)"),
+		await pillsAt("/", "#sidebar .blogtags a:not(.is-current)"),
 		true,
 	],
 ];
@@ -1949,7 +1949,7 @@ const SHIFT = (g) =>
 	DE(g.idle.pw ?? 0, g.hot.pw ?? 0) +
 	DE(g.idle.psw ?? 0, g.hot.psw ?? 0);
 
-const side = await hoverProbe("/", "#sidebar a:not(#blogtags a)");
+const side = await hoverProbe("/", "#sidebar a:not(.blogtags a)");
 check(
 	"票 20：侧栏链接悬停时出现下划线（不只靠变色）",
 	!side.missing && !ULINE(side.idle.deco) && ULINE(side.hot.deco),
@@ -2019,7 +2019,7 @@ check(
 		: `${inline.idle.deco} → ${inline.hot.deco}`,
 );
 
-const pill = await hoverProbe("/", "#sidebar #blogtags a");
+const pill = await hoverProbe("/", "#sidebar .blogtags a");
 check(
 	"票 20：侧栏六色药丸不被那条 hover 划线（药丸的颜色就是它的身份，票面未要求加线）",
 	!pill.missing && !ULINE(pill.hot.deco),
@@ -2298,10 +2298,10 @@ const routeNames = async (path, kind) => {
 		([kind]) => {
 			const out = new Set();
 			// 只认与本页同类的那一种 url：/category/ 上除了头部全量分类云，侧栏部件还会
-			// 再渲染一个 **标签** 药丸云（两者都用 #blogtags），混着收会把 32 个标签名也
+			// 再渲染一个 **标签** 药丸云（两者都用 .blogtags），混着收会把 32 个标签名也
 			// 算进合法分类集合，而「习题/试卷/技术架构」既是标签又是分类——泄漏就会漏判。
 			const re = new RegExp(`^\\/${kind}\\/(.+)\\/$`);
-			for (const a of document.querySelectorAll("#blogtags a")) {
+			for (const a of document.querySelectorAll(".blogtags a")) {
 				const m = re.exec(a.getAttribute("href") ?? "");
 				if (m) out.add(decodeURIComponent(m[1]));
 			}

@@ -3677,7 +3677,7 @@ img:hover {
 }
 
 /* 药丸 6 色轮换盘：背景与 ::before 三角共用同一变量（原版每色写两遍，现收敛于此） */
-#blogtags,
+.blogtags,
 .post-tags {
   /* 六色配白字必须达 WCAG AA（≥4.5:1），故较原版整体压暗；c5 压得最深（白字 11.94，远超门槛）不是笔误——浅一档就会与 c2 琥珀撞色，两两最小 ΔE 会从 44.45 掉到 16.01。
      轮换顺序、计数徽标与当前项的源顺序均未改动（AGENTS.md 锁定项）。 */
@@ -3689,7 +3689,7 @@ img:hover {
   --tag-c6: #0077da;
 }
 
-#blogtags a,
+.blogtags a,
 .post-tags a {
   position: relative;
   display: inline-block;
@@ -3701,7 +3701,7 @@ img:hover {
   line-height: 14px;
 }
 
-#blogtags a::before,
+.blogtags a::before,
 .post-tags a::before {
   position: absolute;
   top: 0;
@@ -3714,7 +3714,7 @@ img:hover {
   content: "";
 }
 
-#blogtags a::after,
+.blogtags a::after,
 .post-tags a::after {
   position: absolute;
   top: 8px;
@@ -3726,60 +3726,60 @@ img:hover {
   content: "";
 }
 
-#blogtags a:nth-child(6n + 1),
+.blogtags a:nth-child(6n + 1),
 .post-tags a:nth-child(6n + 1) {
   background: var(--tag-c1);
 }
-#blogtags a:nth-child(6n + 2),
+.blogtags a:nth-child(6n + 2),
 .post-tags a:nth-child(6n + 2) {
   background: var(--tag-c2);
 }
-#blogtags a:nth-child(6n + 3),
+.blogtags a:nth-child(6n + 3),
 .post-tags a:nth-child(6n + 3) {
   background: var(--tag-c3);
 }
-#blogtags a:nth-child(6n + 4),
+.blogtags a:nth-child(6n + 4),
 .post-tags a:nth-child(6n + 4) {
   background: var(--tag-c4);
 }
-#blogtags a:nth-child(6n + 5),
+.blogtags a:nth-child(6n + 5),
 .post-tags a:nth-child(6n + 5) {
   background: var(--tag-c5);
 }
-#blogtags a:nth-child(6n + 1)::before,
+.blogtags a:nth-child(6n + 1)::before,
 .post-tags a:nth-child(6n + 1)::before {
   border-right-color: var(--tag-c1);
 }
-#blogtags a:nth-child(6n + 2)::before,
+.blogtags a:nth-child(6n + 2)::before,
 .post-tags a:nth-child(6n + 2)::before {
   border-right-color: var(--tag-c2);
 }
-#blogtags a:nth-child(6n + 3)::before,
+.blogtags a:nth-child(6n + 3)::before,
 .post-tags a:nth-child(6n + 3)::before {
   border-right-color: var(--tag-c3);
 }
-#blogtags a:nth-child(6n + 4)::before,
+.blogtags a:nth-child(6n + 4)::before,
 .post-tags a:nth-child(6n + 4)::before {
   border-right-color: var(--tag-c4);
 }
-#blogtags a:nth-child(6n + 5)::before,
+.blogtags a:nth-child(6n + 5)::before,
 .post-tags a:nth-child(6n + 5)::before {
   border-right-color: var(--tag-c5);
 }
 
 /* 标签药丸内的 ×N 数字（/tag/ 标签云集页），白色小字 */
-#blogtags a .tag-count {
+.blogtags a .tag-count {
   margin-left: 2px;
   color: #fff;
   font-size: 11px;
 }
 
 /* 单标签页药丸云中的当前标签：品牌绿高亮（源顺序覆盖 nth-child 轮换色） */
-#blogtags a.is-current {
+.blogtags a.is-current {
   background: var(--colorful-green);
 }
 
-#blogtags a.is-current::before {
+.blogtags a.is-current::before {
   border-right-color: var(--colorful-green);
 }
 
@@ -3788,19 +3788,19 @@ img:hover {
    三角上下边框 10→12（合计等于盒高），圆点 top 8→10（保持居中）。
    桌面盒值一个字节都不动——它与原版逐字节相同且被五处 DOM 共用。 */
 @media screen and (max-width: 680px) {
-  #blogtags a,
+  .blogtags a,
   .post-tags a {
     padding-top: 5px;
     padding-bottom: 5px;
   }
 
-  #blogtags a::before,
+  .blogtags a::before,
   .post-tags a::before {
     border-top-width: 12px;
     border-bottom-width: 12px;
   }
 
-  #blogtags a::after,
+  .blogtags a::after,
   .post-tags a::after {
     top: 10px;
   }
@@ -5137,10 +5137,11 @@ body,
   text-decoration: underline;
 }
 
-/* 上面那条 #sidebar a:hover 同样命中医药丸（#blogtags 就在 #sidebar 内）。
+/* 上面那条 #sidebar a:hover 同样命中医药丸（.blogtags 就在 #sidebar 内）。
    六色药丸的颜色本身就是它的身份，票 20 未要求给它加线，这里显式挡掉。
-   双 id 选择器特异性高于 #sidebar a:hover，无需 !important。 */
-#sidebar #blogtags a:hover {
+   挂点换成类之后本条特异性 (1,2,1) 仍高于那条的 (1,1,1)（多一个类选择器 + 一个伪类），
+   所以依旧不需要 !important——原注释说的「双 id」已随 #blogtags 挂点一并作废。 */
+#sidebar .blogtags a:hover {
   text-decoration: none;
 }
 
@@ -5200,7 +5201,7 @@ body,
   white-space: nowrap;
 }
 
-#blogtags .tag-cloud-items {
+.blogtags .tag-cloud-items {
   overflow: visible;
   margin-right: 0;
   white-space: normal;
