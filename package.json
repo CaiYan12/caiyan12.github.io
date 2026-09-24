@@ -14,6 +14,7 @@
 		"test:fancybox": "node scripts/fancybox-smoke.mjs",
 		"smoke:ui": "node scripts/ui-smoke.mjs",
 		"qa:nice-books-geometry": "node scripts/nice-books-geometry-qa.mjs",
+		"audit:ledger": "node scripts/ledger-audit.mjs",
 		"preview": "astro preview",
 		"new-post": "node scripts/new-post.mjs",
 		"lqips": "node scripts/generate-lqips.mjs",
