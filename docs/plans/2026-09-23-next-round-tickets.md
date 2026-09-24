@@ -160,6 +160,6 @@
 - [x] 构建改写的 `src/constants/github-contributions.json` 与 `github-projects.json` 已 `git checkout --` 还原，工作树干净、`HEAD` == `origin/main`　〔每次构建后都还原，`git status --porcelain` 为空；推送后 `git rev-list --count origin/main..HEAD` = 0，本地 10 笔 commit 全部在 `origin/main` 上〕
 - [x] `.design-flow.json` stage 与 next 更新　〔stage 走 `tickets → implement → verification → delivered`，next 改为「本轮已交付，无待确认事项」〕
 
-**交付（2026-09-24）**：推送 `669b254..46ca8ff` 及本条结办 commit；三条工作流全绿；站点根 `Last-Modified: Thu, 24 Sep 2026 02:43:19 GMT` + `Age: 0`；线上 `/tag/` 只剩一份带 id 的药丸云；缝隙 A 以线上为基准 **121/121**；#43–#48 六张镜像全部关闭并各带一条验收读数，父票 #42 保留为 spec 存档。**本轮六票全部结办，无待确认事项。**
+**交付（2026-09-24）**：推送 `669b254..46ca8ff` 及本条结办 commit；三条工作流全绿；站点根 `Last-Modified: Thu, 24 Sep 2026 02:43:19 GMT` + `Age: 0`；线上 `/tag/` 只剩一份带 id 的药丸云；缝隙 A 以线上为基准 **121/121**；#43–#48 六张镜像全部关闭并各带一条验收读数；父票 #42（spec）贴本轮交付汇总后一并关闭（与上一轮 #17 同样处理），GitHub 开放 issue 归零。**本轮六票全部结办，无待确认事项。**
 
 **证据**：本地全链读数见上。逐笔 commit：`bc329f6`+`b96ea8d`（票 01）、`ad392ad`（票 02）、`82e1ef9`（票 03）、`ced004f`（票 04）、`05841ac`（票 05）、`7c7c947`+`e0dc44e`（票册回填与视觉 A/B）、`d4a936e`（跨轮硬约束）。**全部只在本地**，`origin/main` = `669b254`。
