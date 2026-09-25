@@ -1,14 +1,13 @@
 ---
 import MainGridLayout from "../layouts/MainGridLayout.astro";
 import { getCollection } from "astro:content";
-import { getCover, isPublicPost } from "../utils/content-utils";
+import { getCover, getSortedPosts } from "../utils/content-utils";
 import ResponsiveImage from "../components/control/ResponsiveImage.astro";
 import dayjs from "dayjs";
 
 const allPosts = await getCollection("posts");
 // 图片墙：展示所有文章的封面图（对应 page-images.php 的 imageswall 网格）
-const wallImages = allPosts
-	.filter(isPublicPost)
+const wallImages = getSortedPosts(allPosts)
 	.slice(0, 40)
 	.map((post) => ({
 		title: post.data.title,
