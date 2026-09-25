@@ -79,6 +79,7 @@ export const navBarConfig = {
 		{ name: "我的项目", url: "/projects/" },
 		{ name: "AI日报", url: "/ai-news/", noSwup: true },
 		{ name: "每日好书", url: "/books/", noSwup: true },
+		{ name: "鹈鹕骑车", url: "/pelican-bike/", noSwup: true },
 	],
 	/** 右侧图标导航 */
 	social: {
