@@ -41,14 +41,24 @@ Claude Opus 5.5 一次性生成（one-shot）的 Three.js 单文件 3D 游戏「
 - `package.json`：删除依赖 `"playwright-core": "^1.63.0"` 这一条，其余字段与缩进逐字节保持上游原样。
   原因：上游 `package-lock.json` 把 `playwright-core` 钉到字节跳动内网 registry
   （`https://bnpm.byted.org/...`），`npm install` 会直接以 `EALLOWREMOTE` 失败；该包只用于上游自测，
-  构建产物不需要它。**因此本目录也不 vendor `package-lock.json`**，`dist/` 同样不 vendor。
-  改后 md5（该文件此后再无任务改动，此值为唯一权威基线，无法从别处重新推导）：
-  `34ea621ab6b23324b8a8ffd1329756c3`。
+  构建产物不需要它。**因此本目录也不 vendor `package-lock.json`**，`dist/` 同样不 vendor
+  （顺带一提：根 `.gitignore` 的全局 `package-lock.json` 那条规则本来也不允许它进仓库）。
+  **两份 md5 都写在这里**，因为上游那份在本仓库没有留档（见下方「重建方法」里关于
+  `output/upstream-pelican-bike-54adc1f/` 的说明，那是本机 gitignore 的临时拷贝，干净检出上不存在）：
+
+  - 上游原样：378 字节，md5 `2cf9a7e81dea487b3aff160157cdd886`。
+    2026-09-25 由 `curl https://raw.githubusercontent.com/riba2534/claude-opus-5-5-demo/54adc1fb64155f9dd7c1c90ecae7b8185ac540b8/pelican-bike/package.json`
+    实取核验（删除的那一行 `"playwright-core": "^1.63.0",` 含换行恰 34 字节，与下面的差值吻合）。
+  - 本目录改后：344 字节，md5 `34ea621ab6b23324b8a8ffd1329756c3`。
+    就地复核：`git cat-file blob :vendor/pelican-bike/package.json | md5sum`（该文件此后再无任务改动）。
 
 后续任务改动（完成后回来补精确内容）：
 
 - `vendor/pelican-bike/index.template.html` —— 本仓库对该模板**仅做以下三处改动**，
-  除此之外与上游逐字节相同（Task 2 已完成，逆向剥离三处注入后与上游全等即为其证明）：
+  除此之外与上游逐字节相同（Task 2 已完成，逆向剥离三处注入后与上游全等即为其证明）。
+  上游基线**不依赖本机文件**，两个可就地取得的等价物（2026-09-25 实测二者 md5 全等）：
+  `git cat-file blob 5efd0a3:vendor/pelican-bike/index.template.html`（Task 1 的逐字节 vendored 拷贝），
+  或上表 commit 的 raw URL —— 均为 25,816 字节 / **320 行** / md5 `89528bdab1cc0e3acb3f3716149b632d`：
   1. **pagefind 忽略**：选择器锚点 `<body class="bars">`（行号约 191）加属性，
      改为 `<body class="bars" data-pagefind-ignore="all">`，使游戏页不进入站点搜索索引。
   2. **开场卡返回链接**：选择器锚点 `.intro-links`（模板内 `<div class="intro-links">`，
@@ -92,48 +102,88 @@ Claude Opus 5.5 一次性生成（one-shot）的 Three.js 单文件 3D 游戏「
        一旦被 Tab 到同样会冻住键位（实测这两个锚点确实在 Tab 环内，排在 `.cams` 五个按钮与
        `.tools` 六个 `icon-btn` 之后）——那是上游原样行为，动它等于改 `.tools`（该面板是逐字节的
        禁改区），记录在此以免将来被当成本仓库的回归。
-     - 三处注入完成后的模板 md5（当前权威值，Task 3/6 参照；逆向剥离三处注入后与上游逐字节全等，
-       即为本清单完整性的证明）：`238b31dd5f05edab308e29f0937f4c36`。
-- `vendor/pelican-bike/build.mjs` —— **仅改产物落点**（Task 3 完成，改动可由
-  `git diff 54adc1f 的拷贝..HEAD -- vendor/pelican-bike/build.mjs` 复核，实际对照基线是
-  `output/upstream-pelican-bike-54adc1f/build.mjs`，md5 `2de76684fa3c1168e3e29a2d5402846c`）：
-  把 `mkdirSync('dist')` + `writeFileSync('dist/index.html')` 两行替换为锚定
-  `import.meta.dirname`（脚本自身位置，**不依赖 `process.cwd()`**）的
-  `public/pelican-bike/index.html`，并因此新增 `import { join } from 'node:path'` 与两行说明注释。
+     - 三处注入完成后的模板实测值（当前权威值，Task 3/6 参照；逆向剥离三处注入后与上游逐字节全等，
+       即为本清单完整性的证明）：26,117 字节 / **321 行**（上游 320 行，三处里只有第 2 处新增整行）/
+       相对上游净 **+301 字节** / md5 `238b31dd5f05edab308e29f0937f4c36`。
+       就地复核：`git cat-file blob :vendor/pelican-bike/index.template.html | md5sum`。
+- `vendor/pelican-bike/build.mjs` —— **仅改产物落点**（Task 3 完成）。改动可由
+  `git diff 5efd0a3..HEAD -- vendor/pelican-bike/build.mjs` 直接复核（`5efd0a3` 是本仓库第一个
+  提交，其 build.mjs 与上游逐字节相同）。上游基线**不必依赖本机文件**：
+  `git cat-file blob 5efd0a3:vendor/pelican-bike/build.mjs`（839 字节 / 21 行 /
+  md5 `2de76684fa3c1168e3e29a2d5402846c`）。
+  具体改动：删掉 `mkdirSync('dist', { recursive: true })` + `writeFileSync('dist/index.html', html)`
+  两行，换成锚定 `import.meta.dirname`（脚本自身位置）的 `outDir` 一行 + 同样的
+  `mkdirSync`/`writeFileSync` 两行；并新增 `import { join } from 'node:path'` 与 **6 行**说明注释
+  （Task 6 把原先的 2 行扩写成 6 行，见下条「只锚输出、不锚输入」）。
   其余逻辑——minify 开关、`<\/script` 转义、`<!--OG_IMAGE-->` 替换、`/*APP_JS*/` 替换
   （replacer 函数）、体积打印——逐字保留上游写法；**末行 `console.log` 里的字样仍是
   `dist/index.html`**（判据要求体积打印逐字保留，勿顺手改文案）。
-  ⚠️ **重建时 `package.json` 必须与本目录同时在位**：它的 `"type": "commonjs"` 决定 esbuild 以
-  CJS 语义打包 `src/*.js`（带 `__commonJS`/`__toCommonJS` 互操作壳）。缺了它（如在临时目录只拷
-  模板与 src 构建），同一 esbuild 会按纯 ESM 产出、bundle 小 2,768 字节且标识符重排完全不同——
-  对照构建时漏掉这个文件会得出假差异（Task 3 实测踩过）。
+  - **只锚输出、不锚输入（Task 6 更正的表述）**：`import.meta.dirname` 锚的是**写到哪**，
+    **两个输入** `entryPoints: ['src/main.js']` 与 `readFileSync('index.template.html')` 依旧
+    相对 `process.cwd()`。所以 `node build.mjs` **必须在 `vendor/pelican-bike/` 目录内运行**。
+    从别处调用不是静默走错，而是**大声失败**：2026-09-25 在仓库根实测
+    `node vendor/pelican-bike/build.mjs` → esbuild `Could not resolve "src/main.js"`、
+    **exit 1**、`public/pelican-bike/index.html` 的 md5 与 mtime 均未变化（失败发生在写入之前）。
+    `import.meta.dirname` 本身另要求 **Node ≥ 20.11**（本机实测 v24.18.0），更早的 Node 会在
+    加载脚本时就 `TypeError`，与 cwd 无关。
+  - ⚠️ **`package.json` 是本目录的承重文件，不只是元数据**：它的 `"type": "commonjs"` 决定
+    esbuild 以 CJS 语义打包 `src/*.js`。删掉它，`node build.mjs` **不会报错**，而是静默产出
+    一个更小、形状不同的 bundle（完整实测数值见下方「重建方法」的 ⚠️ 条）。
+    **验证手法有坑**：这些 esbuild 互操作壳（`__esm`、`__commonJS`/`__require`）的名字只在
+    **未压缩**构建里可 grep，压缩产物里会被 mangle 掉——**别拿 `grep __commonJS` 打在
+    `public/pelican-bike/index.html` 上当判据**（实测两侧都是 0，会得出「没有区别」的假结论）。
+    要看壳层差异请用 `node build.mjs --dev`，或直接把 md5 当判据。
 
 ## 重建方法
 
-构建依赖**只装进本目录的 `node_modules/`**（已被根 `.gitignore` 忽略），仓库根 `package.json` /
-`pnpm-lock.yaml` 零改动（GC-3）。实测可用的命令（Task 3，2026-09-25）：
+构建依赖**只装进本目录的 `node_modules/`**（已被根 `.gitignore` 的
+`vendor/pelican-bike/node_modules/` 那条忽略），仓库根 `package.json` /
+`pnpm-lock.yaml` 零改动（GC-3）。实测可用的命令（Task 3，2026-09-25；Task 6 复跑一致）：
 
 ```bash
-cd vendor/pelican-bike
+cd vendor/pelican-bike          # 必须先 cd 进来，见下方「cwd」条
 npm install --no-package-lock --no-audit --no-fund --registry=https://registry.npmmirror.com three@0.186.0 lil-gui@0.21.0 esbuild@0.28.2
 node build.mjs
 ```
 
 - **`--no-package-lock` 必须带**（GC-4）：上游 lock 把 `playwright-core` 钉在字节内网 registry
   （`bnpm.byted.org`），不可复用；本目录也不得生成新 lock。
-- 实测安装结果：`added 4 packages`（esbuild / @esbuild/win32-x64 / three / lil-gui，版本即上面三条）。
+- 实测安装结果：`added 4 packages`（esbuild / @esbuild/win32-x64 / three / lil-gui，版本即上面三条；
+  Task 6 于 `vendor/pelican-bike/node_modules/` 复核到位：three 0.186.0、lil-gui 0.21.0、
+  esbuild 0.28.2，且这三个包在仓库根 `node_modules/` 中**均不存在**，隔离成立）。
+  **`@esbuild/win32-x64` 那一条是 Windows x64 专属**——esbuild 按平台装对应的二进制包，
+  在 linux-x64 / darwin-arm64 上装到的是同名系列的其他包，包数与包名都会不同，属正常而非故障。
   npm 可能打印 `esbuild@0.28.2 (postinstall: node install.js)` 被 allowScripts 策略拦截的 warning，
-  **可忽略**：esbuild 的 JS API 直接调用 `@esbuild/win32-x64` 里的平台二进制，构建不需要该 postinstall
+  **可忽略**：esbuild 的 JS API 直接调用平台包里的二进制，构建不需要该 postinstall
   （已实测构建成功且产物确定性一致：同目录连跑两次 bundle md5 相同）。
-- `node build.mjs` 产物写到仓库根 `public/pelican-bike/index.html`（脚本路径锚定
-  `import.meta.dirname`，从任意 cwd 调用落点不变；日志行标签仍印 `dist/index.html`，见上节）。
-  `--dev` 参数关闭压缩（上游既有开关，本站构建不用）。
+- ⚠️ **`package.json` 必须与本目录同时在位，它是承重文件**（2026-09-25 Task 6 在本目录实测，
+  不是转抄）：它的 `"type": "commonjs"` 决定 esbuild 以 CJS 语义打包 `src/*.js`。把本目录的
+  `package.json` 临时改名后跑 `node build.mjs`，**命令以 exit 0 成功、照常打印体积行、照常写产物**，
+  但产物变成 **815,878 字节 / md5 `85a612da6c27e37a707b1bb0fde01d77`**，比基线 **少 2,768 字节**，
+  且标识符重排完全不同。未压缩对照（`node build.mjs --dev`）看得最清楚：基线产物含
+  **27 处 `__esm`** 与 `var __commonJS = (cb, mod) => function __require() {…}` 壳，缺 `package.json`
+  的那份这三类 helper **一个都不出现**（体积 1,879,610 → 1,747,930 字节）。
+  **不要用 `grep __commonJS` 打在压缩产物上当判据**——压缩会 mangle 这些名字，两侧都是 0，
+  量不出区别（`__toCommonJS` 本站从未出现过）。判据请认 md5。对照构建漏掉这个文件会得出假差异。
+- **cwd 影响能不能跑，不影响写到哪**：产物落点锚定 `import.meta.dirname`（脚本自身位置，
+  该 API 需 **Node ≥ 20.11**，本机实测 v24.18.0），所以**写入目标**与调用位置无关；
+  但 `entryPoints: ['src/main.js']` 与 `readFileSync('index.template.html')` 这两个**输入**
+  仍相对 `process.cwd()`，因此**必须在 `vendor/pelican-bike/` 内运行**。
+  从仓库根跑 `node vendor/pelican-bike/build.mjs` 的实测结果是**大声失败**而非静默走错：
+  esbuild 报 `Could not resolve "src/main.js"`、exit 1，产物 md5 与 mtime 均未变化。
+  日志行标签仍印 `dist/index.html`，见上节。`--dev` 参数关闭压缩（上游既有开关，本站构建不用）。
 - 本次构建产物基线：**818,646 字节**（脚本打印 `798.3 KB (js 774.0 KB)`——那是 UTF-16 字符数，
   与 UTF-8 字节数本就不等，勿以打印值当字节数），md5 `c043aa0ed9b2086419995a07c8ad15a0`，纯 LF。
+  Task 6 为验证「改注释不影响产物」在本目录连跑 `node build.mjs` 多次，每次都是上述字节数与 md5，
+  并与改前留档副本 `cmp` 逐字节全等（`build.mjs` 的注释文本不进产物）。
   与"上游原样模板 + 同一份 LF `src/` + 同一 `package.json` + 同一 esbuild"的对照构建（818,345 字节）
   逐行 diff，差异**只有三处注入**：`+27 B`（body 属性）`+134 B`（intro 链接行，含换行）
   `+140 B`（`.brand` div→a），合计 `+301 B`；774 KB 的 bundle 两侧 md5 全等
   （`b0a01ee9f93853afc6bcdf550d59abbf`）。
+- **`output/upstream-pelican-bike-54adc1f/` 是本机的临时对照目录，不是仓库内容**：根 `.gitignore`
+  的 `output/` 那条把它整棵忽略，**干净检出上它不存在**（Task 6 实测：本机该目录也已不在）。
+  因此本 README 不把它当任何判据的来源——需要上游原样文件时走上表 commit 的 raw URL，
+  或 `git cat-file blob 5efd0a3:vendor/pelican-bike/<path>`（Task 1 的逐字节 vendored 拷贝）。
 
 ## 与主站构建的关系
 

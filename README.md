@@ -32,6 +32,7 @@ pnpm smoke:ai-news  # AI 日报入口、详情、返回与离线快照 Smoke（�
 pnpm smoke:nice-books  # Nice Books 三页全链路 Smoke（随机/换一换/书库/详情/swup；默认 4321，但**权威环境是 build + preview**，用 NICE_BOOKS_BASE_URL 指过去）
 pnpm qa:nice-books-geometry  # Nice Books 统一3D几何运行时检查（默认 127.0.0.1:4321，BASE_URL 可覆盖）
 pnpm smoke:ui      # 主站 UI 缺陷修复实机烟测（UI 整改票册的缝隙 A；**需先 build + preview**，UI_SMOKE_BASE_URL 传站点根）
+pnpm smoke:pelican # 鹈鹕骑车 `/pelican-bike/`（vendored Three.js 单文件游戏）实机烟测；**需先 `pnpm build && pnpm preview --port 4322`**，PELICAN_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形）。该页不参与 pnpm build，重建走 `vendor/pelican-bike/`，见其 README
 pnpm test:utils  # src/utils 纯函数单测（content-utils 排序/评分/邻篇 + pagination canonical）
 pnpm test:contributions  # 贡献日历数据脚本离线单测（注入 fetchImpl，不访问真实网络）
 pnpm test:site-stats  # Giscus 同步单测（fetchImpl/输出路径全注入，无需令牌，已串入 build 链头部）
