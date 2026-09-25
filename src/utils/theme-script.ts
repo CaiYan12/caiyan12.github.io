@@ -921,6 +921,48 @@ function syncNavHighlight() {
 }
 
 /** 返回顶部 */
+let readingProgressFrame = 0;
+let readingProgressBound = false;
+
+function updateReadingProgress() {
+	readingProgressFrame = 0;
+	const progressBar = document.querySelector<HTMLElement>(
+		"[data-reading-progress]",
+	);
+	if (!progressBar) return;
+
+	const root = document.documentElement;
+	const maxScroll = root.scrollHeight - root.clientHeight;
+	const progress =
+		maxScroll > 0
+			? Math.min(1, Math.max(0, window.scrollY / maxScroll))
+			: 0;
+	progressBar.style.transform = `scaleX(${progress})`;
+	progressBar.setAttribute(
+		"aria-valuenow",
+		String(Math.round(progress * 100)),
+	);
+}
+
+function scheduleReadingProgressUpdate() {
+	if (readingProgressFrame) return;
+	readingProgressFrame = requestAnimationFrame(updateReadingProgress);
+}
+
+/** 文章阅读进度条：全站只绑定一组监听，Swup 换页后复用新节点 */
+function initReadingProgress() {
+	if (!readingProgressBound) {
+		readingProgressBound = true;
+		window.addEventListener("scroll", scheduleReadingProgressUpdate, {
+			passive: true,
+		});
+		window.addEventListener("resize", scheduleReadingProgressUpdate, {
+			passive: true,
+		});
+	}
+	scheduleReadingProgressUpdate();
+}
+
 function initBackToTop() {
 	const backtop = document.getElementById("backtop");
 	// backtop 在 Swup 容器外且只初始化一次；dataset 守卫防止未来重入时监听器翻倍
@@ -1143,6 +1185,7 @@ function initSwupHooks() {
 	});
 	document.addEventListener("astro:after-swap", () => {
 		syncNavHighlight();
+		initReadingProgress();
 		initFancybox();
 		initLqipFade();
 		loadKatexCss();
@@ -1151,6 +1194,7 @@ function initSwupHooks() {
 	});
 	document.addEventListener("astro:page-load", () => {
 		window.scrollTo({ top: 0 });
+		scheduleReadingProgressUpdate();
 		// 触发自定义事件，供其他组件（搜索、幻灯片）监听
 		document.dispatchEvent(
 			new CustomEvent("colorful:page:loaded", {
@@ -1182,6 +1226,7 @@ function initRandomBackground() {
 export function pagefindReady() {
 	initRandomBackground();
 	syncNavHighlight();
+	initReadingProgress();
 	initBackToTop();
 	initDblClickScroll();
 	initMMenu();
