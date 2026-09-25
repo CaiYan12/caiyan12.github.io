@@ -140,16 +140,16 @@
 
 **Delivers**：`NICE_BOOKS_BASE_URL` 从三份隐式约定变成一处显式声明。
 
-> 状态：未开始 @2026-09-25
+> 状态：已验收（`d15c04f`）@2026-09-25
 
-- [ ] 改用 `makeHarness`，删除本地 `function check` 与采集/退出码实现
-- [ ] 默认端口**不统一**（4321=dev、4322=preview 有意），但显式传入并注明形态是「完整页面地址」
-- [ ] 计时判据保持「capture 监听打 `performance.now()` 戳 + settle 后先页面内取差值」形状
-- [ ] 同一份 dist、不重建：72 项 PASS 与失败集合完全一致
-- [ ] 两套 QA 脚本本票不迁；`check` 第四参数位足以容纳 design-qa 的形状（写一条断言或注释证明）
-- [ ] T0 产物证明：diff 只含 `scripts/`
+- [x] 改用 `makeHarness`，删除本地 `function check` 与采集/退出码实现　〔第三份 `check()` 删除；`collectErrors()` 拆成两半——console/pageerror 归台子（`harness.attach` 挂在 `page` 与 `rmPage` 上，改前两者本就共用一个数组），HTTP 4xx 与 `requestfailed` 的**按 URL 分流**留在调用点新写的 `collectRequests()`，因为它们要往 `externalFailures` 里记 jsDelivr。diff 33 增 / 37 删，只落在头部、harness 构造、attach、两处 `harness.errors` 引用与尾行〕
+- [x] 默认端口**不统一**（4321=dev、4322=preview 有意），但显式传入并注明形态是「完整页面地址」　〔`defaultBase: "http://localhost:4321/books/"` 原值保留，改成 `makeHarness({envVar, defaultBase})` 的显式声明；头注释新增一行「`NICE_BOOKS_BASE_URL` 传的是**完整页面地址**，不是站点根」。实测回显：`[smoke] NICE_BOOKS_BASE_URL=http://localhost:4399/books/（形态：完整页面/目录地址）`〕
+- [x] 计时判据保持「capture 监听打 `performance.now()` 戳 + settle 后先页面内取差值」形状　〔`git diff` 未触及该项；前后读数 `415.90000000037253ms` / `430.09999999962747ms` 都在设计值 240+170=410ms 一侧——2026-09-20 修好的那个「计时起点不能放在 `page.click()` 之前」的形状原封〕
+- [x] 同一份 dist、不重建：72 项 PASS 与失败集合完全一致　〔同一 `dist`（票 08 的 E 构建，未重建）+ preview 4399。改前脚本 `git show HEAD:scripts/nice-books-smoke.mjs` 落 `output/nice-books-smoke-before.mjs` 同跑：两侧都 **`72/72 checks passed`**。把 detail 段剥掉后逐行比对 **72 行判据名与 PASS/FAIL 完全相同**（`output/nb-{before,after}.names`）；13 行原始差异**全部**在 `::` 之后（随机选书 id 与 ms 读数）加台子那行 `[smoke]` 回显，无一条判据增删或翻色。注意本套仍以本地 build+preview 为权威（打线上会因该 smoke 自己在同一 context 里开多个远端页而虚高到 ~996ms，AGENTS.md 已记）〕
+- [x] 两套 QA 脚本本票不迁；`check` 第四参数位足以容纳 design-qa 的形状（写一条断言或注释证明）　〔QA 两脚本零改动。**证明写成注释并如实标出边界**：`nice-books-design-qa.mjs:44` 的形状是 `check(name, ok, detail = "", extra = {})`，它把 `extra` **展开进结果行**（`{name, ok, detail, ...extra}`）且**返回布尔**；台子的第四参数位只做到「原样挂在结果行上」。所以「容纳」成立在载荷槽位、不成立在那两点——已在 `scripts/lib/smoke-harness.mjs` 的 `check` 注释旁写明缺口，等有第二个消费者时再加宽，不提前扩 interface。可跑的那半由票 04 的 `汇总口径与 check 的第四参数位` 断言守着（`summary().failed[0].extra.kind === "qa"`），`pnpm test:lib` 13/13 绿〕
+- [x] T0 产物证明：diff 只含 `scripts/`　〔本票两文件全在 `scripts/`（迁移体 + 台子注释），`package.json`、`astro.config.mjs`、`src/` 零改动；`git show --stat d15c04f` 可核。产物本票未重构建，沿用 norm=`7baf45a92c742f60` 基线〕
 
-**证据**：（回填）
+**证据**：commit `d15c04f`。前后日志 `output/nb-{before,after}.log`（各 `72/72`），判据名比对 `output/nb-{before,after}.names`（`diff` 空输出）。
 
 ### 07. 迁移 ui-smoke 到测试台（缝隙 A 本体）
 > Issue: #56
