@@ -122,16 +122,16 @@
 
 **Delivers**：台子的第二个真实 adapter，验证它对「带外部服务策略」的那类脚本也够用。
 
-> 状态：未开始 @2026-09-25
+> 状态：已验收（`e792124`）@2026-09-25
 
-- [ ] 改用 `makeHarness`，删除本地 `check` 与采集/退出码实现
-- [ ] 「外部服务单列不计 FAIL、本地资源仍严格判失败」经 `ignoreExternal` 显式表达，语义不变
-- [ ] `FANCY_BASE_URL` 默认值与站点根形态原样保留，改成显式传入
-- [ ] 同一份 dist、不重建：迁移前后 27 项 PASS 与失败集合完全一致，两次读数留档
-- [ ] 放大两项仍按「等原图解码 + 轮询到高度连续一致」，不回退固定毫秒
-- [ ] T0 产物证明：diff 只含 `scripts/`
+- [x] 改用 `makeHarness`，删除本地 `check` 与采集/退出码实现　〔第四份 `check()` 与 `page.on("pageerror")` / `page.on("console")` 采集、`results.filter` + `process.exit` 尾段全删；diff 24 增 / 30 删，改动只落在「头注释 + harness 构造 + launch + attach + `harness.errors` 引用 + 尾行」六处，27 条判据本身一字未动。`harness.attach` 只挂在**第一页**上——改前就只有那一页采集，其余三页的报错原本不计，口径原样保留〕
+- [x] 「外部服务单列不计 FAIL、本地资源仍严格判失败」经 `ignoreExternal` 显式表达，语义不变　〔实际形状是 `isNoise({url, base})` 谓词（票 04 已记的改名）：`!url || url.startsWith(base)` → 不算噪声，否则把主机记进 `externalIssues` 再放行——`externalIssues` 那条 `NOTE` 输出因此**保留在调用点**，台子不认它。**两侧各注入实测**（`output/fancybox-inject-{local,external}.mjs`）：页面内注入同源 `console.error` + `setTimeout` 抛错 → `FAIL 全程无 console/page 报错 :: injected-local-error @ ? | injected-page-error`、`合计 27 项，失败 1 项`、**exit 1**；注入一张 `127.0.0.1:9` 的外部图 → `NOTE …: 127.0.0.1:9, giscus.app`、两项报错判据与 `requestfailed` 判据全 PASS、**exit 0**。偏离留档：入列文案的形状由台子统一（`text 前 90 字 @ 去 base 后的路径`，改前是 `text 前 140 字`），只出现在 FAIL 行的 detail 里，不参与 PASS 集合〕
+- [x] `FANCY_BASE_URL` 默认值与站点根形态原样保留，改成显式传入　〔`defaultBase: "http://localhost:4322"` 原值；启动回显 `FANCY_BASE_URL=http://localhost:4399（形态：站点根）`。AGENTS.md 那条「`FANCY_BASE_URL` 传站点根、另两套传完整页面地址」的形态差异，从此由回显行自己说清，不再靠读脚本头部〕
+- [x] 同一份 dist、不重建：迁移前后 27 项 PASS 与失败集合完全一致，两次读数留档　〔同一 `dist`（票 03 构建后未重建）+ 同一 preview 4399。改前脚本以 `git show HEAD:scripts/fancybox-smoke.mjs` 落 `output/fancybox-smoke-before.mjs` 同跑：两次输出**逐行相同**（27 行 `PASS` + `NOTE …: giscus.app` + `合计 27 项，失败 0 项`），迁移侧只多出台子的 `[smoke]` 回显行。留档：`output/inj-local.log`、`output/inj-external.log`〕
+- [x] 放大两项仍按「等原图解码 + 轮询到高度连续一致」，不回退固定毫秒　〔`git diff` 未触及该段；读数仍是 `点击放大仍然生效 :: 适配 595px → 放大 3072px` 与 `放大态按原图自然尺寸呈现 :: 放大高度 3072 / 原图 3072`，即 2026-09-20 修好的那两条计时判据形状原封〕
+- [x] T0 产物证明：diff 只含 `scripts/`　〔改动仅 `scripts/fancybox-smoke.mjs` 一个文件；冒烟脚本不在任何构建输入的可达路径上，产物中立沿用已标定的 norm 基线 `7baf45a92c742f60`，收口票 09 全量复验〕
 
-**证据**：（回填）
+**证据**：commit `e792124`。迁移前后同 dist 逐行同读数（27/0 失败）；分流语义由两次真实注入分别取到红（本地报错 → exit 1）与绿（外部报错 → 仅 NOTE、exit 0），不是「它本来就是绿的」。
 
 ### 06. 迁移 nice-books-smoke 到测试台
 > Issue: #55
