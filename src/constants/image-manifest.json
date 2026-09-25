@@ -334,6 +334,11 @@
 		"height": 743,
 		"variants": [480, 720, 1080]
 	},
+	"public:images/posts/20260925150221/matt-pocock-skills-youtube-cover.jpg": {
+		"width": 1280,
+		"height": 720,
+		"variants": [480, 720]
+	},
 	"public:images/posts/fee-depreciation-cover.jpg": {
 		"width": 1125,
 		"height": 750,

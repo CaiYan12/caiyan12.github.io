@@ -2,6 +2,7 @@
 title: "告别“开盲盒”写代码：给初学者的现代 AI 前端开发实战指南"
 published: 2026-09-25 15:02:21
 description: "为什么凭感觉让 AI 写前端总是翻车？本文用通俗大白话带你拆解 Matt Pocock 的工程精髓，搭建一套有理有据、所见即所得、零基础也能轻松驾驭的现代 UI 研发工作流。"
+image: /images/posts/20260925150221/matt-pocock-skills-youtube-cover.jpg
 tags: [AI编程, Vibe Coding, 工作流]
 category: 技术
 draft: false
@@ -31,7 +32,7 @@ AI 写代码频频失控，不只是因为提问不够详细，也可能是缺�
 
 为什么会这样？没有规矩不成方圆。在没有任何约束的情况下，AI 就像一个拿着锯子和油漆桶的学徒：它不知道你房子的承重墙在哪里，也不知道地板是实木还是瓷砖，只能靠猜。
 
-Matt Pocock 维护着一套开源的 [Agent Skills（智能体技能）](https://github.com/mattpocock/skills)，为编码代理提供可复用的工作流程说明。它把工程中的一些做法写成可按需调用的指导，而不是神秘算法或一份适用于所有任务的固定 SOP。
+Matt Pocock 维护着一套开源的 [Agent Skills（智能体技能）](https://github.com/mattpocock/skills)，为编码代理提供可复用的工作流程说明。它把工程中的一些做法写成可按需调用的指导，而不是神秘算法或一份适用于所有任务的固定 SOP。相关视频：[《mattpocock/skills: A complete AI Coding workflow, end-to-end》](https://www.youtube.com/watch?v=M6mYodf0dJM)。
 
 ## 2. 新一代 AI 时代的心法：少即是多
 
