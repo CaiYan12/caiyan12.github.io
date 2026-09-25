@@ -35,8 +35,27 @@ export function makeHarness({
 	const base = process.env[envVar] ?? defaultBase;
 	// 形态回显：AGENTS.md 记过三次踩坑——FANCY_BASE_URL 要站点根，
 	// NICE_BOOKS_BASE_URL / AI_NEWS_BASE_URL 要完整页面地址，传错表现为「选择器等不到」的假失败。
-	const shape = /\/$/.test(base) ? "完整页面/目录地址" : "站点根";
+	// 判形看 pathname，不看结尾斜杠：站点根写成 `https://x/` 时结尾也有斜杠，
+	// 而它传给「自己拼 /posts/...」的脚本就会造出 `//posts/...`——
+	// 浏览器按**协议相对 URL** 解析它（host 变成 `posts`），于是一整段的
+	// `Failed to construct 'URL': Invalid URL` 与 replaceState 拒绝全是脚手架自己造的，
+	// 2026-09-25 就是这样把一次线上复跑读成 20 项红。
+	let shape;
+	try {
+		const path = new URL(base).pathname;
+		shape =
+			path === "/" || path === ""
+				? "站点根"
+				: `完整页面/目录地址（${path}）`;
+	} catch {
+		shape = "无法解析的 URL";
+	}
 	console.log(`[smoke] ${envVar}=${base}（形态：${shape}）`);
+	if (shape.startsWith("站点根") && /\/$/.test(base)) {
+		console.log(
+			`[smoke] 注意：${envVar} 以 / 结尾且是站点根——脚本内 base + "/path" 会拼出 //path（协议相对 URL），请去掉结尾斜杠`,
+		);
+	}
 
 	const results = [];
 

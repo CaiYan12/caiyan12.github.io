@@ -187,3 +187,16 @@ test("base 形态在启动时回显（三种形态传错曾造出假失败）", 
 	assert.match(root[0], /形态：站点根/u);
 	assert.match(page[0], /形态：完整页面\/目录地址/u);
 });
+
+test("站点根带结尾斜杠仍判为站点根，并警告会拼出协议相对 URL", () => {
+	const lines = captureLogs(() =>
+		makeHarness({
+			envVar: "HARNESS_TEST_BASE",
+			defaultBase: "https://caiyan12.github.io/",
+		}),
+	);
+	// 2026-09-25 的真实事故：这样传会让脚本内的 base + "/posts/x/" 变成 //posts/x/，
+	// 浏览器按协议相对 URL 解析（host = posts），于是一片 Invalid URL 假红。
+	assert.match(lines[0], /形态：站点根/u);
+	assert.match(lines[1], /请去掉结尾斜杠/u);
+});
