@@ -7,20 +7,8 @@ import { pluginLineNumbers } from "@expressive-code/plugin-line-numbers";
 import swup from "@swup/astro";
 import { defineConfig } from "astro/config";
 import expressiveCode from "astro-expressive-code";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
-import rehypeKatex from "rehype-katex";
-import rehypeSlug from "rehype-slug";
-import remarkMath from "remark-math";
-import remarkDirective from "remark-directive";
-import remarkCjkFriendly from "remark-cjk-friendly";
 import { siteConfig } from "./src/config.ts";
-import { remarkExcerpt } from "./src/plugins/remark-excerpt.js";
-import { remarkImageGrid } from "./src/plugins/remark-image-grid.js";
-import { remarkReadingTime } from "./src/plugins/remark-reading-time.mjs";
-import { remarkExtended } from "./src/plugins/remark-extended.mjs";
-import rehypeEmailProtection from "./src/plugins/rehype-email-protection.mjs";
-import rehypeExternalLinks from "./src/plugins/rehype-external-links.mjs";
-import rehypeTableWrapper from "./src/plugins/rehype-table-wrapper.mjs";
+import { markdownPipeline } from "./src/plugins/pipeline.mjs";
 
 // dev 下 Vite 把懒加载的第三方 CSS（fancybox、katex）以运行时注入的 <style> 挂进 head。
 // swup 的 updateHead 按"新页面没有此节点"把它删掉，而模块已在 Vite 图里、不会再注入一次，
@@ -108,43 +96,7 @@ export default defineConfig({
 		}),
 	],
 	markdown: {
-		processor: unified({
-			remarkPlugins: [
-				remarkCjkFriendly, // 解析层扩展，须紧跟 Astro 内置 remark-gfm 之后、其余插件之前
-				remarkMath,
-				remarkDirective,
-				remarkImageGrid, // [grid]...[/grid] 图片网格（移植自 Firefly）
-				remarkExtended,
-				remarkReadingTime,
-				remarkExcerpt,
-			],
-			rehypePlugins: [
-				rehypeKatex,
-				rehypeSlug,
-				// 外链新窗口打开 + 邮箱地址防爬虫混淆（移植自 Firefly）
-				[rehypeExternalLinks, { siteUrl: siteConfig.siteURL }],
-				[rehypeEmailProtection, { method: "base64" }],
-				rehypeTableWrapper,
-				[
-					rehypeAutolinkHeadings,
-					{
-						behavior: "append",
-						properties: {
-							className: ["anchor"],
-						},
-						content: {
-							type: "element",
-							tagName: "span",
-							properties: {
-								className: ["anchor-icon"],
-								"data-pagefind-ignore": true,
-							},
-							children: [{ type: "text", value: "#" }],
-						},
-					},
-				],
-			],
-		}),
+		processor: unified(markdownPipeline()),
 	},
 	vite: {
 		build: {
