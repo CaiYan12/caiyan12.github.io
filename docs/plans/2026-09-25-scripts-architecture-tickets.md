@@ -179,17 +179,27 @@
 
 **Delivers**：想断言管线的人可以 import 到那 13 个 transform 的数组，而不必 import 整个 `defineConfig`；`astro.config.mjs` 退化成只消费。
 
-> 状态：未开始 @2026-09-25
+> 状态：已验收（`013786c`）@2026-09-25
 
-- [ ] 新 `src/plugins/pipeline.mjs`：`markdownPipeline() → {remarkPlugins, rehypePlugins}`，与 `astro.config.mjs:110-148` 逐元素等价
-- [ ] `astro.config.mjs` 只消费，其余配置一字不动
-- [ ] 取最小形状：不导出顺序命名清单、不加顺序断言测试
-- [ ] **T1 三段式**：① 同一 HEAD 连跑两次完整构建证明 `dist` 自等；② 改码；③ 第三次与基线比 —— `dist/_astro/**` 逐字节 + 全部 HTML 剥 `div.widget.tab-widget` 随机块后相同
-- [ ] 两侧都先删 `node_modules/.astro` 与 `.astro/data-store.json`
-- [ ] `deploy.yml` 的 `cache: false` 不回退；`@astrojs/markdown-remark` 精确版本对齐不动
-- [ ] 构建改写的两个 constants 文件验证后 `git checkout --` 还原
+- [x] 新 `src/plugins/pipeline.mjs`：`markdownPipeline() → {remarkPlugins, rehypePlugins}`，与 `astro.config.mjs:110-148` 逐元素等价　〔改前那一段位于 `astro.config.mjs:98-136`（行号随本轮改动漂移，按 `processor: unified({` 定位）。等价有两层证明：**机械层**——`output/compare-pipeline.mjs` 把改前 config 的整块与改后模块的整块按行去缩进比对，**34 行 / 34 行、除包裹行外逐字相同**（连插件行尾的中文注释一起搬）；**产物层**见下条三段式〕
+- [x] `astro.config.mjs` 只消费，其余配置一字不动　〔diff 只有两处：删掉 13 个只服务于该数组的 import（逐个 `grep -c` 确认各只出现 2 次 = import + 数组内用点，抽走后不残留死 import；`siteConfig` 3 次、仍在 `site: siteConfig.siteURL` 使用，保留），以及 `markdown` 段 38 行 → 1 行 `processor: unified(markdownPipeline())`。`pnpm check` 0 errors（2 处 hint 是既有的 `document.execCommand`）。**Prettier 提示登记**：`pnpm exec prettier --check astro.config.mjs` 仍 warn，比对 HEAD 副本后确认唯一偏差是 `sitemap.filter` 那条长箭头行——**改前就不合规**，不是本票引入，且 `lint.yml` 只扫 `./src`，故不顺手格式化无关行〕
+- [x] 取最小形状：不导出顺序命名清单、不加顺序断言测试　〔模块只导出 `markdownPipeline()` 一个函数、只返回那两个数组；无名称清单、无顺序测试。头注释写明「顺序即产物」并把回归责任指给三段式比对，而不是假装测试已经守住顺序〕
+- [x] **T1 三段式**：① 同一 HEAD 连跑两次完整构建证明 `dist` 自等；② 改码；③ 第三次与基线比 —— `dist/_astro/**` 逐字节 + 全部 HTML 剥 `div.widget.tab-widget` 随机块后相同　〔**①** `output/t1-A.sha` / `t1-B.sha`：两次同 HEAD 构建，norm 清单 `diff -q` **逐行相同**，raw 差 **244 行 = 122 个 HTML × 2**，正对票 02 标定的随机块数量 → 比对器本身有判别力、且噪声已被归零。**③** `t1-C.sha`：1114 文件 / norm=`7baf45a92c742f60`，与 A、B 逐行相同（raw 各自不同：`10b00986915ec5e6` / `839713c255bb140c` / `006510b564febc43`，即构建随机）；`dist/_astro/**` 单列比对 **260 个条目按「文件名 + 字节」双等**（清单行含路径，改名会当场露出）。**红证据**：把 `rehypeAutolinkHeadings` 的 `behavior: "append"` 改 `"prepend"` 再构建 → `t1-D.sha` norm 变 **`c24d624817f41ae4`**，与基线差 **20 个 HTML**；按备份 md5 还原（`b83a4d397708f754f38ab9419fb9f678`，源与备份两侧一致）后重建 `t1-E.sha` → 与 C **逐行相同**〕
+- [x] 两侧都先删 `node_modules/.astro` 与 `.astro/data-store.json`　〔A/B/C/D/E 五次构建每一次前都 `rm -rf node_modules/.astro .astro/data-store.json`（AGENTS.md 的 content layer 大坑：不删则插件改动被缓存吃掉、改动表现为无操作）〕
+- [x] `deploy.yml` 的 `cache: false` 不回退；`@astrojs/markdown-remark` 精确版本对齐不动　〔本票 diff 只含 `astro.config.mjs` 与新模块，`.github/workflows/*` 与 `package.json` / `pnpm-lock.yaml` 零改动，`git show --stat 013786c` 可核〕
+- [x] 构建改写的两个 constants 文件验证后 `git checkout --` 还原　〔本票比对全走 `pnpm exec astro build`（绕开 fetch 链以保证输入钉死），`github-contributions.json` / `github-projects.json` **从未被改写**，无需还原；提交前 `git status --short` 只有本票白名单两个文件。顺带处理一次自造垃圾：一次 `/dev/null` 当输出路径的临时循环在仓库根留下 `nul` 与 `nul.norm`（Git Bash 下 Node 会把 `/dev/null` 落成 Windows 保留名文件），已 `rm -f` 掉，未进任何提交〕
 
-**证据**：（回填：三次构建的哈希对照表 + 差异清单原文）
+**证据**：commit `013786c`。三段式对照表（`dist` 聚合）：
+
+| 阶段 | 代码态 | 文件数 | raw | norm |
+|---|---|---|---|---|
+| A | HEAD（改前） | 1114 | `10b00986915ec5e6` | `7baf45a92c742f60` |
+| B | HEAD（改前，第二次） | 1114 | `839713c255bb140c` | `7baf45a92c742f60` |
+| C | 改后 | 1114 | `006510b564febc43` | `7baf45a92c742f60` |
+| D | 变异（autolink prepend） | 1114 | `0875e2dc9a8f64af` | **`c24d624817f41ae4`** ← 20 个 HTML 与基线不同 |
+| E | 还原后重建 | 1114 | `ac6b293c52fcfae4` | `7baf45a92c742f60` |
+
+清单原文：`output/t1-{A,B,C,D,E}.sha`（raw 逐文件）与 `.norm` 后缀（剥随机块）。本轮开工以来的 norm 一直是同一个值，说明票 01–08 对产物整体中立。
 
 ## 收尾
 
