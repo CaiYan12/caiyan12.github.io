@@ -209,10 +209,10 @@
 
 **Delivers**：本地全链绿、产物逐字节不变已被证明、票册状态全部回填并被自己的脚本承认。
 
-> 状态：未开始 @2026-09-25
+> 状态：进行中 @2026-09-25（停在完整构建——外网中断，见末条证据）
 
-- [ ] 删 content layer 缓存后完整 `pnpm build` 通过（链头此时含新增三组离线测试与台子自测）
-- [ ] `pnpm check` 0 errors、`prettier --check ./src ./scripts` 通过
+- [ ] 删 content layer 缓存后完整 `pnpm build` 通过（链头此时含新增三组离线测试与台子自测）　〔**未完成**。已按规程 `rm -rf node_modules/.astro .astro/data-store.json` 后跑完整链：链头七组**全绿**（非 `tail` 读法逐个抓出：`test:projects` 6 + 7、`test:nice-books` 51、`test:site-stats` 19、`test:utils` 16、`test:contributions` 11、`test:friend-icons` 32、`test:lib` 13，每组 `fail 0`），`validate-post-slugs` 通过（22 个目录），随后 `astro build` 在 OG 图端点死于 `Error: No fonts are loaded.`。本机此刻出站 HTTPS 全断：`fonts.googleapis.com` / `api.github.com` / `caiyan12.github.io` / `registry.npmmirror.com` 四路 curl 一律 `000`，贡献日历与友链图标也走了「拉取失败→复用旧缓存」分支（`SKIP github contributions: fetch failed`）。按 AGENTS.md 这属环境抖动不是代码问题，但它同时使 `dist` 处于**残缺态**（113 个 HTML、`dist/og` 0 张、无 `dist/pagefind`），因此下面四项一并挂起〕
+- [x] `pnpm check` 0 errors、`prettier --check ./src ./scripts` 通过　〔`astro check` 输出 `0 errors / 0 warnings / 2 hints`（两处 hint 是既有的 `document.execCommand`）；`prettier --check ./src ./scripts` → `All matched files use Prettier code style!`。两项纯本地，断网不影响，已达成〕
 - [ ] 四套冒烟与全部离线单测绿，总数非 `tail` 读法记录，判据数量与开工前一致（9 / 27 / 72 / 121）
 - [ ] 最终一次 `pnpm build` 的 `dist` 与开工前基线逐字节相同（T1 归一化：`_astro` 文件名哈希可变、内容不可变）
 - [ ] 缝隙 A 以线上为基准复跑全绿（推送部署后，`Last-Modified` 判生效）
@@ -222,6 +222,8 @@
 - [ ] `.design-flow.json` stage 与 next 更新
 
 **证据**：（回填）
+
+> 中断与裁定记录 @2026-09-25：① **不在残缺 dist 上勾判据**，也不为让自检变绿而放宽任何一条——票 09 剩下的四项等外网恢复从「重跑完整 `pnpm build`」这一步继续。② 另一会话反复报来的「console 零报错门禁」（它的票 10 / issue #79 / #81）经七路核验在本工作副本的任何提交与文件里都不存在：`git status` 干净、HEAD 是本人的 `ec73a13`（票 07）、`git show HEAD:scripts/ui-smoke.mjs` 内 `checkClean(` 仍是 **17** 处且 `全页零` / `KNOWN_THIRD_PARTY` 命中 **0**、`HEAD:package.json` 无 `console-error-gate`、四套冒烟在 HEAD 与工作树里的 `checkClean` 数分别为 17 / 0 / 0 / 0、`find /d/pages -maxdepth 3 -name 'console-error*'` 无结果、其引用的四个 sha 在 `git cat-file -t` 下全部 "Not a valid object name"、`gh issue view 79` not found。站长裁定「**既然不存在，那就不做**」，故本批判据数仍为 **9 / 27 / 72 / 121**，未为它增删一条。③ 顺带纠正一处归属：`ec73a13` 是本人撰写提交的票 07，不是对方的提交。
 
 ## 本批不做（登记，避免被误当回归）
 
