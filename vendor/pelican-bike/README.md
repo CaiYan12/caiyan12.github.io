@@ -32,7 +32,6 @@ Claude Opus 5.5 一次性生成（one-shot）的 Three.js 单文件 3D 游戏「
 - `src/` 全部 11 个 `.js`（`audio.js` `bicycle.js` `effects.js` `fish.js` `main.js` `ocean.js`
   `pelican.js` `sky.js` `textures.js` `util.js` `world.js`）—— 游戏逻辑、数值、配色、动画、镜头、
   成就、音效一律不改。
-- `build.mjs` —— 上游原样。输出路径的改动在后续任务追加（见下）。
 - `index.template.html` —— 拷贝自上游后，已注入本仓库唯一会对模板做的三处改动
   （pagefind 忽略属性、`.intro-links` 返回博客链接、`.brand` 面板变成返回链接），
   逐条见下方「后续任务改动」清单；`<style>…</style>` 整块与上游**逐字节相同**（零 CSS 改动）。
@@ -95,19 +94,53 @@ Claude Opus 5.5 一次性生成（one-shot）的 Three.js 单文件 3D 游戏「
        禁改区），记录在此以免将来被当成本仓库的回归。
      - 三处注入完成后的模板 md5（当前权威值，Task 3/6 参照；逆向剥离三处注入后与上游逐字节全等，
        即为本清单完整性的证明）：`238b31dd5f05edab308e29f0937f4c36`。
-- `build.mjs`：暂无（Task 3 追加输出路径改动）。
+- `vendor/pelican-bike/build.mjs` —— **仅改产物落点**（Task 3 完成，改动可由
+  `git diff 54adc1f 的拷贝..HEAD -- vendor/pelican-bike/build.mjs` 复核，实际对照基线是
+  `output/upstream-pelican-bike-54adc1f/build.mjs`，md5 `2de76684fa3c1168e3e29a2d5402846c`）：
+  把 `mkdirSync('dist')` + `writeFileSync('dist/index.html')` 两行替换为锚定
+  `import.meta.dirname`（脚本自身位置，**不依赖 `process.cwd()`**）的
+  `public/pelican-bike/index.html`，并因此新增 `import { join } from 'node:path'` 与两行说明注释。
+  其余逻辑——minify 开关、`<\/script` 转义、`<!--OG_IMAGE-->` 替换、`/*APP_JS*/` 替换
+  （replacer 函数）、体积打印——逐字保留上游写法；**末行 `console.log` 里的字样仍是
+  `dist/index.html`**（判据要求体积打印逐字保留，勿顺手改文案）。
+  ⚠️ **重建时 `package.json` 必须与本目录同时在位**：它的 `"type": "commonjs"` 决定 esbuild 以
+  CJS 语义打包 `src/*.js`（带 `__commonJS`/`__toCommonJS` 互操作壳）。缺了它（如在临时目录只拷
+  模板与 src 构建），同一 esbuild 会按纯 ESM 产出、bundle 小 2,768 字节且标识符重排完全不同——
+  对照构建时漏掉这个文件会得出假差异（Task 3 实测踩过）。
 
 ## 重建方法
 
-精确命令由 Task 3 写完后补充。当前上游自有的构建方式为在该目录下执行
-`node build.mjs`（先 `npm install --no-package-lock` 装 `esbuild`；`--dev` 参数关闭压缩），
-产物写到 `./dist/index.html`。本仓库的产物落点与脚本入口以 Task 3 的补充为准。
+构建依赖**只装进本目录的 `node_modules/`**（已被根 `.gitignore` 忽略），仓库根 `package.json` /
+`pnpm-lock.yaml` 零改动（GC-3）。实测可用的命令（Task 3，2026-09-25）：
+
+```bash
+cd vendor/pelican-bike
+npm install --no-package-lock --no-audit --no-fund --registry=https://registry.npmmirror.com three@0.186.0 lil-gui@0.21.0 esbuild@0.28.2
+node build.mjs
+```
+
+- **`--no-package-lock` 必须带**（GC-4）：上游 lock 把 `playwright-core` 钉在字节内网 registry
+  （`bnpm.byted.org`），不可复用；本目录也不得生成新 lock。
+- 实测安装结果：`added 4 packages`（esbuild / @esbuild/win32-x64 / three / lil-gui，版本即上面三条）。
+  npm 可能打印 `esbuild@0.28.2 (postinstall: node install.js)` 被 allowScripts 策略拦截的 warning，
+  **可忽略**：esbuild 的 JS API 直接调用 `@esbuild/win32-x64` 里的平台二进制，构建不需要该 postinstall
+  （已实测构建成功且产物确定性一致：同目录连跑两次 bundle md5 相同）。
+- `node build.mjs` 产物写到仓库根 `public/pelican-bike/index.html`（脚本路径锚定
+  `import.meta.dirname`，从任意 cwd 调用落点不变；日志行标签仍印 `dist/index.html`，见上节）。
+  `--dev` 参数关闭压缩（上游既有开关，本站构建不用）。
+- 本次构建产物基线：**818,646 字节**（脚本打印 `798.3 KB (js 774.0 KB)`——那是 UTF-16 字符数，
+  与 UTF-8 字节数本就不等，勿以打印值当字节数），md5 `c043aa0ed9b2086419995a07c8ad15a0`，纯 LF。
+  与"上游原样模板 + 同一份 LF `src/` + 同一 `package.json` + 同一 esbuild"的对照构建（818,345 字节）
+  逐行 diff，差异**只有三处注入**：`+27 B`（body 属性）`+134 B`（intro 链接行，含换行）
+  `+140 B`（`.brand` div→a），合计 `+301 B`；774 KB 的 bundle 两侧 md5 全等
+  （`b0a01ee9f93853afc6bcdf550d59abbf`）。
 
 ## 与主站构建的关系
 
 **本目录不参与 `pnpm build`**，不参与 `pnpm check`、`prettier --check ./src`（它在仓库根的
 `vendor/`，不在 `src/` 内）。这里的代码是**留档 + 手动重建用**：站点实际访问的是重建后的静态产物，
-该产物由后续任务落到 `public/pelican-bike/`（本任务不创建该目录）。
+该产物已由 Task 3 落到 `public/pelican-bike/index.html`（**跟踪提交**，非 gitignore），
+按上一节的命令重建后需自行提交该文件。
 
 `vendor/pelican-bike/node_modules/`（若为手动重建而临时安装）已在根 `.gitignore` 中忽略。
 
