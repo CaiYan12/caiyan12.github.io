@@ -1,37 +1,33 @@
+// AI日报入口/详情/返回/离线快照的实机烟测（需先 build + preview）。
+// 台子（check / 报错采集 / 汇总）来自 scripts/lib/smoke-harness.mjs，本文件只写判据。
+// AI_NEWS_BASE_URL 传的是**完整页面地址**（形如 http://host/ai-news/），不是站点根。
 import { chromium } from "playwright";
+import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const baseUrl =
-	process.env.AI_NEWS_BASE_URL ?? "http://127.0.0.1:4321/ai-news/";
 const itemSelector = '.juya-feed-item, article[role="button"]';
-const results = [];
 
-function check(name, ok, detail = "") {
-	results.push({ name, ok });
-	console.log(
-		`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` :: ${detail}` : ""}`,
-	);
-}
-
-function collectErrors(page, errors, ignoredConsoleMessages = []) {
-	page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
-	page.on("console", (message) => {
-		if (message.type() !== "error") return;
-		const text = message.text();
-		if (text.includes("[feed] 实时抓取失败")) return;
-		if (ignoredConsoleMessages.includes(text)) return;
-		errors.push(text);
-	});
-}
+// 噪声策略留在调用点：实时 RSS 抓取失败是这条链路**设计上要演示**的分支，不是缺陷。
+const harness = makeHarness({
+	envVar: "AI_NEWS_BASE_URL",
+	defaultBase: "http://127.0.0.1:4321/ai-news/",
+	isNoise: ({ text }) => text.includes("[feed] 实时抓取失败"),
+});
+const baseUrl = harness.base;
+const { check } = harness;
 
 const browser = await chromium.launch();
-const errors = [];
-const offlineErrors = [];
+const offlineSink = harness.createSink({
+	name: "offline",
+	// 离线页额外允许那条被 route.abort() 制造出来的资源加载失败（原文精确匹配，与原实现同）
+	sinkNoise: ({ text }) =>
+		text.includes("[feed] 实时抓取失败") ||
+		text === "Failed to load resource: net::ERR_FAILED",
+});
 
 try {
-	const page = await browser.newPage({
-		viewport: { width: 1280, height: 900 },
-	});
-	collectErrors(page, errors);
+	const page = harness.attach(
+		await browser.newPage({ viewport: { width: 1280, height: 900 } }),
+	);
 
 	const siteRootUrl = new URL("/", baseUrl).href;
 	await page.goto(siteRootUrl, { waitUntil: "domcontentloaded" });
@@ -76,12 +72,9 @@ try {
 		(await page.locator('footer a[href="/"][data-no-swup]').count()) === 1,
 	);
 
-	const offline = await browser.newPage({
-		viewport: { width: 1280, height: 900 },
-	});
-	collectErrors(offline, offlineErrors, [
-		"Failed to load resource: net::ERR_FAILED",
-	]);
+	const offline = offlineSink.attach(
+		await browser.newPage({ viewport: { width: 1280, height: 900 } }),
+	);
 	await offline.route("https://daily.juya.uk/**", (route) => route.abort());
 	await offline.goto(baseUrl, { waitUntil: "domcontentloaded" });
 	await offline.waitForSelector(itemSelector, { timeout: 20000 });
@@ -98,17 +91,10 @@ try {
 	await browser.close();
 }
 
+const allErrors = [...harness.errors, ...offlineSink.errors];
 console.log("\n--- console errors ---");
-console.log(
-	[...errors, ...offlineErrors].length === 0
-		? "(none)"
-		: [...errors, ...offlineErrors].join("\n"),
-);
+console.log(allErrors.length === 0 ? "(none)" : allErrors.join("\n"));
 
-const failed = results.filter((result) => !result.ok);
-console.log(`\n结果：${results.length - failed.length}/${results.length} 通过`);
-process.exit(
-	failed.length === 0 && errors.length === 0 && offlineErrors.length === 0
-		? 0
-		: 1,
-);
+const { total, failed } = harness.summary();
+console.log(`\n结果：${total - failed.length}/${total} 通过`);
+process.exit(failed.length === 0 && allErrors.length === 0 ? 0 : 1);
