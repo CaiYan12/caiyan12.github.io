@@ -158,7 +158,7 @@
 
 **Delivers**：本轮验收的主要门禁本身站上台子。
 
-> 状态：已验收（`ec73a13`）@2026-09-25
+> 状态：已验收（`ec70aec`）@2026-09-25
 
 - [x] 改用 `makeHarness`：本地 `check`、`checkClean`、console/pageerror 采集上移　〔diff **20 增 / 39 删**，逐行核过与改前副本的完整差异只有六处：import、harness 构造（含 `isNoise`）、`check`/`checkClean` 解构、`browser.launch`、`attach`、尾行 `finish()`。台子的报错入列格式 `${text.slice(0,90)} @ ${url.slice(base.length) || "?"}` 与 pageerror 的 `slice(0,140)` **本就是照本文件抄的**，所以连 detail 文案都逐字节不变；`errorsSeen` 游标随 `checkClean` 一起消失（改前它挂在模块级、只服务这一个汇，语义等价迁到汇内）〕
 - [x] 121 条判据一条不增不删不改；`hoverProbe` / `readPills` / `pillsAt` / `sharp` 像素助手留在判据侧　〔**本轮第一次跑红 3 项，红在我自己身上**：改写时把 `LONGEST_POST` 误换成另一篇文章（`/posts/20260909092113/`），89 半角单位的最长标题没了，1440/1100/680 三档「未裁切且换行」当场落空（行盒 2→1、高 54→27）。改回后全绿，并把 `git show HEAD:` 副本与迁移体做**整文件 diff** 确认再无一字超出迁移。判据名与 PASS/FAIL 剥 detail 后 **121 行逐行相同**（`output/ui-{before,after2}.names`）。像素助手四项原样留在本文件〕
@@ -167,7 +167,7 @@
 - [x] `#45`（微言轮播静息=悬停，含 reduced-motion 冻结取数）与 `#47`（sitemap 160 页负扫「重复 0 条」）两条常驻判据仍有效　〔`#45` 五条全 PASS：悬停不变色 / 不出下划线 / 悬停停住 / 移出恢复 / Tab 拿到焦点环；`#47` `扫 160 页，重复 0 条`。`KNOWN_DEAD` 白名单按原样留在调用点（票 18 故意访问的 404 哨兵路径），其「按名前缀列名而非放宽整条检查」的来由注释未动〕
 - [x] 迁移后本地 4399 跑一次全绿（线上复跑归票 09）　〔本轮第二次跑即全绿：121/121、`失败 0 项`、exit 0。线上复跑按票册留给票 09〕
 
-**证据**：commit `ec73a13`。四套冒烟至此全部接上台子（9 / 27 / 72 / 121 判据数一项未增减）；`output/ui-{before,after,after2}.log` 与 `.names` 三份留档，其中 `after.log` 是自家 typo 被判据抓住的现场。
+**证据**：commit `ec70aec`。四套冒烟至此全部接上台子（9 / 27 / 72 / 121 判据数一项未增减）；`output/ui-{before,after,after2}.log` 与 `.names` 三份留档，其中 `after.log` 是自家 typo 被判据抓住的现场。
 
 ## T1 · 会被构建消费的一项
 
@@ -223,7 +223,7 @@
 
 **证据**：（回填）
 
-> 中断与裁定记录 @2026-09-25：① **不在残缺 dist 上勾判据**，也不为让自检变绿而放宽任何一条——票 09 剩下的四项等外网恢复从「重跑完整 `pnpm build`」这一步继续。② 另一会话反复报来的「console 零报错门禁」（它的票 10 / issue #79 / #81）经七路核验在本工作副本的任何提交与文件里都不存在：`git status` 干净、HEAD 是本人的 `ec73a13`（票 07）、`git show HEAD:scripts/ui-smoke.mjs` 内 `checkClean(` 仍是 **17** 处且 `全页零` / `KNOWN_THIRD_PARTY` 命中 **0**、`HEAD:package.json` 无 `console-error-gate`、四套冒烟在 HEAD 与工作树里的 `checkClean` 数分别为 17 / 0 / 0 / 0、`find /d/pages -maxdepth 3 -name 'console-error*'` 无结果、其引用的四个 sha 在 `git cat-file -t` 下全部 "Not a valid object name"、`gh issue view 79` not found。站长裁定「**既然不存在，那就不做**」，故本批判据数仍为 **9 / 27 / 72 / 121**，未为它增删一条。③ 顺带纠正一处归属：`ec73a13` 是本人撰写提交的票 07，不是对方的提交。
+> 中断与裁定记录 @2026-09-25：① **不在残缺 dist 上勾判据**，也不为让自检变绿而放宽任何一条——票 09 剩下的四项等外网恢复从「重跑完整 `pnpm build`」这一步继续。② 另一会话反复报来的「console 零报错门禁」（它的票 10 / issue #79 / #81）经七路核验在本工作副本的任何提交与文件里都不存在：`git status` 干净、HEAD 是本人的 `ec70aec`（票 07）、`git show HEAD:scripts/ui-smoke.mjs` 内 `checkClean(` 仍是 **17** 处且 `全页零` / `KNOWN_THIRD_PARTY` 命中 **0**、`HEAD:package.json` 无 `console-error-gate`、四套冒烟在 HEAD 与工作树里的 `checkClean` 数分别为 17 / 0 / 0 / 0、`find /d/pages -maxdepth 3 -name 'console-error*'` 无结果、其引用的四个 sha 在 `git cat-file -t` 下全部 "Not a valid object name"、`gh issue view 79` not found。站长裁定「**既然不存在，那就不做**」，故本批判据数仍为 **9 / 27 / 72 / 121**，未为它增删一条。③ 顺带纠正一处归属：`ec70aec` 是本人撰写提交的票 07，不是对方的提交。
 
 ## 本批不做（登记，避免被误当回归）
 
