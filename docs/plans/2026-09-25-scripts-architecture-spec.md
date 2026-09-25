@@ -42,6 +42,8 @@
 10. **门禁位置**：前置进 `pnpm build` 链头（与现有三组同构）。**后果已确认接受**：纯函数测试红会直接挡住 Pages 部署（`deploy.yml` 的 withastro/action 默认跑 `pnpm run build`）。
 11. **两套 nice-books QA 脚本本批不迁**，只靠第四参数位预留形状。
 12. **流程**：spec + 8 票镜像 issue（parent = spec issue，`gh` 原生 `--parent`/`--blocked-by`）、一票一 commit、**无预览点**、全部完成后等站长同意推送。
+13. **（2026-09-25 实施期中途追加，站长裁决）票 06／07 在票 05 之后暂停**，等「console 报错全量清点门禁」（另一会话在做的票）先落地，那两票接在其后做；届时它们的「PASS 数不减」判据要与那条零报错判据**同批评测**，不得让迁移降低 console 报错的可见性。票 08 照原序完成——它只动 `astro.config.mjs` 与新建 `src/plugins/pipeline.mjs`，不碰任何 smoke 文件，其判据也不读 console 报错。
+- **事实登记（写本条时三次核验）**：该门禁在票册（233 行，`grep 票 10` 与 `R7` 命中 0）与 `AGENTS.md`（449 行，命中 0）里都还没有对应段落，`gh issue view 79` / `80` 均返回 "Could not resolve to an issue"（本仓库最大 issue 为 #58）。故本轮**不据未落地的说法改任何判据或阻塞边**；等它真进台账，再按上面那半条把判据补进票 06／07。
 
 ## User Stories
 
