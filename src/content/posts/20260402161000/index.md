@@ -1,6 +1,7 @@
 ---
 title: 《数据库原理》作业5：关系理论1
 published: 2026-04-02
+readingTime: 6
 description: "关系数据库规范化与函数依赖习题整理"
 image: /images/posts/202604021610.png
 tags: [数据库, 习题]

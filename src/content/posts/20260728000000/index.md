@@ -1,6 +1,7 @@
 ---
 title: 你好，Astro！博客迁移正式完成
 published: 2026-07-28
+readingTime: 2
 category: 技术
 tags: [Astro, 博客, 迁移]
 description: 从 Emlog Colorful 主题迁移到 Astro 静态博客的完整记录

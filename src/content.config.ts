@@ -29,8 +29,8 @@ const postsCollection = defineCollection({
 		hotness: z.number().min(0).max(5).optional().default(0),
 		author: z.string().optional().default("WindowsIt"),
 		lang: z.string().optional().default("zh_CN"),
-		/** 阅读时间（由 remark-reading-time 注入） */
-		readingTime: z.number().optional(),
+		/** 阅读时间（优先使用 frontmatter 手写值，缺省时由 remark-reading-time 注入） */
+		readingTime: z.number().int().positive().optional(),
 		/** 摘要（由 remark-excerpt 注入） */
 		excerpt: z.string().optional().default(""),
 	}),

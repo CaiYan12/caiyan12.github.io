@@ -1,6 +1,7 @@
 ---
 title: 《Linux操作系统》课程练习题3：基本操作
 published: 2026-03-18
+readingTime: 3
 description: "Linux操作系统基本操作习题"
 image: /images/posts/202603181619.jpg
 tags: [习题, Linux操作系统]

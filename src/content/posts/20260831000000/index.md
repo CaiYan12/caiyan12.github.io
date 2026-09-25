@@ -1,6 +1,7 @@
 ---
 title: Windows 上的本地项目控制面：Windy Project Manager 的 Tauri 架构、离线扫描与可携带数据设计
 published: 2026-08-31
+readingTime: 21
 description: 从一个真实运行中的 Tauri 项目出发，拆解 Windy Project Manager 如何在 Windows 上组织项目记录、扫描技术栈、读取 Git 状态、启动开发命令，并用自动化与实机证据验证它。
 image: /images/posts/windy-project-manager-cover.jpg
 tags: [Tauri, Rust, React, TypeScript, Windows, 本地优先]

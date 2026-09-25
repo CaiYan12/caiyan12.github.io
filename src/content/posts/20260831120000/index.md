@@ -1,6 +1,7 @@
 ---
 title: "Mock 测试：Markdown 内容增强"
 published: 2026-08-31 12:00:00
+readingTime: 2
 category: "习题"
 tags: ["mock", "markdown"]
 description: "private mock 文章：验证 Callouts、GitHub 卡片、图片网格、外链处理、邮箱保护与版权声明。"

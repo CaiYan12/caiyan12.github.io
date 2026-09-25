@@ -1,6 +1,7 @@
 ---
 title: 当 QScrollArea 吞掉了 Mica：我花了一晚上才找到那层白底从哪来的
 published: 2026-09-09 09:21:13
+readingTime: 7
 description: "video-to-gif 主页面套上 QScrollArea 后，白底盖住了 FluentWindow 的 Mica。排查记录：setWidget 静默打开 autoFillBackground、qss transparent 回退调色板 Base、rgba 涂层全是绕路，最终用 qfluentwidgets 官方 enableTransparentBackground() + addSubInterface(isTransparent=True) 解决。"
 image: /images/posts/20260909092113/qscrollarea-mica-cover.jpg
 category: 技术

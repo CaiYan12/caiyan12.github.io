@@ -1,6 +1,7 @@
 ---
 title: 音色设计之为你的音色添加一个锋利的音头
 published: 2022-05-14 18:26:00
+readingTime: 2
 description: "在很多EDM舞曲中，我们经常可以听到一种Click,Crispy的锋利的音色。这种音色的特点在于强烈的打击感的Punch音头，本篇文章将教你如何设计这种音头与运用这个方法做出一个Pluck音色。"
 image: /images/posts/20220514182600/sylenth1-amp-env-adsr.png
 category: 编曲知识

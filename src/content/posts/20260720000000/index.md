@@ -1,6 +1,7 @@
 ---
 title: 为什么叫"Music Club"？聊聊这个站名的由来
 published: 2026-07-20
+readingTime: 1
 category: 生活
 tags: [音乐, 随笔]
 description: 站点名称 WindowsIt's Music Club 的由来

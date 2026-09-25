@@ -1,6 +1,7 @@
 ---
 title: “费用贬值”下企业在不同生产阶段的生产决策
 published: 2026-03-20
+readingTime: 30
 image: /images/posts/fee-depreciation-cover.jpg
 ---
 

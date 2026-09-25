@@ -1,6 +1,7 @@
 ---
 title: Markdown 扩展特性
 published: 2024-05-01
+readingTime: 2
 description: 介绍本站支持的 Markdown 扩展语法：GitHub 卡片、提示块、剧透隐藏等。
 tags: [示例, Markdown, 扩展]
 category: 示例

@@ -1,6 +1,6 @@
 /**
  * remark-reading-time：计算文章阅读时间（按中文阅读速度 ~300 字/分钟），
- * 写入 frontmatter 的 readingTime 字段。
+ * 写入 frontmatter 的 readingTime 字段；已有正整数时保留手写值。
  */
 import { toString } from "mdast-util-to-string";
 
@@ -8,6 +8,9 @@ const WORDS_PER_MINUTE = 300;
 
 export function remarkReadingTime() {
 	return (tree, file) => {
+		const manualMinutes = file.data.astro.frontmatter.readingTime;
+		if (Number.isInteger(manualMinutes) && manualMinutes > 0) return;
+
 		const text = toString(tree);
 		const cjkCount = (text.match(/[一-鿿぀-ヿ]/g) || []).length;
 		const otherWords = text

@@ -1,6 +1,7 @@
 ---
 title: 在文章中嵌入视频
 published: 2022-08-01
+readingTime: 1
 description: 演示如何在博客文章中嵌入 YouTube 与哔哩哔哩视频。
 tags: [示例, 视频]
 category: 示例

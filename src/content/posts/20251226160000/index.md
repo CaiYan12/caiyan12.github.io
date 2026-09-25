@@ -1,6 +1,7 @@
 ---
 title: 《会计学》基础复习试卷例
 published: 2025-12-26
+readingTime: 7
 description: "《会计学》是一门强调记忆的科目，本卷可检测知识点的掌握程度。附有答案。"
 image: /images/posts/202512261600.jpg
 tags: [复习, 试卷, 会计学]

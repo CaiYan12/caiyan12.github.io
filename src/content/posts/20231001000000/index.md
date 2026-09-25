@@ -1,6 +1,7 @@
 ---
 title: Mermaid 图表
 published: 2023-10-01
+readingTime: 3
 description: 在 Markdown 中使用 Mermaid 绘制流程图、时序图、甘特图、类图、状态图和饼图。
 tags: [Markdown, Mermaid, 图表]
 category: 示例

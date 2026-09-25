@@ -1,6 +1,7 @@
 ---
 title: 草稿示例
 published: 2022-07-01
+readingTime: 1
 description: 这是一篇草稿，用于测试 draft 字段的隐藏行为。
 tags: [Markdown, 草稿, 示例]
 category: 示例

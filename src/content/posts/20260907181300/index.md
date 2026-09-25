@@ -1,6 +1,7 @@
 ---
 title: 记一次折腾 Arch Linux 的失败经历……
 published: 2026-09-07 18:13:00
+readingTime: 6
 description: "给那台用了六年的 RedmiBook 14 装 Nyarch 的完整翻车记录：Deskflow 剪贴板不互通、Boost 被 dwarfs 卡住、老 SSD 报 I/O Error、更新到一半卡死、GRUB 起不来。"
 image: /images/posts/nyarch-cover.jpg
 category: 技术

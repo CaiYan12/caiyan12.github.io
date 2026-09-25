@@ -30,7 +30,8 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { title, published, updated, category, tags, author } = post.data;
+const { title, published, updated, category, tags, author, readingTime } =
+	post.data;
 const comments = getEffectiveComments(post);
 const { Content, headings } = await render(post);
 const allPosts = await getCollection("posts");
@@ -155,6 +156,14 @@ const starLevel = (comments: number) => {
 					<i class="fa fa-comments ml-2" aria-hidden="true"></i>
 					{comments} 吐槽
 				</span>
+				{
+					typeof readingTime === "number" && (
+						<span class="ml-2">
+							<i class="fa fa-search ml-2" aria-hidden="true" />
+							{readingTime} 分钟读完
+						</span>
+					)
+				}
 
 				<ul class="tools">
 					<li title="字号" class="size" id="font-size-btn">

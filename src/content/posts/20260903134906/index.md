@@ -1,6 +1,7 @@
 ---
 title: "前端特化 Web UI 设计开源项目索引（2026-09-03）"
 published: 2026-09-03 13:49:06
+readingTime: 51
 description: "从液态玻璃、动效与设计系统，到工程化、可视化和 AI 编码，按场景整理的前端开源项目索引。"
 image: "/images/posts/front-end-ui-tool-index-cover.jpg"
 tags: ["前端", "开源", "Web UI", "GitHub"]

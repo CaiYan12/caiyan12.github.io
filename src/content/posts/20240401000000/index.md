@@ -1,6 +1,7 @@
 ---
 title: 博客使用指南
 published: 2024-04-01
+readingTime: 2
 description: 如何使用本博客模板：文章目录结构、frontmatter 字段、封面图规则。
 image: /images/guide-cover.png
 tags: [博客, 定制, 指南]

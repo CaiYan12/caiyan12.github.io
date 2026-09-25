@@ -1,6 +1,7 @@
 ---
 title: "Matt Pocock 工作流在实际 Vibe Coding 中的应用"
 published: 2026-09-19 13:50:00
+readingTime: 7
 description: "照 Matt Pocock 官方视频梳理的 skills 工作流使用顺序：/setup-matt-pocock-skills 一次性初始化，/grill-with-docs 把模糊想法同步成共识，再按任务能否塞进一个高效上下文窗口分岔——能就直达 /implement，不能走 /to-spec → /to-tickets 按 400K 阈值切分计划，最后 /code-review 放进干净上下文的子代理里做双轴审查。"
 image: /images/posts/20260919135000/matt-pocock-workflow-cover.jpg
 tags: [AI编程, Claude Code, Vibe Coding, 工作流]

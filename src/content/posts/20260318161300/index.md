@@ -1,6 +1,7 @@
 ---
 title: 《Linux操作系统》课程练习题2：基本概念
 published: 2026-03-18
+readingTime: 2
 description: "Linux操作系统基本概念习题"
 image: /images/posts/202603181613.jpg
 tags: [习题, Linux操作系统]

@@ -1,6 +1,7 @@
 ---
 title: GitHub + Vercel 免费部署静态博客指南
 published: 2026-07-15
+readingTime: 1
 category: 技术
 tags: [Vercel, GitHub, 部署]
 description: 把 Astro 静态博客部署到 GitHub + Vercel 的完整流程

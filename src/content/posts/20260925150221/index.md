@@ -1,6 +1,7 @@
 ---
 title: "告别“开盲盒”写代码：给初学者的现代 AI 前端开发实战指南"
 published: 2026-09-25 15:02:21
+readingTime: 7
 description: "为什么凭感觉让 AI 写前端总是翻车？本文用通俗大白话带你拆解 Matt Pocock 的工程精髓，搭建一套有理有据、所见即所得、零基础也能轻松驾驭的现代 UI 研发工作流。"
 image: /images/posts/20260925150221/matt-pocock-skills-youtube-cover.jpg
 tags: [AI编程, Vibe Coding, 工作流]

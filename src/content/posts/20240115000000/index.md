@@ -1,6 +1,7 @@
 ---
 title: 私密帖测试
 published: 2024-01-15
+readingTime: 1
 description: 这是一篇私密帖，用于测试 private 字段的行为。
 tags: [测试, 私密]
 category: 示例
