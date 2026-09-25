@@ -99,6 +99,24 @@ export default defineConfig({
 		processor: unified(markdownPipeline()),
 	},
 	vite: {
+		plugins: [
+			{
+				// `public/pelican-bike/index.html` 是 vendored 的自包含单文件游戏，不是 Astro 路由。
+				// astro dev 用 Vite 的 public 静态中间件按路径直出文件，不做目录索引重写，于是导航链接
+				// `/pelican-bike/` 在 dev 下 404（构建产物与 GitHub Pages 会正常解析到该 index.html）。
+				// 这里只在 dev 补一次 URL 重写，使两端形态一致；configureServer 不在生产构建中运行，
+				// 产物字节与线上行为均不受影响。
+				name: "pelican-bike-dev-directory-index",
+				configureServer(server) {
+					server.middlewares.use((req, _res, next) => {
+						if (req.url === "/pelican-bike/" || req.url === "/pelican-bike") {
+							req.url = "/pelican-bike/index.html";
+						}
+						next();
+					});
+				},
+			},
+		],
 		build: {
 			assetsInlineLimit: 4096,
 		},
