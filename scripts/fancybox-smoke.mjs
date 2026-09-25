@@ -2,22 +2,27 @@
 // 前置：pnpm build && pnpm preview --port 4322
 // 运行：pnpm test:fancybox（或 FANCY_BASE_URL=http://localhost:4321 node scripts/fancybox-smoke.mjs）
 // 覆盖：关闭不跳位、焦点归还、定位到文章位置（含 reduced-motion）、下载新标签页、中文文案
-import { chromium } from "playwright";
+// 台子（check / 报错采集 / 汇总）来自 scripts/lib/smoke-harness.mjs，本文件只写判据。
+// FANCY_BASE_URL 传的是**站点根**（脚本自己拼 /posts/... 与 /albums/...），
+// 与 NICE_BOOKS_BASE_URL / AI_NEWS_BASE_URL 那种「完整页面地址」形态不同。
+import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const base = process.env.FANCY_BASE_URL ?? "http://localhost:4322";
+// 外部服务（Giscus 评论接口、字体 CDN）在本机网络下可能 4xx/重置：单列统计，不计 FAIL；
+// 本地资源的失败仍然严格判失败。策略写在调用点，台子内不放行任何东西。
+const externalIssues = [];
+const harness = makeHarness({
+	envVar: "FANCY_BASE_URL",
+	defaultBase: "http://localhost:4322",
+	isNoise: ({ url, base }) => {
+		if (!url || url.startsWith(base)) return false;
+		externalIssues.push(url.split("/")[2]);
+		return true;
+	},
+});
+const base = harness.base;
+const { check } = harness;
 const articlePath = "/posts/20260909092113/";
 const albumPath = "/albums/" + encodeURIComponent("轻松一刻") + "/";
-
-const results = [];
-// 外部服务（Giscus 评论接口、字体 CDN）在本机网络下可能 4xx/重置：单列统计，不计 FAIL；
-// 本地资源的失败仍然严格判失败。
-const externalIssues = [];
-const check = (name, ok, detail = "") => {
-	results.push({ name, ok });
-	console.log(
-		`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` :: ${detail}` : ""}`,
-	);
-};
 
 /** 灯箱打开期间的工具栏快照：右上角按钮顺序与文案 */
 const toolbarState = () => {
@@ -63,23 +68,15 @@ async function openLightbox(page, selector, index = 0) {
 	return trigger;
 }
 
-const browser = await chromium.launch();
+const browser = await harness.browser.launch(harness.launch);
 
 // ---------------- 文章页：post-gallery ----------------
 const ctx = await browser.newContext({
 	viewport: { width: 1280, height: 800 },
 });
-const page = await ctx.newPage();
-const errors = [];
+// 只有这一页挂报错采集（其余三页沿用改前口径：不进 errors）。
+const page = harness.attach(await ctx.newPage());
 const failedRequests = [];
-page.on("pageerror", (e) => errors.push(e.message.slice(0, 140)));
-page.on("console", (m) => {
-	if (m.type() !== "error") return;
-	const url = m.location()?.url || "";
-	// Giscus 等外部接口的 4xx 会以 console error 出现，与灯箱无关
-	if (url && !url.startsWith(base)) externalIssues.push(url.split("/")[2]);
-	else errors.push(m.text().slice(0, 140));
-});
 page.on("requestfailed", (r) => {
 	if (r.url().startsWith(base))
 		failedRequests.push(r.url().slice(base.length));
@@ -445,8 +442,8 @@ check(
 );
 check(
 	"全程无 console/page 报错",
-	errors.length === 0,
-	errors.slice(0, 3).join(" | "),
+	harness.errors.length === 0,
+	harness.errors.slice(0, 3).join(" | "),
 );
 if (externalIssues.length)
 	console.log(
@@ -455,7 +452,4 @@ if (externalIssues.length)
 
 await browser.close();
 
-const failed = results.filter((r) => !r.ok);
-console.log(`\n合计 ${results.length} 项，失败 ${failed.length} 项`);
-if (failed.length) failed.forEach((f) => console.log("  -", f.name));
-process.exit(failed.length ? 1 : 0);
+harness.finish();
