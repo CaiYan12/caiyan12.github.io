@@ -3,32 +3,25 @@
 // 运行：pnpm smoke:ui（或 UI_SMOKE_BASE_URL=http://localhost:4399 node scripts/ui-smoke.mjs）
 // 约定：UI_SMOKE_BASE_URL 传的是站点根（脚本自己拼路径），与 test:fancybox 同形
 // 断言一律落在真实渲染后的计算值、几何、键盘结果与可访问性属性上，不断言 CSS 源文本
-import { chromium } from "playwright";
 import sharp from "sharp";
+import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const base = process.env.UI_SMOKE_BASE_URL ?? "http://localhost:4322";
+// 台子（check / checkClean / console+pageerror 采集 / 汇总）来自 scripts/lib/smoke-harness.mjs，
+// 本文件只写判据。UI_SMOKE_BASE_URL 传的是**站点根**（脚本自己拼 /posts/... 路径），与 FANCY_BASE_URL 同形。
+const harness = makeHarness({
+	envVar: "UI_SMOKE_BASE_URL",
+	defaultBase: "http://localhost:4322",
+	// 放行清单留在调用点：外部接口（Giscus、字体 CDN）在本机网络下会 4xx / 重置，
+	// 以及票 18 自己故意访问的 404 哨兵路径（见下方 KNOWN_DEAD 的来由注释）。
+	// isKnownDead 定义在本文件下方，此处的引用要到 attach 之后才被调用。
+	isNoise: ({ url }) =>
+		(!!url && !url.startsWith(harness.base)) || isKnownDead(url),
+});
+const base = harness.base;
+const { check, checkClean } = harness;
 // 全站显示宽度最大的文章标题（89 个半角单位），当前被单行省略裁切
 const LONGEST_POST = "/posts/20260831000000/";
 const WIDTHS = [1440, 1100, 860, 680, 390];
-
-const results = [];
-const check = (name, ok, detail = "") => {
-	results.push({ name, ok });
-	console.log(
-		`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` :: ${detail}` : ""}`,
-	);
-};
-/** 按票归属报错：全程只报一次会把票 01 的报错算到票 06 头上 */
-let errorsSeen = 0;
-const checkClean = (label) => {
-	const fresh = errors.slice(errorsSeen);
-	errorsSeen = errors.length;
-	check(
-		`${label}：无本地 console / page 报错`,
-		fresh.length === 0,
-		fresh.slice(0, 2).join(" | "),
-	);
-};
 
 // 行盒数按行顶边去重：同一行内的多个内联片段只算一行。
 // 各页内函数自管内联一份——Playwright 的 evaluate 只接收一个 arg，跨上下文共享函数不可靠。
@@ -72,23 +65,14 @@ const clipped = (p) => p.scrollWidth > p.clientWidth + 1;
 const KNOWN_DEAD = ["/this-page-should-404/"];
 const isKnownDead = (url) => KNOWN_DEAD.some((p) => url.startsWith(base + p));
 
-const browser = await chromium.launch();
+const browser = await harness.browser.launch(harness.launch);
 
 // ---------------- 文章页标题：五档宽度下不再被裁切 ----------------
 const ctx = await browser.newContext({
 	viewport: { width: 1440, height: 900 },
 });
-const page = await ctx.newPage();
-const errors = [];
-page.on("pageerror", (e) => errors.push(e.message.slice(0, 140)));
-page.on("console", (m) => {
-	if (m.type() !== "error") return;
-	const url = m.location()?.url || "";
-	// 外部接口（Giscus、字体 CDN）在本机网络下会 4xx / 重置，单列不计 FAIL
-	if (url && !url.startsWith(base)) return;
-	if (isKnownDead(url)) return;
-	errors.push(`${m.text().slice(0, 90)} @ ${url.slice(base.length) || "?"}`);
-});
+// 只有这一页挂报错采集（改前口径：其余 context 的页不入 errors）
+const page = harness.attach(await ctx.newPage());
 
 await page.goto(base + LONGEST_POST, { waitUntil: "load" });
 await page.waitForSelector(".post-header h1");
@@ -2436,7 +2420,4 @@ check(
 
 await browser.close();
 
-const failed = results.filter((r) => !r.ok);
-console.log(`\n合计 ${results.length} 项，失败 ${failed.length} 项`);
-if (failed.length) failed.forEach((f) => console.log("  -", f.name));
-process.exit(failed.length ? 1 : 0);
+harness.finish();
