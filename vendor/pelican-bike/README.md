@@ -33,8 +33,9 @@ Claude Opus 5.5 一次性生成（one-shot）的 Three.js 单文件 3D 游戏「
   `pelican.js` `sky.js` `textures.js` `util.js` `world.js`）—— 游戏逻辑、数值、配色、动画、镜头、
   成就、音效一律不改。
 - `build.mjs` —— 上游原样。输出路径的改动在后续任务追加（见下）。
-- `index.template.html` —— 目前是上游原样。模板的三处注入（pagefind 忽略属性、返回博客的链接、
-  `.brand` 面板变成返回链接）在后续任务追加（见下）。
+- `index.template.html` —— 拷贝自上游后，已注入本仓库唯一会对模板做的三处改动
+  （pagefind 忽略属性、`.intro-links` 返回博客链接、`.brand` 面板变成返回链接），
+  逐条见下方「后续任务改动」清单；`<style>…</style>` 整块与上游**逐字节相同**（零 CSS 改动）。
 
 对上游的**唯一**已做改动：
 
@@ -42,10 +43,32 @@ Claude Opus 5.5 一次性生成（one-shot）的 Three.js 单文件 3D 游戏「
   原因：上游 `package-lock.json` 把 `playwright-core` 钉到字节跳动内网 registry
   （`https://bnpm.byted.org/...`），`npm install` 会直接以 `EALLOWREMOTE` 失败；该包只用于上游自测，
   构建产物不需要它。**因此本目录也不 vendor `package-lock.json`**，`dist/` 同样不 vendor。
+  改后 md5（该文件此后再无任务改动，此值为唯一权威基线，无法从别处重新推导）：
+  `34ea621ab6b23324b8a8ffd1329756c3`。
 
-后续任务改动（本任务先记「暂无」，完成后回来补精确内容）：
+后续任务改动（完成后回来补精确内容）：
 
-- `index.template.html`：暂无（Task 2 追加）。
+- `vendor/pelican-bike/index.template.html` —— 本仓库对该模板**仅做以下三处改动**，
+  除此之外与上游逐字节相同（Task 2 已完成，逆向剥离三处注入后与上游全等即为其证明）：
+  1. **pagefind 忽略**：选择器锚点 `<body class="bars">`（行号约 191）加属性，
+     改为 `<body class="bars" data-pagefind-ignore="all">`，使游戏页不进入站点搜索索引。
+  2. **开场卡返回链接**：选择器锚点 `.intro-links`（模板内 `<div class="intro-links">`，
+     行号约 229），在其**第一个子元素位置**（既有「GitHub 开源仓库」署名链接之前，
+     不改变两个署名链接的相对顺序）插入一行
+     `<a href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 12h3v8h6v-6h2v6h6v-8h3z"/></svg>返回博客首页</a>`
+     （6 空格缩进与同组 `<a>` 对齐；`svg` 不带 `fill`/`width`，由 `<style>` 内既有规则
+     `.intro-links svg { width:14px; height:14px; fill:currentColor }` 接管）。
+  3. **HUD 返回入口 = `.brand` 面板整体变成返回链接**：选择器锚点 `.hud > .brand.panel`
+     （单行结构，行号约 237）。把该行**第一个** `<div class="brand panel">` 换成
+     `<a class="brand panel" href="/" style="color:inherit;text-decoration:none" title="返回博客首页" aria-label="返回博客首页">`，
+     把该行**最后一个** `</div>` 换成 `</a>`；内部 `<span class="logo">`、内层 `<div>`、`<b>`、`<small>`
+     及中文文本逐字保留。**未加任何 CSS**：模板没有全局 `a` 选择器（`<style>` 里只有
+     `* { box-sizing: border-box }`），浏览器默认链接色/下划线靠该 inline `style` 在元素上压掉，
+     因此 `<style>…</style>` 整块仍与上游逐字节相同。`.brand > div{display:none}` 等后代选择器
+     在外层由 `div` 换为 `a` 后照常命中，六档视口实测盒子与上游逐值相同，唯一差异是
+     `cursor: auto → pointer`。**`.tools` 面板刻意不动**（实测量过：加第 9 个 `icon-btn` 会让
+     右锚定的工具条变宽 36/44px，320px 视口下最左按钮被推出屏外 `tools.x = -28`、414px 出现
+     上游没有的重叠，故返回入口落在 `.brand` 上）。
 - `build.mjs`：暂无（Task 3 追加输出路径改动）。
 
 ## 重建方法
