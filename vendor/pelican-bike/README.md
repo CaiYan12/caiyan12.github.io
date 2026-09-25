@@ -59,8 +59,8 @@ Claude Opus 5.5 一次性生成（one-shot）的 Three.js 单文件 3D 游戏「
      （6 空格缩进与同组 `<a>` 对齐；`svg` 不带 `fill`/`width`，由 `<style>` 内既有规则
      `.intro-links svg { width:14px; height:14px; fill:currentColor }` 接管）。
   3. **HUD 返回入口 = `.brand` 面板整体变成返回链接**：选择器锚点 `.hud > .brand.panel`
-     （单行结构，行号约 237）。把该行**第一个** `<div class="brand panel">` 换成
-     `<a class="brand panel" href="/" style="color:inherit;text-decoration:none" title="返回博客首页" aria-label="返回博客首页">`，
+     （单行结构，行号约 238）。把该行**第一个** `<div class="brand panel">` 换成
+     `<a class="brand panel" href="/" style="color:inherit;text-decoration:none" title="返回博客首页" aria-label="鹈鹕骑单车 · 返回博客首页" tabindex="-1">`，
      把该行**最后一个** `</div>` 换成 `</a>`；内部 `<span class="logo">`、内层 `<div>`、`<b>`、`<small>`
      及中文文本逐字保留。**未加任何 CSS**：模板没有全局 `a` 选择器（`<style>` 里只有
      `* { box-sizing: border-box }`），浏览器默认链接色/下划线靠该 inline `style` 在元素上压掉，
@@ -69,6 +69,32 @@ Claude Opus 5.5 一次性生成（one-shot）的 Three.js 单文件 3D 游戏「
      `cursor: auto → pointer`。**`.tools` 面板刻意不动**（实测量过：加第 9 个 `icon-btn` 会让
      右锚定的工具条变宽 36/44px，320px 视口下最左按钮被推出屏外 `tools.x = -28`、414px 出现
      上游没有的重叠，故返回入口落在 `.brand` 上）。
+     - **`aria-label` 为什么写「鹈鹕骑单车 · 返回博客首页」而不是只写用途**：`aria-label` 会
+       **整体覆盖**从元素内容算出的可访问名称，只写「返回博客首页」等于把可见标签（面板上的
+       游戏标题）从名称里抹掉，违反 WCAG 2.5.3「Label in Name」（A 级）——语音控制用户照屏幕上
+       读到的名字称呼它，就匹配不到任何控件。故按「可见标签在前、用途在后」拼，`title` 保持
+       「返回博客首页」不动（它是唯一提示这块面板可点的悬停反馈）。
+       `.intro-links` 里我们插入的那个 `<a>` **不加** `aria-label`：它的名称本来就来自内容
+       「返回博客首页」，天然满足 2.5.3。
+     - **`tabindex="-1"` 为什么必须在**：上游 `vendor/pelican-bike/src/main.js`（行号约 995）
+       有一条 `if (e.target instanceof HTMLInputElement || e.target instanceof HTMLAnchorElement) return;`
+       ——焦点在 `<a>` 上时键位处理直接整段返回。`.brand` 是 HUD 里 DOM 顺序最靠前的可聚焦元素，
+       把它变成 `<a>` 就等于让「锚点」成为第一个 Tab 焦点。评审在构建产物上实机复现了后果：
+       焦点落在 `.brand` 时 W/S/A/D、空格、`U` 全部失灵、Enter 直接跳走；本仓库另在留档模板上以
+       Playwright 复现了同一 Tab 环事实（临时去掉该属性后 `.brand` 即成 post-start 第 1 个 Tab
+       停靠点，保留则首个停靠点回到 `<button>`——上游原本的第一个 Tab 停靠点是按钮，按钮不是
+       锚点，键位照常），所以这个坑是我们注入时新造出来的。`vendor/pelican-bike/src/*.js`
+       逐字节冻结、又不允许新增客户端 JS，故取最小解：把 `.brand` 链接移出 Tab 环（鼠标/触控照旧可点）。
+       **已知取舍**：键盘用户改用开场卡 `.intro-links` 的返回链接（仍在 Tab 环内，实测是开场卡里
+       第一个可 Tab 到的**链接**，排在「开始骑行」「静音进入」两个按钮之后）或浏览器后退键回博客；
+       游戏内键盘操作永不降级。
+       **同一隐患在上游本就有两处，本项目有意不修**：`.tools.panel` 里的两个署名锚点
+       （`<a href="https://github.com/riba2534/...">`、`<a href="https://x.com/riba2534">`）
+       一旦被 Tab 到同样会冻住键位（实测这两个锚点确实在 Tab 环内，排在 `.cams` 五个按钮与
+       `.tools` 六个 `icon-btn` 之后）——那是上游原样行为，动它等于改 `.tools`（该面板是逐字节的
+       禁改区），记录在此以免将来被当成本仓库的回归。
+     - 三处注入完成后的模板 md5（当前权威值，Task 3/6 参照；逆向剥离三处注入后与上游逐字节全等，
+       即为本清单完整性的证明）：`238b31dd5f05edab308e29f0937f4c36`。
 - `build.mjs`：暂无（Task 3 追加输出路径改动）。
 
 ## 重建方法
