@@ -222,15 +222,6 @@
 - [ ] `.design-flow.json` stage 与 next 更新　〔留到线上复跑与关票之后一次写完，避免登记一个尚未交付的 stage〕
 
 **证据**：本地部分 = `output/t09-build2.log`（完整链 `FULL_EXIT=0`）、`output/t09-det.log` + `output/t09-final.sha{,.norm}`（终版产物 = 开工前基线）、`output/t09-s{1,2,3,4}-*.log`（四套冒烟 9 / 27 / 72 / 121 全绿、退出码全 0）。线上部分待回填。
-- [ ] 四套冒烟与全部离线单测绿，总数非 `tail` 读法记录，判据数量与开工前一致（9 / 27 / 72 / 121）
-- [ ] 最终一次 `pnpm build` 的 `dist` 与开工前基线逐字节相同（T1 归一化：`_astro` 文件名哈希可变、内容不可变）
-- [ ] 缝隙 A 以线上为基准复跑全绿（推送部署后，`Last-Modified` 判生效）
-- [ ] 每票状态行回填终态 + sha；`pnpm audit:ledger`（含 R5）对本册报 GREEN
-- [ ] 两条「本批不做」的登记仍在文档里：图片墙漏排序（另立缺陷票）、sitemap 私有篇（已裁保持现状）
-- [ ] 构建改写的两个 constants 文件已还原，工作树干净、`HEAD` == `origin/main`
-- [ ] `.design-flow.json` stage 与 next 更新
-
-**证据**：（回填）
 
 > 中断与裁定记录 @2026-09-25：① **不在残缺 dist 上勾判据**，也不为让自检变绿而放宽任何一条——票 09 剩下的四项等外网恢复从「重跑完整 `pnpm build`」这一步继续。② 另一会话反复报来的「console 零报错门禁」（它的票 10 / issue #79 / #81）经七路核验在本工作副本的任何提交与文件里都不存在：`git status` 干净、HEAD 是本人的 `ec70aec`（票 07）、`git show HEAD:scripts/ui-smoke.mjs` 内 `checkClean(` 仍是 **17** 处且 `全页零` / `KNOWN_THIRD_PARTY` 命中 **0**、`HEAD:package.json` 无 `console-error-gate`、四套冒烟在 HEAD 与工作树里的 `checkClean` 数分别为 17 / 0 / 0 / 0、`find /d/pages -maxdepth 3 -name 'console-error*'` 无结果、其引用的四个 sha 在 `git cat-file -t` 下全部 "Not a valid object name"、`gh issue view 79` not found。站长裁定「**既然不存在，那就不做**」，故本批判据数仍为 **9 / 27 / 72 / 121**，未为它增删一条。③ 顺带纠正一处归属：`ec70aec` 是本人撰写提交的票 07，不是对方的提交。
 
