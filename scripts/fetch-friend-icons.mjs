@@ -3,7 +3,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { parse } from "parse5";
 import { pathToFileURL } from "node:url";
-import { formatJson } from "./lib/write-json.mjs";
+import { atomicWrite, atomicWriteJson } from "./lib/atomic-write.mjs";
 import defaultFriends from "../src/data/friends.json" with { type: "json" };
 
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
@@ -485,70 +485,6 @@ async function readManifest(manifestPath) {
 
 export { readManifest };
 
-const atomicWriteLocks = new Map();
-
-async function atomicWriteOnce(filePath, bytes, fsImpl) {
-	await fsImpl.mkdir(path.dirname(filePath), { recursive: true });
-	const operationId = crypto.randomUUID();
-	const temporary = `${filePath}.tmp-${operationId}`;
-	const backup = `${filePath}.bak-${operationId}`;
-	let backupCreated = false;
-	let preserveBackup = false;
-	try {
-		await fsImpl.writeFile(temporary, bytes);
-		try {
-			await fsImpl.rename(temporary, filePath);
-		} catch (error) {
-			let targetExists = true;
-			try {
-				await fsImpl.access(filePath);
-			} catch {
-				targetExists = false;
-			}
-			if (!targetExists) throw error;
-			// Windows may reject rename-overwrite. Move the old target to a unique,
-			// recoverable backup before installing the replacement, then restore it
-			// if the second rename is interrupted.
-			await fsImpl.rename(filePath, backup);
-			backupCreated = true;
-			try {
-				await fsImpl.rename(temporary, filePath);
-			} catch (replacementError) {
-				try {
-					await fsImpl.rename(backup, filePath);
-					backupCreated = false;
-				} catch (restoreError) {
-					preserveBackup = true;
-					replacementError.message += `; old cache restore failed: ${restoreError.message}`;
-				}
-				throw replacementError;
-			}
-		}
-	} finally {
-		await fsImpl.rm(temporary, { force: true });
-		if (backupCreated && !preserveBackup) {
-			try {
-				await fsImpl.rm(backup, { force: true });
-			} catch {
-				// A recoverable backup may remain when antivirus software holds it.
-			}
-		}
-	}
-}
-
-export function atomicWrite(filePath, bytes, fsImpl = fs) {
-	const lockKey = path.resolve(filePath);
-	const previous = atomicWriteLocks.get(lockKey) ?? Promise.resolve();
-	const operation = previous
-		.catch(() => {})
-		.then(() => atomicWriteOnce(filePath, bytes, fsImpl));
-	atomicWriteLocks.set(lockKey, operation);
-	return operation.finally(() => {
-		if (atomicWriteLocks.get(lockKey) === operation)
-			atomicWriteLocks.delete(lockKey);
-	});
-}
-
 function stableAssetName(friendUrl, kind) {
 	return `${crypto.createHash("sha256").update(friendUrl).digest("hex").slice(0, 16)}.${kind}`;
 }
@@ -792,10 +728,7 @@ export async function fetchFriendIcons(options = {}) {
 	};
 	// 比较数据而不是排版：排版由 formatJson 统一负责，否则每次运行都会因格式不同而重写
 	if (JSON.stringify(manifest) !== JSON.stringify(nextManifest))
-		await atomicWrite(
-			context.manifestPath,
-			await formatJson(context.manifestPath, nextManifest),
-		);
+		await atomicWriteJson(context.manifestPath, nextManifest);
 	return { entries, fallbacks, manifest: nextManifest };
 }
 

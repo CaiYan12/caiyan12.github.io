@@ -8,9 +8,9 @@ import {
 	parseIconCandidates,
 	fetchFriendIcons,
 	readManifest,
-	atomicWrite,
 	DEFAULT_MAX_BYTES,
 } from "./fetch-friend-icons.mjs";
+import { atomicWrite } from "./lib/atomic-write.mjs";
 
 async function tempFixture() {
 	const root = await fs.mkdtemp(path.join(os.tmpdir(), "friend-icons-test-"));

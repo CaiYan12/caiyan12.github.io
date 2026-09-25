@@ -17,7 +17,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveGitHubToken } from "./lib/github-token.mjs";
-import { formatJson } from "./lib/write-json.mjs";
+import { atomicWriteJson } from "./lib/atomic-write.mjs";
 import {
 	isPostSlug,
 	listPostSlugs,
@@ -675,15 +675,8 @@ export async function syncSiteStats({
 		}),
 	);
 
-	// 原子写：tmp + rename；rename 失败时清理 tmp
-	const tmp = `${output}.tmp`;
-	try {
-		await fs.writeFile(tmp, await formatJson(output, snapshot), "utf-8");
-		await fs.rename(tmp, output);
-	} catch (err) {
-		await fs.rm(tmp, { force: true });
-		throw err;
-	}
+	// 原子写与排版契约单源见 scripts/lib/atomic-write.mjs
+	await atomicWriteJson(output, snapshot);
 	return snapshot;
 }
 

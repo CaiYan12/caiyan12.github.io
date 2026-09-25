@@ -36,7 +36,7 @@
 4. **launch 默认**：仍是 headless `chromium.launch()`，参数可注入；「滚动条宽度类问题必须 `headless:false` + `channel:"msedge"`」写进台子注释。
 5. **外部错误策略**：台子只供机制，`ignoreExternal` 由各调用点自传——不把「什么算外部」单源化（白名单是缺陷的藏身处，本批不扩）。
 6. **`NICE_BOOKS_BASE_URL` 三个默认值不统一**：AGENTS.md 已写明 4321 是 dev、4322 是 preview，差异**有意**；台子只要求每个调用点显式声明自己的默认值，把隐式约定变成一处可读声明。
-7. **`atomicWriteJson(path, value)` 内部统一走 `formatJson`**：与 AGENTS.md「新增写 JSON 产物的脚本请走同一个写入器」同构。只提 `tmp+rename`；`fetch-friend-icons` 的锁/备份/回滚留在它自己实现里（只有它的负缓存需要回滚）——把锁塞进通用接口会让 interface 变宽变浅。
+7. **`atomicWriteJson(path, value)` 内部统一走 `formatJson`**：与 AGENTS.md「新增写 JSON 产物的脚本请走同一个写入器」同构。**（2026-09-25 实施期修订）** 原写「只提 `tmp+rename`，friend-icons 的锁/备份/回滚留在它自己实现里，因为只有它的负缓存需要回滚」——读码发现这个前提不成立：`fetch-friend-icons.mjs:488-551` 那份是**已经通用**的导出函数 `atomicWrite(filePath, bytes, fsImpl)`，fs 可注入、与友链逻辑不缠绕。于是改为把这份强实现整体搬进 `scripts/lib/atomic-write.mjs`，四个朴素调用点共用它。**interface 仍然是窄的**（`atomicWriteJson` 只接路径与值，锁与回滚在实现里），原先担心的「让调用方学一套用不到的规则」并不因此复活。
 8. **候选 3 取最小版**：只收正则，**不**改 `validate-post-slugs`/`new-post` 的可注入性（那是另一笔收益，另案）。
 9. **候选 6 保留但取最小形状**：`markdownPipeline() → {remarkPlugins, rehypePlugins}`，不导出顺序清单。
 10. **门禁位置**：前置进 `pnpm build` 链头（与现有三组同构）。**后果已确认接受**：纯函数测试红会直接挡住 Pages 部署（`deploy.yml` 的 withastro/action 默认跑 `pnpm run build`）。

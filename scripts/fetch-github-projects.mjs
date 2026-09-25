@@ -10,7 +10,7 @@ import path from "node:path";
 import { execSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
 import { resolveGitHubToken } from "./lib/github-token.mjs";
-import { formatJson } from "./lib/write-json.mjs";
+import { atomicWriteJson } from "./lib/atomic-write.mjs";
 
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
 const DEFAULT_OUTPUT = path.join(
@@ -306,18 +306,7 @@ export async function fetchGitHubProjects(options = {}) {
 		return { status: "invalid-data", message: error.message };
 	}
 
-	const temporaryPath = `${outputPath}.tmp`;
-	try {
-		await fs.writeFile(
-			temporaryPath,
-			await formatJson(outputPath, snapshot),
-			"utf-8",
-		);
-		await fs.rename(temporaryPath, outputPath);
-	} catch (error) {
-		await fs.rm(temporaryPath, { force: true });
-		throw error;
-	}
+	await atomicWriteJson(outputPath, snapshot);
 	return {
 		status: "ok",
 		count: included.length,

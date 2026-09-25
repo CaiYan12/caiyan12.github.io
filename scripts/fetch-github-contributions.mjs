@@ -13,7 +13,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { execSync } from "node:child_process";
 import { resolveGitHubToken } from "./lib/github-token.mjs";
-import { formatJson } from "./lib/write-json.mjs";
+import { atomicWriteJson } from "./lib/atomic-write.mjs";
 import { pathToFileURL } from "node:url";
 
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
@@ -203,19 +203,7 @@ export async function fetchContributions(options = {}) {
 		totals,
 	};
 
-	const tmpPath = `${outputPath}.tmp`;
-	try {
-		await fs.writeFile(
-			tmpPath,
-			await formatJson(outputPath, snapshot),
-			"utf-8",
-		);
-		await fs.rename(tmpPath, outputPath);
-	} catch (error) {
-		await fs.rm(tmpPath, { force: true });
-		throw error;
-	}
-
+	await atomicWriteJson(outputPath, snapshot);
 	return { status: "ok", totals, outputPath };
 }
 

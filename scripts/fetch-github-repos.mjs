@@ -13,7 +13,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { resolveGitHubToken } from "./lib/github-token.mjs";
-import { formatJson } from "./lib/write-json.mjs";
+import { atomicWriteJson } from "./lib/atomic-write.mjs";
 
 const CONTENT_DIR = "src/content";
 const OUTPUT_FILE = "src/constants/github-repos.json";
@@ -137,11 +137,8 @@ async function main() {
 			.sort()
 			.map((repo) => [repo, cache[repo]]),
 	);
-	await fs.writeFile(
-		OUTPUT_FILE,
-		await formatJson(OUTPUT_FILE, sorted),
-		"utf-8",
-	);
+	// 原先是直接 writeFile：崩溃会留下半截 JSON，现在与其余产物同一契约
+	await atomicWriteJson(OUTPUT_FILE, sorted);
 	console.log(
 		`Done! Total: ${Object.keys(sorted).length}. Output: ${OUTPUT_FILE}`,
 	);
