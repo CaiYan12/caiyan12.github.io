@@ -230,5 +230,5 @@
 - **候选 5**：页面清单与第三方子树排除表单源化（会同时动四套脚本的字面路径）。
 - **候选 7**：导航「当前页态」`navState` —— 一旦 `theme-script.ts` import 它，客户端 chunk 名必变，与「逐字节相同」有真实张力；`AGENTS.md` 已锁现行形状。
 - **两套 nice-books QA 脚本**迁移：非门禁，缺「PASS 数不变」这类硬回归证据。
-- **图片墙漏排序**（`src/pages/images.astro:10-12` 的 `filter(isPublicPost).slice(0, 40)` 未过 `getSortedPosts`）：真缺陷，但修它必改 `dist/images/index.html` → 另立缺陷票。
+- **图片墙漏排序**（`src/pages/images.astro:10-12` 的 `filter(isPublicPost).slice(0, 40)` 未过 `getSortedPosts`）：真缺陷，但修它必改 `dist/images/index.html` → 另立缺陷票。**（2026-09-25 同日已修：issue #59 / `fa3e012`，改走 `getSortedPosts`，线上按时间倒序，三条工作流全绿——本册该登记到此为止。）**
 - **sitemap 收录私有文章**：站长 2026-09-23 已裁「保持现状」，不重开。

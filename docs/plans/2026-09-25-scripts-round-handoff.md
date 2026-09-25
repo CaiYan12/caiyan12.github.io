@@ -1,7 +1,7 @@
 # 交接：脚本层架构加深轮 → 下一轮
 
 - 本轮：spec `docs/plans/2026-09-25-scripts-architecture-spec.md`（issue **#49**，已关闭）／票册 `docs/plans/2026-09-25-scripts-architecture-tickets.md`（镜像 **#50–#58**，已全部关闭）
-- 收口时刻：`HEAD` == `origin/main` == `28e5ff5`，工作树干净，开放 issue **0**
+- 收口时刻：票 09 结办于 `28e5ff5`；本文件写就后同日又掉了图片墙修复 `fa3e012`（issue #59），当前 `HEAD` == `origin/main` == `fa3e012`，工作树干净，开放 issue **0**
 - 台账自检：`node scripts/ledger-audit.mjs docs/plans/2026-09-25-scripts-architecture-tickets.md`（联网，含 R5）→ **`9 段 / 0 条不合规 → GREEN`**
 - 上位决策：ADR 0001–0004；`AGENTS.md` 的构建链与依赖约束、文档写作约定（Q45-B：锚点用「选择器 + 文件路径」，行号只作辅助且写「约」）
 - 本文件性质：**交接文档**，不是待办清单。每条待办都写清「现状 / 为什么本轮没做 / 判据该怎么写 / 风险」，接手者不需要重新推导本轮的实测事实
@@ -25,14 +25,14 @@
 
 ---
 
-## 二、留给下一轮的五件
+## 二、留给下一轮的四件（原五件，第 1 件已于同日完成）
 
-### 1. 图片墙漏排序 —— **这是真缺陷，不是重构余债**
+### 1. 图片墙漏排序 —— ~~下一轮立缺陷票~~ **已完成（2026-09-25，issue #59 已关闭）**
 
-- **现状**：`src/pages/images.astro`（约第 10–12 行）用 `filter(isPublicPost).slice(0, 40)` 取图，**没有过 `getSortedPosts`**，因此图片墙的条目顺序取决于 content layer 的遍历顺序，而非「置顶 + 时间」的站点既定全序。
-- **为什么本轮没做**：修它必然改变 `dist/images/index.html` 的内容，与本轮硬约束「构建结果逐字节不变」直接冲突（票册「本批不做」已登记）。
-- **下一轮该怎么开工**：按 house 流程另立**缺陷票**（不是架构票），红证据取**线上改前产物**的顺序读数，绿证据取改后；判据写成「图片墙顺序 == `getSortedPosts(publicPosts).slice(0, 40)`」这种与实现同源的比较，不要写死一串标题。
-- **风险**：顺序一变，`nth-child` 类配色/相位若与位置耦合需复查（本轮之前有过 `.post-list:nth-child(N)::after` 被插入兄弟节点整体换色的先例）。
+- **修复**：`fa3e012`（`fix(images): sort image wall posts`）把 `src/pages/images.astro` 的 `allPosts.filter(isPublicPost).slice(0, 40)` 改为 `getSortedPosts(allPosts).slice(0, 40)`。复核过语义无损：`getSortedPosts` 内部第一行就是 `.filter(isPublicPost)`（`src/utils/content-utils.ts:13-14`），所以去掉显式 filter 不放宽任何可见性；公开文章只有 11 篇，`slice(0, 40)` 不截断，**集合未变、只变顺序**。
+- **线上读数**：`/images/` 现按时间倒序（首三项 `20260919135000 → 20260909092113 → 20260907181300`）。唯一 `pinned: true` 的文章同时是 `private: true`，因此它不参与——**若将来把某篇公开文章设为置顶，图片墙首位会被它抢到，这是预期行为**（站点全站就是「置顶 + 时间倒序」这一条序）。
+- **门禁**：`Build and Check` / `Lint` / `Deploy to GitHub Pages` 在 `fa3e012` 全 success；`HEAD` == `origin/main`。
+- 下一轮**不必再碰此项**。若图片墙要的是「只按时间、不让置顶插队」，那是另一种产品判断，需重新裁决而不是回退本修复。
 
 ### 2. 候选 5 —— 页面清单与第三方子树排除表单源化
 
