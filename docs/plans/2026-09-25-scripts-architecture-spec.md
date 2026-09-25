@@ -31,7 +31,7 @@
 ## 已确认的设计参数（五轮 grilling，不再重议）
 
 1. **证明口径**：不新增哈希清单脚本，按 AGENTS.md 既有确定性配方**手工双跑比对**。
-2. **台子形状**：给零件、**不反转控制**。`makeHarness({envVar, defaultBase, launch?, ignoreExternal?}) → {check, checkClean, finish, base}`；各 smoke 仍自己 launch、导航、关浏览器，保留顶层 `await` 的线性结构。
+2. **台子形状**：给零件、**不反转控制**。`makeHarness({envVar, defaultBase, launch?, isNoise}) → {check, checkClean, finish, base}`；各 smoke 仍自己 launch、导航、关浏览器，保留顶层 `await` 的线性结构。（**2026-09-25 票 04 实施期修订**：原写 `ignoreExternal?`。读码发现放行需求不是布尔——`ai-news-smoke` 要按**文案**放行 `[feed] 实时抓取失败`（那是它设计上要演示的分支），离线页还要一条更宽的副本策略。故形状改为谓词 `isNoise({url, text, base})`，「各调用点自传、台子不预设清单」不变。）
 3. **`check` 签名**：`check(name, ok, detail, extra?)`——第四参数位预留（为将来 `design-qa` 迁移），本批不消费。`finish()` 的输出格式**逐字保持现状**（`合计 N 项，失败 M 项` + 失败清单 + 退出码），因为票册与 AGENTS.md 的读数都引用这个形状。
 4. **launch 默认**：仍是 headless `chromium.launch()`，参数可注入；「滚动条宽度类问题必须 `headless:false` + `channel:"msedge"`」写进台子注释。
 5. **外部错误策略**：台子只供机制，`ignoreExternal` 由各调用点自传——不把「什么算外部」单源化（白名单是缺陷的藏身处，本批不扩）。
