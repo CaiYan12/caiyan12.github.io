@@ -19,11 +19,18 @@ Claude Opus 5.5 一次性生成（one-shot）的 Three.js 单文件 3D 游戏「
 
 ## 许可声明（事实陈述）
 
-上游仓库**根目录没有 LICENSE 文件**，仅在 `pelican-bike/package.json` 中声明 `"license": "ISC"`。
+上游仓库**根目录与本子目录都没有 LICENSE 文件**（GitHub API 返回的 `license` 字段亦为 `null`），
+仅在 `pelican-bike/package.json` 中声明 `"license": "ISC"`。
 我们保留该字段原样，并保留游戏内既有的 GitHub / X 署名链接
 （`https://github.com/riba2534/claude-opus-5-5-demo` 与 `https://x.com/riba2534`，
 在 `index.template.html` 的 intro 与 HUD 中各出现一次）。
-本目录**不额外添加**我们自己的 LICENSE。
+
+本目录的 `LICENSE` 是**我们按对方声明的 ISC 补写的标准文本**，版权行署名
+`Copyright (c) 2026 riba2534`（年份取自上游 commit `54adc1fb` 的日期 2026-09-23）。
+它**不是**上游随附的文件，也**不构成**我们对这份代码的权利主张；
+补写的唯一目的是让读者就地读出所依赖的条款，而不必去别处推断。
+先例是同仓库里 `public/vendor/svg3dtagcloud/LICENSE` 之于那套 vendored 库。
+本仓库根目录仍然没有 LICENSE 文件。
 
 ## 我们本目录的内容与改动清单
 
