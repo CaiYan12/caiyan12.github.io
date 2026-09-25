@@ -158,17 +158,16 @@
 
 **Delivers**：本轮验收的主要门禁本身站上台子。
 
-> 状态：未开始 @2026-09-25
+> 状态：已验收（`ec73a13`）@2026-09-25
 
-- [ ] 改用 `makeHarness`：本地 `check`、`checkClean`、console/pageerror 采集上移
-- [ ] 121 条判据一条不增不删不改；`hoverProbe` / `readPills` / `pillsAt` / `sharp` 像素助手留在判据侧
-- [ ] `UI_SMOKE_BASE_URL` 仍是站点根形态，显式传入并回显
-- [ ] 同一份 dist、不重建：121 项 PASS 与失败集合完全一致，两次读数留档
-- [ ] `#45`（微言轮播静息=悬停，含 reduced-motion 冻结取数）与 `#47`（sitemap 160 页负扫「重复 0 条」）两条常驻判据仍有效
-- [ ] 迁移后本地 4399 跑一次全绿（线上复跑归票 09）
-- [ ] T0 产物证明：diff 只含 `scripts/`
+- [x] 改用 `makeHarness`：本地 `check`、`checkClean`、console/pageerror 采集上移　〔diff **20 增 / 39 删**，逐行核过与改前副本的完整差异只有六处：import、harness 构造（含 `isNoise`）、`check`/`checkClean` 解构、`browser.launch`、`attach`、尾行 `finish()`。台子的报错入列格式 `${text.slice(0,90)} @ ${url.slice(base.length) || "?"}` 与 pageerror 的 `slice(0,140)` **本就是照本文件抄的**，所以连 detail 文案都逐字节不变；`errorsSeen` 游标随 `checkClean` 一起消失（改前它挂在模块级、只服务这一个汇，语义等价迁到汇内）〕
+- [x] 121 条判据一条不增不删不改；`hoverProbe` / `readPills` / `pillsAt` / `sharp` 像素助手留在判据侧　〔**本轮第一次跑红 3 项，红在我自己身上**：改写时把 `LONGEST_POST` 误换成另一篇文章（`/posts/20260909092113/`），89 半角单位的最长标题没了，1440/1100/680 三档「未裁切且换行」当场落空（行盒 2→1、高 54→27）。改回后全绿，并把 `git show HEAD:` 副本与迁移体做**整文件 diff** 确认再无一字超出迁移。判据名与 PASS/FAIL 剥 detail 后 **121 行逐行相同**（`output/ui-{before,after2}.names`）。像素助手四项原样留在本文件〕
+- [x] `UI_SMOKE_BASE_URL` 仍是站点根形态，显式传入并回显　〔`defaultBase: "http://localhost:4322"` 原值；实测回显 `[smoke] UI_SMOKE_BASE_URL=http://localhost:4399（形态：站点根）`，与 `FANCY_BASE_URL` 同形、与另两套「完整页面地址」区分开〕
+- [x] 同一份 dist、不重建：121 项 PASS 与失败集合完全一致，两次读数留档　〔同一 `dist`（票 08 的 E 构建，未重建）+ preview 4399。`合计 121 项，失败 0 项` 前后一致；原始日志只差 **7 行** = 台子回显 1 行 + 3 组 detail 读数（黑幕像素静止差、焦点环读数、hover 帧数 `46→44`）——都是本就逐次波动的量，无一项翻色。留档 `output/ui-before.log` / `output/ui-after2.log`（第一次的 `output/ui-after.log` 是那次红 3 项的现场，保留）〕
+- [x] `#45`（微言轮播静息=悬停，含 reduced-motion 冻结取数）与 `#47`（sitemap 160 页负扫「重复 0 条」）两条常驻判据仍有效　〔`#45` 五条全 PASS：悬停不变色 / 不出下划线 / 悬停停住 / 移出恢复 / Tab 拿到焦点环；`#47` `扫 160 页，重复 0 条`。`KNOWN_DEAD` 白名单按原样留在调用点（票 18 故意访问的 404 哨兵路径），其「按名前缀列名而非放宽整条检查」的来由注释未动〕
+- [x] 迁移后本地 4399 跑一次全绿（线上复跑归票 09）　〔本轮第二次跑即全绿：121/121、`失败 0 项`、exit 0。线上复跑按票册留给票 09〕
 
-**证据**：（回填）
+**证据**：commit `ec73a13`。四套冒烟至此全部接上台子（9 / 27 / 72 / 121 判据数一项未增减）；`output/ui-{before,after,after2}.log` 与 `.names` 三份留档，其中 `after.log` 是自家 typo 被判据抓住的现场。
 
 ## T1 · 会被构建消费的一项
 
