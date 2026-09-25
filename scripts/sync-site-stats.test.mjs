@@ -11,17 +11,15 @@ import {
 	buildSnapshot,
 	selectRandomComments,
 } from "./sync-site-stats.mjs";
+import { listPostSlugs } from "./lib/post-slug.mjs";
 
 // 与 syncSiteStats 相同的枚举规则（脚本相对仓库根解析）
-const slugs = (
+const slugs = listPostSlugs(
 	await fs.readdir(
 		path.resolve(import.meta.dirname, "..", "src", "content", "posts"),
 		{ withFileTypes: true },
-	)
-)
-	.filter((e) => e.isDirectory() && /^\d{14}$/.test(e.name))
-	.map((e) => e.name)
-	.sort();
+	),
+);
 const slugA = slugs[0];
 const slugB = slugs[1];
 assert.ok(slugA && slugB, "src/content/posts 至少要有两篇文章目录才能作夹具");

@@ -1,5 +1,5 @@
 // Giscus 评论构建期同步脚本：
-// 1) 枚举 src/content/posts 下匹配 ^\d{14}$ 的直接子目录作为文章 slug（字典序排序）；
+// 1) 枚举 src/content/posts 下的文章目录（slug 规则单一来源见 lib/post-slug.mjs），字典序排序；
 // 2) 用 GitHub GraphQL 分页拉取 Announcements 分类 Discussions，
 //    按 title "posts/<slug>/" 精确匹配文章；guestbook 单独拉取其留言，
 //    评论数口径 = 顶层 comments.totalCount + 所有回复 replies.totalCount；
@@ -18,9 +18,12 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { resolveGitHubToken } from "./lib/github-token.mjs";
 import { formatJson } from "./lib/write-json.mjs";
+import {
+	isPostSlug,
+	listPostSlugs,
+	slugFromDiscussionTitle,
+} from "./lib/post-slug.mjs";
 
-const SLUG_RE = /^\d{14}$/;
-const DISCUSSION_TITLE_RE = /^posts\/(\d{14})\/$/;
 const GUESTBOOK_DISCUSSION_TITLE = "guestbook";
 const RECENT_COMMENTS_DISPLAY_LIMIT = 5;
 const RECENT_COMMENTS_POOL_LIMIT = 20;
@@ -171,7 +174,7 @@ function validateRecentComment(comment, index, slugSet) {
 	}
 	if (
 		typeof comment.postSlug !== "string" ||
-		!SLUG_RE.test(comment.postSlug) ||
+		!isPostSlug(comment.postSlug) ||
 		(slugSet && !slugSet.has(comment.postSlug))
 	) {
 		throw new Error(`${label}.postSlug must be a current article slug`);
@@ -254,7 +257,7 @@ export function buildSnapshot({
 }) {
 	if (!Array.isArray(slugs)) throw new Error("slugs must be an array");
 	for (const slug of slugs) {
-		if (typeof slug !== "string" || !SLUG_RE.test(slug)) {
+		if (!isPostSlug(slug)) {
 			throw new Error(`invalid article slug: ${String(slug)}`);
 		}
 	}
@@ -264,7 +267,7 @@ export function buildSnapshot({
 	}
 	const comments = {};
 	for (const [slug, count] of toMap(discussions)) {
-		if (!SLUG_RE.test(slug) || !slugSet.has(slug)) {
+		if (!isPostSlug(slug) || !slugSet.has(slug)) {
 			throw new Error(`${SLUG_SET_ERROR}: ${String(slug)}`);
 		}
 		if (!Number.isInteger(count) || count < 0) {
@@ -310,7 +313,7 @@ function validateSnapshot(snapshot) {
 			throw new Error(`snapshot.${section} must be an object`);
 		}
 		for (const [slug, count] of Object.entries(map)) {
-			if (!SLUG_RE.test(slug)) {
+			if (!isPostSlug(slug)) {
 				throw new Error(`snapshot.${section} has invalid key: ${slug}`);
 			}
 			if (!Number.isInteger(count) || count < 0) {
@@ -567,10 +570,7 @@ export async function syncSiteStats({
 
 	// 文章 slug 枚举（14 位目录名，字典序）
 	const entries = await fs.readdir(POSTS_DIR, { withFileTypes: true });
-	const slugs = entries
-		.filter((e) => e.isDirectory() && SLUG_RE.test(e.name))
-		.map((e) => e.name)
-		.sort();
+	const slugs = listPostSlugs(entries);
 	const slugSet = new Set(slugs);
 	const postTitles = await readPostTitles(slugs);
 
@@ -599,8 +599,8 @@ export async function syncSiteStats({
 				}
 				guestbookId = node.id;
 			}
-			const m = DISCUSSION_TITLE_RE.exec(node.title);
-			if (m && slugSet.has(m[1])) matchedIds.set(m[1], node.id);
+			const slug = slugFromDiscussionTitle(node.title);
+			if (slug && slugSet.has(slug)) matchedIds.set(slug, node.id);
 		}
 		const next = nextConnectionCursor(
 			pageInfo,

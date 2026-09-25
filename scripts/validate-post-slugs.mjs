@@ -1,13 +1,13 @@
 import { readdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { isPostSlug } from "./lib/post-slug.mjs";
 
 const postsDirectory = resolve("src", "content", "posts");
-const postSlugPattern = /^\d{14}$/u;
 const directories = readdirSync(postsDirectory, { withFileTypes: true }).filter(
 	(entry) => entry.isDirectory(),
 );
 const invalidDirectories = directories.filter(
-	(entry) => !postSlugPattern.test(entry.name),
+	(entry) => !isPostSlug(entry.name),
 );
 
 if (invalidDirectories.length > 0) {

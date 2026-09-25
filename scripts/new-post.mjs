@@ -1,11 +1,11 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { isPostSlug } from "./lib/post-slug.mjs";
 
 const args = process.argv.slice(2);
 const dryRun = args.includes("--dry-run");
 const values = args.filter((arg) => arg !== "--dry-run");
 const [slug, suppliedTitle] = values;
-const postSlugPattern = /^\d{14}$/u;
 
 if (!slug) {
 	console.error("用法：pnpm new-post -- <yyyymmddhhmmss> [标题] [--dry-run]");
@@ -17,7 +17,7 @@ if (slug === "." || slug === ".." || /[\\/:*?"<>|]/u.test(slug)) {
 	process.exit(1);
 }
 
-if (!postSlugPattern.test(slug)) {
+if (!isPostSlug(slug)) {
 	console.error("文章 slug 必须严格为 14 位数字：yyyymmddhhmmss。");
 	process.exit(1);
 }
