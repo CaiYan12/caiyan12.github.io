@@ -1,18 +1,22 @@
 // Nice Books 实机烟测（Playwright + 本地 dev 服务器）
 // 运行：node scripts/nice-books-smoke.mjs（需 pnpm dev 已在 4321 端口运行）
 // 覆盖：首页随机契约、换一换 loading/去重、推荐组整组替换、reduced-motion。
-import { chromium } from "playwright";
+// 台子（check / console+pageerror 采集 / 汇总）来自 scripts/lib/smoke-harness.mjs，本文件只写判据。
+// NICE_BOOKS_BASE_URL 传的是**完整页面地址**（默认含 /books/），不是站点根。
+import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const baseUrl =
-	process.env.NICE_BOOKS_BASE_URL ?? "http://localhost:4321/books/";
-const results = [];
-
-function check(name, ok, detail = "") {
-	results.push({ name, ok });
-	console.log(
-		`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` :: ${detail}` : ""}`,
-	);
-}
+// 外部 CDN（jsDelivr 字体）在本机网络下可能被重置：单列统计，不计 FAIL；
+// 本地资源（localhost）的加载失败仍然严格判失败。
+// 「Failed to load resource」这类 console 噪声由下面的 requestfailed 判据按 URL 分流，
+// 所以它在 console 侧算噪声——放行策略写在调用点，台子内不放行任何东西。
+const externalFailures = [];
+const harness = makeHarness({
+	envVar: "NICE_BOOKS_BASE_URL",
+	defaultBase: "http://localhost:4321/books/",
+	isNoise: ({ text }) => text.includes("Failed to load resource"),
+});
+const baseUrl = harness.base;
+const { check } = harness;
 
 function heroId() {
 	return page.evaluate(() => {
@@ -23,28 +27,22 @@ function heroId() {
 }
 
 let page;
-const browser = await chromium.launch();
+const browser = await harness.browser.launch(harness.launch);
 
-// 外部 CDN（jsDelivr 字体）在本机网络下可能被重置：单列统计，不计 FAIL；
-// 本地资源（localhost）的加载失败仍然严格判失败。
-const externalFailures = [];
-
-function collectErrors(page, errors) {
-	page.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
-	page.on("console", (message) => {
-		if (message.type() !== "error") return;
-		if (message.text().includes("Failed to load resource")) return; // 由 requestfailed 按 URL 分类
-		errors.push(message.text());
-	});
+/**
+ * console / pageerror 由台子按调用点策略采集；HTTP 4xx 与请求失败按 URL 分流后
+ * 并入**同一个**报错汇（改前两者共用一个 `errors` 数组，语义原样保留）。
+ */
+function collectRequests(page) {
 	page.on("response", (response) => {
 		if (response.status() >= 400)
-			errors.push(`HTTP ${response.status()}: ${response.url()}`);
+			harness.errors.push(`HTTP ${response.status()}: ${response.url()}`);
 	});
 	page.on("requestfailed", (request) => {
 		const url = request.url();
 		if (url.includes("jsdelivr")) externalFailures.push(url);
 		else
-			errors.push(
+			harness.errors.push(
 				`requestfailed: ${url} ${request.failure()?.errorText ?? ""}`,
 			);
 	});
@@ -54,9 +52,8 @@ try {
 	const context = await browser.newContext({
 		viewport: { width: 1280, height: 900 },
 	});
-	page = await context.newPage();
-	const errors = [];
-	collectErrors(page, errors);
+	page = harness.attach(await context.newPage());
+	collectRequests(page);
 
 	await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
 	await page.waitForSelector("#nb-hero .hero-title a", { timeout: 15000 });
@@ -272,8 +269,8 @@ try {
 	);
 	check(
 		"loading 期间连点不产生额外状态错误",
-		errors.length === 0,
-		errors.join(" | ").slice(0, 200),
+		harness.errors.length === 0,
+		harness.errors.join(" | ").slice(0, 200),
 	);
 
 	// 第二次换组在 CSS 入场中切页，验证 before-swap 会取消后代动画并移除旧作用域。
@@ -308,7 +305,8 @@ try {
 
 	// --- reduced-motion ---
 	const rmPage = await context.newPage();
-	collectErrors(rmPage, errors);
+	harness.attach(rmPage);
+	collectRequests(rmPage);
 	await rmPage.emulateMedia({ reducedMotion: "reduce" });
 	await rmPage.goto(baseUrl, { waitUntil: "domcontentloaded" });
 	await rmPage.waitForSelector("#nb-hero .hero-title a", { timeout: 15000 });
@@ -884,8 +882,8 @@ try {
 
 	check(
 		"全程无 console/page 错误",
-		errors.length === 0,
-		errors.join(" | ").slice(0, 300),
+		harness.errors.length === 0,
+		harness.errors.join(" | ").slice(0, 300),
 	);
 
 	// 404 验证置于错误断言之后：预期的 404 响应不应计入错误
@@ -1035,8 +1033,6 @@ try {
 	await browser.close();
 }
 
-const failed = results.filter((r) => !r.ok);
-console.log(
-	`\n${results.length - failed.length}/${results.length} checks passed`,
-);
+const { total, failed } = harness.summary();
+console.log(`\n${total - failed.length}/${total} checks passed`);
 process.exit(failed.length > 0 ? 1 : 0);

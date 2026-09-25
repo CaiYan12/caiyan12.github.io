@@ -40,7 +40,12 @@ export function makeHarness({
 
 	const results = [];
 
-	/** 登记一条判据。extra 预留位（design-qa 那类需要附结构化数据时用），本批不消费 */
+	/**
+	 * 登记一条判据。`extra` 是为 `nice-books-design-qa.mjs` 那类需要附结构化数据的
+	 * 形状预留的槽位（票 06 实测其形状为 `check(name, ok, detail, extra = {})`）：
+	 * 台子只把它原样挂在结果行上，**不展开进结果对象、也不返回布尔**——真去迁那两套
+	 * QA 脚本时要先补这两点，槽位本身不等于契约。现在只有一个消费者用不到，故不提前加宽。
+	 */
 	function check(name, ok, detail = "", extra = undefined) {
 		results.push({ name, ok, extra });
 		console.log(
