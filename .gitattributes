@@ -1,0 +1,4 @@
+# 第三方 vendored 游戏源码与其构建产物：保持字节原样，禁用 Git 的 EOL 转换
+# （本仓库 core.autocrlf=true，这两处必须与工作区/blob 逐字节一致）
+vendor/pelican-bike/** -text
+public/pelican-bike/** -text

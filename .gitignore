@@ -50,6 +50,9 @@ bun.lockb
 .workbuddy/
 .workbuddy-ai/
 
+# vendored 第三方游戏源码的本地构建依赖（不参与 pnpm build）
+vendor/pelican-bike/node_modules/
+
 # local tool artifacts
 output/
 .mimosa/
