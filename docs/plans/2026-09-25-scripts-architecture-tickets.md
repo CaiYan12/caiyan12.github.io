@@ -209,10 +209,19 @@
 
 **Delivers**：本地全链绿、产物逐字节不变已被证明、票册状态全部回填并被自己的脚本承认。
 
-> 状态：进行中 @2026-09-25（停在完整构建——外网中断，见末条证据）
+> 状态：进行中 @2026-09-25（本地部分已全绿，剩推送与线上复跑）
 
-- [ ] 删 content layer 缓存后完整 `pnpm build` 通过（链头此时含新增三组离线测试与台子自测）　〔**未完成**。已按规程 `rm -rf node_modules/.astro .astro/data-store.json` 后跑完整链：链头七组**全绿**（非 `tail` 读法逐个抓出：`test:projects` 6 + 7、`test:nice-books` 51、`test:site-stats` 19、`test:utils` 16、`test:contributions` 11、`test:friend-icons` 32、`test:lib` 13，每组 `fail 0`），`validate-post-slugs` 通过（22 个目录），随后 `astro build` 在 OG 图端点死于 `Error: No fonts are loaded.`。本机此刻出站 HTTPS 全断：`fonts.googleapis.com` / `api.github.com` / `caiyan12.github.io` / `registry.npmmirror.com` 四路 curl 一律 `000`，贡献日历与友链图标也走了「拉取失败→复用旧缓存」分支（`SKIP github contributions: fetch failed`）。按 AGENTS.md 这属环境抖动不是代码问题，但它同时使 `dist` 处于**残缺态**（113 个 HTML、`dist/og` 0 张、无 `dist/pagefind`），因此下面四项一并挂起〕
-- [x] `pnpm check` 0 errors、`prettier --check ./src ./scripts` 通过　〔`astro check` 输出 `0 errors / 0 warnings / 2 hints`（两处 hint 是既有的 `document.execCommand`）；`prettier --check ./src ./scripts` → `All matched files use Prettier code style!`。两项纯本地，断网不影响，已达成〕
+- [x] 删 content layer 缓存后完整 `pnpm build` 通过（链头此时含新增三组离线测试与台子自测）　〔按规程 `rm -rf node_modules/.astro .astro/data-store.json` 后跑完整链 → **`FULL_EXIT=0`**（`output/t09-build2.log`）。链头七组**全绿**且用非 `tail` 读法逐个抓出：`test:projects` 6 + 7、`test:nice-books` **51**、`test:site-stats` 19、`test:utils` 16、`test:contributions` 11、`test:friend-icons` 32、`test:lib` 13（每组 `fail 0`）；`validate-post-slugs` 通过（22 个目录）；Pagefind 正常索引。**过程留档**：第一次尝试死于 `Error: No fonts are loaded.`——当时本机出站 HTTPS 全断（`fonts.googleapis.com` / `api.github.com` / `caiyan12.github.io` / `registry.npmmirror.com` 四路 curl 一律 `000`、`gh` EOF、`git ls-remote` schannel 握手失败），属 AGENTS.md 记过的 OG 取字体环境抖动，不是代码问题；那一次把 `dist` 留成**残缺态**（113 HTML、`dist/og` 0 张、无 `pagefind`），因此**当时没有在任何依赖它的判据上打勾**，等外网恢复后重跑才补齐（`output/t09-build.log` 与 `output/t09-build2.log` 两份都在）〕
+- [x] `pnpm check` 0 errors、`prettier --check ./src ./scripts` 通过　〔`astro check` → `0 errors / 0 warnings / 2 hints`（两处 hint 是既有的 `document.execCommand`）；`prettier --check ./src ./scripts` → `All matched files use Prettier code style!`〕
+- [x] 四套冒烟与全部离线单测绿，总数非 `tail` 读法记录，判据数量与开工前一致（9 / 27 / 72 / 121）　〔离线单测七组读数见上（合计 138 项 `fail 0`）。四套冒烟在**最终那份 dist** 上以 preview 4399 依次复跑、退出码全 0：ai-news `结果：9/9 通过`（`t09-s1-ainews.log`）、fancybox `合计 27 项，失败 0 项`（`t09-s2-fancy.log`）、nice-books `72/72 checks passed`（`t09-s3-nb.log`）、ui-smoke `合计 121 项，失败 0 项`（`t09-s4-ui.log`）。**判据数量与开工前逐项相等**，迁移四票没有增减任何一条〕
+- [x] 最终一次 `pnpm build` 的 `dist` 与开工前基线逐字节相同（T1 归一化：`_astro` 文件名哈希可变、内容不可变）　〔完整构建会刷新两个网络快照，故按规程 `git checkout -- src/constants/github-contributions.json src/constants/github-projects.json` 还原后再做一次确定性重建（`pnpm exec astro build` + banner + pagefind，`DET_EXIT=0`，先删两处缓存）→ **1114 文件 / norm=`7baf45a92c742f60`**，与开工前基线 `output/arch-pre-round.sha.norm` **逐行相同**，也与票 08 的 C 逐行相同。至此本轮 15 笔 commit 对产物整体中立的最终证明成立〕
+- [ ] 缝隙 A 以线上为基准复跑全绿（推送部署后，`Last-Modified` 判生效）　〔待站长同意推送后做：`UI_SMOKE_BASE_URL=https://caiyan12.github.io/`，并以响应头 `Last-Modified` 判部署生效，不以刷新可见为准〕
+- [ ] 每票状态行回填终态 + sha；`pnpm audit:ledger`（含 R5）对本册报 GREEN　〔票 01–08 八段已终态 + sha（含一次 R4 自纠：票 07 的 sha 我曾抄成另一会话给的 `ec73a13`，真值 `ec70aec`，见 `550eddf`）；`--offline` 自检现报 **9 段 / 8 条不合规，全部是本票未勾的判据**，即收口前应有的 RED。含 R5 的 GREEN 要等镜像 #50–#58 关闭，那一步在推送之后〕
+- [x] 两条「本批不做」的登记仍在文档里：图片墙漏排序（另立缺陷票）、sitemap 私有篇（已裁保持现状）　〔本册末「本批不做」段 5 条登记齐在，含这两条原文与理由（`图片墙漏排序` 点名 `src/pages/images.astro` 的 `filter(isPublicPost).slice(0, 40)` 未过 `getSortedPosts`；`sitemap 收录私有文章` 记站长 2026-09-23 已裁保持现状）〕
+- [ ] 构建改写的两个 constants 文件已还原，工作树干净、`HEAD` == `origin/main`　〔前两项已成立：两个 constants 已 `git checkout --` 还原、`git status --short` 为空。`HEAD` == `origin/main` 待推送（本地领先 15 笔）〕
+- [ ] `.design-flow.json` stage 与 next 更新　〔留到线上复跑与关票之后一次写完，避免登记一个尚未交付的 stage〕
+
+**证据**：本地部分 = `output/t09-build2.log`（完整链 `FULL_EXIT=0`）、`output/t09-det.log` + `output/t09-final.sha{,.norm}`（终版产物 = 开工前基线）、`output/t09-s{1,2,3,4}-*.log`（四套冒烟 9 / 27 / 72 / 121 全绿、退出码全 0）。线上部分待回填。
 - [ ] 四套冒烟与全部离线单测绿，总数非 `tail` 读法记录，判据数量与开工前一致（9 / 27 / 72 / 121）
 - [ ] 最终一次 `pnpm build` 的 `dist` 与开工前基线逐字节相同（T1 归一化：`_astro` 文件名哈希可变、内容不可变）
 - [ ] 缝隙 A 以线上为基准复跑全绿（推送部署后，`Last-Modified` 判生效）
