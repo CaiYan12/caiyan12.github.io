@@ -1980,11 +1980,56 @@ img:hover {
   height: 55px;
   margin: 0 auto;
   padding: 0 10px;
+  /* 玻璃描边用 outline 而不是 border：border 会同时吃掉上下 1px，
+     实测把首项 y 从 180 顶到 181、社交项 186→187；outline 不占盒内空间，
+     配合 outline-offset:-1px 视觉上与 1px 内描边一致，且跟随 border-radius */
+  outline: 1px solid rgba(255, 255, 255, 0.62);
+  outline-offset: -1px;
   border-radius: 5px;
-  background: var(--content-surface);
+  /* 必须显式清掉自身背景：玻璃搬到 ::before 后，本元素若有背景就会成为
+     ::before 的 backdrop 被采样 —— @layer components 里那条 legacy
+     `.head-nav{background-color:#fff}` 会在此处接管成不透明白，
+     折射与透底全丢（实测元素背景 rgb(255,255,255)）。id 特异性压过 class */
+  background: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
   font-size: 16px;
   font-weight: 400;
   letter-spacing: -0.02em;
+}
+
+/* 玻璃本体画在 ::before 上，元素自身不带 backdrop-filter。
+   原因（实测）：带 backdrop-filter 的元素会建立 backdrop root，后代元素的
+   backdrop-filter 只能采到这一层之内的内容 —— 下拉面板是 #head-nav 的后代，
+   挂在元素身上时面板自己的滤镜是彻底空转的（关掉面板 backdrop-filter，
+   面板内部像素变化 0.0%）。挪到 ::before 后两者互不干扰。
+   z-index:-1 在 #head-nav 自己的层叠上下文内，仍位于背景之上、链接之下，
+   所以底沿那条 2px 白线不会盖住 li > a::after 的绿色下划线 */
+#head-nav::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  /* 中间密的白膜撑文字，四缘略疏把折射透镜让出来 */
+  background: radial-gradient(130% 320% at 50% 50%, rgba(255, 255, 255, 0.75) 58%, rgba(255, 255, 255, 0.6) 100%), linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0));
+  /* 回落链：不支持 backdrop-filter: url() 的浏览器（Safari 系）停在纯毛玻璃 */
+  -webkit-backdrop-filter: blur(15px) saturate(1.5) brightness(1.04);
+  backdrop-filter: blur(15px) saturate(1.5) brightness(1.04);
+  /* 底沿 2px #f5f5f5 与 #menu-index > li > a 的 border-bottom 同色同厚，
+     铺满整条 nav：原来那条线只画在 7 个 110px 项盒下面，分组之间与右侧社交簇是断开的 */
+  box-shadow:
+    0 -2px 0 #f5f5f5 inset,
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 -10px 22px rgba(0, 0, 0, 0.1) inset;
+}
+
+/* 折射链只在贴图真的挂上后启用（initLiquidGlass 置 data-liquid-glass）。
+   滤镜 id 由 JS 按目标逐个写进 --lg-filter：横条一张，每个下拉面板各一张
+   （尺寸与圆角不同，位移场不能共用） */
+html[data-liquid-glass="on"] #head-nav::before,
+html[data-liquid-glass="on"] #nav li ul {
+  -webkit-backdrop-filter: var(--lg-filter) blur(15px) contrast(1.05) brightness(1.06) saturate(1.2);
+  backdrop-filter: var(--lg-filter) blur(15px) contrast(1.05) brightness(1.06) saturate(1.2);
 }
 
 .head-nav-wrap {
@@ -2058,10 +2103,20 @@ img:hover {
   left: 0;
   z-index: 999;
   display: none;
+  overflow: hidden;
   width: 110px;
   margin: 0;
   padding: 0;
-  background: var(--content-surface);
+  /* 与导航条同一块玻璃：同色同档的白膜 + 顶部高光 + 内侧上高光，
+     折射贴图由 initLiquidGlass 按面板自己的尺寸与四角半径另生成一张
+     （面板是 110×128 的竖盒、只有下两角有半径，不能复用横条那张） */
+  border-radius: 0 0 5px 5px;
+  background: radial-gradient(150% 120% at 50% 50%, rgba(255, 255, 255, 0.75) 58%, rgba(255, 255, 255, 0.6) 100%), linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0));
+  -webkit-backdrop-filter: blur(15px) saturate(1.5) brightness(1.04);
+  backdrop-filter: blur(15px) saturate(1.5) brightness(1.04);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 #nav .dropdown:hover > ul,
@@ -2088,7 +2143,10 @@ img:hover {
   display: block;
   height: 30px;
   padding: 0;
-  background: #fff;
+  /* 原来是 #fff：每行链接一块不透明白，把 #nav li ul 的玻璃整个盖死
+     （实测改面板膜 .75→.35 渲染零变化、去掉 url() 折射差值 0）。
+     链接透明后玻璃才透得出来，行分隔仍由 li 的 1px 边框承担 */
+  background: transparent;
   color: #555;
   line-height: 28px;
   transition:
@@ -2110,7 +2168,9 @@ img:hover {
 }
 
 #nav li ul a:hover {
-  background: #f6f6f6;
+  /* #f6f6f6 也是不透明的，hover 会把那一行的玻璃重新糊成白板；
+     改成品牌绿的半透底，与导航项 hover 同一套语言 */
+  background: rgba(0, 192, 0, 0.07);
   color: var(--colorful-green);
 }
 

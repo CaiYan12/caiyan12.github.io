@@ -244,7 +244,7 @@ Your agent and bash are running on:
 
 ### Domain docs
 
-单上下文布局：根 `CONTEXT.md` 术语表 + `docs/adr/`（0001–0004 共四份）。探索、命名或写 issue 前先取用 `CONTEXT.md` 的既定称呼；ADR 只记「难以回退、有真实取舍、令人意外」的决策。见 `docs/agents/domain.md`。
+单上下文布局：根 `CONTEXT.md` 术语表 + `docs/adr/`（0001–0005 共五份）。探索、命名或写 issue 前先取用 `CONTEXT.md` 的既定称呼；ADR 只记「难以回退、有真实取舍、令人意外」的决策。见 `docs/agents/domain.md`。
 
 ## 项目背景
 

@@ -101,6 +101,45 @@ const myhkwScriptAttributes: Record<string, string> = {
 			decoding="async"
 		/>
 		<div class="bg-image-pattern"></div>
+		{
+			/* 导航条液态玻璃的折射滤镜：feImage 的位移贴图与 feDisplacementMap 的 scale
+		    由 theme-script.ts 的 initLiquidGlass() 按 #head-nav 实际尺寸生成。
+		    滤镜节点常驻在 Swup 容器之外（导航本身也在容器外，切页不换），
+		    未挂上贴图前 CSS 走纯 blur 回落（见 global.css 的 [data-liquid-glass] 门）。 */
+		}
+		<svg
+			width="0"
+			height="0"
+			aria-hidden="true"
+			focusable="false"
+			style="position:fixed;left:0;top:0;pointer-events:none"
+		>
+			<defs>
+				<filter
+					id="lg-nav-filter"
+					filterUnits="userSpaceOnUse"
+					x="0"
+					y="0"
+					width="0"
+					height="0"
+					color-interpolation-filters="sRGB"
+				>
+					<feImage
+						id="lg-nav-map"
+						x="0"
+						y="0"
+						width="0"
+						height="0"
+						href=""></feImage>
+					<feDisplacementMap
+						in="SourceGraphic"
+						in2="lg-nav-map"
+						xChannelSelector="R"
+						yChannelSelector="G"
+						scale="0"></feDisplacementMap>
+				</filter>
+			</defs>
+		</svg>
 		<Sakura />
 
 		<slot />
