@@ -6,13 +6,31 @@
 
 /* ---------- Admonition 提示块（:::note/tip/important/warning/caution） ---------- */
 .post-context .admonition {
+  --admonition-signal: #007b15;
   position: relative;
-  margin: 1.25em 0;
-  padding: 0.85rem 1rem;
-  border: 1px solid;
-  border-radius: 0.5rem;
-  font-size: 0.95em;
+  margin: 2.1em 0 1.7em;
+  padding: 1.5rem 1.1rem 1rem;
+  border: 1px solid #dce6db;
+  border-left: 4px solid var(--admonition-signal);
+  border-radius: 3px 11px 11px 11px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 4px 5px 0 rgba(31, 76, 39, 0.08);
+  font-size: 14px;
   line-height: 1.75;
+}
+
+.post-context .admonition::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 23px;
+  height: 23px;
+  border-radius: 0 9px 0 0;
+  background: linear-gradient(225deg, #dcebd9 0 49%, transparent 50%);
+  content: "";
+  opacity: 0.65;
+  transition: opacity 150ms ease;
+  pointer-events: none;
 }
 
 .post-context .admonition > :first-child {
@@ -24,49 +42,116 @@
 }
 
 .post-context .admonition-title {
-  margin: 0 0 0.4em;
+  position: absolute;
+  top: -16px;
+  left: -4px;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 4px 15px 5px;
+  border-radius: 5px 5px 0 0;
+  background: var(--admonition-signal);
+  box-shadow: 2px 3px 0 rgba(0, 0, 0, 0.1);
+  color: #fff;
+  font-size: 12px;
   font-weight: 700;
-  font-size: 0.95em;
+  line-height: 1.5;
+}
+
+.post-context .admonition > .admonition-title + * {
+  margin-top: 0;
+}
+
+.post-context .admonition:not(:has(> .admonition-title)) {
+  margin-top: 1.25em;
+  padding-top: 1rem;
+}
+
+.post-context .admonition > ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.post-context .admonition > ul > li {
+  position: relative;
+  margin: 0;
+  padding-left: 1.45em;
+}
+
+.post-context .admonition > ul > li + li {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #dbe4d6;
+}
+
+.post-context .admonition > ul > li::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: auto;
+  height: auto;
+  background: none;
+  color: var(--admonition-signal);
+  content: "•";
+  font-weight: 700;
+  line-height: inherit;
+  transform: none;
+}
+
+.post-context .admonition > ul > li + li::before {
+  top: 6px;
 }
 
 .post-context .admonition-note {
-  border-color: #cfe2fb;
-  background: #eef5ff;
-}
-.post-context .admonition-note .admonition-title {
-  color: #1a73e8;
+  --admonition-signal: #285f97;
 }
 
 .post-context .admonition-tip {
-  border-color: #bfe6d0;
-  background: #edfaf2;
-}
-.post-context .admonition-tip .admonition-title {
-  color: #1e8e3e;
+  --admonition-signal: #117544;
 }
 
-.post-context .admonition-important {
-  border-color: #e0d0f5;
-  background: #f8f2fe;
+.post-context .admonition-tip > ul > li::before {
+  content: "✓";
 }
-.post-context .admonition-important .admonition-title {
-  color: #7c3aed;
+
+.post-context .admonition-important strong {
+  color: #17682b;
 }
 
 .post-context .admonition-warning {
-  border-color: #f7e1b4;
-  background: #fef8ea;
+  --admonition-signal: #87550c;
 }
-.post-context .admonition-warning .admonition-title {
-  color: #b25e00;
+
+.post-context .admonition-warning > ul > li::before {
+  content: "–";
 }
 
 .post-context .admonition-caution {
-  border-color: #f8cfcc;
-  background: #fdf0ef;
+  --admonition-signal: #a9352b;
 }
-.post-context .admonition-caution .admonition-title {
-  color: #d93025;
+
+@media (hover: hover) and (pointer: fine) {
+  .post-context .admonition:hover::after {
+    opacity: 1;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .post-context .admonition {
+    transition: transform 180ms var(--ease-out);
+  }
+
+  .post-context .admonition-title {
+    transition: transform 180ms var(--ease-out);
+  }
+
+  .post-context .admonition:hover {
+    transform: translateY(-2px);
+  }
+
+  .post-context .admonition:hover .admonition-title {
+    transform: translateY(-2px);
+  }
 }
 
 /* ---------- GitHub 风格 alerts（> [!NOTE] 等） ---------- */

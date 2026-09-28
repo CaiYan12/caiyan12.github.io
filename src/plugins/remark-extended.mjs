@@ -81,7 +81,7 @@ function renderGithubCard(repoRaw, repoData) {
 /** 提取容器指令中的标题节点（:::note[自定义标题]），返回标题 HTML；无则返回空串 */
 function extractLabel(directive) {
 	const idx = directive.children.findIndex(
-		(c) => c.type === "directiveLabel",
+		(c) => c.type === "paragraph" && c.data?.directiveLabel === true,
 	);
 	if (idx === -1) return "";
 	const [label] = directive.children.splice(idx, 1);

@@ -24,7 +24,7 @@
 		"test:projects": "node --test scripts/fetch-github-projects.test.mjs && node --import ./scripts/test-hooks.mjs --test \"src/utils/projects.test.ts\" \"src/data/projects.test.ts\"",
 		"fetch-friend-icons": "node scripts/fetch-friend-icons.mjs",
 		"test:friend-icons": "node --test scripts/fetch-friend-icons.test.mjs",
-		"test:lib": "node --test \"scripts/lib/*.test.mjs\"",
+		"test:lib": "node --test \"scripts/lib/*.test.mjs\" \"src/plugins/*.test.mjs\"",
 		"sync-site-stats": "node scripts/sync-site-stats.mjs",
 		"test:site-stats": "node --test scripts/sync-site-stats.test.mjs scripts/site-stats-fixture.test.mjs",
 		"test:contributions": "node --test scripts/fetch-github-contributions.test.mjs",
