@@ -17,6 +17,13 @@ if not exist "node_modules\" (
 	exit /b 1
 )
 
+node -e "fetch('http://localhost:4321/',{signal:AbortSignal.timeout(3000)}).then(async r=>process.exit(r.ok&&(await r.text()).includes('WindowsIt')?0:1)).catch(()=>process.exit(1))" >nul 2>nul
+if not errorlevel 1 (
+	echo [提示] 本地博客已在运行，直接打开现有页面：http://localhost:4321/
+	start "" "http://localhost:4321/"
+	exit /b 0
+)
+
 echo 正在启动博客：http://localhost:4321/
 echo 关闭此窗口或按 Ctrl+C 可停止本地服务器。
 echo.
