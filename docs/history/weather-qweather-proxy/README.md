@@ -47,7 +47,8 @@ weather_monthly_usage: billing_month=2026-09, total_calls=38, initial_calls=2
 ## 凭据处置
 
 - `%LOCALAPPDATA%\WindowsIt\QWeather\api-test.credential.xml`（DPAPI 加密，仅本机同用户可解）与 `output/` 下的录入、测试脚本已按站长指示**删除**。KEY 从未进入聊天、仓库、命令行或浏览器请求。
-- 和风账号本身仍然存在，**API KEY 需站长在控制台自行吊销**才算真正失效；本目录的任何留档都不含 KEY 或 Host 值。
+- 和风账号本身仍然存在；**API KEY 已于 2026-09-29 由站长在控制台删除凭据**（`console.qweather.com` → 项目管理 → 该项目 → 凭据区域）。此条为**站长自述**：受控浏览器当时停在 `id.qweather.com` 登录页、会话属于站长本人，agent 侧无法进入控制台独立复核，故这里记录的是处置声明而非第二方证据。本目录的任何留档都不含 KEY 或 Host 值。
+- 重启试验时**必须新建凭据**（旧 KEY 已失效）：先撤销本目录 `handler.js` 需要的两个 secret 的旧值，再按下节重新录入。
 
 ## 若要重启试验
 
