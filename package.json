@@ -27,7 +27,7 @@
 		"test:lib": "node --test \"scripts/lib/*.test.mjs\" \"src/plugins/*.test.mjs\"",
 		"sync-site-stats": "node scripts/sync-site-stats.mjs",
 		"test:site-stats": "node --test scripts/sync-site-stats.test.mjs scripts/site-stats-fixture.test.mjs",
-		"test:weather": "node --test scripts/weather-service.test.mjs scripts/domain-weather.test.mjs",
+		"test:weather": "node --test scripts/weather-service.test.mjs scripts/weather-codes.test.mjs scripts/domain-weather.test.mjs",
 		"test:contributions": "node --test scripts/fetch-github-contributions.test.mjs",
 		"test:utils": "node --import ./scripts/test-hooks.mjs --test \"src/utils/*.test.ts\"",
 		"test:nice-books": "node --import ./scripts/test-hooks.mjs --test \"src/nice-books/**/*.test.ts\"",

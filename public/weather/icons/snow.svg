@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+	<path
+		d="M17 36h31a9 9 0 0 0 .5-18 16 16 0 0 0-30.7-2.3A10.3 10.3 0 0 0 17 36Z"
+		fill="#d2deea"
+		stroke="#8fa5ba"
+		stroke-width="1.6"></path>
+	<!-- 三枚六向雪花：每枚由过心的竖线与 ±30° 两条对角线组成 -->
+	<path
+		d="M20 41v12M14.8 44l10.4 6M14.8 50l10.4-6M32 44.5v13M26.4 47.8l11.2 6.4M26.4 54.2l11.2-6.4M44 41v12M38.8 44l10.4 6M38.8 50l10.4-6"
+		fill="none"
+		stroke="#5fb6f0"
+		stroke-width="2.4"
+		stroke-linecap="round"></path>
+</svg>

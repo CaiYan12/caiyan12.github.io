@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+	<!-- 云后露日：多云是最高频态，纯灰云在白底上最显素 -->
+	<circle
+		cx="23.5"
+		cy="21"
+		r="8"
+		fill="#ffc53d"
+		stroke="#f0ad1f"
+		stroke-width="1.4"></circle>
+	<path
+		d="M17 47h31a9 9 0 0 0 .5-18 16 16 0 0 0-30.7-2.3A10.3 10.3 0 0 0 17 47Z"
+		fill="#c6d7e6"
+		stroke="#8ba4bb"
+		stroke-width="1.6"></path>
+	<path
+		d="M20 43.5h26"
+		fill="none"
+		stroke="#b3c6d8"
+		stroke-width="3"
+		stroke-linecap="round"></path>
+</svg>

@@ -45,7 +45,9 @@
 
 	function weatherErrorMessage(error, hasStaleWeather) {
 		if (hasStaleWeather) {
-			return "天气更新失败，当前显示旧数据，请重试";
+			// 「旧数据」标记与下方重试按钮已在同一张卡上说明其余信息，
+			// 这句再长就会在 233px 侧栏里被省略号截掉。
+			return "天气更新失败";
 		}
 		return error?.reason === "timeout"
 			? "天气请求超时，请重试"
@@ -57,13 +59,17 @@
 			weather.condition ?? weather.description ?? "",
 		);
 		const code = String(weather.conditionCode ?? "").toLowerCase();
-		if (/雷/u.test(condition) || /^2\d{2}$/u.test(code)) return "storm";
-		if (/雪|冰雹/u.test(condition) || /^4\d{2}$/u.test(code)) return "snow";
-		if (/雾|霾/u.test(condition) || /^5\d{2}$/u.test(code)) return "fog";
-		if (/雨/u.test(condition) || /^3\d{2}$/u.test(code)) return "rain";
+		// 只按中文天气文字归类：wttr 的 2xx 段同时含雷暴(200)、雪(227/230)、
+		// 雾(248/260) 与冻毛毛雨(263–284)，任何按码段判定都会把其中三类归错。
+		if (/雷/u.test(condition)) return "storm";
+		if (/雪|雹|冰/u.test(condition)) return "snow";
+		if (/雾|霾/u.test(condition)) return "fog";
+		if (/雨/u.test(condition)) return "rain";
 		if (/晴/u.test(condition) || code === "113") {
 			return "clear";
 		}
+		// 阴（Overcast）不能沿用带日头的「多云」图
+		if (/阴/u.test(condition)) return "overcast";
 		return "cloud";
 	}
 
@@ -126,7 +132,9 @@
 			statusText = "天气已更新";
 		}
 		status.textContent = statusText;
+		status.title = statusText;
 		reading.hidden = !state.weather;
+		card.querySelector("[data-weather-meta]").hidden = !state.weather;
 		if (refresh) {
 			refresh.hidden = !state.weather || state.status === "weather-error";
 			refresh.disabled = state.status === "weather-loading";
@@ -140,19 +148,26 @@
 		const roundedTemperature = Number.isInteger(temperature)
 			? String(temperature)
 			: String(Number(temperature.toFixed(1)));
-		card.querySelector("[data-weather-temperature]").textContent =
-			`${roundedTemperature}°C`;
-		card.querySelector("[data-weather-city]").textContent =
-			`附近：${state.weather.cityName || "未知城市"}`;
-		card.querySelector("[data-weather-description]").textContent =
+		const cityText = `附近：${state.weather.cityName || "未知城市"}`;
+		const conditionText =
 			state.weather.condition ||
 			state.weather.description ||
 			"天气情况未知";
+		const city = card.querySelector("[data-weather-city]");
+		const description = card.querySelector("[data-weather-description]");
+		city.textContent = cityText;
+		city.title = cityText;
+		description.textContent = conditionText;
+		description.title = conditionText;
+		card.querySelector("[data-weather-temperature]").textContent =
+			`${roundedTemperature}°C`;
 		const stale =
 			state.status === "weather-error" || state.weather.stale === true;
 		card.querySelector("[data-weather-stale]").hidden = !stale;
-		card.querySelector("[data-weather-icon]").dataset.weatherKind =
-			iconKind(state.weather);
+		const icon = card.querySelector("[data-weather-icon]");
+		const iconKindName = iconKind(state.weather);
+		icon.dataset.weatherKind = iconKindName;
+		icon.src = `/weather/icons/${iconKindName}.svg`;
 		card.querySelector("[data-weather-fetched-at]").textContent =
 			formatTime(state.fetchedAt);
 		const source = card.querySelector("[data-weather-source]");

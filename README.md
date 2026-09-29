@@ -59,6 +59,7 @@ pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scr
 - 数据来源**只有 `wttr.in`**：浏览器定位取访客位置 → 坐标粗化到一位小数（约 10 公里）→ GET `https://wttr.in/<lat>,<lon>?format=j1&lang=zh`，一次请求同时拿到附近城市与当前天气。**绝不按 IP 推断位置**。
 - 关键行为：普通精度、`maximumAge: 0`、定位与天气各 8 秒超时；整页刷新才重新定位，站内 Swup 切页复用结果；成功态刷新只重取天气、不重新定位；`/domain/` 保持终端版式、成功态没有刷新按钮、失败才出现 `[重试]`；无 JS 或脚本加载失败时保留静态说明，绝不残留「天气加载中…」。
 - 失败文案按原因区分（拒绝授权／定位超时／浏览器不支持／服务不可用），浏览器完全不支持定位时不放无效的重试按钮。城市名中文优先、拿不到时显示原始地名（wttr.in 对北京坐标实测返回英文 `Beijing`）。
+- 天气文字与图标靠 `public/weather/weather-service.js` 里的两张码表（`weatherNames` / `weatherIcons`），**内容对齐上游 wttr.in 官方简中表**（`share/translations/zh-cn/conditions.txt`，46 码，核对于 2026-09-29），另加本站自译的 `149 烟霾`——上游对 149 也没有译名，实测 `lang=zh-cn` 仍返回英文 `Smoky haze`，所以本地表不能省。`pnpm test:weather` 里的 `scripts/weather-codes.test.mjs` 逐码锁住这份覆盖（缺码、译名漂移、掉默认温度计图标都会翻红）。上游加码时，改那张表 + 补这里的 UPSTREAM_CODES。
 - 验证：`pnpm test:weather` 跑离线单测；`pnpm build && pnpm preview --port 4322` 后跑 `node scripts/sidebar-weather-smoke.mjs`、`node scripts/domain-weather-smoke.mjs`、`node scripts/mobile-weather-smoke.mjs`（假定位到北京公开坐标，响应走 `page.route()` 桩，不访问真实 wttr.in）。
 - **为什么不是和风**：2026-09-28 曾按「大陆访客更快」的假设试验和风天气 + Cloudflare Worker 代理，本机全链路通过（凭据 DPAPI 隔离、45,000 次/月硬截流、真实浏览器 20/20）。但 GitHub Pages 没有可保管密钥的服务端，而站长没有 Cloudflare 账号、没有服务器、没有备案域名，`workers.dev` 默认域名又**不在 Cloudflare 中国大陆网络上**，大陆可达性从未实测——成本确定、收益未证实，故 2026-09-29 裁决搁置。代理实现整体留档在 [`docs/history/weather-qweather-proxy/`](docs/history/weather-qweather-proxy/README.md)（含搁置原因、已验证边界、配额账本终值与重启步骤），不参与任何构建与测试；决策过程全文见 [`docs/history/qweather-settingup-history-sessions.md`](docs/history/qweather-settingup-history-sessions.md)。
 - 遗留未测：`wttr.in` 自身在大陆网络下的可达性与耗时**同样没有实测**。
@@ -177,11 +178,11 @@ public/
 - 首页右侧文章推荐上方固定为“最新 / 手气不错”两栏，使用普通箭头＋日期列表；下方只保留一个“热门推荐”，按既有热度排序显示旗帜形序号。随机文章在构建期生成，浏览器不新增 GitHub 请求。
 - 3D 标签/分类云（`/tag/` 与 `/category/` 云集页）：由 `src/components/layout/TagCloud3D.astro` 渲染，数据与下方 `#blogtags` 药丸云同源（药丸云保留：当前项高亮 + `prefers-reduced-motion` 回退）。库为 vendored `public/vendor/svg3dtagcloud/`（npm `svg-3d-tag-cloud@0.0.20`，MIT），标签颜色走库内置 10 色调色板；hover 放大 1.15 倍、“N篇文章”tooltip 上浮已内置；实例经 `window.__tagCloud3D` 跨页交接，Swup 互切安全。
 - Pio 看板娘（`public/pio/static/`，vendored 但随本项目自维护）：
-  - 操作按钮列顺序为 `home → info → side（停靠切换）→ close`，停靠支持左/右切换并写入 `localStorage.pioSide`，加载时恢复偏好；右侧停靠时按钮列、折叠按钮（`.pio-show`）、消息框位置均已对称适配。
-  - 看板娘默认折叠，仅显示“点击召唤Pio”按钮（hover 有提示）；折叠状态记忆在 `localStorage.posterGirl`（召唤 = `1` 展开，关闭 = `0` 折叠，其余值一律折叠）。
-  - 消息框居中于人物并带底部三角尾巴，`max-width: 100%` 限制长消息左缘不溢出视口；再现按钮与操作按钮已上移避开 myhkw 播放器歌词框与展开面板。
-  - “关于我”按钮的跳转仓库由 `src/config.ts` 的 `pioConfig.dialog.link` 配置（现为 Pio 官方仓库）。
-  - 已知问题：`pnpm dev` 下 Pio 因 Svelte hydration 报错不渲染（仅 dev，生产构建正常）；排查 pio 视觉问题请用 `pnpm build && pnpm preview`。
+    - 操作按钮列顺序为 `home → info → side（停靠切换）→ close`，停靠支持左/右切换并写入 `localStorage.pioSide`，加载时恢复偏好；右侧停靠时按钮列、折叠按钮（`.pio-show`）、消息框位置均已对称适配。
+    - 看板娘默认折叠，仅显示“点击召唤Pio”按钮（hover 有提示）；折叠状态记忆在 `localStorage.posterGirl`（召唤 = `1` 展开，关闭 = `0` 折叠，其余值一律折叠）。
+    - 消息框居中于人物并带底部三角尾巴，`max-width: 100%` 限制长消息左缘不溢出视口；再现按钮与操作按钮已上移避开 myhkw 播放器歌词框与展开面板。
+    - “关于我”按钮的跳转仓库由 `src/config.ts` 的 `pioConfig.dialog.link` 配置（现为 Pio 官方仓库）。
+    - 已知问题：`pnpm dev` 下 Pio 因 Svelte hydration 报错不渲染（仅 dev，生产构建正常）；排查 pio 视觉问题请用 `pnpm build && pnpm preview`。
 
 ## 与 Emlog 原站的差异
 
@@ -197,7 +198,7 @@ public/
 
 - [x] **纯 HTML 页面资源移植**（2026-09-19 完成评估；结论：全部候选不移植，本项关闭）：源为 2020–2022 的手写多页站，实际路径 `C:\Users\Einn Tzai\Documents\HTML5网页`（本条目旧写法「文档\HTML5页面」按字面搜不到），入口 `index.html`（"WindowsIt's Music Site"）链向 `about/`、`login/`、`quesion/` 与 5 个 `tools/` 子页，全站 25 个 HTML 已逐一核对。排除理由分四类：**第三方「另存为」产物**（版权与外部依赖风险）——`!downloaded/`（Google 翻译镜像、jQuery MP4 播放器、css3 3D 翻牌）、`tools/eeslap`、`tools/burymewithmymoney`、`tools/smashthewalls`，特征为 `*_files/` 子目录 + 脚本文件名带 `.下载` + 内嵌 analytics/firebase/three.js，`login/index.html` 标题本身即下载代码片段且静态站无鉴权场景；**已被本站取代的前代模板残留**——`myblog/`、`HACKEREMPIER/`、`officialblog/`、`about/index.html`、需后端的 `_UNUSED TESTED PAGE/` 留言表单；**纯 CSS 演示无内容增量**——`tools/chemicals`（诞生石药水瓶）、`tools/newtonbai`（牛顿摆）、`tools/moonnight`（星空月景）虽零依赖可搬，但属装饰性 demo；`tools/makebridge` 系 freeCodeCamp "Santa's Helper" 教程复刻（`santaX`/`perfectAreaSize` 变量名原样），移植需去圣诞主题化并注明来源，收益不抵成本；`tools/daojishi` 倒计时硬编码 `12/31/2020 23:59:59`，原样移植即死页；**原创文字资产不宜沿用页面形态**——`quesion/`（恶搞产品文案）与 `slide/`（"HOT IDEAS" 卡片）为站主 2020 年的吐槽，若将来启用应以重新撰写的文章呈现，旧页面不搬。`MainSources/` 仅字体与两个未核授权的音视频，同样不动。
 
-- [x] **原模板未移植页面评估**（2026-09-04 完成）：对 `../limh.me` 全部 12 个 page-*.php / t.php / reg.php / function/*.php 逐一核对，与 myblog 现有 14 个路由 + sidebarConfig 侧栏清单对齐。结论：已移植清单（log_list/echo_log/header/footer/side/options→config.ts/归档/微语/留言板/关于/友链/图片墙/相册/404/全部侧栏 widget/文章尾部表情/吐槽水军）无遗漏。未移植 9 项取舍：**标签云集页**已作为 TODO 10 落地为 `/tag/`（2026-09-04 完成）；**读者墙**与**微语分页+[F*]表情码解析**移入远期规划（触发条件见该节）；分享组件（分享目标大半死链）、日历 widget（Emlog ajax 依赖，交互已被归档/时间线替代）、读者等级（Giscus 无访客邮箱数据源）不移植；前台注册（需后端写库+验证码）、评论 UA/IP 属地（Giscus 不提供该数据）、通用页面模板变体 page-test/page1/page-colorful（已被 `spec` collection 的 `[...slug]` 覆盖）为架构性/数据源排除项，永久排除。原 `module.php`（eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）维持严禁搬运。
+- [x] **原模板未移植页面评估**（2026-09-04 完成）：对 `../limh.me` 全部 12 个 page-_.php / t.php / reg.php / function/_.php 逐一核对，与 myblog 现有 14 个路由 + sidebarConfig 侧栏清单对齐。结论：已移植清单（log_list/echo_log/header/footer/side/options→config.ts/归档/微语/留言板/关于/友链/图片墙/相册/404/全部侧栏 widget/文章尾部表情/吐槽水军）无遗漏。未移植 9 项取舍：**标签云集页**已作为 TODO 10 落地为 `/tag/`（2026-09-04 完成）；**读者墙**与**微语分页+[F\*]表情码解析**移入远期规划（触发条件见该节）；分享组件（分享目标大半死链）、日历 widget（Emlog ajax 依赖，交互已被归档/时间线替代）、读者等级（Giscus 无访客邮箱数据源）不移植；前台注册（需后端写库+验证码）、评论 UA/IP 属地（Giscus 不提供该数据）、通用页面模板变体 page-test/page1/page-colorful（已被 `spec` collection 的 `[...slug]` 覆盖）为架构性/数据源排除项，永久排除。原 `module.php`（eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）维持严禁搬运。
 
 ### 远期规划（观望项，均已完成评估、明确触发条件，未触发不排期）
 
@@ -205,4 +206,4 @@ public/
 
 - **11. 读者墙**（limh.me 移植评估得分 10，条件观望）：原版 `function/page-guest.php` 为评论区活跃者头像墙（Gravatar + 评论次数 top200）。技术上可行——Giscus 走 GitHub Discussions，`sync-site-stats.mjs` 可扩展按 author 聚合，`author.avatar_url` 替代 Gravatar；但当前站评论量极小，移植即空页。**触发条件：留言板/文章评论参与者明显增长（>20 人）**。
 
-- **12. 微语分页 + [F*] 表情码解析**（limh.me 移植评估，数据层无当前需求）：原版 `t.php` 含 pagenavi 分页与 `[F1]`–`[F18]` 表情码 → gif 替换；本站 `diary.ts` 仅 3 条数据（无分页需求）、内容零 `[F*]` 码（rg 实测）、表情 gif 资源未迁移。**触发条件：说说条数增长到单页过长（>30 条）或迁移历史说说数据含表情码时**，一并补 `public/images/face/` 资源。
+- _*12. 微语分页 + [F*] 表情码解析_*（limh.me 移植评估，数据层无当前需求）：原版 `t.php` 含 pagenavi 分页与 `[F1]`–`[F18]` 表情码 → gif 替换；本站 `diary.ts` 仅 3 条数据（无分页需求）、内容零 `[F*]` 码（rg 实测）、表情 gif 资源未迁移。**触发条件：说说条数增长到单页过长（>30 条）或迁移历史说说数据含表情码时**，一并补 `public/images/face/` 资源。

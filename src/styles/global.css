@@ -6072,7 +6072,11 @@ body,
 
 /* 主站桌面附近天气：沿用 .widget 外框，只安排胶囊自身内容。 */
 .mobile-weather-slot {
+  /* 与 #sidebar 同源的继承上下文：小部件标题图标不自行设色，
+     手机挂载若跟随 #main 会算成 #000/13px，与侧栏那枚不一致。 */
   display: none;
+  color: var(--colorful-text-secondary);
+  font-size: 12px;
 }
 
 .widget:has(.weather-widget-body) {
@@ -6127,8 +6131,8 @@ body,
 
 .weather-widget-body {
   display: grid;
-  gap: 4px;
-  padding: 9px 10px 10px;
+  gap: 6px;
+  padding: 8px 10px 9px;
 }
 
 .weather-widget-body [hidden] {
@@ -6143,80 +6147,109 @@ body,
   margin: 0;
 }
 
-.weather-widget__status {
-  color: var(--colorful-text-secondary);
-  font-size: 12px;
-  line-height: 1.6;
-}
-
 .weather-widget__reading {
   display: grid;
-  gap: 3px;
   min-width: 0;
 }
 
+/* 图标与温度成一组，城市与天气描述占右侧一栏，不再把温度推到卡片右缘。 */
 .weather-widget__current {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
   align-items: center;
-  justify-content: space-between;
-  min-height: 56px;
+  min-width: 0;
+}
+
+.weather-widget__visual {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+/* 城市与天气描述长度完全由外部数据决定（俄语地名、未收录天气码会回退成
+   英文原句），一律单行截断，卡片高度不随文案变化；全文由 title 兜底。 */
+.weather-widget__facts {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
 }
 
 .weather-widget__icon {
   display: block;
-  width: 52px;
-  height: 52px;
-  flex: 0 0 52px;
-  overflow: visible;
-  color: var(--colorful-green);
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   animation: weather-widget-icon-float 3.6s ease-in-out infinite;
-}
-
-.weather-widget__icon [data-weather-part] {
-  display: none;
-}
-
-.weather-widget__icon[data-weather-kind="clear"] [data-weather-part="clear"],
-.weather-widget__icon[data-weather-kind="cloud"] [data-weather-part="cloud"],
-.weather-widget__icon[data-weather-kind="rain"] [data-weather-part="rain"],
-.weather-widget__icon[data-weather-kind="snow"] [data-weather-part="snow"],
-.weather-widget__icon[data-weather-kind="storm"] [data-weather-part="storm"],
-.weather-widget__icon[data-weather-kind="fog"] [data-weather-part="fog"] {
-  display: block;
 }
 
 .weather-widget__temperature {
   margin: 0;
   color: var(--text);
-  font-size: 27px;
+  font-size: 28px;
   font-weight: 600;
-  line-height: 1.15;
+  line-height: 1.1;
+  letter-spacing: -0.4px;
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 
 .weather-widget__city {
+  overflow: hidden;
   color: var(--text);
   font-size: 13px;
-  line-height: 1.5;
+  font-weight: 500;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .weather-widget__description {
+  overflow: hidden;
   color: var(--colorful-text-secondary);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 状态、旧数据标记与来源共用一条 11px 元信息行；状态文案最长（定位说明句），
+   由它吸收挤压，来源与旧数据标记保持完整可读。 */
+.weather-widget__foot {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: baseline;
+  gap: 0 8px;
+  min-width: 0;
+  color: var(--colorful-text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.weather-widget__status {
+  overflow: hidden;
+  color: var(--colorful-text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .weather-widget__stale {
   color: #8a6200;
   font-size: 11px;
-  line-height: 1.4;
+  line-height: 1.45;
+  white-space: nowrap;
 }
 
 .weather-widget__source-line {
+  justify-self: end;
   color: var(--colorful-text-secondary);
   font-size: 11px;
   line-height: 1.45;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 .weather-widget__source {

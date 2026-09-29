@@ -584,7 +584,7 @@ try {
 			staleState.every(
 				(item) =>
 					item.stale &&
-					item.status === "天气更新失败，当前显示旧数据，请重试" &&
+					item.status === "天气更新失败" &&
 					item.source === "wttr.in" &&
 					item.sourceAnchor === 1 &&
 					item.attributionNodes === 0 &&

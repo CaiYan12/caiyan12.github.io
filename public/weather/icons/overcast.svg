@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+	<!-- 阴（Overcast）：纯云无日、比 cloud 重一档灰，靠「没有太阳 + 更深的云」与少云/多云区分 -->
+	<path
+		d="M15 49h34a10 10 0 0 0 .5-20 17.5 17.5 0 0 0-33.6-2.5A11.4 11.4 0 0 0 15 49Z"
+		fill="#b8c6d4"
+		stroke="#8b9cae"
+		stroke-width="1.6"></path>
+	<path
+		d="M19 45.5h26"
+		fill="none"
+		stroke="#a3b3c3"
+		stroke-width="3"
+		stroke-linecap="round"></path>
+</svg>

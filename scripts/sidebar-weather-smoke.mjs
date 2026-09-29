@@ -1,5 +1,6 @@
 // Main-site desktop weather widget acceptance. Run after build + preview.
 // SIDEBAR_WEATHER_BASE_URL is the site root, for example http://localhost:4322.
+import { readFile } from "node:fs/promises";
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
 const harness = makeHarness({
@@ -19,13 +20,17 @@ const pages = [
 	{ path: "/archive/", name: "其他侧栏页" },
 ];
 
-function wttrFixture({ city = "Beijing", temp_C = "24" } = {}) {
+function wttrFixture({
+	city = "Beijing",
+	temp_C = "24",
+	weatherCode = "113",
+} = {}) {
 	return {
 		nearest_area: city ? [{ areaName: [{ value: city }] }] : [],
 		current_condition: [
 			{
 				temp_C: String(temp_C),
-				weatherCode: "113",
+				weatherCode: String(weatherCode),
 				weatherDesc: [{ value: "Clear" }],
 			},
 		],
@@ -109,6 +114,55 @@ async function routeWttr(page, handler) {
 	return requests;
 }
 
+// 图标是 public/weather/icons/ 下的六个真资产：离线校验它们确实存在、
+// 各自含多种颜色且不再靠 currentColor 继承（单色化会在这里翻红）。
+{
+	const iconKinds = [
+		"clear",
+		"cloud",
+		"overcast",
+		"rain",
+		"snow",
+		"storm",
+		"fog",
+	];
+	const rows = [];
+	for (const kind of iconKinds) {
+		const file = new URL(
+			"../public/weather/icons/" + kind + ".svg",
+			import.meta.url,
+		);
+		let text = null;
+		try {
+			text = await readFile(file, "utf8");
+		} catch {
+			rows.push({ kind, error: "文件缺失" });
+			continue;
+		}
+		const colors = [
+			...new Set(
+				[...text.matchAll(/(?:fill|stroke)="(#[0-9a-f]{3,8})"/gi)].map(
+					(m) => m[1].toLowerCase(),
+				),
+			),
+		];
+		rows.push({
+			kind,
+			root: /^<svg[^>]*viewBox="0 0 64 64"/.test(text),
+			colors: colors.length,
+			mono: /currentColor/.test(text),
+		});
+	}
+	check(
+		"七个本地天气图标文件齐备、各自多色且不靠 currentColor",
+		rows.length === iconKinds.length &&
+			rows.every(
+				(row) => row.root && row.colors >= 2 && row.mono === false,
+			),
+		JSON.stringify(rows),
+	);
+}
+
 try {
 	// Layout and the successful wttr.in state on one home, one article, and one other sidebar page.
 	for (const route of pages) {
@@ -190,14 +244,17 @@ try {
 				const rect = card.getBoundingClientRect();
 				const style = getComputedStyle(card);
 				const icon = el.querySelector("[data-weather-icon]");
-				const iconStyle = icon ? getComputedStyle(icon) : null;
 				return {
 					visible: rect.width > 0 && style.display !== "none",
 					border: style.borderTopStyle,
 					borderWidth: style.borderTopWidth,
 					radius: style.borderTopLeftRadius,
 					background: style.backgroundColor,
-					iconColor: iconStyle?.color,
+
+					iconSrc: icon
+						? new URL(icon.getAttribute("src"), location.href)
+								.pathname
+						: null,
 					temperatureSize: Number.parseFloat(
 						getComputedStyle(
 							el.querySelector("[data-weather-temperature]"),
@@ -206,20 +263,22 @@ try {
 				};
 			});
 			check(
-				"天气卡延续白底直角边框，绿色本地图标与温度醒目可见",
+				"天气卡延续白底直角边框，本地图标文件已挂载且温度醒目可见",
 				geometry.visible &&
 					geometry.border === "solid" &&
 					geometry.borderWidth === "1px" &&
 					geometry.radius === "0px" &&
 					geometry.background === "rgb(255, 255, 255)" &&
-					geometry.iconColor === "rgb(0, 192, 0)" &&
+					/^\/weather\/icons\/(clear|cloud|overcast|rain|snow|storm|fog)\.svg$/u.test(
+						geometry.iconSrc ?? "",
+					) &&
 					geometry.temperatureSize >= 24,
 				JSON.stringify(geometry),
 			);
 			const svgAccessibility = await widget
 				.locator("[data-weather-icon]")
 				.getAttribute("aria-hidden");
-			check("天气 SVG 不重复进入读屏播报", svgAccessibility === "true");
+			check("天气图标不重复进入读屏播报", svgAccessibility === "true");
 		}
 		checkClean(`${route.name}天气成功态`);
 	}
@@ -526,6 +585,76 @@ try {
 			);
 			checkClean("图标动效与键盘交互");
 		} while (false);
+	}
+
+	// 图标归类判据：wttr 的 2xx 段同时含雷暴(200)、雪(227/230)、雾(248/260) 与
+	// 冻毛毛雨(263–284)，任何按码段判定都会把其中三类归错，故逐码锁住可见图层。
+	{
+		const kindCases = [
+			{ code: "200", kind: "storm" },
+			{ code: "227", kind: "snow" },
+			{ code: "248", kind: "fog" },
+			{ code: "263", kind: "rain" },
+			{ code: "149", kind: "fog" },
+			{ code: "350", kind: "snow" },
+			{ code: "179", kind: "snow" },
+			{ code: "317", kind: "snow" },
+			{ code: "113", kind: "clear" },
+			{ code: "122", kind: "overcast" },
+			{ code: "119", kind: "cloud" },
+		];
+		const seen = [];
+		for (const kindCase of kindCases) {
+			const page = await newPage();
+			await routeWttr(page, (r) =>
+				fulfillJson(r, wttrFixture({ weatherCode: kindCase.code })),
+			);
+			await page.goto(base + "/", { waitUntil: "load" });
+			const settled = await page
+				.waitForFunction(
+					() =>
+						document.querySelector("#sidebar [data-weather-widget]")
+							?.dataset.weatherState === "success",
+					undefined,
+					{ timeout: 30000 },
+				)
+				.then(() => true)
+				.catch(() => false);
+			seen.push(
+				settled
+					? await page.evaluate((code) => {
+							const widget = document.querySelector(
+								"#sidebar [data-weather-widget]",
+							);
+							return {
+								code,
+								kind: widget.querySelector(
+									"[data-weather-icon]",
+								)?.dataset.weatherKind,
+								src: widget
+									.querySelector("[data-weather-icon]")
+									?.getAttribute("src"),
+								condition: widget.querySelector(
+									"[data-weather-description]",
+								)?.textContent,
+							};
+						}, kindCase.code)
+					: { code: kindCase.code, kind: "never-success" },
+			);
+			await page.close();
+		}
+		check(
+			"天气图标按中文天气文字归类，2xx 段不得整段判为雷暴",
+			seen.length === kindCases.length &&
+				seen.every(
+					(row, i) =>
+						row.kind === kindCases[i].kind &&
+						row.src ===
+							"/weather/icons/" + kindCases[i].kind + ".svg",
+				),
+			JSON.stringify(seen),
+		);
+		checkClean("天气图标归类判据");
 	}
 
 	// The single source and its deadline are exercised through the service injection
