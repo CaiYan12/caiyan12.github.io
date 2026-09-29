@@ -112,7 +112,7 @@
 **状态**：发布闸门已过（`84fed51` 上线，`64a6192` 为最近一次三条工作流全绿的推送）；**唯一未过的是大陆直连网络实测**，工具已就位、读数只待站长在大陆网络采集；Issue：[**#67**](https://github.com/CaiYan12/caiyan12.github.io/issues/67)。
 
 - [ ] 用中国大陆直连网络（多运营商、多时段）实测 wttr.in 的成功率与耗时，记录测点与时间；本机外国出口结果只能作连通性旁证。**注意**：这道门现在测的是**已上线方案本身**，不是候选源——搁置和风并没有让它消失，只是换了被测对象。工具：`pnpm qa:weather-mainland`（`scripts/wttr-mainland-check.mjs`），跑前用 `$env:NET` / `$env:WINDOW` 标注运营商与时段，缺这两栏的读数按本票判据不算大陆链路证据；读数与本机旁证已登记在 #67。
-- [x] 完整 `pnpm check`、`pnpm build`、`pnpm test:weather`、两个天气浏览器烟测与既有 UI 烟测通过；站点不含任何服务端凭据（代理已归档，前端零密钥）。证据：`pnpm test:weather` 15/15、`sidebar-weather-smoke` 49/49、`domain-weather-smoke` 28/28、`mobile-weather-smoke` 26/26、`pnpm smoke:ui` 121/121（本地与线上各一遍；两项历史失败已归因为「判据锁内容而非锁代码」并改写，见 #67 与本票 06）。
+- [x] 完整 `pnpm check`、`pnpm build`、`pnpm test:weather`、两个天气浏览器烟测与既有 UI 烟测通过；站点不含任何服务端凭据（代理已归档，前端零密钥）。证据（2026-09-29 手机挂载撤除后的当前值）：`pnpm test:weather` 27/27、`sidebar-weather-smoke` 63/63、`domain-weather-smoke` 29/29、`pnpm smoke:ui` 121/121。原 `mobile-weather-smoke` 26/26 随挂载删除，其独有判据已并入侧栏烟测。两项历史 UI 失败已归因为「判据锁内容而非锁代码」并改写，见 #67 与本票 06。
 - [x] 发布已获授权并完成：记录远端 SHA、对应 CI、Pages 产物、线上可见来源与实际网络请求后才宣称上线。最近一次为 `64a6192`（Lint / Build and Check / Deploy 三条工作流全绿，`Last-Modified: Tue, 29 Sep 2026 04:37:23 GMT`）。**大陆实测判据仍未勾选，本票因此不得关闭。**
 
 以下段落是**搁置前的和风试验记录，保留原样**（它们是那次测量的记录，不是当前事实）：

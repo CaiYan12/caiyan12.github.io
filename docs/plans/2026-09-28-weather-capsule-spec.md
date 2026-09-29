@@ -77,7 +77,7 @@
 ## Testing Decisions / Acceptance Criteria
 
 1. **服务边界。** 在可注入 `fetchImpl` 的最高层服务接口离线验证（`pnpm test:weather`）：坐标只以一位小数粗化值进入唯一请求；正常城市+天气；城市缺失仍成功并给空城市；失败重试后返回同位置旧数据并标 stale；8 秒期限内挂起即 timeout 且 `sources` 为 `["wttr.in"]`。不访问真实网络。
-2. **浏览器边界。** 基于 `scripts/lib/smoke-harness.mjs`，在 build + preview 的真实 Chromium 中覆盖：授权成功、拒绝、定位超时、不支持、天气超时、城市缺失、旧数据标记、手动刷新不重新定位、Swup 切页不重复请求、脚本加载失败与禁用 JS 不留死加载文案；断言计算值/可见状态/请求次数/ARIA 与键盘结果，不锁 CSS 源文本或行号。三个烟测：`scripts/sidebar-weather-smoke.mjs`、`scripts/domain-weather-smoke.mjs`、`scripts/mobile-weather-smoke.mjs`。
+2. **浏览器边界。** 基于 `scripts/lib/smoke-harness.mjs`，在 build + preview 的真实 Chromium 中覆盖：授权成功、拒绝、定位超时、不支持、天气超时、城市缺失、旧数据标记、手动刷新不重新定位、Swup 切页不重复请求、脚本加载失败与禁用 JS 不留死加载文案；断言计算值/可见状态/请求次数/ARIA 与键盘结果，不锁 CSS 源文本或行号。两个烟测：`scripts/sidebar-weather-smoke.mjs`（含窄屏零可见卡＋零定位＋零请求的负扫）与 `scripts/domain-weather-smoke.mjs`；原 `scripts/mobile-weather-smoke.mjs` 随手机挂载一并删除（见「二次改判」）。
 3. **布局与动效。** 在 390 与 768px 确认天气**一处都不可见、且零定位零请求**（负扫，已做变异验证），769px 与桌面宽度确认恰有一处可见、侧栏顺序在吐槽水军之前、无横向溢出；默认与 hover 图标动效均可见，触屏无伪 hover，减少动态效果下运动减轻；`/domain/` 终端布局不被重排。
 4. **既有门禁。** `pnpm check`、`pnpm test:weather`、`pnpm build`、三个天气烟测，并确认既有 `pnpm smoke:ui` 与 `/domain/` 返回路径无回归。
 5. **来源诚实。** 卡片与终端行显示实际来源 `wttr.in`；任何文档不得把未实测的大陆表现写成已验证。
