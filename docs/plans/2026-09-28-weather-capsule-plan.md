@@ -96,10 +96,12 @@
 
 **Blocked by**：05  
 **Delivers**：手机访客在主内容前看到同一张天气卡，站内无刷新切页沿用本次结果；页面上任一宽度只有一张可见天气卡。  
-**状态**：已验收并上线（实现 `84fed51`，手机挂载与图标随 `249affe` 收敛）；原「上游公网验收仍阻塞」的阻塞来自和风代理，已随该源作废；Issue：[**#66**](https://github.com/CaiYan12/caiyan12.github.io/issues/66)。
+**状态**：**作废（2026-09-29 二次改判，站主裁定手机端不显示天气）**。本票交付物「主内容前的第二枚挂载」整体撤除：`MainGridLayout.astro` 的 `.mobile-weather-slot`、`global.css` 中它的两条规则、`scripts/mobile-weather-smoke.mjs`（26 项）均已删除，GitHub #66 关闭并写明原因。本票独有的四条覆盖没有丢，已并入 `sidebar-weather-smoke.mjs`（现 63 项）：窄屏零可见卡＋零定位＋零请求（变异验证过）、Swup 切页与返回不重复定位/请求、整页刷新重新定位、`#content` 内无天气节点。下面判据保留为当时的验收记录。
+
+（历史）状态曾为：已验收并上线（实现 `84fed51`，手机挂载与图标随 `249affe` 收敛）；原「上游公网验收仍阻塞」的阻塞来自和风代理，已随该源作废；Issue：[**#66**](https://github.com/CaiYan12/caiyan12.github.io/issues/66)。
 
 - [x] `≤768px` 天气在主内容前，`≥769px` 天气在侧栏；390、768、769px 及桌面逐档量可见数量、盒宽、换行和横向溢出，文章卡片原有色带不变。769px 整页原有 1px 溢出在隐藏两处天气节点后仍存在，天气卡自身未溢出。
-- [x] 两个响应式挂载点共用同一会话状态；首次整页打开只有一次定位和一轮天气请求，Swup 切页不重复请求，整页刷新重新定位。
+- [x] ~~两个响应式挂载点共用同一会话状态；~~ **作废**（只剩侧栏一处；「同一会话不重复请求」的语义由侧栏烟测继续守）；首次整页打开只有一次定位和一轮天气请求，Swup 切页不重复请求，整页刷新重新定位。
 - [x] 成功刷新、旧数据标记、来源链接、图标默认/hover/触屏/减少动态效果在手机和桌面均按同一规则工作；键盘顺序与 ARIA 状态通过浏览器检查。
 - [x] build + preview 的真实 Chromium 覆盖首页→文章→返回的 Swup 路径与脚本禁用状态；本票 `pnpm check`、`pnpm build`、相关烟测通过。证据：`.superpowers/sdd/2026-09-28-weather-capsule-plan/task-06-report.md` 记录移动/Swup 20/20、桌面回归 44/44、构建 210 页；`task-06-review.md` 给出 SPEC/实现 PASS，无 P1/P2。
 
@@ -110,7 +112,7 @@
 **状态**：发布闸门已过（`84fed51` 上线，`64a6192` 为最近一次三条工作流全绿的推送）；**唯一未过的是大陆直连网络实测**，工具已就位、读数只待站长在大陆网络采集；Issue：[**#67**](https://github.com/CaiYan12/caiyan12.github.io/issues/67)。
 
 - [ ] 用中国大陆直连网络（多运营商、多时段）实测 wttr.in 的成功率与耗时，记录测点与时间；本机外国出口结果只能作连通性旁证。**注意**：这道门现在测的是**已上线方案本身**，不是候选源——搁置和风并没有让它消失，只是换了被测对象。工具：`pnpm qa:weather-mainland`（`scripts/wttr-mainland-check.mjs`），跑前用 `$env:NET` / `$env:WINDOW` 标注运营商与时段，缺这两栏的读数按本票判据不算大陆链路证据；读数与本机旁证已登记在 #67。
-- [x] 完整 `pnpm check`、`pnpm build`、`pnpm test:weather`、三个天气浏览器烟测与既有 UI 烟测通过；站点不含任何服务端凭据（代理已归档，前端零密钥）。证据：`pnpm test:weather` 15/15、`sidebar-weather-smoke` 49/49、`domain-weather-smoke` 28/28、`mobile-weather-smoke` 26/26、`pnpm smoke:ui` 121/121（本地与线上各一遍；两项历史失败已归因为「判据锁内容而非锁代码」并改写，见 #67 与本票 06）。
+- [x] 完整 `pnpm check`、`pnpm build`、`pnpm test:weather`、两个天气浏览器烟测与既有 UI 烟测通过；站点不含任何服务端凭据（代理已归档，前端零密钥）。证据：`pnpm test:weather` 15/15、`sidebar-weather-smoke` 49/49、`domain-weather-smoke` 28/28、`mobile-weather-smoke` 26/26、`pnpm smoke:ui` 121/121（本地与线上各一遍；两项历史失败已归因为「判据锁内容而非锁代码」并改写，见 #67 与本票 06）。
 - [x] 发布已获授权并完成：记录远端 SHA、对应 CI、Pages 产物、线上可见来源与实际网络请求后才宣称上线。最近一次为 `64a6192`（Lint / Build and Check / Deploy 三条工作流全绿，`Last-Modified: Tue, 29 Sep 2026 04:37:23 GMT`）。**大陆实测判据仍未勾选，本票因此不得关闭。**
 
 以下段落是**搁置前的和风试验记录，保留原样**（它们是那次测量的记录，不是当前事实）：

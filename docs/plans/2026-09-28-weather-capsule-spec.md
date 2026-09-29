@@ -17,10 +17,16 @@
 2. **数据源只有 `wttr.in`。** 一次 GET 同时返回附近区域与当前天气，无需凭据、无需代理、无第二来源。
 3. **本站不引入需要保管密钥的天气数据源。** 见「已作废条款」。
 
+## 二次改判（2026-09-29，站主裁定）：天气只属于侧栏
+
+首轮实现同时挂在桌面侧栏与 `≤768px` 主内容前。站主实机查看后裁定：**手机端任何页面都出现天气太违和，取消竖屏天气模块，把元件严格绑定为侧栏的子元件**。本文件所有涉及「手机挂载 / `.mobile-weather-slot` / 两个响应式挂载点共享会话 / 390 与 768px 各有一张可见卡」的条款一律作废，以本节为准；镜像票 #66 随之作废关闭，PLAN 的 06 票同样作废。
+
+界面从三处收敛为两处：主站侧栏首位、`/domain/` 终端天气行。实现上不只是删挂载点——`#sidebar` 在窄屏只是 `display:none`、节点仍在 DOM 里，若照旧初始化，手机访客会为一张永不显示的卡被弹定位授权、并发出一条永远看不见的天气请求，这比视觉违和更糟。副带好处：`#content` 里从此没有天气节点，文章卡 `nth-child` 色带不再需要额外保护。
+
 ## User Stories
 
 1. As a desktop visitor, I want one nearby-weather widget above the existing sidebar widgets, so that I can glance at local conditions on every page that has a sidebar.
-2. As a mobile visitor, I want the same weather information before the main content, so that the hidden sidebar does not hide the feature from me.
+2. ~~As a mobile visitor, I want the same weather information before the main content~~ —— **撤销（2026-09-29 二次改判）**：手机访客不需要天气卡。
 3. As a visitor granting location access, I want the site to explain why it is locating me and then show a nearby city, current temperature, icon, and condition, so that the data has a clear meaning.
 4. As a visitor refreshing the whole page, I want my location read again, so that moving to another city can update the weather.
 5. As a visitor navigating within the site, I want the current weather result reused during Swup page changes, so that navigation does not repeat the permission prompt or requests.
@@ -43,7 +49,7 @@
 ### 页面与视觉
 
 - `src/config.ts` 的 `sidebarConfig.widgets` 与 `src/components/layout/SideBar.astro` 是主站桌面入口；天气小部件排在现有 `blogger`（吐槽水军）**之前**，只在 `showSidebar` 为真的页面出现。复用 `WidgetLayout.astro` 及现有 `.widget` 白底、有边框、直角标题框架，不顺手重做侧栏。
-- `src/layouts/MainGridLayout.astro` 负责在侧栏隐藏的 `≤768px` 视口把同一天气组件放在主内容前；`≥769px` 只显示侧栏实例。两个响应式位置共享一份会话状态与同一轮请求，不得因两个 DOM 实例而定位或请求两次。新节点不得插入 `#content` 的文章卡片兄弟序列，避免影响现有 `nth-child` 色带。
+- ~~`src/layouts/MainGridLayout.astro` 负责在侧栏隐藏的 `≤768px` 视口把同一天气组件放在主内容前~~ —— **作废（2026-09-29 二次改判）**：天气是侧栏的子元件，窄屏不显示也不初始化（`#sidebar` 在窄屏只是 `display:none`、节点仍在 DOM，故 `sidebar-widget.js` 的 `pageReady()` 按侧栏是否真的渲染来过滤挂载点）。两个响应式位置共享一份会话状态与同一轮请求，不得因两个 DOM 实例而定位或请求两次。新节点不得插入 `#content` 的文章卡片兄弟序列，避免影响现有 `nth-child` 色带。
 - 标题「附近天气」；地点行「附近：{城市}」；温度与本地天气图标为主视觉，天气描述次一级，底部写「获取于 HH:mm · 实际来源」。时间是访客浏览器的**获取时间**，不冒充气象观测时间。摄氏度沿用 `/domain/` 既有口径。城市中文优先，来源未给中文时允许原文（wttr.in 对北京坐标实测返回 `Beijing`）。
 - 天气图标用本地 SVG 资源、海洋绿强调，不加载供应商返回的第三方图片。图标默认轻微循环，支持 hover 的精细指针进入整卡时平滑增强，离开回到默认；文字与卡片不位移。触屏无伪 hover，`prefers-reduced-motion` 减轻运动。成功态在标题处有可聚焦刷新按钮。
 - `/domain/` 保留 `src/domain.html` 与 `public/domain/css/` 的独立终端排版；成功态不加刷新按钮、不另加获取时间行；失败时可在天气行后显示同字体 `[重试]`。来源链接以终端语汇内联显示实际来源。
@@ -72,7 +78,7 @@
 
 1. **服务边界。** 在可注入 `fetchImpl` 的最高层服务接口离线验证（`pnpm test:weather`）：坐标只以一位小数粗化值进入唯一请求；正常城市+天气；城市缺失仍成功并给空城市；失败重试后返回同位置旧数据并标 stale；8 秒期限内挂起即 timeout 且 `sources` 为 `["wttr.in"]`。不访问真实网络。
 2. **浏览器边界。** 基于 `scripts/lib/smoke-harness.mjs`，在 build + preview 的真实 Chromium 中覆盖：授权成功、拒绝、定位超时、不支持、天气超时、城市缺失、旧数据标记、手动刷新不重新定位、Swup 切页不重复请求、脚本加载失败与禁用 JS 不留死加载文案；断言计算值/可见状态/请求次数/ARIA 与键盘结果，不锁 CSS 源文本或行号。三个烟测：`scripts/sidebar-weather-smoke.mjs`、`scripts/domain-weather-smoke.mjs`、`scripts/mobile-weather-smoke.mjs`。
-3. **布局与动效。** 在 390、768、769px 与桌面宽度确认天气恰有一处可见、侧栏顺序在吐槽水军之前、无横向溢出；默认与 hover 图标动效均可见，触屏无伪 hover，减少动态效果下运动减轻；`/domain/` 终端布局不被重排。
+3. **布局与动效。** 在 390 与 768px 确认天气**一处都不可见、且零定位零请求**（负扫，已做变异验证），769px 与桌面宽度确认恰有一处可见、侧栏顺序在吐槽水军之前、无横向溢出；默认与 hover 图标动效均可见，触屏无伪 hover，减少动态效果下运动减轻；`/domain/` 终端布局不被重排。
 4. **既有门禁。** `pnpm check`、`pnpm test:weather`、`pnpm build`、三个天气烟测，并确认既有 `pnpm smoke:ui` 与 `/domain/` 返回路径无回归。
 5. **来源诚实。** 卡片与终端行显示实际来源 `wttr.in`；任何文档不得把未实测的大陆表现写成已验证。
 
