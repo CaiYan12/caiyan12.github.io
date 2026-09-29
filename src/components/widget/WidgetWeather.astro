@@ -11,14 +11,16 @@ import WidgetLayout from "./WidgetLayout.astro";
 		data-weather-refresh
 		hidden
 	>
-		<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+		<svg
+			viewBox="0 0 1024 1024"
+			width="13"
+			height="13"
+			aria-hidden="true"
+			focusable="false"
+		>
 			<path
-				d="M13.7 4.3V1.8m0 2.5h-2.5M2.3 11.7v2.5m0-2.5h2.5M3.5 5.1a5.2 5.2 0 0 1 8.8-1.7l1.4 1.4M12.5 10.9a5.2 5.2 0 0 1-8.8 1.7l-1.4-1.4"
-				fill="none"
-				stroke="currentColor"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				stroke-width="1.4"></path>
+				d="M118.869333 503.096889c1.137778-49.948444 11.406222-98.417778 30.72-144.014222A392.277333 392.277333 0 0 1 233.841778 234.097778a391.111111 391.111111 0 0 1 278.044444-115.2c53.134222 0 104.561778 10.382222 152.917334 30.833778 46.734222 19.740444 89.144889 48.384 124.928 84.366222 11.292444 11.292444 21.902222 23.324444 31.772444 35.868444l-68.835556 53.731556a9.102222 9.102222 0 0 0 3.441778 16.099555l200.817778 49.152c5.688889 1.365333 11.292444-2.986667 11.292444-8.817777l0.910223-206.734223a9.102222 9.102222 0 0 0-14.734223-7.196444l-64.455111 50.403555c-87.893333-112.469333-224.568889-184.576-378.168889-184.576-261.831111 0-474.851556 209.834667-479.772444 470.641778a9.130667 9.130667 0 0 0 9.159111 9.358222h68.551111a9.102222 9.102222 0 0 0 9.159111-8.903111zM982.869333 512h-68.579555a9.102222 9.102222 0 0 0-9.159111 8.903111 390.4 390.4 0 0 1-30.72 144.014222 391.054222 391.054222 0 0 1-84.224 125.013334 391.367111 391.367111 0 0 1-278.072889 115.2 391.139556 391.139556 0 0 1-277.930667-115.2c-11.320889-11.292444-21.959111-23.324444-31.772444-35.868445l68.778666-53.731555a9.130667 9.130667 0 0 0-3.413333-16.099556l-200.817778-49.152a9.187556 9.187556 0 0 0-11.292444 8.817778l-0.796445 206.848c0 7.68 8.789333 12.003556 14.734223 7.196444l64.455111-50.403555c87.893333 112.355556 224.568889 184.462222 378.168889 184.462222 261.973333 0 474.851556-209.92 479.772444-470.641778a9.102222 9.102222 0 0 0-9.130667-9.358222z"
+				fill="currentColor"></path>
 		</svg>
 		刷新
 	</button>
@@ -35,26 +37,29 @@ import WidgetLayout from "./WidgetLayout.astro";
 						data-weather-icon
 						data-weather-kind="clear"
 						src="/weather/icons/clear.svg"
-						width="44"
-						height="44"
+						width="40"
+						height="40"
 						alt=""
 						aria-hidden="true"
 					/>
-					<p
-						class="weather-widget__temperature"
-						data-weather-temperature
-					>
-					</p>
+					<div class="weather-widget__reading-stack">
+						<p
+							class="weather-widget__temperature"
+							data-weather-temperature
+						>
+						</p>
+						<p
+							class="weather-widget__description"
+							data-weather-description
+						>
+						</p>
+					</div>
 				</div>
 				<div class="weather-widget__facts">
 					<p class="weather-widget__city" data-weather-city></p>
-					<p
-						class="weather-widget__description"
-						data-weather-description
-					>
-					</p>
 				</div>
 			</div>
+			<p class="weather-widget__details" data-weather-details hidden></p>
 		</div>
 		<div class="weather-widget__foot">
 			<p
@@ -70,13 +75,14 @@ import WidgetLayout from "./WidgetLayout.astro";
 				旧数据
 			</p>
 			<p class="weather-widget__source-line" data-weather-meta hidden>
-				<span data-weather-fetched-at></span>
-				<span aria-hidden="true"> · </span>
+				<span class="weather-widget__source-label">数据：</span>
 				<a
 					class="weather-widget__source"
 					data-weather-source
 					target="_blank"
 					rel="noopener noreferrer"></a>
+				<span class="weather-widget__time" data-weather-fetched-at
+				></span>
 			</p>
 		</div>
 		<button

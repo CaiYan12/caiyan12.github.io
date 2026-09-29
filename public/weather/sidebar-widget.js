@@ -90,7 +90,8 @@
 	function formatTime(timestamp) {
 		const date = new Date(timestamp);
 		if (!Number.isFinite(date.getTime())) return "";
-		return `获取于 ${String(date.getHours()).padStart(2, "0")}:${String(
+		// 页脚已是「数据：wttr.in 14:36」的组件状态栏语序，时间不再自带「获取于」前缀。
+		return `${String(date.getHours()).padStart(2, "0")}:${String(
 			date.getMinutes(),
 		).padStart(2, "0")}`;
 	}
@@ -162,6 +163,35 @@
 		description.title = conditionText;
 		card.querySelector("[data-weather-temperature]").textContent =
 			`${roundedTemperature}°C`;
+		// 通栏参数行：每项一个「标签 + 数值」对，靠分隔线与字重差建立三级层级，
+		// 不再是一串点号连接的纯文本。数值全部来自同一份 j1 响应。
+		// 不放风向：wttr 的 winddir16Point 是英文十六方位，会重新引入翻译面。
+		const detailItems = [];
+		const { feelsLikeC, windSpeedKmph, humidityPercent } = state.weather;
+		if (Number.isFinite(feelsLikeC)) detailItems.push(["体感", `${feelsLikeC}°`]);
+		if (Number.isFinite(windSpeedKmph))
+			detailItems.push(["风", `${windSpeedKmph} km/h`]);
+		if (Number.isFinite(humidityPercent))
+			detailItems.push(["湿度", `${humidityPercent}%`]);
+		const details = card.querySelector("[data-weather-details]");
+		details.replaceChildren(
+			...detailItems.map(([label, value]) => {
+				const item = document.createElement("span");
+				item.className = "weather-widget__detail";
+				const labelEl = document.createElement("span");
+				labelEl.className = "weather-widget__detail-label";
+				labelEl.textContent = label;
+				const valueEl = document.createElement("span");
+				valueEl.className = "weather-widget__detail-value";
+				valueEl.textContent = value;
+				item.append(labelEl, valueEl);
+				return item;
+			}),
+		);
+		details.hidden = detailItems.length === 0;
+		details.title = detailItems
+			.map(([label, value]) => `${label} ${value}`)
+			.join("，");
 		const stale =
 			state.status === "weather-error" || state.weather.stale === true;
 		card.querySelector("[data-weather-stale]").hidden = !stale;

@@ -160,3 +160,46 @@ test("the eight second deadline covers the wttr.in response body", async () => {
 	assert.equal(signals.length, 1);
 	assert.equal(signals[0].aborted, true);
 });
+
+test("exposes the same-response detail fields used by the card's parameter row", async () => {
+	const service = createService({
+		fetchImpl: async () => ({
+			ok: true,
+			json: async () => ({
+				nearest_area: [{ areaName: [{ value: "Nanchang" }] }],
+				current_condition: [
+					{
+						temp_C: "31",
+						weatherCode: "122",
+						weatherDesc: [{ value: "Overcast" }],
+						FeelsLikeC: "35",
+						windspeedKmph: "6",
+						humidity: "63",
+					},
+				],
+			}),
+		}),
+	});
+	const weather = await service.fetchCurrentWeather({
+		latitude: 28.68,
+		longitude: 115.89,
+	});
+	assert.deepEqual(
+		{
+			feelsLikeC: weather.feelsLikeC,
+			windSpeedKmph: weather.windSpeedKmph,
+			humidityPercent: weather.humidityPercent,
+		},
+		{ feelsLikeC: 35, windSpeedKmph: 6, humidityPercent: 63 },
+	);
+});
+
+test("detail fields degrade to null instead of NaN when the response omits them", async () => {
+	const service = createService({
+		fetchImpl: async () => ({ ok: true, json: async () => wttrResponse() }),
+	});
+	const weather = await service.fetchCurrentWeather(BEIJING);
+	assert.equal(weather.feelsLikeC, null);
+	assert.equal(weather.windSpeedKmph, null);
+	assert.equal(weather.humidityPercent, null);
+});

@@ -24,6 +24,7 @@ function wttrFixture({
 	city = "Beijing",
 	temp_C = "24",
 	weatherCode = "113",
+	withDetails = false,
 } = {}) {
 	return {
 		nearest_area: city ? [{ areaName: [{ value: city }] }] : [],
@@ -32,6 +33,9 @@ function wttrFixture({
 				temp_C: String(temp_C),
 				weatherCode: String(weatherCode),
 				weatherDesc: [{ value: "Clear" }],
+				...(withDetails
+					? { FeelsLikeC: "35", windspeedKmph: "6", humidity: "63" }
+					: {}),
 			},
 		],
 	};
@@ -203,11 +207,20 @@ try {
 				(await widget
 					.locator("[data-weather-description]")
 					.innerText()) === "晴" &&
-				(
+				/^\d{2}:\d{2}$/.test(
 					await widget
 						.locator("[data-weather-fetched-at]")
-						.innerText()
-				).match(/获取于 \d{2}:\d{2}/u) !== null,
+						.innerText(),
+				) &&
+				/^数据：\s*wttr\.in\s+\d{2}:\d{2}$/u.test(
+					await widget
+						.locator(".weather-widget__source-line")
+						.innerText(),
+				) &&
+				(await widget
+					.locator(".weather-widget__time")
+					.evaluate((el) => getComputedStyle(el).marginLeft)) ===
+					"5px",
 		);
 		check(
 			`${route.name}来源链接只指向 wttr.in`,
@@ -839,6 +852,63 @@ try {
 				).includes("加载中"),
 		);
 		blockedSink.checkClean(`${blockedScript} 被阻止`);
+	}
+	// 通栏参数行：体感 / 风 / 湿度，全部来自同一份 j1 响应，不额外请求上游。
+	{
+		const page = await newPage();
+		await routeWttr(page, (route) =>
+			fulfillJson(route, wttrFixture({ withDetails: true })),
+		);
+		await page.goto(base + "/", { waitUntil: "load" });
+		await waitForState(page, "success");
+		const row = page.locator("#sidebar [data-weather-details]");
+		const cells = (
+			await row.locator(".weather-widget__detail").allInnerTexts()
+		).map((t) => t.replace(/\s+/gu, " ").trim());
+		const shape = await row.evaluate((el) => ({
+			hidden: el.hidden,
+			children: el.children.length,
+			clipped: el.scrollWidth > el.clientWidth + 1,
+			rules: [...el.children]
+				.map((c) => getComputedStyle(c).borderLeftWidth)
+				.filter((w) => w !== "0px").length,
+			overflow: document.documentElement.scrollWidth - window.innerWidth,
+		}));
+		check(
+			"参数行三格文案正确、只有两条分隔线且不被截断",
+			!shape.hidden &&
+				shape.children === 3 &&
+				shape.rules === 2 &&
+				!shape.clipped &&
+				shape.overflow <= 0 &&
+				cells.join("|") === "体感 35°|风 6 km/h|湿度 63%",
+			JSON.stringify({ cells, ...shape }),
+		);
+		check(
+			"参数行仍是单行且卡片高度不随字段出现而换行",
+			(await row.evaluate((el) => {
+				const tops = [...el.children].map((c) =>
+					Math.round(c.getBoundingClientRect().top),
+				);
+				return (
+					new Set(tops).size === 1 &&
+					el.getBoundingClientRect().height <= 20
+				);
+			})) === true,
+		);
+	}
+	{
+		const page = await newPage();
+		await routeWttr(page, (route) => fulfillJson(route, wttrFixture()));
+		await page.goto(base + "/", { waitUntil: "load" });
+		await waitForState(page, "success");
+		const row = page.locator("#sidebar [data-weather-details]");
+		check(
+			"上游未给体感/风力/湿度时整行隐藏，不留空带",
+			(await row.evaluate(
+				(el) => el.hidden && el.children.length === 0,
+			)) === true,
+		);
 	}
 } finally {
 	await Promise.all(contexts.map((context) => context.close()));

@@ -6131,7 +6131,7 @@ body,
 
 .weather-widget-body {
   display: grid;
-  gap: 6px;
+  gap: 5px;
   padding: 8px 10px 9px;
 }
 
@@ -6149,10 +6149,12 @@ body,
 
 .weather-widget__reading {
   display: grid;
+  gap: 3px;
   min-width: 0;
 }
 
-/* 图标与温度成一组，城市与天气描述占右侧一栏，不再把温度推到卡片右缘。 */
+/* 图标与温度靠左、地点与天气贴右缘，中间留白是有意的两极构图；
+   通栏详情行（体感/风力/湿度）填掉原先右侧那 106px 塌陷区。 */
 .weather-widget__current {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
@@ -6165,7 +6167,14 @@ body,
   display: flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* 温度与天气状态同列堆叠，读作一个「当前读数」，不再让「阴」去依附地名。 */
+.weather-widget__reading-stack {
+  display: grid;
+  gap: 0;
   min-width: 0;
 }
 
@@ -6174,24 +6183,27 @@ body,
 .weather-widget__facts {
   display: grid;
   gap: 1px;
+  align-self: start;
+  justify-items: end;
   min-width: 0;
+  text-align: right;
 }
 
 .weather-widget__icon {
   display: block;
-  width: 44px;
-  height: 44px;
-  flex: 0 0 44px;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
   animation: weather-widget-icon-float 3.6s ease-in-out infinite;
 }
 
 .weather-widget__temperature {
   margin: 0;
   color: var(--text);
-  font-size: 28px;
+  font-size: 36px;
   font-weight: 600;
-  line-height: 1.1;
-  letter-spacing: -0.4px;
+  line-height: 1.02;
+  letter-spacing: -0.8px;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
@@ -6204,15 +6216,55 @@ body,
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* 顶对齐后再下沉半个行高，让地名与大数字读作同一水平线上的两端，
+     而不是浮在右上角。 */
+  padding-top: 9px;
 }
 
 .weather-widget__description {
   overflow: hidden;
   color: var(--colorful-text-secondary);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1.35;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 三级参数行：标签弱、数值强，靠竖向分隔线切成三格，读作仪表面板的一行读数，
+   而不是句子里的点号。仍是单行截断 + title 兜底，字段缺失时整行隐藏不撑高。 */
+.weather-widget__details {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.weather-widget__detail {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  min-width: 0;
+  padding: 0 7px;
+  border-left: 1px solid #e6e6e6;
+}
+
+.weather-widget__detail:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.weather-widget__detail-label {
+  color: var(--colorful-text-secondary);
+  font-size: 11px;
+}
+
+.weather-widget__detail-value {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 /* 状态、旧数据标记与来源共用一条 11px 元信息行；状态文案最长（定位说明句），
@@ -6256,6 +6308,13 @@ body,
   color: var(--colorful-green);
   text-decoration: underline;
   text-underline-offset: 2px;
+}
+
+/* 四级：状态栏里的时间戳。跟在来源之后、不另起语义，读作「组件上次刷新」，
+   而不是「API 响应字段」。 */
+.weather-widget__time {
+  margin-left: 5px;
+  font-variant-numeric: tabular-nums;
 }
 
 .weather-widget__retry {

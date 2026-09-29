@@ -270,6 +270,11 @@
 			firstValue(condition.weatherDesc)?.value?.trim();
 		if (!description) return null;
 
+		const optionalNumber = (raw) => {
+			const n = Number(raw);
+			return Number.isFinite(n) ? n : null;
+		};
+
 		return {
 			cityName,
 			temperatureC,
@@ -277,6 +282,10 @@
 			description,
 			conditionCode: String(condition.weatherCode ?? ""),
 			icon: conditionIcon(description, code),
+			// 体感、风力、湿度来自同一个 j1 响应，不额外请求任何上游。
+			feelsLikeC: optionalNumber(condition.FeelsLikeC),
+			windSpeedKmph: optionalNumber(condition.windspeedKmph),
+			humidityPercent: optionalNumber(condition.humidity),
 			fetchedAt,
 			source: "wttr.in",
 			sourceUrl: WTTR_URL,
