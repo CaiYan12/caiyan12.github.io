@@ -22,6 +22,7 @@ src/constants/github-projects.json.tmp
 
 # environment variables
 .env
+.env.local
 .env.production
 
 # macOS-specific files
