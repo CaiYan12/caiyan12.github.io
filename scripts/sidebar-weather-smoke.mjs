@@ -34,7 +34,7 @@ function wttrFixture({
 				weatherCode: String(weatherCode),
 				weatherDesc: [{ value: "Clear" }],
 				...(withDetails
-					? { FeelsLikeC: "35", windspeedKmph: "6", humidity: "63" }
+					? { FeelsLikeC: "35", windspeedKmph: "11", humidity: "75" }
 					: {}),
 			},
 		],
@@ -889,7 +889,7 @@ try {
 			!shape.hidden &&
 				shape.children === 3 &&
 				shape.rules === 2 &&
-				cells.join("|") === "体感 35°|风 6 km/h|湿度 63%",
+				cells.join("|") === "体感 35°|风速 11 km/h|湿度 75%",
 			JSON.stringify({ cells, ...shape }),
 		);
 		check(
@@ -944,6 +944,58 @@ try {
 				!truncation.rowOverflowX &&
 				truncation.docOverflow <= 0,
 			JSON.stringify(truncation),
+		);
+		// 图标是站内固定资产：每格恰好一枚、路径逐字来自站主给的参考图、
+		// 颜色必须走 currentColor（硬写 fill 会让它不随 hover 变色，也说明改动者动了几何）。
+		const iconFacts = await row.evaluate((el) =>
+			[...el.children].map((cell) => {
+				const svg = cell.querySelector("svg");
+				return {
+					count: cell.querySelectorAll("svg").length,
+					paths: svg ? svg.querySelectorAll("path").length : 0,
+					firstD: svg
+						? svg
+								.querySelector("path")
+								.getAttribute("d")
+								.slice(0, 22)
+						: "",
+					hardFill: svg
+						? [...svg.querySelectorAll("path")].some((q) =>
+								q.hasAttribute("fill"),
+							)
+						: true,
+					svgFill: svg ? getComputedStyle(svg).fill : "",
+					hiddenFromAT: svg
+						? svg.getAttribute("aria-hidden") === "true"
+						: false,
+					order: cell.firstElementChild === svg,
+				};
+			}),
+		);
+		check(
+			"三格各带一枚图标、排在标签前、路径无硬写 fill 且继承 currentColor",
+			iconFacts.length === 3 &&
+				iconFacts.every(
+					(f) =>
+						f.count === 1 &&
+						f.paths >= 1 &&
+						!f.hardFill &&
+						f.order &&
+						f.hiddenFromAT &&
+						/rgb\(102, 102, 102\)/u.test(f.svgFill),
+				) &&
+				iconFacts[0].firstD === "M442.65472 514.78528c-" &&
+				iconFacts[1].firstD === "M352 0h64v1024h-64z" &&
+				iconFacts[2].firstD === "M512 874.666667c-34.13",
+			JSON.stringify(iconFacts),
+		);
+		check(
+			"常见读数下没有任何一格被截断（图标+标签+数值必须装得下）",
+			(await row.evaluate((el) =>
+				[...el.querySelectorAll(".weather-widget__detail-value")].every(
+					(v) => v.scrollWidth <= v.clientWidth + 1,
+				),
+			)) === true,
 		);
 		check(
 			"参数行仍是单行（三格顶边一致且行高不超过约一行）",
