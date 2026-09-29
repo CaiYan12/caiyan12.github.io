@@ -87,6 +87,16 @@ const myhkwScriptAttributes: Record<string, string> = {
 		<meta name="twitter:image" content={ogImageUrl} />
 		<meta name="generator" content={Astro.generator} />
 		<slot name="head" />
+		<script
+			is:inline
+			data-swup-ignore-script=""
+			src="/weather/weather-service.js"
+			defer></script>
+		<script
+			is:inline
+			data-swup-ignore-script=""
+			src="/weather/sidebar-widget.js"
+			defer></script>
 	</head>
 	<body class="transition-swup-fade">
 		<!-- 键盘可访问性：Tab 首焦点跳过导航直达正文（样式见 global.css .skip-link） -->

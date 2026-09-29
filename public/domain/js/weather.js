@@ -1,144 +1,132 @@
 (() => {
-    const weatherInfo = document.getElementById("weather-info");
+	if (!window.WeatherCapsule) return;
 
-    if (!weatherInfo) return;
+	const weatherService = window.WeatherCapsule.weatherService;
+	window.domainWeatherService = Object.freeze({
+		fetchCurrentWeather(coords, fetchImpl) {
+			if (!fetchImpl) return weatherService.fetchCurrentWeather(coords);
+			const testService = window.WeatherCapsule.createWeatherService({
+				fetchImpl,
+			});
+			return testService.fetchCurrentWeather(coords);
+		},
+	});
 
-    const weatherNames = {
-        113: "晴",
-        116: "局部多云",
-        119: "多云",
-        122: "阴",
-        143: "雾",
-        176: "附近有阵雨",
-        200: "雷暴",
-        248: "雾",
-        260: "冻雾",
-        263: "小雨",
-        266: "小雨",
-        293: "小雨",
-        296: "小雨",
-        299: "中雨",
-        302: "中雨",
-        305: "大雨",
-        308: "大雨",
-        323: "小雪",
-        326: "小雪",
-        329: "中雪",
-        332: "中雪",
-        335: "大雪",
-        338: "大雪",
-        353: "阵雨",
-        356: "阵雨",
-        359: "暴雨",
-        386: "雷阵雨",
-        389: "雷阵雨",
-        392: "雷雪",
-        395: "雷雪",
-    };
+	const weatherInfo = document.getElementById("weather-info");
+	if (!weatherInfo) return;
 
-    const weatherIcons = {
-        113: "☀️",
-        116: "🌤️",
-        119: "☁️",
-        122: "☁️",
-        143: "🌫️",
-        176: "🌦️",
-        200: "⛈️",
-        248: "🌫️",
-        260: "🌫️",
-        263: "🌦️",
-        266: "🌧️",
-        293: "🌦️",
-        296: "🌧️",
-        299: "🌧️",
-        302: "🌧️",
-        305: "🌧️",
-        308: "🌧️",
-        323: "🌨️",
-        326: "🌨️",
-        329: "🌨️",
-        332: "❄️",
-        335: "❄️",
-        338: "❄️",
-        353: "🌦️",
-        356: "🌧️",
-        359: "🌧️",
-        386: "⛈️",
-        389: "⛈️",
-        392: "🌨️",
-        395: "❄️",
-    };
+	weatherInfo.style.whiteSpace = "normal";
+	weatherInfo.style.overflow = "visible";
+	weatherInfo.style.textOverflow = "clip";
 
-    const firstValue = (value) => (Array.isArray(value) ? value[0] : null);
+	function appendRetryButton() {
+		weatherInfo.append(document.createTextNode(" "));
+		const button = document.createElement("button");
+		button.type = "button";
+		button.className = "weather-retry";
+		button.setAttribute("aria-label", "重试获取附近天气");
+		button.textContent = "[重试]";
+		button.style.font = "inherit";
+		button.style.lineHeight = "inherit";
+		button.style.color = "inherit";
+		button.style.background = "none";
+		button.style.border = "0";
+		button.style.padding = "0";
+		button.style.textDecoration = "underline";
+		button.style.cursor = "pointer";
+		button.addEventListener("click", loadWeather);
+		weatherInfo.append(button);
+	}
 
-    const weatherQuery = "?format=j1&lang=zh";
+	function setStatus(message, { retry = false } = {}) {
+		weatherInfo.replaceChildren(document.createTextNode(message));
+		if (retry) appendRetryButton();
+	}
 
-    const fetchWeather = (url) =>
-        fetch(url)
-            .then((response) => {
-                if (!response.ok) throw new Error(`weather request failed: ${response.status}`);
-                return response.json();
-            })
-            .then((payload) => {
-                const data = payload.data || payload;
-                const condition = firstValue(data.current_condition);
-                const area = firstValue(data.nearest_area);
+	function appendLink(label, href) {
+		const link = document.createElement("a");
+		link.href = href;
+		link.target = "_blank";
+		link.rel = "noopener noreferrer";
+		link.textContent = label;
+		link.style.color = "inherit";
+		link.style.textDecoration = "underline";
+		link.style.overflowWrap = "anywhere";
+		weatherInfo.append(link);
+	}
 
-                if (!condition) throw new Error("weather response has no current condition");
+	function showWeather(weather) {
+		weatherInfo.replaceChildren(
+			document.createTextNode(
+				`附近：${weather.cityName || "未知城市"} ${weather.temperatureC}°C `,
+			),
+		);
+		const icon = document.createElement("span");
+		icon.setAttribute("aria-hidden", "true");
+		icon.textContent = weather.icon;
+		weatherInfo.append(
+			icon,
+			document.createTextNode(` ${weather.description}`),
+		);
 
-                const city = firstValue(area?.areaName)?.value?.trim();
-                const temperature = condition.temp_C?.trim();
-                const code = Number(condition.weatherCode);
-                const description =
-                    weatherNames[code] ||
-                    firstValue(condition.lang_zh)?.value?.trim() ||
-                    firstValue(condition.weatherDesc)?.value?.trim() ||
-                    "天气情况";
-                const icon = weatherIcons[code] || "🌡️";
+		if (weather.stale) {
+			weatherInfo.append(document.createTextNode("（旧数据）"));
+		}
+		weatherInfo.append(document.createTextNode("（来源："));
+		appendLink(weather.source, weather.sourceUrl);
+		weatherInfo.append(document.createTextNode("）"));
+		if (weather.stale) appendRetryButton();
+	}
 
-                weatherInfo.textContent = [
-                    icon,
-                    city,
-                    temperature && `${temperature}°C`,
-                    description,
-                ]
-                    .filter(Boolean)
-                    .join(" ");
-            });
+	function weatherErrorMessage(error) {
+		if (error?.reason === "timeout") {
+			return "天气请求超过 8 秒上限，请稍后重试。";
+		}
+		return "天气服务暂不可用，请重试。";
+	}
 
-    const loadIpWeather = () => {
-        weatherInfo.textContent = "正在使用网络位置…";
-        return fetchWeather(`https://wttr.in/${weatherQuery}`);
-    };
+	function showGeolocationError(error) {
+		const messages = {
+			1: "定位权限已拒绝，请在浏览器设置中允许定位后重试。",
+			2: "当前位置暂不可用，请重试。",
+			3: "定位超时，请重试。",
+		};
+		setStatus(messages[error.code] || "定位失败，请重试。", {
+			retry: true,
+		});
+	}
 
-    const useIpWeather = () =>
-        loadIpWeather().catch(() => {
-            weatherInfo.textContent = "天气暂时不可用";
-            weatherInfo.title = "天气服务暂时不可用，请稍后再试";
-        });
+	function loadWeather() {
+		if (!navigator.geolocation) {
+			setStatus("当前浏览器不支持定位，无法查询附近天气。");
+			return;
+		}
 
-    const loadWeather = () => {
-        weatherInfo.textContent = "正在请求位置…";
+		setStatus("正在获取位置，用于显示附近天气…");
+		navigator.geolocation.getCurrentPosition(
+			({ coords }) => {
+				setStatus("正在读取天气…");
+				weatherService
+					.fetchCurrentWeather(coords)
+					.then(showWeather)
+					.catch((error) => {
+						const stale =
+							weatherService.getLastSuccessfulWeather(coords);
+						if (stale) {
+							showWeather(stale);
+							return;
+						}
+						setStatus(weatherErrorMessage(error), { retry: true });
+					});
+			},
+			showGeolocationError,
+			{
+				enableHighAccuracy: false,
+				timeout: 8000,
+				maximumAge: 0,
+			},
+		);
+	}
 
-        if (!navigator.geolocation) {
-            return useIpWeather();
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            ({ coords }) => {
-                weatherInfo.textContent = "正在读取天气…";
-                fetchWeather(
-                    `https://wttr.in/${coords.latitude},${coords.longitude}${weatherQuery}`,
-                ).catch(useIpWeather);
-            },
-            useIpWeather,
-            {
-                enableHighAccuracy: true,
-                timeout: 8000,
-                maximumAge: 300000,
-            },
-        );
-    };
-
-    loadWeather();
+	loadWeather();
 })();

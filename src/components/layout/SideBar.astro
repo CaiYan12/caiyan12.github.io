@@ -1,5 +1,6 @@
 ---
 import WidgetBlogger from "../widget/WidgetBlogger.astro";
+import WidgetWeather from "../widget/WidgetWeather.astro";
 import WidgetSearch from "../widget/WidgetSearch.astro";
 import WidgetSort from "../widget/WidgetSort.astro";
 import WidgetTag from "../widget/WidgetTag.astro";
@@ -15,6 +16,7 @@ import { sidebarConfig } from "../../config";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const widgetMap: Record<string, any> = {
+	weather: WidgetWeather,
 	blogger: WidgetBlogger,
 	search: WidgetSearch,
 	sort: WidgetSort,

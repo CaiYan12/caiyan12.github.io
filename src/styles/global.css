@@ -6069,3 +6069,216 @@ body,
   background: var(--primary);
   color: #fff;
 }
+
+/* 主站桌面附近天气：沿用 .widget 外框，只安排胶囊自身内容。 */
+.mobile-weather-slot {
+  display: none;
+}
+
+.widget:has(.weather-widget-body) {
+  background: #fff;
+}
+
+@media screen and (max-width: 768px) {
+  .mobile-weather-slot {
+    display: block;
+    margin-bottom: 10px;
+  }
+}
+
+.weather-widget__refresh {
+  display: inline-flex;
+  float: right;
+  align-items: center;
+  gap: 4px;
+  height: 30px;
+  margin: 0 0 0 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--colorful-text-secondary);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  line-height: 30px;
+  text-indent: 0;
+}
+
+.weather-widget__refresh[hidden] {
+  display: none !important;
+}
+
+.weather-widget__refresh:hover,
+.weather-widget__refresh:focus-visible {
+  color: var(--colorful-green);
+}
+
+.weather-widget__refresh:focus-visible,
+.weather-widget__retry:focus-visible,
+.weather-widget__source:focus-visible {
+  outline: 2px solid var(--colorful-green);
+  outline-offset: 2px;
+}
+
+.weather-widget__refresh:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.weather-widget-body {
+  display: grid;
+  gap: 4px;
+  padding: 9px 10px 10px;
+}
+
+.weather-widget-body [hidden] {
+  display: none !important;
+}
+
+.weather-widget__status,
+.weather-widget__city,
+.weather-widget__description,
+.weather-widget__stale,
+.weather-widget__source-line {
+  margin: 0;
+}
+
+.weather-widget__status {
+  color: var(--colorful-text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.weather-widget__reading {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.weather-widget__current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+}
+
+.weather-widget__icon {
+  display: block;
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  overflow: visible;
+  color: var(--colorful-green);
+  animation: weather-widget-icon-float 3.6s ease-in-out infinite;
+}
+
+.weather-widget__icon [data-weather-part] {
+  display: none;
+}
+
+.weather-widget__icon[data-weather-kind="clear"] [data-weather-part="clear"],
+.weather-widget__icon[data-weather-kind="cloud"] [data-weather-part="cloud"],
+.weather-widget__icon[data-weather-kind="rain"] [data-weather-part="rain"],
+.weather-widget__icon[data-weather-kind="snow"] [data-weather-part="snow"],
+.weather-widget__icon[data-weather-kind="storm"] [data-weather-part="storm"],
+.weather-widget__icon[data-weather-kind="fog"] [data-weather-part="fog"] {
+  display: block;
+}
+
+.weather-widget__temperature {
+  margin: 0;
+  color: var(--text);
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.weather-widget__city {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.weather-widget__description {
+  color: var(--colorful-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.weather-widget__stale {
+  color: #8a6200;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.weather-widget__source-line {
+  color: var(--colorful-text-secondary);
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.weather-widget__source {
+  color: var(--colorful-green);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.weather-widget__retry {
+  justify-self: start;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--colorful-green);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+@keyframes weather-widget-icon-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -1.5px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .weather-widget__icon {
+    transition: transform 220ms cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .widget:has(.weather-widget-body):hover .weather-widget__icon {
+    transform: translateY(-2px) rotate(-3deg) scale(1.08);
+  }
+}
+
+@keyframes weather-widget-icon-float-reduced {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -0.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .weather-widget__icon {
+    animation-name: weather-widget-icon-float-reduced;
+    animation-duration: 6s;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
+  .widget:has(.weather-widget-body):hover .weather-widget__icon {
+    transform: translateY(-1px) scale(1.03);
+  }
+}

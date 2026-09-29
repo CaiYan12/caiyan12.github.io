@@ -1933,7 +1933,7 @@ const SHIFT = (g) =>
 	DE(g.idle.pw ?? 0, g.hot.pw ?? 0) +
 	DE(g.idle.psw ?? 0, g.hot.psw ?? 0);
 
-const side = await hoverProbe("/", "#sidebar a:not(.blogtags a)");
+const side = await hoverProbe("/", "#sidebar a:not(.blogtags a):visible");
 check(
 	"票 20：侧栏链接悬停时出现下划线（不只靠变色）",
 	!side.missing && !ULINE(side.idle.deco) && ULINE(side.hot.deco),

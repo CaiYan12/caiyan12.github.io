@@ -98,6 +98,7 @@ export const navBarConfig = {
 export const sidebarConfig = {
 	/** 依次显示的小部件（hotlog 仅首页显示、related 仅文章页显示，由各自组件按 URL 判断） */
 	widgets: [
+		"weather",
 		"blogger",
 		"search",
 		"sort",
