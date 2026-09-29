@@ -325,8 +325,18 @@
 		);
 	}
 
+	// 天气是侧栏的子元件。窄屏下 #sidebar 只是 `display: none`、节点仍在 DOM 里，
+	// 若照旧初始化，手机访客会为了一张永不显示的卡被弹定位授权、并发出一条
+	// 永远看不见的天气请求。因此挂载点必须随侧栏的实际渲染与否取舍。
+	const sidebarIsRendered = (card) => {
+		const sidebar = card.closest("#sidebar");
+		return !sidebar || getComputedStyle(sidebar).display !== "none";
+	};
+
 	function pageReady() {
-		const cards = [...document.querySelectorAll("[data-weather-widget]")];
+		const cards = [
+			...document.querySelectorAll("[data-weather-widget]"),
+		].filter(sidebarIsRendered);
 		if (cards.length === 0) return;
 		cards.forEach(bindCard);
 		renderAll();

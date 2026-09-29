@@ -2,7 +2,6 @@
 import Layout from "./Layout.astro";
 import Navbar from "../components/layout/Navbar.astro";
 import SideBar from "../components/layout/SideBar.astro";
-import WidgetWeather from "../components/widget/WidgetWeather.astro";
 import Footer from "../components/layout/Footer.astro";
 import MMenu from "../components/layout/MMenu.astro";
 import BackToTop from "../components/control/BackToTop.astro";
@@ -45,13 +44,6 @@ const { showSidebar = true, searchIndex = false } = Astro.props;
 				     放在 #content 之外，是因为卡片下划线按 `.post-list:nth-child` 取色，
 				     任何进入 #content 的前置兄弟节点都会让整排色带位移。 -->
 				<slot name="heading" />
-				{
-					showSidebar && (
-						<div class="mobile-weather-slot">
-							<WidgetWeather />
-						</div>
-					)
-				}
 				<div id="container">
 					<div id="anitOut"></div>
 					<div

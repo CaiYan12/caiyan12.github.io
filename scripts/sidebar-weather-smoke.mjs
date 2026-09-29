@@ -179,7 +179,7 @@ try {
 		const exists =
 			(await widget.count()) === 1 &&
 			(await widget.isVisible()) &&
-			(await page.locator("[data-weather-widget]").count()) === 2;
+			(await page.locator("[data-weather-widget]").count()) === 1;
 		check(`${route.name}桌面侧栏有且仅有一个天气胶囊`, exists);
 		if (!exists) continue;
 
@@ -307,7 +307,7 @@ try {
 		check(
 			"769px 天气胶囊仍可见于桌面侧栏",
 			count === 1 &&
-				(await page.locator("[data-weather-widget]").count()) === 2 &&
+				(await page.locator("[data-weather-widget]").count()) === 1 &&
 				(await page
 					.locator("#sidebar [data-weather-widget]")
 					.isVisible()),
@@ -853,6 +853,111 @@ try {
 		);
 		blockedSink.checkClean(`${blockedScript} 被阻止`);
 	}
+	// 天气是侧栏的子元件：侧栏不渲染的窄屏必须一张卡都不存在，
+	// 也不许产生定位授权或天气请求（站主 2026-09-29 裁定撤除手机挂载）。
+	for (const width of [390, 768]) {
+		const page = await newPage({ width });
+		const requests = await routeWttr(page, (route) =>
+			fulfillJson(route, wttrFixture()),
+		);
+		await page.goto(base + "/", { waitUntil: "load" });
+		// window.WeatherSidebarWidget 只在 widget 脚本跑完 init 后才出现，
+		// 用它当确定性信号，不用固定毫秒等待。
+		await page.waitForFunction(
+			() => Boolean(window.WeatherSidebarWidget),
+			undefined,
+			{ timeout: 15000 },
+		);
+		const absent = await page.evaluate(() => ({
+			widgets: document.querySelectorAll("[data-weather-widget]").length,
+			visible: [
+				...document.querySelectorAll("[data-weather-widget]"),
+			].filter((el) => el.offsetParent !== null).length,
+			inContent: document.querySelectorAll(
+				"#content [data-weather-widget]",
+			).length,
+			geo: window.__weatherGeolocationCalls?.length ?? 0,
+		}));
+		check(
+			`${width}px 竖屏没有任何可见天气卡，且不定位不请求`,
+			absent.visible === 0 &&
+				absent.inContent === 0 &&
+				absent.geo === 0 &&
+				requests.length === 0,
+			JSON.stringify({ ...absent, requests: requests.length }),
+		);
+	}
+
+	// 桌面侧栏：Swup 切页与整页刷新的会话语义（原手机烟测独有，撤挂载后搬到这里）
+	{
+		const page = await newPage();
+		const requests = await routeWttr(page, (route) =>
+			fulfillJson(route, wttrFixture()),
+		);
+		await page.goto(base + "/", { waitUntil: "load" });
+		await waitForState(page, "success");
+		await page.waitForFunction(() => Boolean(window.swup), undefined, {
+			timeout: 20000,
+		});
+		const link = page
+			.locator('#content .post-list a[href^="/posts/"]:visible')
+			.first();
+		const articlePath = await link.getAttribute("href");
+		await link.click();
+		await page.waitForFunction(
+			(path) => location.pathname === path,
+			articlePath,
+			{ timeout: 15000 },
+		);
+		await waitForState(page, "success");
+		check(
+			"Swup 切到文章页不重复定位、不重复请求天气",
+			(await page.evaluate(
+				() => window.__weatherGeolocationCalls.length,
+			)) === 1 &&
+				requests.length === 1 &&
+				(await page
+					.locator("#sidebar [data-weather-widget]")
+					.count()) === 1,
+			JSON.stringify(requests),
+		);
+		await page.goBack();
+		await page.waitForFunction(() => location.pathname === "/", undefined, {
+			timeout: 15000,
+		});
+		await waitForState(page, "success");
+		check(
+			"Swup 返回首页仍复用同一会话，不新增定位或请求",
+			(await page.evaluate(
+				() => window.__weatherGeolocationCalls.length,
+			)) === 1 && requests.length === 1,
+		);
+		await page.reload({ waitUntil: "load" });
+		await waitForState(page, "success");
+		check(
+			"整页刷新重新定位并以同一粗化坐标重新请求一轮天气",
+			// 页面内计数是 addInitScript 注入的，整页刷新会归零重计；
+			// 跨刷新累计的只有 Node 侧的 requests，所以这里是「新文档定位 1 次 + 累计 2 轮请求」。
+			(await page.evaluate(
+				() => window.__weatherGeolocationCalls.length,
+			)) === 1 &&
+				requests.length === 2 &&
+				requests[1].url === WTTR_WEATHER_URL,
+			JSON.stringify(requests),
+		);
+		check(
+			"天气卡只存在于侧栏，#content 内无天气节点（文章卡色带不受影响）",
+			(await page.evaluate(
+				() =>
+					document.querySelectorAll("#content [data-weather-widget]")
+						.length,
+			)) === 0 &&
+				(await page
+					.locator("#sidebar [data-weather-widget]")
+					.count()) === 1,
+		);
+	}
+
 	// 通栏参数行：体感 / 风 / 湿度，全部来自同一份 j1 响应，不额外请求上游。
 	{
 		const page = await newPage();

@@ -6071,23 +6071,8 @@ body,
 }
 
 /* 主站桌面附近天气：沿用 .widget 外框，只安排胶囊自身内容。 */
-.mobile-weather-slot {
-  /* 与 #sidebar 同源的继承上下文：小部件标题图标不自行设色，
-     手机挂载若跟随 #main 会算成 #000/13px，与侧栏那枚不一致。 */
-  display: none;
-  color: var(--colorful-text-secondary);
-  font-size: 12px;
-}
-
 .widget:has(.weather-widget-body) {
   background: #fff;
-}
-
-@media screen and (max-width: 768px) {
-  .mobile-weather-slot {
-    display: block;
-    margin-bottom: 10px;
-  }
 }
 
 .weather-widget__refresh {
