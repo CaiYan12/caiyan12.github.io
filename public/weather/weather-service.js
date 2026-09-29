@@ -130,6 +130,98 @@
 		};
 	}
 
+	// 中国境内的城市名由本地目录解析：wttr 的 nearest_area 是村镇级站点
+	// （实测深圳返回 "Dills Corner"、佛山返回 "Tainan"、南昌返回 "Nanchangfu"），
+	// 直接显示既不是访客所在的城市，也永远是拉丁写法。
+	const CHINA_BOX = {
+		latMin: 3.6,
+		latMax: 53.6,
+		lonMin: 73.4,
+		lonMax: 135.1,
+	};
+	const CITY_MATCH_MAX_KM = 120;
+	// 键取 wttr 的 region（省级）原样返回值；未命中再试 country，用于港澳。
+	const provinceNames = {
+		Anhui: "安徽",
+		Beijing: "北京",
+		Chongqing: "重庆",
+		Fujian: "福建",
+		Gansu: "甘肃",
+		Guangdong: "广东",
+		Guangxi: "广西",
+		Guizhou: "贵州",
+		Hainan: "海南",
+		Hebei: "河北",
+		Heilongjiang: "黑龙江",
+		Henan: "河南",
+		"Hong Kong": "香港",
+		Hubei: "湖北",
+		Hunan: "湖南",
+		Jiangsu: "江苏",
+		Jiangxi: "江西",
+		Jilin: "吉林",
+		Liaoning: "辽宁",
+		Macao: "澳门",
+		Macau: "澳门",
+		"Nei Mongol": "内蒙古",
+		Ningxia: "宁夏",
+		Qinghai: "青海",
+		Shaanxi: "陕西",
+		Shandong: "山东",
+		Shanghai: "上海",
+		Shanxi: "山西",
+		Sichuan: "四川",
+		Tianjin: "天津",
+		Xizang: "西藏",
+		Xinjiang: "新疆",
+		Yunnan: "云南",
+		Zhejiang: "浙江",
+		"T'ai-wan": "台湾",
+		Taiwan: "台湾",
+	};
+
+	function nearestCatalogCity(lat, lon) {
+		const catalog = window.__weatherCityCatalog;
+		if (!Array.isArray(catalog) || catalog.length === 0) return null;
+		const cosLat = Math.cos((lat * Math.PI) / 180);
+		let best = null;
+		let bestSq = Infinity;
+		for (const entry of catalog) {
+			const dLat = entry[1] - lat;
+			const dLon = (entry[2] - lon) * cosLat;
+			const sq = dLat * dLat + dLon * dLon;
+			if (sq < bestSq) {
+				bestSq = sq;
+				best = entry;
+			}
+		}
+		if (!best) return null;
+		return Math.sqrt(bestSq) * 111.32 <= CITY_MATCH_MAX_KM ? best[0] : null;
+	}
+
+	function resolveCityName(coordinates, areaName, region, country) {
+		const lat = Number(coordinates?.lat);
+		const lon = Number(coordinates?.lon);
+		const inChina =
+			Number.isFinite(lat) &&
+			Number.isFinite(lon) &&
+			lat >= CHINA_BOX.latMin &&
+			lat <= CHINA_BOX.latMax &&
+			lon >= CHINA_BOX.lonMin &&
+			lon <= CHINA_BOX.lonMax;
+		if (inChina) {
+			const city = nearestCatalogCity(lat, lon);
+			if (city) return city;
+			// 省名优先；港澳在这份数据里 region 为空，只有 country 认得出来。
+			// 绝不拿 areaName 当键——它是村镇名，撞上省名就是错标。
+			for (const label of [region, country]) {
+				const key = String(label || "").trim();
+				if (key && provinceNames[key]) return provinceNames[key];
+			}
+		}
+		return areaName || null;
+	}
+
 	function conditionIcon(condition, code) {
 		if (weatherIcons[Number(code)]) {
 			return weatherIcons[Number(code)];
@@ -147,13 +239,19 @@
 		return Array.isArray(value) ? value[0] : null;
 	}
 
-	function normalizeWttr(payload, fetchedAt) {
+	function normalizeWttr(payload, fetchedAt, coordinates) {
 		const data = payload?.data || payload;
 		const condition = firstValue(data?.current_condition);
 		const area = firstValue(data?.nearest_area);
 		if (!condition) return null;
 
-		const cityName = firstValue(area?.areaName)?.value?.trim() || null;
+		const areaName = firstValue(area?.areaName)?.value?.trim() || null;
+		const cityName = resolveCityName(
+			coordinates,
+			areaName,
+			firstValue(area?.region)?.value?.trim(),
+			firstValue(area?.country)?.value?.trim(),
+		);
 		const rawTemperature = condition.temp_C;
 		if (
 			(typeof rawTemperature !== "number" &&
@@ -241,6 +339,7 @@
 				const weather = normalizeWttr(
 					payload,
 					new Date(now()).toISOString(),
+					coordinates,
 				);
 				if (!weather) throw new Error("weather response was invalid");
 				return remember(weather, coordinates);
@@ -277,5 +376,6 @@
 	window.WeatherCapsule = Object.freeze({
 		createWeatherService,
 		weatherService,
+		resolveCityName,
 	});
 })();

@@ -399,7 +399,7 @@ try {
 			mountState.every(
 				(item) =>
 					item.state === "success" &&
-					item.city === "附近：Beijing" &&
+					item.city === "北京" &&
 					item.temperature === "24°C" &&
 					item.description === "晴" &&
 					item.iconKind === "clear" &&
@@ -417,8 +417,8 @@ try {
 		() => window.WeatherSidebarWidget?.state?.weather ?? null,
 	);
 	check(
-		"会话共享的规范化结果就是 wttr.in 单源的值（Beijing 24°C 晴 ☀️，且无 attributions 字段）",
-		sessionWeather?.cityName === "Beijing" &&
+		"会话共享的规范化结果就是 wttr.in 单源的值（北京 24°C 晴 ☀️，且无 attributions 字段）",
+		sessionWeather?.cityName === "北京" &&
 			sessionWeather?.temperatureC === 24 &&
 			sessionWeather?.condition === "晴" &&
 			sessionWeather?.description === "晴" &&
@@ -752,7 +752,7 @@ try {
 			)) === "1" &&
 			timeoutRequests.strayCalls.length === 0 &&
 			afterRetry.state === "success" &&
-			afterRetry.city === "附近：Beijing" &&
+			afterRetry.city === "北京" &&
 			afterRetry.temperature === "24°C" &&
 			afterRetry.staleHidden === true &&
 			afterRetry.sourceAnchors === 1,

@@ -148,7 +148,8 @@
 		const roundedTemperature = Number.isInteger(temperature)
 			? String(temperature)
 			: String(Number(temperature.toFixed(1)));
-		const cityText = `附近：${state.weather.cityName || "未知城市"}`;
+		// 卡片标题已经写着「附近天气」，行内不再重复「附近：」——那 39px 是城市名的命。
+		const cityText = state.weather.cityName || "未知城市";
 		const conditionText =
 			state.weather.condition ||
 			state.weather.description ||

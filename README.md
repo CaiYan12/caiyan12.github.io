@@ -40,6 +40,7 @@ pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl）
 pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/六字段搜索/SVG 封面，node --test）
 pnpm test:weather  # 天气服务与 /domain/ 天气离线单测（注入 fetchImpl，不访问真实网络）
 pnpm qa:weather-mainland  # wttr.in 大陆直连实测（须由大陆网络执行，NET/WINDOW 两栏必填；-- --site 量真实访客路径）
+pnpm build:weather-cities  # 再生成中文地级市目录 public/weather/city-catalog.js（需网络，不进 pnpm build）
 pnpm test:fancybox  # 灯箱 Smoke（关闭不跳位/焦点归还/定位到文章位置/下载新标签页/中文文案，需先 pnpm build && pnpm preview；默认 4322，FANCY_BASE_URL 传**站点根**）
 pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scripts/tailwind.config）
 ```
@@ -57,11 +58,12 @@ pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scr
 规格见 [`docs/plans/2026-09-28-weather-capsule-spec.md`](docs/plans/2026-09-28-weather-capsule-spec.md)（镜像 [issue #60](https://github.com/CaiYan12/caiyan12.github.io/issues/60)），实施与验收台账见 [`docs/plans/2026-09-28-weather-capsule-plan.md`](docs/plans/2026-09-28-weather-capsule-plan.md)（子票 [#61](https://github.com/CaiYan12/caiyan12.github.io/issues/61) · [#65](https://github.com/CaiYan12/caiyan12.github.io/issues/65) · [#66](https://github.com/CaiYan12/caiyan12.github.io/issues/66) · [#67](https://github.com/CaiYan12/caiyan12.github.io/issues/67)；#62/#63/#64 是已作废的和风代理票）。
 
 - 三处共用一套逻辑：主站桌面侧栏**首位**（在「吐槽水军」上面）、768px 及以下主内容前的手机挂载、`/domain/` 终端天气行。数据契约在 `public/weather/weather-service.js`，卡片渲染在 `public/weather/sidebar-widget.js`，终端行在 `public/domain/js/weather.js`；两枚卡片在同一标签页共用一份会话。
-- 数据来源**只有 `wttr.in`**：浏览器定位取访客位置 → 坐标粗化到一位小数（约 10 公里）→ GET `https://wttr.in/<lat>,<lon>?format=j1&lang=zh`，一次请求同时拿到附近城市与当前天气。**绝不按 IP 推断位置**。
+- 数据来源**只有 `wttr.in`**：浏览器定位取访客位置 → 坐标粗化到一位小数（约 10 公里）→ GET `https://wttr.in/<lat>,<lon>?format=j1&lang=zh`，一次请求拿到温度与天气。**绝不按 IP 推断位置**。
 - 关键行为：普通精度、`maximumAge: 0`、定位与天气各 8 秒超时；整页刷新才重新定位，站内 Swup 切页复用结果；成功态刷新只重取天气、不重新定位；`/domain/` 保持终端版式、成功态没有刷新按钮、失败才出现 `[重试]`；无 JS 或脚本加载失败时保留静态说明，绝不残留「天气加载中…」。
 - 失败文案按原因区分（拒绝授权／定位超时／浏览器不支持／服务不可用），浏览器完全不支持定位时不放无效的重试按钮。城市名中文优先、拿不到时显示原始地名（wttr.in 对北京坐标实测返回英文 `Beijing`）。
 - 天气文字与图标靠 `public/weather/weather-service.js` 里的两张码表（`weatherNames` / `weatherIcons`），**内容对齐上游 wttr.in 官方简中表**（`share/translations/zh-cn/conditions.txt`，46 码，核对于 2026-09-29），另加本站自译的 `149 烟霾`——上游对 149 也没有译名，实测 `lang=zh-cn` 仍返回英文 `Smoky haze`，所以本地表不能省。`pnpm test:weather` 里的 `scripts/weather-codes.test.mjs` 逐码锁住这份覆盖（缺码、译名漂移、掉默认温度计图标都会翻红）。上游加码时，改那张表 + 补这里的 UPSTREAM_CODES。
-- 验证：`pnpm test:weather` 跑离线单测；`pnpm build && pnpm preview --port 4322` 后跑 `node scripts/sidebar-weather-smoke.mjs`、`node scripts/domain-weather-smoke.mjs`、`node scripts/mobile-weather-smoke.mjs`（假定位到北京公开坐标，响应走 `page.route()` 桩，不访问真实 wttr.in）。
+- **城市名不取 wttr 的返回值**：实测 80 个中国坐标返回 80 个互不相同的村镇级拉丁站名（深圳是 `Dills Corner`、南昌是 `Nanchangfu`），既不是访客所在城市也不是中文。改为本地两层解析：坐标距某地级市中心 ≤120 公里用官方中文市名，境内但半径外用 wttr 的 `region` 经省表译成中文省名，境外保持原名。地级市目录 `public/weather/city-catalog.js`（367 城、gzip 3.8KB，数据源为阿里 DataV 行政区划图集）由 `pnpm build:weather-cities` 显式再生成，不参与 `pnpm build`。侧栏卡片的城市行不再重复「附近：」前缀（标题已是「附近天气」，那 39 像素是长名字的命），`/domain/` 终端行保留前缀。
+- 验证：`pnpm test:weather` 跑离线单测（25 项，含逐码覆盖与逐 `region` 中文覆盖两道门）；`pnpm build && pnpm preview --port 4322` 后跑 `node scripts/sidebar-weather-smoke.mjs`（49 项）、`node scripts/domain-weather-smoke.mjs`（29 项）、`node scripts/mobile-weather-smoke.mjs`（26 项）（假定位到北京公开坐标，响应走 `page.route()` 桩，不访问真实 wttr.in）。
 - **为什么不是和风**：2026-09-28 曾按「大陆访客更快」的假设试验和风天气 + Cloudflare Worker 代理，本机全链路通过（凭据 DPAPI 隔离、45,000 次/月硬截流、真实浏览器 20/20）。但 GitHub Pages 没有可保管密钥的服务端，而站长没有 Cloudflare 账号、没有服务器、没有备案域名，`workers.dev` 默认域名又**不在 Cloudflare 中国大陆网络上**，大陆可达性从未实测——成本确定、收益未证实，故 2026-09-29 裁决搁置。代理实现整体留档在 [`docs/history/weather-qweather-proxy/`](docs/history/weather-qweather-proxy/README.md)（含搁置原因、已验证边界、配额账本终值与重启步骤），不参与任何构建与测试；决策过程全文见 [`docs/history/qweather-settingup-history-sessions.md`](docs/history/qweather-settingup-history-sessions.md)。
 - 遗留未测：`wttr.in` 自身在大陆网络下的可达性与耗时**同样没有实测**。测量工具已就位——在大陆网络（如手机热点）下执行 `pnpm qa:weather-mainland`，先用 `$env:NET` / `$env:WINDOW` 标好运营商与时段，输出的读数表粘贴到 issue #67；缺这两栏的读数按 PLAN 判据不算大陆链路证据，本机境外出口的读数只能当旁证。
 

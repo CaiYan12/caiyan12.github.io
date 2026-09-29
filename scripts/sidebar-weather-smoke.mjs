@@ -196,7 +196,7 @@ try {
 		check(
 			`${route.name}显示附近城市、温度、天气描述与获取时间`,
 			(await widget.locator("[data-weather-city]").innerText()) ===
-				"附近：Beijing" &&
+				"北京" &&
 				(await widget
 					.locator("[data-weather-temperature]")
 					.innerText()) === "24°C" &&

@@ -36,6 +36,7 @@ async function openPage({
 	first = "success",
 	later = "success",
 	javascript = true,
+	coords = { latitude: 39.9042, longitude: 116.4074 },
 } = {}) {
 	const context = await browser.newContext({
 		viewport: { width: 390, height: 844 },
@@ -46,7 +47,7 @@ async function openPage({
 	harness.attach(page);
 	if (javascript) {
 		await page.addInitScript(
-			({ firstAction, laterAction }) => {
+			({ firstAction, laterAction, position }) => {
 				window.__weatherGeolocationCalls = [];
 				if (firstAction === "unsupported") {
 					Object.defineProperty(navigator, "geolocation", {
@@ -66,12 +67,7 @@ async function openPage({
 									: laterAction;
 							queueMicrotask(() => {
 								if (action === "success") {
-									success({
-										coords: {
-											latitude: 39.9042,
-											longitude: 116.4074,
-										},
-									});
+									success({ coords: position });
 								} else if (action === "denied") {
 									error({ code: 1 });
 								} else if (action === "unavailable") {
@@ -84,7 +80,7 @@ async function openPage({
 					},
 				});
 			},
-			{ firstAction: first, laterAction: later },
+			{ firstAction: first, laterAction: later, position: coords },
 		);
 	}
 	return page;
@@ -115,10 +111,10 @@ try {
 	);
 	await success.goto(baseUrl, { waitUntil: "load" });
 	const weather = success.locator("#weather-info");
-	await weather.getByText("Beijing").waitFor({ timeout: 10000 });
+	await weather.getByText("北京").waitFor({ timeout: 10000 });
 	check(
 		"授权定位后显示附近城市、真实摄氏温度与天气说明",
-		/附近：Beijing 24°C .*晴/u.test(await weather.innerText()),
+		/附近：北京 24°C .*晴/u.test(await weather.innerText()),
 	);
 	check(
 		"来源链接标明 wttr.in 且指向 wttr.in",
@@ -183,7 +179,23 @@ try {
 		(await weather.getByRole("button").count()) === 0,
 	);
 
-	const unknownCity = await openPage();
+	// wttr 不给城市名时：境内由本地目录补出中文市名，境外才落到「未知城市」
+	const rescued = await openPage();
+	const rescuedWttr = await routeWttr(rescued, (route) =>
+		fulfillJson(route, wttrFixture("")),
+	);
+	await rescued.goto(baseUrl, { waitUntil: "load" });
+	const rescuedWeather = rescued.locator("#weather-info");
+	await rescuedWeather.getByText("北京").waitFor({ timeout: 10000 });
+	check(
+		"wttr 缺城市名时境内由目录补出中文市名，天气照常显示",
+		/附近：北京 24°C .*晴/u.test(await rescuedWeather.innerText()) &&
+			rescuedWttr.length === 1,
+	);
+
+	const unknownCity = await openPage({
+		coords: { latitude: 51.5074, longitude: -0.1278 },
+	});
 	const unknownWttr = await routeWttr(unknownCity, (route) =>
 		fulfillJson(route, wttrFixture("")),
 	);
@@ -191,7 +203,7 @@ try {
 	const unknownWeather = unknownCity.locator("#weather-info");
 	await unknownWeather.getByText("未知城市").waitFor({ timeout: 10000 });
 	check(
-		"城市缺失时仍显示真实天气并标为未知城市",
+		"境外且 wttr 缺城市名时仍显示真实天气并标为未知城市",
 		/未知城市 24°C .*晴/u.test(await unknownWeather.innerText()) &&
 			unknownWttr.length === 1,
 	);
@@ -218,7 +230,7 @@ try {
 	);
 	await retryButton.focus();
 	await retry.keyboard.press("Enter");
-	await retry.locator("#weather-info").getByText("Beijing").waitFor({
+	await retry.locator("#weather-info").getByText("北京").waitFor({
 		timeout: 10000,
 	});
 	check(
