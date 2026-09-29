@@ -1,0 +1,23 @@
+{
+	"name": "weather-proxy",
+	"main": "./src/index.js",
+	"compatibility_date": "2026-09-28",
+	"workers_dev": true,
+	"vars": {
+		"WEATHER_ALLOWED_ORIGINS": "https://caiyan12.github.io,http://localhost:4321,http://127.0.0.1:4321,http://localhost:4322,http://127.0.0.1:4322",
+	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "WEATHER_QUOTA",
+				"class_name": "QuotaDO",
+			},
+		],
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": ["QuotaDO"],
+		},
+	],
+}

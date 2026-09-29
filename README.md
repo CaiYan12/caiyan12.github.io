@@ -38,6 +38,7 @@ pnpm test:contributions  # 贡献日历数据脚本离线单测（注入 fetchIm
 pnpm test:site-stats  # Giscus 同步单测（fetchImpl/输出路径全注入，无需令牌，已串入 build 链头部）
 pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl）
 pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/六字段搜索/SVG 封面，node --test）
+pnpm test:weather  # 天气服务与 /domain/ 天气离线单测（注入 fetchImpl，不访问真实网络）
 pnpm test:fancybox  # 灯箱 Smoke（关闭不跳位/焦点归还/定位到文章位置/下载新标签页/中文文案，需先 pnpm build && pnpm preview；默认 4322，FANCY_BASE_URL 传**站点根**）
 pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scripts/tailwind.config）
 ```
@@ -49,6 +50,18 @@ pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scr
 - **测试环境（本地）**：`http://localhost:4321`（`pnpm dev`；`pnpm preview` 验证构建产物，可 `--port` 指定端口）。交互、布局、Swup 切页的验证都在本地做。已知 dev 限制：Pio 看板娘因 Svelte hydration 报错不渲染，验证 Pio 必须 `pnpm build && pnpm preview`。
 - **生产环境（线上）**：`https://caiyan12.github.io/`（GitHub Actions 自动部署）。验证部署是否生效：看响应头 `Last-Modified` 是否晚于部署完成时间，或下载 Actions run 的 `github-pages` artifact；Fastly 边缘缓存 HTML `max-age=600` 且缓存键不含查询串（加 `?cb=` 破缓存无效），刚部署完可能最多等 10 分钟才看到新版本。
 - 两环境行为差异须留意：dev 下评论 mock 数据（`src/data/comments.ts` 等）与生产构建期同步的真实数据不同；Mermaid、OG 图等一切以生产实测为准。
+
+## 附近天气胶囊（wttr.in 单源）
+
+规格见 [`docs/plans/2026-09-28-weather-capsule-spec.md`](docs/plans/2026-09-28-weather-capsule-spec.md)（镜像 [issue #60](https://github.com/CaiYan12/caiyan12.github.io/issues/60)），实施与验收台账见 [`docs/plans/2026-09-28-weather-capsule-plan.md`](docs/plans/2026-09-28-weather-capsule-plan.md)（子票 [#61](https://github.com/CaiYan12/caiyan12.github.io/issues/61) · [#65](https://github.com/CaiYan12/caiyan12.github.io/issues/65) · [#66](https://github.com/CaiYan12/caiyan12.github.io/issues/66) · [#67](https://github.com/CaiYan12/caiyan12.github.io/issues/67)；#62/#63/#64 是已作废的和风代理票）。
+
+- 三处共用一套逻辑：主站桌面侧栏**首位**（在「吐槽水军」上面）、768px 及以下主内容前的手机挂载、`/domain/` 终端天气行。数据契约在 `public/weather/weather-service.js`，卡片渲染在 `public/weather/sidebar-widget.js`，终端行在 `public/domain/js/weather.js`；两枚卡片在同一标签页共用一份会话。
+- 数据来源**只有 `wttr.in`**：浏览器定位取访客位置 → 坐标粗化到一位小数（约 10 公里）→ GET `https://wttr.in/<lat>,<lon>?format=j1&lang=zh`，一次请求同时拿到附近城市与当前天气。**绝不按 IP 推断位置**。
+- 关键行为：普通精度、`maximumAge: 0`、定位与天气各 8 秒超时；整页刷新才重新定位，站内 Swup 切页复用结果；成功态刷新只重取天气、不重新定位；`/domain/` 保持终端版式、成功态没有刷新按钮、失败才出现 `[重试]`；无 JS 或脚本加载失败时保留静态说明，绝不残留「天气加载中…」。
+- 失败文案按原因区分（拒绝授权／定位超时／浏览器不支持／服务不可用），浏览器完全不支持定位时不放无效的重试按钮。城市名中文优先、拿不到时显示原始地名（wttr.in 对北京坐标实测返回英文 `Beijing`）。
+- 验证：`pnpm test:weather` 跑离线单测；`pnpm build && pnpm preview --port 4322` 后跑 `node scripts/sidebar-weather-smoke.mjs`、`node scripts/domain-weather-smoke.mjs`、`node scripts/mobile-weather-smoke.mjs`（假定位到北京公开坐标，响应走 `page.route()` 桩，不访问真实 wttr.in）。
+- **为什么不是和风**：2026-09-28 曾按「大陆访客更快」的假设试验和风天气 + Cloudflare Worker 代理，本机全链路通过（凭据 DPAPI 隔离、45,000 次/月硬截流、真实浏览器 20/20）。但 GitHub Pages 没有可保管密钥的服务端，而站长没有 Cloudflare 账号、没有服务器、没有备案域名，`workers.dev` 默认域名又**不在 Cloudflare 中国大陆网络上**，大陆可达性从未实测——成本确定、收益未证实，故 2026-09-29 裁决搁置。代理实现整体留档在 [`docs/history/weather-qweather-proxy/`](docs/history/weather-qweather-proxy/README.md)（含搁置原因、已验证边界、配额账本终值与重启步骤），不参与任何构建与测试；决策过程全文见 [`docs/history/qweather-settingup-history-sessions.md`](docs/history/qweather-settingup-history-sessions.md)。
+- 遗留未测：`wttr.in` 自身在大陆网络下的可达性与耗时**同样没有实测**。
 
 ## CI 构建与部署
 
