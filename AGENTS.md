@@ -425,7 +425,7 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 - 标题栏必须走 `WidgetLayout.astro` 的 `icon` prop（现用 `fa-cloud`），它自带 `.widget > .icon` 的 47×30 盒、`border-right 1px #dadada` 分割线与 `#fbfbfb` 底——**不要另写头部样式或为此下载新图标**。`.mobile-weather-slot` 需显式带 `color: var(--colorful-text-secondary); font-size: 12px`，因为它挂在 `#main`（`#000/13px`）下而非 `#sidebar`（`#666/12px`）下，标题图标不设色就会两枚不一致。
 - 卡片内所有外部数据文本（城市、天气描述、状态文案）**一律 `white-space: nowrap` + `text-overflow: ellipsis` + `title` 兜底**，不许改回 `overflow-wrap`（换行会撑高卡片）。实测四组极端值 × 两档视口卡片高度恒 114.9px、零横向溢出。加进元信息行的新文案要先量它与同行邻居的总宽——旧数据态那句曾被截掉 126px，正解是缩短文案而不是放宽布局。
 - 回归：`pnpm test:weather`（15 项，含三条码表覆盖门）；`pnpm build && pnpm preview --port 4322` 后 `node scripts/sidebar-weather-smoke.mjs`（49 项）、`node scripts/domain-weather-smoke.mjs`（28 项）、`node scripts/mobile-weather-smoke.mjs`（26 项），三者用 `page.route()` 桩不访问真实 wttr.in。**env 形态不同**：`SIDEBAR_WEATHER_BASE_URL` / `MOBILE_WEATHER_BASE_URL` 传**站点根**，`DOMAIN_WEATHER_BASE_URL` 传**完整页面地址**（`…/domain/`），传错表现为「等不到 `#weather-info`」的假失败。
-- 未测：wttr.in 自身在中国大陆网络下的可达性与耗时（搁置和风并没有让这道门消失，只是被测对象换成了现生产源）。
+- 未测：wttr.in 自身在中国大陆网络下的可达性与耗时（搁置和风并没有让这道门消失，只是被测对象换成了现生产源）。测量工具 `pnpm qa:weather-mainland`（`scripts/wttr-mainland-check.mjs`，默认 10 次 API 直连，`-- --site` 量首页侧栏卡片整路径，`-- --with-egress` 记录出口归属）；跑前必须用 `$env:NET` / `$env:WINDOW` 标注运营商与时段，缺这两栏的读数按 PLAN 票 07 判据**不算大陆链路证据**，本工具在境外出口机上的读数只是旁证。两处实现约束：每次采样新开浏览器上下文（HTTP 缓存按上下文隔离，复用同一上下文会量到 1ms 级假耗时，实测过）；`--site` 模式注入北京粗坐标，**所以它不测浏览器定位**，不要把它的读数当成定位可用性证据。跨域无 `Timing-Allow-Origin` 时 `transferSize` 恒报 0，不能拿来判缓存命中。
 
 ### 工具函数
 `src/utils/content-utils.ts`：`getSortedPosts`（置顶+时间）、`getTagList`、`getCategoryList`、`getArchiveList`（YYYY年M月）、`getHotPosts`（hotness*100+comments 排序）、`getNeighbors`（前一篇/后一篇）、`getCover`（frontmatter image 兜底 hash 选 `public/images/random/tb1-40.jpg`）

@@ -39,6 +39,7 @@ pnpm test:site-stats  # Giscus 同步单测（fetchImpl/输出路径全注入，
 pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl）
 pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/六字段搜索/SVG 封面，node --test）
 pnpm test:weather  # 天气服务与 /domain/ 天气离线单测（注入 fetchImpl，不访问真实网络）
+pnpm qa:weather-mainland  # wttr.in 大陆直连实测（须由大陆网络执行，NET/WINDOW 两栏必填；-- --site 量真实访客路径）
 pnpm test:fancybox  # 灯箱 Smoke（关闭不跳位/焦点归还/定位到文章位置/下载新标签页/中文文案，需先 pnpm build && pnpm preview；默认 4322，FANCY_BASE_URL 传**站点根**）
 pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scripts/tailwind.config）
 ```
@@ -62,7 +63,7 @@ pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scr
 - 天气文字与图标靠 `public/weather/weather-service.js` 里的两张码表（`weatherNames` / `weatherIcons`），**内容对齐上游 wttr.in 官方简中表**（`share/translations/zh-cn/conditions.txt`，46 码，核对于 2026-09-29），另加本站自译的 `149 烟霾`——上游对 149 也没有译名，实测 `lang=zh-cn` 仍返回英文 `Smoky haze`，所以本地表不能省。`pnpm test:weather` 里的 `scripts/weather-codes.test.mjs` 逐码锁住这份覆盖（缺码、译名漂移、掉默认温度计图标都会翻红）。上游加码时，改那张表 + 补这里的 UPSTREAM_CODES。
 - 验证：`pnpm test:weather` 跑离线单测；`pnpm build && pnpm preview --port 4322` 后跑 `node scripts/sidebar-weather-smoke.mjs`、`node scripts/domain-weather-smoke.mjs`、`node scripts/mobile-weather-smoke.mjs`（假定位到北京公开坐标，响应走 `page.route()` 桩，不访问真实 wttr.in）。
 - **为什么不是和风**：2026-09-28 曾按「大陆访客更快」的假设试验和风天气 + Cloudflare Worker 代理，本机全链路通过（凭据 DPAPI 隔离、45,000 次/月硬截流、真实浏览器 20/20）。但 GitHub Pages 没有可保管密钥的服务端，而站长没有 Cloudflare 账号、没有服务器、没有备案域名，`workers.dev` 默认域名又**不在 Cloudflare 中国大陆网络上**，大陆可达性从未实测——成本确定、收益未证实，故 2026-09-29 裁决搁置。代理实现整体留档在 [`docs/history/weather-qweather-proxy/`](docs/history/weather-qweather-proxy/README.md)（含搁置原因、已验证边界、配额账本终值与重启步骤），不参与任何构建与测试；决策过程全文见 [`docs/history/qweather-settingup-history-sessions.md`](docs/history/qweather-settingup-history-sessions.md)。
-- 遗留未测：`wttr.in` 自身在大陆网络下的可达性与耗时**同样没有实测**。
+- 遗留未测：`wttr.in` 自身在大陆网络下的可达性与耗时**同样没有实测**。测量工具已就位——在大陆网络（如手机热点）下执行 `pnpm qa:weather-mainland`，先用 `$env:NET` / `$env:WINDOW` 标好运营商与时段，输出的读数表粘贴到 issue #67；缺这两栏的读数按 PLAN 判据不算大陆链路证据，本机境外出口的读数只能当旁证。
 
 ## CI 构建与部署
 

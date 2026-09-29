@@ -146,14 +146,43 @@ const cards = await page.evaluate((sel) => {
 	});
 }, ".post-list .post-header h2");
 const truncated = cards.filter((c) => c.scrollWidth > c.clientWidth + 1);
+// 原判据钉的是「今天恰好有一张标题长到被裁」，那是内容属性不是规则属性：
+// 2026-09-28 起首页六张卡最长 592px < 771px 容器，判据因此恒红，而 CSS 契约完好。
+// 改为主动注入超长标题，验证规则本身仍然生效（溢出被裁、不换行、行高不变、省略号在位）。
+const injected = await page.evaluate((sel) => {
+	const el = document.querySelector(sel);
+	const target = el.querySelector("a") ?? el;
+	const original = target.textContent;
+	const restingHeight = Math.round(el.getBoundingClientRect().height);
+	target.textContent = "超长标题验证省略号是否仍然生效".repeat(12);
+	const cs = getComputedStyle(el);
+	const during = {
+		scrollWidth: el.scrollWidth,
+		clientWidth: el.clientWidth,
+		height: Math.round(el.getBoundingClientRect().height),
+		whiteSpace: cs.whiteSpace,
+		overflow: cs.overflow,
+		textOverflow: cs.textOverflow,
+	};
+	target.textContent = original;
+	return {
+		...during,
+		restingHeight,
+		restoredHeight: Math.round(el.getBoundingClientRect().height),
+	};
+}, ".post-list .post-header h2");
 check(
-	"首页列表卡标题仍单行省略（ADR-0003 故意分叉）",
-	cards.length > 0 &&
-		truncated.length > 0 &&
-		truncated.every((c) => c.lineBoxes === 1 && c.whiteSpace === "nowrap"),
-	`${truncated.length}/${cards.length} 张被裁切：${truncated
-		.map((c) => `${c.text}(${c.scrollWidth}/${c.clientWidth})`)
-		.join(", ")}`,
+	"列表卡标题保持单行省略：注入超长标题后被裁且行高不变（ADR-0003 故意分叉）",
+	injected.scrollWidth > injected.clientWidth + 1 &&
+		injected.whiteSpace === "nowrap" &&
+		injected.overflow === "hidden" &&
+		injected.textOverflow === "ellipsis" &&
+		injected.height === injected.restingHeight &&
+		injected.restoredHeight === injected.restingHeight,
+	JSON.stringify(injected),
+);
+console.log(
+	`NOTE  当前首页标题裁切数（内容相关，不作判据）: ${truncated.length}/${cards.length}`,
 );
 checkClean("票 01");
 
@@ -1244,10 +1273,18 @@ check(
 		cal390.wdFS === "10px",
 	`1440=${cal1440?.monthFS}/${cal1440?.wdFS} 681=${cal681?.monthFS} 390=${cal390?.monthFS}/${cal390?.wdFS}`,
 );
+// 月标数量取决于滚动 53 周窗口落在哪几天：跨到第 13 个日历月时就是 13 枚
+// （2026-09-29 线上实测三档均为 13，外溢与裁切都是 0）。所以这里只锁「至少覆盖
+// 12 个月且不多于窗口可能产生的 13 个」，真正要钉的死线是外溢与裁切。
 check(
 	"字号上调后周几列不外溢、月份行不被裁切（三档）",
 	[cal1440, cal681, cal390].every(
-		(c) => c && c.wdSpill <= 0 && c.clipWorst <= 0.5 && c.labels === 12,
+		(c) =>
+			c &&
+			c.wdSpill <= 0 &&
+			c.clipWorst <= 0.5 &&
+			c.labels >= 12 &&
+			c.labels <= 13,
 	),
 	[cal1440, cal681, cal390]
 		.map((c) =>
