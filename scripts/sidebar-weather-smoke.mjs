@@ -865,27 +865,88 @@ try {
 		const cells = (
 			await row.locator(".weather-widget__detail").allInnerTexts()
 		).map((t) => t.replace(/\s+/gu, " ").trim());
-		const shape = await row.evaluate((el) => ({
-			hidden: el.hidden,
-			children: el.children.length,
-			clipped: el.scrollWidth > el.clientWidth + 1,
-			rules: [...el.children]
-				.map((c) => getComputedStyle(c).borderLeftWidth)
-				.filter((w) => w !== "0px").length,
-			overflow: document.documentElement.scrollWidth - window.innerWidth,
-		}));
+		const shape = await row.evaluate((el) => {
+			const box = el.getBoundingClientRect();
+			const kids = [...el.children];
+			const last = kids.at(-1).getBoundingClientRect();
+			return {
+				hidden: el.hidden,
+				children: el.children.length,
+				rules: kids
+					.map((c) => getComputedStyle(c).borderLeftWidth)
+					.filter((w) => w !== "0px").length,
+				// 铺满判据用几何：最后一格右缘到行右缘的剩余距离。
+				// 绝不能用 scrollWidth>clientWidth —— 不溢出的块级元素两者恒等，
+				// 那样量不出右侧死区（上一版就栽在这里）。
+				deadRight: +(box.right - last.right).toFixed(1),
+				rowWidth: +box.width.toFixed(1),
+				overflow:
+					document.documentElement.scrollWidth - window.innerWidth,
+			};
+		});
 		check(
-			"参数行三格文案正确、只有两条分隔线且不被截断",
+			"参数行三格文案正确且只有两条分隔线",
 			!shape.hidden &&
 				shape.children === 3 &&
 				shape.rules === 2 &&
-				!shape.clipped &&
-				shape.overflow <= 0 &&
 				cells.join("|") === "体感 35°|风 6 km/h|湿度 63%",
 			JSON.stringify({ cells, ...shape }),
 		);
 		check(
-			"参数行仍是单行且卡片高度不随字段出现而换行",
+			"参数行三格铺满整行，右侧死区不超过 1px",
+			shape.deadRight <= 1 && shape.overflow <= 0,
+			JSON.stringify(shape),
+		);
+		// 注入远超单格宽度的值，验证截断真的咬住：值元素自身溢出、
+		// 计算值为 ellipsis，且行的宽高一格都不许变。
+		const truncation = await row.evaluate(async (el) => {
+			const box = el.getBoundingClientRect();
+			const before = {
+				w: +box.width.toFixed(1),
+				h: +box.height.toFixed(1),
+			};
+			const target = el.children[1].querySelector(
+				".weather-widget__detail-value",
+			);
+			const restore = target.textContent;
+			const cs = getComputedStyle(target);
+			target.textContent = "999999 km/h 999999 km/h 999999 km/h";
+			await new Promise((r) => requestAnimationFrame(() => r()));
+			const after = el.getBoundingClientRect();
+			const result = {
+				valueOverflows: target.scrollWidth > target.clientWidth + 1,
+				textOverflow: cs.textOverflow,
+				wrap: cs.whiteSpace,
+				hidden: cs.overflowX,
+				after: {
+					w: +after.width.toFixed(1),
+					h: +after.height.toFixed(1),
+				},
+				rowOverflowX: el.scrollWidth > el.clientWidth + 1,
+				docOverflow:
+					document.documentElement.scrollWidth - window.innerWidth,
+			};
+			target.textContent = restore;
+			return { before, ...result };
+		});
+		check(
+			"注入超长值后截断生效：值元素自身溢出且按省略号裁切",
+			truncation.valueOverflows &&
+				truncation.textOverflow === "ellipsis" &&
+				truncation.wrap === "nowrap" &&
+				truncation.hidden === "hidden",
+			JSON.stringify(truncation),
+		);
+		check(
+			"超长值不改变行的宽高、也不撑破行或文档",
+			truncation.after.w === truncation.before.w &&
+				truncation.after.h === truncation.before.h &&
+				!truncation.rowOverflowX &&
+				truncation.docOverflow <= 0,
+			JSON.stringify(truncation),
+		);
+		check(
+			"参数行仍是单行（三格顶边一致且行高不超过约一行）",
 			(await row.evaluate((el) => {
 				const tops = [...el.children].map((c) =>
 					Math.round(c.getBoundingClientRect().top),

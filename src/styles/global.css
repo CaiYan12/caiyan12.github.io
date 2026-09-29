@@ -6232,17 +6232,19 @@ body,
 }
 
 /* 三级参数行：标签弱、数值强，靠竖向分隔线切成三格，读作仪表面板的一行读数，
-   而不是句子里的点号。仍是单行截断 + title 兜底，字段缺失时整行隐藏不撑高。 */
+   而不是句子里的点号。三格等宽**铺满整行**——左聚成一小串会在右侧留下与
+   主视觉同源的塌陷区。用 grid-auto-flow: column + 1fr 自动列，字段缺失时
+   剩下几格照样铺满，不会因为少一个字段又开一个洞。 */
 .weather-widget__details {
-  display: flex;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   align-items: baseline;
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
 }
 
 .weather-widget__detail {
-  display: inline-flex;
+  display: flex;
   align-items: baseline;
   gap: 3px;
   min-width: 0;
@@ -6256,15 +6258,22 @@ body,
 }
 
 .weather-widget__detail-label {
+  flex: 0 0 auto;
   color: var(--colorful-text-secondary);
   font-size: 11px;
 }
 
+/* 截断落在数值上：标签是站内固定文案，只有数值可能被上游撑长。 */
 .weather-widget__detail-value {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   color: var(--text);
   font-size: 12px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 状态、旧数据标记与来源共用一条 11px 元信息行；状态文案最长（定位说明句），
