@@ -260,7 +260,7 @@
   color: inherit;
   text-decoration: none;
   /* 整卡可点击：头像等子元素继承手型，不再出现放大指针 */
-  cursor: pointer;
+  cursor: var(--cursor-link);
 }
 
 .post-context .github-card-link:hover {

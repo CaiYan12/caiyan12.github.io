@@ -79,7 +79,10 @@
 .site-modal__confirm {
   border: 0;
   font: inherit;
-  cursor: pointer;
+  /* 回退值不能省：/domain/ 是独立壳，只引 nutssss.css 与本文件（`src/pages/domain/index.astro`
+     以 ?url 导入），拿不到 global.css 的 `--cursor-link`——没有 fallback 时这条声明会在
+     计算值阶段失效，那两个按钮会连系统手型都丢掉，退回 body 的 auto */
+  cursor: var(--cursor-link, pointer);
   transition:
     background-color 160ms ease,
     color 160ms ease,
