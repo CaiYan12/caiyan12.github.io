@@ -344,6 +344,7 @@
 	}
 
 	window.WeatherSidebarWidget = Object.freeze({ state });
-	document.addEventListener("astro:page-load", pageReady);
+	// 侧栏在 swup 容器内，按主题协议重挂（同 Slideshow / WidgetNewLog）。
+	document.addEventListener("colorful:page:loaded", pageReady);
 	pageReady();
 })();

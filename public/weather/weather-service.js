@@ -216,7 +216,11 @@
 			// 绝不拿 areaName 当键——它是村镇名，撞上省名就是错标。
 			for (const label of [region, country]) {
 				const key = String(label || "").trim();
-				if (key && provinceNames[key]) return provinceNames[key];
+				// 键来自上游 JSON，必须只认自有属性：朴素查表会把 "__proto__"
+				// 之类算作命中并返回原型对象。
+				if (key && Object.hasOwn(provinceNames, key)) {
+					return provinceNames[key];
+				}
 			}
 		}
 		return areaName || null;

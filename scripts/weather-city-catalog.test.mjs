@@ -246,6 +246,21 @@ test("省名逐条对得上（不是「只要中文就行」）", async () => {
 	}
 });
 
+test("region 撞上原型键时不得把原型对象当省名", async () => {
+	const resolve = await resolver();
+	// 省表键来自上游 JSON。朴素查表（provinceNames[key]）会把 "__proto__"
+	// 这类键算作「命中」，返回的是 Object.prototype 而非省名，卡片于是渲染出
+	// "[object Object]"。对抗性或坏数据必须落回 areaName，而不是报错也不是垃圾值。
+	for (const region of ["__proto__", "constructor", "toString", "valueOf"]) {
+		const name = resolve({ lat: "39.0", lon: "97.0" }, "Village", region);
+		assert.equal(
+			name,
+			"Village",
+			`region "${region}" 应落回 areaName（实得 ${typeof name}：${String(name).slice(0, 40)}）`,
+		);
+	}
+});
+
 test("山西与陕西不串（Shanxi 与 Shaanxi 是两个省）", async () => {
 	const resolve = await resolver();
 	assert.equal(resolve({ lat: "39.0", lon: "97.0" }, "X", "Shanxi"), "山西");
