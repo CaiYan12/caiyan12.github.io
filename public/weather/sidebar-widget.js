@@ -160,7 +160,11 @@
 		retry.hidden = !canRetry;
 		retry.textContent =
 			state.status === "location-error" ? "重试定位" : "重试获取附近天气";
-		if (!state.weather) return;
+		if (!state.weather) {
+			// 没有天气就没有壁纸：CSS 靠卡片根上这个属性存在与否决定画不画两层
+			delete card.dataset.weatherKind;
+			return;
+		}
 
 		const temperature = state.weather.temperatureC;
 		const roundedTemperature = Number.isInteger(temperature)
@@ -229,6 +233,8 @@
 		const iconKindName = iconKind(state.weather);
 		icon.dataset.weatherKind = iconKindName;
 		icon.src = `/weather/icons/${iconKindName}.svg`;
+		// 同一份 kind 镜像到卡片根：壁纸层挂在 body 上，需要按天气换图
+		card.dataset.weatherKind = iconKindName;
 		card.querySelector("[data-weather-fetched-at]").textContent =
 			formatTime(state.fetchedAt);
 		const source = card.querySelector("[data-weather-source]");

@@ -874,5 +874,33 @@
 	"public:images/posts/20260927082016/matt-pocock-de-slop-youtube-cover.jpg": {
 		"g": "2221223a2e274e4741",
 		"bytes": 71153
+	},
+	"public:weather/bg/clear.webp": {
+		"g": "6c95c444658c406993",
+		"bytes": 5258
+	},
+	"public:weather/bg/cloud.webp": {
+		"g": "637696184171556c8d",
+		"bytes": 6050
+	},
+	"public:weather/bg/fog.webp": {
+		"g": "7da8c9527591364c5c",
+		"bytes": 7350
+	},
+	"public:weather/bg/overcast.webp": {
+		"g": "adadb3bfb9b8706854",
+		"bytes": 13690
+	},
+	"public:weather/bg/rain.webp": {
+		"g": "7572684c4d47676760",
+		"bytes": 15186
+	},
+	"public:weather/bg/snow.webp": {
+		"g": "e9e3f1ccd5eea69faa",
+		"bytes": 7542
+	},
+	"public:weather/bg/storm.webp": {
+		"g": "8593a23e5563415767",
+		"bytes": 7522
 	}
 }

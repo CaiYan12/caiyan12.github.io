@@ -6130,6 +6130,98 @@ body,
   display: grid;
   gap: 5px;
   padding: 8px 10px 9px;
+  position: relative;
+  /* 局部层叠上下文：没有它，负 z-index 的壁纸层会掉到 .widget 白底之下，永远看不见 */
+  isolation: isolate;
+  /* hover 放大时壁纸不外溢过 1px 边框（#sidebar 的 overflow 在 255px 外，兜不住） */
+  overflow: hidden;
+  /* 壁纸浓度：数值单源，侧栏烟测的对比度像素门读这几个值而不是重抄一遍 */
+  --bg-photo-opacity: 0.3;
+  --bg-photo-opacity-hover: 0.4;
+  --bg-veil-top: 0.45;
+  --bg-veil-bottom: 0.82;
+  /* saturate() 是保亮度变换（L' = L），提饱和几乎不花对比度，所以彩色度白拿 */
+  --bg-photo-saturate: 1.35;
+}
+
+/* 天气壁纸：::before 是照片层、::after 是白纱层，两层都钉在盒子上、
+   用负 z-index 压在 in-flow 文字之下。
+   为什么分两层而不是把「上浓下淡」烘进图片 alpha：主体区实测 253×113 CSS px，
+   cover 后各张只显竖向 59–80%，烘进图片的话挪 background-position 时纱会跟着
+   照片一起跑，文字区就漏了。
+   浓度是站主 2026-09-30 的明确取舍：**牺牲小字 AA 换彩色感**。守住 AA 的上限
+   只有 α=0.275（静止 0.18 / hover 0.26，实测 4.97/4.64），站主看过六档实测曲线后
+   选了本档，代价是静止 4.12:1、hover 3.66:1（AA 小字线 4.5、大字线 3.0）。
+   侧栏烟测的门因此从「≥4.5」改成「静止 ≥4.0 / hover ≥3.5」——它现在守的是
+   这次裁决承诺的下限，不是 AA；要再往浓走属于新的改判，会被这道门当场拦下。 */
+.weather-widget-body[data-weather-kind]::before,
+.weather-widget-body[data-weather-kind]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.weather-widget-body[data-weather-kind]::before {
+  z-index: -2;
+  opacity: var(--bg-photo-opacity);
+  filter: saturate(var(--bg-photo-saturate));
+  background-repeat: no-repeat;
+  background-size: cover;
+  animation: weather-bg-in 220ms cubic-bezier(0.23, 1, 0.32, 1);
+  transition:
+    transform 220ms cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 220ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* 入场只淡照片层，白纱不参与动画：淡入全程文字都被完整护住 */
+.weather-widget-body[data-weather-kind]::after {
+  z-index: -1;
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, var(--bg-veil-top)) 0%, rgba(255, 255, 255, var(--bg-veil-bottom)) 100%);
+}
+
+/* 取景锚点：竖向原高保住了，这里才有可挪的余量把主体留在可见带里。
+   初值按各张图的主体位置给（雨的花苞在正中、阴的荒原在下 1/3 要避开），
+   要调只改百分比，不动尺寸。 */
+.weather-widget-body[data-weather-kind="clear"]::before {
+  background-image: url(/weather/bg/clear.webp);
+  background-position: 50% 14%;
+}
+
+.weather-widget-body[data-weather-kind="cloud"]::before {
+  background-image: url(/weather/bg/cloud.webp);
+  background-position: 50% 34%;
+}
+
+.weather-widget-body[data-weather-kind="overcast"]::before {
+  background-image: url(/weather/bg/overcast.webp);
+  background-position: 50% 24%;
+}
+
+.weather-widget-body[data-weather-kind="rain"]::before {
+  background-image: url(/weather/bg/rain.webp);
+  background-position: 50% 44%;
+}
+
+.weather-widget-body[data-weather-kind="snow"]::before {
+  background-image: url(/weather/bg/snow.webp);
+  background-position: 50% 54%;
+}
+
+.weather-widget-body[data-weather-kind="storm"]::before {
+  background-image: url(/weather/bg/storm.webp);
+  background-position: 50% 38%;
+}
+
+.weather-widget-body[data-weather-kind="fog"]::before {
+  background-image: url(/weather/bg/fog.webp);
+  background-position: 50% 44%;
+}
+
+@keyframes weather-bg-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .weather-widget-body [hidden] {
@@ -6369,6 +6461,13 @@ body,
   .widget:has(.weather-widget-body):hover .weather-widget__icon {
     transform: translateY(-2px) rotate(-3deg) scale(1.08);
   }
+
+  /* 悬停整卡时壁纸变浓并轻微推近。触发面与图标那条同用 .widget:has(...)，
+     所以两处动效是同一个手势一起响应，不是两套判定。 */
+  .widget:has(.weather-widget-body):hover .weather-widget-body[data-weather-kind]::before {
+    opacity: var(--bg-photo-opacity-hover);
+    transform: scale(1.05);
+  }
 }
 
 @keyframes weather-widget-icon-float-reduced {
@@ -6386,10 +6485,20 @@ body,
     animation-name: weather-widget-icon-float-reduced;
     animation-duration: 6s;
   }
+
+  /* 减少动态时不淡入，壁纸直接出现 */
+  .weather-widget-body[data-weather-kind]::before {
+    animation: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) and (hover: hover) and (pointer: fine) {
   .widget:has(.weather-widget-body):hover .weather-widget__icon {
     transform: translateY(-1px) scale(1.03);
+  }
+
+  /* 去位移保浓度变化（站主裁决）：只撤壁纸的 scale，不透明度照常变浓 */
+  .widget:has(.weather-widget-body):hover .weather-widget-body[data-weather-kind]::before {
+    transform: none;
   }
 }

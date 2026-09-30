@@ -16,6 +16,7 @@
 		"smoke:pelican": "node scripts/pelican-bike-smoke.mjs",
 		"qa:weather-mainland": "node scripts/wttr-mainland-check.mjs",
 		"build:weather-cities": "node scripts/build-weather-cities.mjs",
+		"build:weather-bg": "node scripts/build-weather-bg.mjs",
 		"qa:nice-books-geometry": "node scripts/nice-books-geometry-qa.mjs",
 		"audit:ledger": "node scripts/ledger-audit.mjs",
 		"preview": "astro preview",
