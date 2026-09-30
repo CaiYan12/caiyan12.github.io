@@ -42,6 +42,7 @@ pnpm test:weather  # 天气服务与 /domain/ 天气离线单测（注入 fetchI
 pnpm qa:weather-mainland  # wttr.in 大陆直连实测（须由大陆网络执行，NET/WINDOW 两栏必填；-- --site 量真实访客路径）
 pnpm build:weather-cities  # 再生成中文地级市目录 public/weather/city-catalog.js（需网络，不进 pnpm build）
 pnpm build:weather-bg -- --from <原图目录>  # 重导侧栏天气卡的 7 张壁纸 public/weather/bg/<kind>.webp（502px 宽保高，需原图，不进 pnpm build）
+pnpm build:favicon  # 从 public/images/avatar.png 重出 favicon.ico（16/32/48/256 四档 PNG 内嵌）到 public/、public/domain/、public/images/ 三处（显式运行，不进 pnpm build）
 pnpm test:fancybox  # 灯箱 Smoke（关闭不跳位/焦点归还/定位到文章位置/下载新标签页/中文文案，需先 pnpm build && pnpm preview；默认 4322，FANCY_BASE_URL 传**站点根**）
 pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scripts/tailwind.config）
 ```
