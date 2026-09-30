@@ -2,7 +2,7 @@
 
 - 日期：2026-09-28（Asia/Shanghai）；2026-09-29 按站长裁决收敛为 wttr.in 单源
 - 镜像 issue：[#60](https://github.com/CaiYan12/caiyan12.github.io/issues/60)
-- 状态：**已实现、已上线、七票全部结案**（`84fed51` 单源实现 → `249affe` 视觉与图标资产化 → `64a6192` 门禁修复 → `704b820` 中文地名本地解析 → `c302a8b`/`7870d1f`/`e133e11` 版式与参数行 → `f376b29` 严格绑定侧栏；三条工作流全绿，线上 `Last-Modified` 已核对）。最后一道门（wttr.in 大陆直连实测）已由**站长本人在大陆网络实测并裁定通过**，#67 关闭 —— 读数由站长持有、未入仓库，故本台账记录的是站长裁定而非可复核数字。数据源切换议题已关闭（见下「已作废条款」）。
+- 状态：**已实现、已上线、七票全部结案**（子票 #61–#67 全部 CLOSED，父规格 #60 于 2026-09-30 随之一并关闭；收口时 `pnpm audit:ledger docs/plans/2026-09-28-weather-capsule-plan.md` 为 GREEN）（`84fed51` 单源实现 → `249affe` 视觉与图标资产化 → `64a6192` 门禁修复 → `704b820` 中文地名本地解析 → `c302a8b`/`7870d1f`/`e133e11` 版式与参数行 → `f376b29` 严格绑定侧栏；三条工作流全绿，线上 `Last-Modified` 已核对）。最后一道门（wttr.in 大陆直连实测）已由**站长本人在大陆网络实测并裁定通过**，#67 关闭 —— 读数由站长持有、未入仓库，故本台账记录的是站长裁定而非可复核数字。数据源切换议题已关闭（见下「已作废条款」）。
 - 术语：根目录 `CONTEXT.md` 的「访客所在地天气」「附近城市」「天气胶囊」；`/domain/` 继续遵守 `docs/adr/0002-domain-page-independent-shell.md`
 - 范围：主站所有原本显示侧栏的页面，以及 `/domain/` 既有天气行
 - 来源：本轮站主逐题裁决（全文见 `docs/history/qweather-settingup-history-sessions.md`）、`README.md`「附近天气胶囊」、`docs/weather-api-research.md`、当前源码
