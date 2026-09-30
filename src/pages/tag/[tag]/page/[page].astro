@@ -22,7 +22,7 @@ export const getStaticPaths = (async ({ paginate }) => {
 			{
 				params: { tag: name },
 				props: { tags },
-				pageSize: siteConfig.tagPostsPerPage,
+				pageSize: siteConfig.postsPerPage,
 			},
 		),
 	);

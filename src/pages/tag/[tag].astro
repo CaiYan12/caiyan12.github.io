@@ -28,8 +28,8 @@ export async function getStaticPaths() {
 
 const { name, posts, tags } = Astro.props;
 const rootUrl = `/tag/${encodeURIComponent(name)}/`;
-const pages = Math.max(1, Math.ceil(posts.length / siteConfig.tagPostsPerPage));
-const pagePosts = posts.slice(0, siteConfig.tagPostsPerPage);
+const pages = Math.max(1, Math.ceil(posts.length / siteConfig.postsPerPage));
+const pagePosts = posts.slice(0, siteConfig.postsPerPage);
 ---
 
 <MainGridLayout

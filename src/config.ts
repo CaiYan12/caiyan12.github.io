@@ -26,10 +26,8 @@ export const siteConfig = {
 	lang: "zh_CN",
 	/** 建站时间（用于 footer 运行天数） */
 	foundationTime: "2026-01-01",
-	/** 每页文章数 */
+	/** 每页文章数（全部列表页共用：首页、分类、标签、月归档、热门） */
 	postsPerPage: 10,
-	/** 标签页每页文章数（2026-09-30 站长裁定与「每页文章数」对齐，改此处只影响 /tag/xxx/） */
-	tagPostsPerPage: 10,
 	/** 首页摘要字数 */
 	excerptLength: 120,
 	/** 站点备案号（可留空） */
