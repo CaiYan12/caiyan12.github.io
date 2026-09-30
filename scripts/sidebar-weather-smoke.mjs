@@ -24,6 +24,7 @@ function wttrFixture({
 	city = "Beijing",
 	temp_C = "24",
 	weatherCode = "113",
+	lang_zh = null,
 	withDetails = false,
 } = {}) {
 	return {
@@ -33,6 +34,7 @@ function wttrFixture({
 				temp_C: String(temp_C),
 				weatherCode: String(weatherCode),
 				weatherDesc: [{ value: "Clear" }],
+				...(lang_zh ? { lang_zh: [{ value: lang_zh }] } : {}),
 				...(withDetails
 					? { FeelsLikeC: "35", windspeedKmph: "11", humidity: "75" }
 					: {}),
@@ -602,6 +604,9 @@ try {
 
 	// 图标归类判据：wttr 的 2xx 段同时含雷暴(200)、雪(227/230)、雾(248/260) 与
 	// 冻毛毛雨(263–284)，任何按码段判定都会把其中三类归错，故逐码锁住可见图层。
+	// 最后一例不走码表（码 999 表外），用 lang_zh 造一个同时含「雨」与「雾」的描述，
+	// 钉住 AGENTS.md 记的优先级「雾/霾 在 雨 之前」——终端侧那份已由
+	// scripts/weather-service.test.mjs 的同名用例锁住，两边缺任何一边都能悄悄漂回去。
 	{
 		const kindCases = [
 			{ code: "200", kind: "storm" },
@@ -615,12 +620,19 @@ try {
 			{ code: "113", kind: "clear" },
 			{ code: "122", kind: "overcast" },
 			{ code: "119", kind: "cloud" },
+			{ code: "999", lang_zh: "雨雾", kind: "fog" },
 		];
 		const seen = [];
 		for (const kindCase of kindCases) {
 			const page = await newPage();
 			await routeWttr(page, (r) =>
-				fulfillJson(r, wttrFixture({ weatherCode: kindCase.code })),
+				fulfillJson(
+					r,
+					wttrFixture({
+						weatherCode: kindCase.code,
+						lang_zh: kindCase.lang_zh,
+					}),
+				),
 			);
 			await page.goto(base + "/", { waitUntil: "load" });
 			const settled = await page
