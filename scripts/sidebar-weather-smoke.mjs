@@ -411,6 +411,23 @@ try {
 						.locator("[data-weather-temperature]")
 						.innerText()) === "24°C",
 			);
+			const staleBg = await widget.evaluate((el) => ({
+				kind: el.dataset.weatherKind ?? null,
+				content: getComputedStyle(el, "::before").content,
+				filter: getComputedStyle(el, "::before").filter,
+				saturate: getComputedStyle(el)
+					.getPropertyValue("--bg-photo-saturate")
+					.trim(),
+			}));
+			check(
+				"旧数据（stale）态壁纸与成功态一致（不去饱和、不隐藏）",
+				staleBg.kind === "clear" &&
+					staleBg.content === '""' &&
+					// 「不去饱和」是相对 CSS 声明值说的，不等于 none：
+					// 壁纸层本来就带 saturate()，写死 none 会把合法实现判成红
+					staleBg.filter === `saturate(${staleBg.saturate})`,
+				JSON.stringify(staleBg),
+			);
 			check(
 				"成功刷新只重取天气，不再次申请定位",
 				(await page.evaluate(
@@ -654,6 +671,7 @@ try {
 							const widget = document.querySelector(
 								"#sidebar [data-weather-widget]",
 							);
+							const before = getComputedStyle(widget, "::before");
 							return {
 								code,
 								kind: widget.querySelector(
@@ -665,6 +683,12 @@ try {
 								condition: widget.querySelector(
 									"[data-weather-description]",
 								)?.textContent,
+								// 壁纸层挂在卡片根上：kind 必须镜像过来才有 ::before
+								bgKind: widget.dataset.weatherKind ?? null,
+								bgImage: before.backgroundImage,
+								bgPosition: before.backgroundPosition,
+								veil: getComputedStyle(widget, "::after")
+									.backgroundImage,
 							};
 						}, kindCase.code)
 					: { code: kindCase.code, kind: "never-success" },
@@ -681,6 +705,23 @@ try {
 							"/weather/icons/" + kindCases[i].kind + ".svg",
 				),
 			JSON.stringify(seen),
+		);
+		// 12 例归类里 7 个 kind 全部出现过，所以这一条同时覆盖 7 张壁纸
+		check(
+			"7 类天气各自命中对应壁纸，且带可挪动的取景锚点与白纱层",
+			seen.length === kindCases.length &&
+				seen.every(
+					(row, i) =>
+						row.bgKind === kindCases[i].kind &&
+						row.bgImage.includes(
+							`/weather/bg/${kindCases[i].kind}.webp`,
+						) &&
+						/%/.test(row.bgPosition) &&
+						row.veil.includes("linear-gradient"),
+				),
+			JSON.stringify(
+				seen.map((row) => [row.bgKind, row.bgPosition, row.veil]),
+			),
 		);
 		checkClean("天气图标归类判据");
 	}
@@ -1141,6 +1182,171 @@ try {
 			(await row.evaluate(
 				(el) => el.hidden && el.children.length === 0,
 			)) === true,
+		);
+	}
+
+	// 没有天气数据就绝不渲染壁纸层：定位失败与读取中都不该有卡片根上的 kind，
+	// 两层伪元素也必须整个不存在（content: none 而不是透明图）。
+	{
+		const page = await newPage({ geolocationActions: ["denied"] });
+		await page.goto(base + "/", { waitUntil: "load" });
+		await waitForState(page, "location-error");
+		const absent = await page.evaluate(() => {
+			const widget = document.querySelector(
+				"#sidebar [data-weather-widget]",
+			);
+			return {
+				attr: widget.hasAttribute("data-weather-kind"),
+				photo: getComputedStyle(widget, "::before").content,
+				veil: getComputedStyle(widget, "::after").content,
+			};
+		});
+		check(
+			"定位失败态不渲染壁纸层（无 kind 属性、两层伪元素不存在）",
+			!absent.attr && absent.photo === "none" && absent.veil === "none",
+			JSON.stringify(absent),
+		);
+		await page.close();
+	}
+	{
+		const page = await newPage();
+		// 上游直接失败且手上没有旧数据：weather-error 无数据态同样不许有壁纸
+		await routeWttr(page, (route) => route.abort());
+		await page.goto(base + "/", { waitUntil: "load" });
+		await waitForState(page, "weather-error");
+		const absent = await page.evaluate(() => {
+			const widget = document.querySelector(
+				"#sidebar [data-weather-widget]",
+			);
+			return {
+				attr: widget.hasAttribute("data-weather-kind"),
+				photo: getComputedStyle(widget, "::before").content,
+			};
+		});
+		check(
+			"天气请求失败且无旧数据时不渲染壁纸层",
+			!absent.attr && absent.photo === "none",
+			JSON.stringify(absent),
+		);
+		await page.close();
+	}
+
+	// 壁纸 + 白纱的真实像素对比度门：把 7 张壁纸按 CSS 的 cover/锚点画进同源 canvas，
+	// 从「有字的最上一行」往下逐像素算最坏值，静止与 hover 两档分别守住裁决下限。
+	// 浓度值全部从 CSS 自定义属性读，测试里不重抄——改浓度不用改测试。
+	// 只有 --bg-photo-saturate 不进这里：saturate() 是保亮度变换（L' = L），
+	// 对对比度比值无影响，所以门不必读它（实测加饱和前后差 0.01，是 0–255 取整噪声）。
+	{
+		const page = await newPage();
+		await routeWttr(page, (route) =>
+			fulfillJson(route, wttrFixture({ withDetails: true })),
+		);
+		await page.goto(base + "/", { waitUntil: "load" });
+		await waitForState(page, "success");
+		const gate = await page.evaluate(async () => {
+			const kinds = [
+				"clear",
+				"cloud",
+				"overcast",
+				"rain",
+				"snow",
+				"storm",
+				"fog",
+			];
+			const lin = (c) => {
+				c /= 255;
+				return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+			};
+			const lum = (r, g, b) =>
+				0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+			const ratio = (a, b) =>
+				(Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+			const widget = document.querySelector(
+				"#sidebar [data-weather-widget]",
+			);
+			const own = getComputedStyle(widget);
+			const alpha = {
+				rest: Number(own.getPropertyValue("--bg-photo-opacity")),
+				hover: Number(own.getPropertyValue("--bg-photo-opacity-hover")),
+			};
+			const veilTop = Number(own.getPropertyValue("--bg-veil-top"));
+			const veilBottom = Number(own.getPropertyValue("--bg-veil-bottom"));
+			const box = widget.getBoundingClientRect();
+			const W = Math.round(box.width);
+			const H = Math.round(box.height);
+			// 城市名（13px #666）顶在 padding-top 处，是有字的最上一行；它上面是内距
+			const TEXT_TOP = 0.1;
+			const L666 = lum(0x66, 0x66, 0x66);
+			const report = [];
+			for (const kind of kinds) {
+				widget.dataset.weatherKind = kind;
+				const position = getComputedStyle(
+					widget,
+					"::before",
+				).backgroundPosition.match(/(-?[\d.]+)%\s+(-?[\d.]+)%/);
+				const image = new Image();
+				image.src = `/weather/bg/${kind}.webp`;
+				await image.decode();
+				// 复刻 CSS cover：取满盒的缩放比，再按百分比锚点平移
+				const scale = Math.max(
+					W / image.naturalWidth,
+					H / image.naturalHeight,
+				);
+				const dw = image.naturalWidth * scale;
+				const dh = image.naturalHeight * scale;
+				const ox = (Number(position[1]) / 100) * (W - dw);
+				const oy = (Number(position[2]) / 100) * (H - dh);
+				const canvas = document.createElement("canvas");
+				canvas.width = W;
+				canvas.height = H;
+				const ctx = canvas.getContext("2d", {
+					willReadFrequently: true,
+				});
+				ctx.fillStyle = "#fff";
+				ctx.fillRect(0, 0, W, H);
+				ctx.drawImage(image, ox, oy, dw, dh);
+				const { data } = ctx.getImageData(0, 0, W, H);
+				const worstAt = (a) => {
+					let worst = Infinity;
+					for (let y = Math.floor(H * TEXT_TOP); y < H; y++) {
+						const veil =
+							veilTop + ((veilBottom - veilTop) * y) / (H - 1);
+						const keep = 1 - veil;
+						for (let x = 0; x < W; x++) {
+							const o = (y * W + x) * 4;
+							const c =
+								keep * (a * data[o] + (1 - a) * 255) +
+								veil * 255;
+							const g =
+								keep * (a * data[o + 1] + (1 - a) * 255) +
+								veil * 255;
+							const b =
+								keep * (a * data[o + 2] + (1 - a) * 255) +
+								veil * 255;
+							const r = ratio(lum(c, g, b), L666);
+							if (r < worst) worst = r;
+						}
+					}
+					return Number(worst.toFixed(2));
+				};
+				report.push({
+					kind,
+					rest: worstAt(alpha.rest),
+					hover: worstAt(alpha.hover),
+				});
+			}
+			return { alpha, report };
+		});
+		// 站主 2026-09-30 裁决：牺牲小字 AA（4.5:1）换壁纸的彩色感，
+		// 所以这道门守的是那次取舍承诺的下限（静止 4.0 / hover 3.5），不是 AA。
+		// 再往浓走属于新的改判，会被这条当场拦下而不是静默通过。
+		check(
+			`壁纸+白纱合成后小字对比度守住裁决下限（静止 ≥4.0 / hover ≥3.5；静止 α=${gate.alpha.rest} / hover α=${gate.alpha.hover}）：` +
+				gate.report
+					.map((r) => `${r.kind}=${r.rest}/${r.hover}`)
+					.join(" "),
+			gate.report.length === 7 &&
+				gate.report.every((r) => r.rest >= 4.0 && r.hover >= 3.5),
 		);
 	}
 } finally {
