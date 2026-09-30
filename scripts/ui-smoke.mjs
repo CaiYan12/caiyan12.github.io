@@ -2455,6 +2455,83 @@ check(
 			: ""),
 );
 
+// ---------------- 常驻：可点元素必须落在站点自有手型光标上（负扫） ----------------
+// 本站只有两枚光标资源（箭头 default.cur + 手型 link.cur），单源在 global.css 的
+// `--cursor-link` / `--cursor-default`。全局规则 `a, button, input[type=submit]` 只有
+// (0,0,1)，任何类选择器里裸写 `cursor: pointer` 都会以 (0,1,0) 把它静默退回系统手型——
+// 2026-09-30 侧栏「刷新」「换一批」等 10 处就是这么丢的，且 CSS 源文本完全看不出。
+// 所以判据写成负扫而不是点名单：凡可见的可点元素，计算 cursor 必须含 /style/link.cur。
+// 有意放行（它们不是「可点=手型」的对象，且是各自的语义信号）：
+//   · 明月浩空播放器子树——远端组件，自带 myhkw.cn 的 link.cur，不归本站管
+//   · a.copy-post-link（copy）、[aria-disabled] / .is-disabled（not-allowed）、
+//     .photo/正文图（zoom-in）、输入框（text）、看板娘拖拽（move）
+// /books/、/ai-news/、/pelican-bike/ 是站长点名排除的导入独立壳，不在页面集内。
+const CURSOR_SELECTOR = [
+	"a[href]",
+	"button:not([disabled])",
+	"input[type=submit]",
+	"[role=button]",
+	"summary",
+	".post-metaa .tools li",
+	".slideshow .dots span",
+	".font-size-pop input[type=range]",
+	".pio-show",
+	".pio-action span",
+].join(",");
+const cursorOffenders = [];
+let cursorSeen = 0;
+for (const path of OUTLINE_PAGES) {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto(base + path, { waitUntil: "load" });
+	const got = await page.evaluate(
+		({ sel }) => {
+			const offenders = [];
+			let seen = 0;
+			for (const el of document.querySelectorAll(sel)) {
+				const cs = getComputedStyle(el);
+				if (cs.display === "none" || cs.visibility === "hidden")
+					continue;
+				if (el.closest("#myhkplayer, [id^=myhk]")) continue;
+				if (el.closest(".fancybox__container")) continue;
+				if (el.matches(".copy-post-link")) continue;
+				if (el.getAttribute("aria-disabled") === "true") continue;
+				seen++;
+				if (cs.cursor.includes("/style/link.cur")) continue;
+				const cls =
+					typeof el.className === "string" && el.className.trim()
+						? "." + el.className.trim().split(/\s+/).join(".")
+						: "";
+				offenders.push(
+					`${el.tagName.toLowerCase()}${cls}${el.id ? "#" + el.id : ""} ⇒ ${cs.cursor}`,
+				);
+			}
+			return {
+				offenders,
+				seen,
+				arrow: getComputedStyle(document.body).cursor,
+			};
+		},
+		{ sel: CURSOR_SELECTOR },
+	);
+	cursorSeen += got.seen;
+	for (const o of got.offenders) cursorOffenders.push(`${path} → ${o}`);
+	if (path === "/") {
+		check(
+			"页面底衬用站点自有箭头（body 计算值含 /style/default.cur）",
+			got.arrow.includes("/style/default.cur"),
+			`body cursor=${got.arrow}`,
+		);
+	}
+}
+check(
+	"每个可见的可点元素都落在站点自有手型光标上（裸 cursor: pointer 负扫）",
+	cursorOffenders.length === 0 && cursorSeen >= 40,
+	`扫 ${cursorSeen} 个可点元素，越界 ${cursorOffenders.length} 个` +
+		(cursorOffenders.length
+			? `：${cursorOffenders.slice(0, 8).join("、")}${cursorOffenders.length > 8 ? ` …等 ${cursorOffenders.length} 个` : ""}`
+			: ""),
+);
+
 await browser.close();
 
 harness.finish();

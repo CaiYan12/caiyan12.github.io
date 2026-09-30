@@ -111,11 +111,10 @@ const cursors = await page.evaluate(() => {
 		bodyImg: c('.post-context img[data-fancybox="post-gallery"]'),
 	};
 });
+const hand = (v) => v.includes("/style/link.cur") && v.endsWith("pointer");
 check(
-	"仓库卡片可点击区域统一为手型指针",
-	cursors.link === "pointer" &&
-		cursors.avatar === "pointer" &&
-		cursors.name === "pointer",
+	"仓库卡片可点击区域统一为站点自有手型指针",
+	hand(cursors.link) && hand(cursors.avatar) && hand(cursors.name),
 	JSON.stringify(cursors),
 );
 check("正文触发图仍为放大指针", cursors.bodyImg === "zoom-in", cursors.bodyImg);
