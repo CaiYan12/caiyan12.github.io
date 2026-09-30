@@ -232,8 +232,8 @@
 		}
 		if (/雷/u.test(condition)) return "⛈️";
 		if (/雪|雹|冰/u.test(condition)) return "🌨️";
-		if (/雨/u.test(condition)) return "🌧️";
 		if (/雾|霾/u.test(condition)) return "🌫️";
+		if (/雨/u.test(condition)) return "🌧️";
 		if (/晴/u.test(condition)) return "☀️";
 		if (/云|阴/u.test(condition)) return "☁️";
 		return "🌡️";

@@ -61,6 +61,33 @@ test("wttr.in is queried once with one-decimal string coordinates", async () => 
 	assert.equal(weather.stale, false);
 });
 
+test("条件文字同时含雨与雾时，雾优先于雨（AGENTS 记的归类顺序）", async () => {
+	// AGENTS.md 的顺序是 雷→storm、雪/雹/冰→snow、雾/霾→fog、雨→rain。
+	// 卡片侧一直照这个走；终端侧的 emoji 级联原先把 雨 排在 雾/霾 前面，
+	// 上游哪天给出「雨雾」这类名字，两个壳就会各报各的。码 999 不在表内，
+	// 描述因此取自 lang_zh，正好用来钉住这条优先级。
+	const service = createService({
+		fetchImpl: async () => ({
+			ok: true,
+			json: async () => ({
+				nearest_area: [{ areaName: [{ value: "Village" }] }],
+				current_condition: [
+					{
+						temp_C: "-2",
+						weatherCode: "999",
+						lang_zh: [{ value: "雨雾" }],
+					},
+				],
+			}),
+		}),
+	});
+
+	const weather = await service.fetchCurrentWeather(BEIJING);
+
+	assert.equal(weather.description, "雨雾");
+	assert.equal(weather.icon, "🌫️");
+});
+
 test("wttr.in weather without a city still succeeds with a null city", async () => {
 	let requests = 0;
 	const service = createService({
