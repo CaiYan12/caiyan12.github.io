@@ -27,7 +27,7 @@ export const siteConfig = {
 	/** 建站时间（用于 footer 运行天数） */
 	foundationTime: "2026-01-01",
 	/** 每页文章数 */
-	postsPerPage: 6,
+	postsPerPage: 10,
 	/** 标签页每页文章数（单标签页头部含标签药丸云，初始 5，远期随标签增长调整） */
 	tagPostsPerPage: 5,
 	/** 首页摘要字数 */

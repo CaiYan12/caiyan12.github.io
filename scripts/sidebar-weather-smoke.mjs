@@ -572,7 +572,10 @@ try {
 			);
 			const refresh = page.locator("#sidebar [data-weather-refresh]");
 			let keyboardFocused = false;
-			for (let i = 0; i < 90; i++) {
+			// 上限按「首页每页 10 条」量出来的：刷新按钮是第 95 次 Tab 的落点
+			// （2026-09-30 实测；每页 6 条时是第 76 次，旧的 90 只剩 14 次余量，
+			// 加到 10 条后先撞上的是上限而不是按钮，判据会以「焦点不可见」假红）。
+			for (let i = 0; i < 160; i++) {
 				await page.keyboard.press("Tab");
 				if (
 					(await page.evaluate(() =>
