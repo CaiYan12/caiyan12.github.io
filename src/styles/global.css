@@ -2518,6 +2518,18 @@ html[data-liquid-glass="on"] #nav li ul {
 .post-list:nth-child(9)::after {
   background: #f0f;
 }
+/* 每页 10 条后色带要铺到 nth-child(12)：首页首卡前有 2 个兄弟节点，末位卡即第 12 项
+   （/hot/ 首卡前 1 个 → 到 11，其余列表页不超过 5）。色值取自 colorful-original.css
+   的 10/11/12 位，实测六类列表页无一经由此范围之外的序号。 */
+.post-list:nth-child(10)::after {
+  background: #00f;
+}
+.post-list:nth-child(11)::after {
+  background: #000;
+}
+.post-list:nth-child(12)::after {
+  background: #ff8c00;
+}
 .post-list:hover::after {
   width: 100%;
 }
