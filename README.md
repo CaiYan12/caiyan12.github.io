@@ -1,208 +1,510 @@
 # WindowsIt's Music Club
 
-由 Emlog Colorful（明月浩空）主题迁移而来的纯静态 Astro 博客。
+[![Astro](https://img.shields.io/badge/Astro-6.4.8-BC52EE?logo=astro&logoColor=white)](https://astro.build/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![GitHub Pages](https://img.shields.io/badge/Deploy-GitHub_Pages-222?logo=github&logoColor=white)](https://caiyan12.github.io/)
 
-## 技术栈
+由 Emlog Colorful（明月浩空）主题迁移而来的**纯静态**个人博客。没有后台、没有数据库——**所有内容都是这个仓库里的文件**：改完 `git push`，GitHub Actions 自动构建上线。
 
-- **Astro 6.4.8** + TypeScript + Svelte 5（搜索组件）
-- **React 19 + @astrojs/react** — 独立 AI 日报阅读页
-- **Tailwind CSS 3**（样式重写，视觉还原 Colorful 海洋绿主题）
-- **Swup.js** — 无刷新页面切换（替代原 Pjax）
-- **Pagefind** — 构建期静态搜索索引
-- **Giscus** — 评论系统（GitHub Discussions，文章评论区与留言板已启用；文章尾部使用 Giscus 原生表情；主题样式见 `public/giscus-theme.css`）
-- **Fancybox** — 图片灯箱（替代原 Highslide）
-- **Expressive Code** + **KaTeX** — 代码高亮与数学公式
-- **@astrojs/rss / @astrojs/sitemap** — 订阅与 SEO
+> 📖 **这份 README 是站长的内容编辑手册。** 想改什么，先从下面「🧭 我想改点什么」一行找到该动哪个文件，再进对应小节看细节。
+> 实现细节、踩坑记录与维护红线（z-index 层叠、光标单源、天气对比度门……）不在 README 重复，见 [AGENTS.md](AGENTS.md)。
 
-## 常用命令
+- 线上：<https://caiyan12.github.io/>
+- 本地：`pnpm dev` → <http://localhost:4321>
+- 文章 URL 硬规则：`/posts/<14位时间戳>/`，目录名即 slug，**不能用标题或中文当 slug**
+
+---
+
+## 🧭 我想改点什么
+
+一行一件事。**「改这里」是唯一入口**，不用去别处找。
+
+### ✍️ 内容
+
+| 我想…                                | 改这里                                                                                     | 生效                                                                               |
+| ------------------------------------ | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| 发一篇文章                           | `pnpm new-post -- <yyyymmddhhmmss> [标题]` → 生成的 `src/content/posts/<14位>/index.md`    | dev 热更新                                                                         |
+| 改文章标题/正文/标签/分类/简介       | 同上文件的 frontmatter 与正文                                                              | dev 热更新                                                                         |
+| 给文章配头图                         | 图放 `public/images/posts/<14位>/`，frontmatter 写 `image: "/images/posts/<14位>/xxx.jpg"` | 头图变更后跑 `pnpm lqips` 或 `pnpm build` 才出模糊占位与 WebP 变体（不跑也能显示） |
+| 临时藏起一篇                         | frontmatter `draft: true`                                                                  | dev 热更新                                                                         |
+| 发一篇但不进任何列表（URL 直连可见） | frontmatter `private: true`                                                                | dev 热更新                                                                         |
+| 让一篇上「热门推荐」                 | frontmatter `hotness: 0–5`                                                                 | dev 热更新                                                                         |
+| 置顶一篇                             | frontmatter `pinned: true`                                                                 | dev 热更新                                                                         |
+| 发一条微言碎语                       | `src/data/diary.ts`，**插到数组最前面**                                                    | dev 热更新                                                                         |
+| 新建相册 / 加照片                    | 往 `public/images/albums/<相册名>/` 放图                                                   | dev 热更新                                                                         |
+| 删一个相册                           | 删掉 `public/images/albums/<相册名>/` 整个文件夹                                           | dev 热更新                                                                         |
+| 改「关于」页正文                     | `src/content/spec/about.md`                                                                | dev 热更新                                                                         |
+| 改「我的技能」                       | `src/data/skills.ts`                                                                       | dev 热更新                                                                         |
+| 改「时间线」                         | `src/data/timeline.ts`                                                                     | dev 热更新                                                                         |
+| 改「每日好书」书单                   | `src/nice-books/data/books.ts`                                                             | dev 热更新                                                                         |
+| 换 AI 日报的 RSS 源                  | `src/ai-news/config/sources.ts` 的 `DEFAULT_SOURCE`                                        | dev 热更新                                                                         |
+| 换 AI 日报的离线快照                 | 把当期 RSS 的 XML 原样覆盖到 `public/ai-news/snapshot/juya.xml`                            | 强刷浏览器                                                                         |
+
+### 🤝 友链与项目
+
+| 我想…                                    | 改这里                                                        | 生效            |
+| ---------------------------------------- | ------------------------------------------------------------- | --------------- |
+| 加/改/删友情链接                         | `src/data/friends.json`                                       | 文字 dev 热更新 |
+| 让新友链有图标                           | `pnpm fetch-friend-icons`（缺省只补缺，`--refresh` 强制刷新） | 立即            |
+| 改友链页的「申请须知」文案               | `src/pages/friends.astro` 底部                                | dev 热更新      |
+| 改「我的项目」卡片的中文简介/技术栈/状态 | `src/data/projects.ts` 的 `projectOverrides`                  | dev 热更新      |
+| 刷新 GitHub 仓库卡片元数据               | `pnpm fetch-repos [--refresh]`                                | 立即            |
+| 刷新「我的项目」快照（含 Pinned 顺序）   | `pnpm fetch-projects`                                         | 立即            |
+
+### 🎨 外观与设置
+
+| 我想…                                              | 改这里                                                                                                                                                                                | 生效              |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| 站点标题/副标题/关键词/作者/建站时间/备案号/页脚字 | `src/config.ts` → `siteConfig`                                                                                                                                                        | dev 热更新        |
+| 站点头像                                           | 站点各处显示的是 `/images/avatar.webp`（`siteConfig.avatar` / `desktopLogo` 都指向它，直接替换该文件）；`public/images/avatar.png` 只是 favicon 的源图，换图后跑 `pnpm build:favicon` | 立即              |
+| 顶部导航的菜单项                                   | `src/config.ts` → `navBarConfig`                                                                                                                                                      | dev 热更新        |
+| 侧栏部件的顺序/增删                                | `src/config.ts` → `sidebarConfig.widgets`                                                                                                                                             | dev 热更新        |
+| 侧栏部件的标题（如「吐槽水军」）                   | 对应 `src/components/widget/Widget*.astro` 里的 `<WidgetLayout title="…">`                                                                                                            | dev 热更新        |
+| 首页幻灯片切换速度                                 | `src/config.ts` → `slideshowConfig.interval`                                                                                                                                          | dev 热更新        |
+| 首页幻灯片的大图                                   | ⚠️ 见下方「三个想当然会错的地方」——改的是文章头图                                                                                                                                     | dev 热更新        |
+| 背景壁纸                                           | `src/config.ts` → `backgroundConfig.images` + `public/images/bg/`                                                                                                                     | dev 热更新        |
+| 看板娘 Pio 开关/位置/台词                          | `src/config.ts` → `pioConfig`                                                                                                                                                         | dev 热更新        |
+| 音乐播放器开关/皮肤/ID                             | `src/config.ts` → `myhkwPlayerConfig`                                                                                                                                                 | 运行时            |
+| 樱花动效数量/速度                                  | `src/config.ts` → `sakuraConfig`                                                                                                                                                      | dev 热更新        |
+| 文章底部版权协议                                   | `src/config.ts` → `licenseConfig`                                                                                                                                                     | dev 热更新        |
+| 页脚「勉强运行 N 天」是否显示                      | `src/config.ts` → `footerConfig.showRuntime`                                                                                                                                          | dev 热更新        |
+| 评论仓库/分类/主题                                 | `src/config.ts` → `commentConfig` + `src/data/giscus-sync.json`                                                                                                                       | dev 热更新        |
+| 天气卡的 7 枚天气图标                              | `public/weather/icons/*.svg`（平涂、禁渐变）                                                                                                                                          | dev 热更新        |
+| 天气卡的 7 张摄影壁纸                              | 准备 640px 原图后跑 `pnpm build:weather-bg -- --from <原图目录>`                                                                                                                      | 立即              |
+| 光标                                               | 整体替换 `public/style/default.cur` / `link.cur`                                                                                                                                      | dev 热更新        |
+| 站点图标 favicon                                   | `pnpm build:favicon`（源图 `public/images/avatar.png`，四档输出到三处）                                                                                                               | 立即              |
+| 佛祖保佑横幅的文案                                 | 仓库根 `佛祖保佑.xml`                                                                                                                                                                 | 必须 `pnpm build` |
+
+### ✏️ 页面上的文字
+
+| 我想…                                           | 改这里                                                                               |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 留言板欢迎语                                    | `src/pages/guestbook.astro`                                                          |
+| 友链申请须知                                    | `src/pages/friends.astro`                                                            |
+| 404 页全部文案                                  | `src/pages/404.astro`                                                                |
+| 搜索页无 JS 兜底文案                            | `src/pages/search.astro`                                                             |
+| 各列表页的 `title=` / `description=` / 空态文案 | 对应 `src/pages/` 下的 `.astro`（每页 frontmatter 里就是）                           |
+| 技能页的分类/等级中文名                         | `src/pages/skills.astro` frontmatter 的 `categoryLabels` / `levelLabels`             |
+| 时间线的类型中文名                              | `src/pages/timeline.astro` frontmatter 的 `typeLabels`                               |
+| 标签云/分类云集的标题与前缀                     | `src/components/layout/TaxonomyListing.astro` 的 `KIND_CONFIG`                       |
+| 面包屑首项「首页」                              | `src/components/layout/ListingHeader.astro`                                          |
+| 文章卡「N 次吐槽 / 抢沙发」                     | `src/components/layout/PostCard.astro`                                               |
+| 版权声明整句                                    | `src/components/misc/License.astro`                                                  |
+| `/domain/` 终端壳的名片、自述、友链、署名       | `src/domain.html`（整份都是硬编码）                                                  |
+| `/books/` 三页的标题与导航                      | `src/nice-books/components/SiteHead.astro` / `SiteHeader.astro` / `SiteFooter.astro` |
+| `/ai-news/` 的界面文案                          | `src/ai-news/components/*.tsx`                                                       |
+
+### 🔌 需要跑命令的刷新
+
+| 我想…                                  | 命令                                                                    |
+| -------------------------------------- | ----------------------------------------------------------------------- |
+| 刷新评论数 / 最新评论 / 吐槽水军快照   | `pnpm sync-site-stats`（**不在 `pnpm build` 里**，CI 每次部署前自动跑） |
+| 重新生成文章封面的模糊占位与 WebP 变体 | `pnpm lqips`（`--refresh` 强制全量）                                    |
+| 重新生成中文地级市目录                 | `pnpm build:weather-cities`                                             |
+| 重新导出 favicon                       | `pnpm build:favicon`                                                    |
+
+### 🚫 这些不要手改
+
+它们由脚本在构建期覆写，手改会被下一次构建/部署冲掉。
+
+| 文件                                              | 谁写的                                   |
+| ------------------------------------------------- | ---------------------------------------- |
+| `src/constants/lqips.json`、`image-manifest.json` | `scripts/generate-lqips.mjs`             |
+| `src/constants/github-repos.json`                 | `scripts/fetch-github-repos.mjs`         |
+| `src/constants/github-projects.json`              | `scripts/fetch-github-projects.mjs`      |
+| `src/constants/github-contributions.json`         | `scripts/fetch-github-contributions.mjs` |
+| `src/constants/friend-icons.json`                 | `scripts/fetch-friend-icons.mjs`         |
+| `src/data/site-stats.json`                        | `scripts/sync-site-stats.mjs`            |
+| `public/images/_variants/`（整个目录，且未入库）  | `scripts/generate-lqips.mjs`             |
+
+---
+
+## 📝 写文章
+
+### 三步
 
 ```bash
-pnpm install     # 安装依赖
-pnpm dev         # 本地开发（http://localhost:4321）
-pnpm build       # 构建到 dist/（项目目录 + LQIP + GitHub 数据 + 佛祖横幅 + Pagefind 已串联）
-pnpm new-post -- <yyyymmddhhmmss> [标题]  # 按规范创建文章目录
-pnpm fetch-projects        # 刷新“我的项目”GitHub 仓库与 Pinned 快照
-pnpm test:projects         # 项目同步、缓存、合并与排序测试
-pnpm fetch-repos --refresh  # 全量刷新 GitHub 仓库卡片元数据缓存
-pnpm fetch-friend-icons     # 增量补齐缺失的友链图标缓存
-pnpm fetch-friend-icons --refresh  # 手动刷新当前友链图标缓存
-pnpm preview     # 预览构建产物
-pnpm check       # 类型检查
-pnpm smoke:ai-news  # AI 日报入口、详情、返回与离线快照 Smoke（默认 127.0.0.1:4321 dev；AI_NEWS_BASE_URL 传**完整页面地址**）
-pnpm smoke:nice-books  # Nice Books 三页全链路 Smoke（随机/换一换/书库/详情/swup；默认 4321，但**权威环境是 build + preview**，用 NICE_BOOKS_BASE_URL 指过去）
-pnpm qa:nice-books-geometry  # Nice Books 统一3D几何运行时检查（默认 127.0.0.1:4321，BASE_URL 可覆盖）
-pnpm smoke:ui      # 主站 UI 缺陷修复实机烟测（UI 整改票册的缝隙 A；**需先 build + preview**，UI_SMOKE_BASE_URL 传站点根）
-pnpm smoke:pelican # 鹈鹕骑车 `/pelican-bike/`（vendored Three.js 单文件游戏）实机烟测；**需先 `pnpm build && pnpm preview --port 4322`**，PELICAN_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形）。该页不参与 pnpm build，重建走 `vendor/pelican-bike/`，见其 README
-pnpm test:utils  # src/utils 纯函数单测（content-utils 排序/评分/邻篇 + pagination canonical）
-pnpm test:contributions  # 贡献日历数据脚本离线单测（注入 fetchImpl，不访问真实网络）
-pnpm test:site-stats  # Giscus 同步单测（fetchImpl/输出路径全注入，无需令牌，已串入 build 链头部）
-pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl）
-pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/六字段搜索/SVG 封面，node --test）
-pnpm test:weather  # 天气服务与 /domain/ 天气离线单测（注入 fetchImpl，不访问真实网络）
-pnpm qa:weather-mainland  # wttr.in 大陆直连实测（须由大陆网络执行，NET/WINDOW 两栏必填；-- --site 量真实访客路径）
-pnpm build:weather-cities  # 再生成中文地级市目录 public/weather/city-catalog.js（需网络，不进 pnpm build）
-pnpm build:weather-bg -- --from <原图目录>  # 重导侧栏天气卡的 7 张壁纸 public/weather/bg/<kind>.webp（502px 宽保高，需原图，不进 pnpm build）
-pnpm build:favicon  # 从 public/images/avatar.png 重出 favicon.ico（16/32/48/256 四档 PNG 内嵌）到 public/、public/domain/、public/images/ 三处（显式运行，不进 pnpm build）
-pnpm test:fancybox  # 灯箱 Smoke（关闭不跳位/焦点归还/定位到文章位置/下载新标签页/中文文案，需先 pnpm build && pnpm preview；默认 4322，FANCY_BASE_URL 传**站点根**）
-pnpm format      # Prettier 格式化（含 astro/svelte 插件；覆盖 src/scripts/tailwind.config）
+# 1. 建目录（目录名 = URL slug，必须 14 位数字 yyyymmddhhmmss）
+pnpm new-post -- 20260930120000 文章标题
+#    --dry-run 可先只预览不落盘
+
+# 2. 编辑刚生成的 src/content/posts/<上面那个目录名>/index.md
+
+# 3. 推送即上线
+git add . && git commit && git push
 ```
 
-> ⚠️ **踩坑警告**：修改 Markdown 渲染插件（remark/rehype）后构建产物没变化？Astro 的 content layer 会复用旧渲染结果（Astro 5 与 6 皆有此行为，本站实测在 6.4.8 上复现）——先删除 `node_modules/.astro/`，并在存在时删除 `.astro/data-store.json`，再构建；touch 文件无效。CI 侧 `deploy.yml` 已对 `withastro/action` 传 `cache: false` 关闭同类缓存，任何 workflow 改动勿恢复。
+- `new-post` 会自动按目录名生成 `published`（`2026-09-30 12:00:00`），**别手改它**，必须与目录名对应。
+- 目录名不合规时 `pnpm build` 会直接失败（`scripts/validate-post-slugs.mjs` 把关），这是故意的。
+- 文章正文里的图片放 `public/images/posts/<14位>/`，用 `/images/posts/<14位>/<文件名>` 引用；正文图会自动进灯箱可放大。
 
-## 测试与生产环境
+### frontmatter 全字段
 
-- **测试环境（本地）**：`http://localhost:4321`（`pnpm dev`；`pnpm preview` 验证构建产物，可 `--port` 指定端口）。交互、布局、Swup 切页的验证都在本地做。已知 dev 限制：Pio 看板娘因 Svelte hydration 报错不渲染，验证 Pio 必须 `pnpm build && pnpm preview`。
-- **生产环境（线上）**：`https://caiyan12.github.io/`（GitHub Actions 自动部署）。验证部署是否生效：看响应头 `Last-Modified` 是否晚于部署完成时间，或下载 Actions run 的 `github-pages` artifact；Fastly 边缘缓存 HTML `max-age=600` 且缓存键不含查询串（加 `?cb=` 破缓存无效），刚部署完可能最多等 10 分钟才看到新版本。
-- 两环境行为差异须留意：dev 下评论 mock 数据（`src/data/comments.ts` 等）与生产构建期同步的真实数据不同；Mermaid、OG 图等一切以生产实测为准。
+schema 定义在 `src/content.config.ts`，未列出的字段不要自己加。
 
-## 附近天气胶囊（wttr.in 单源）
+| 字段                      | 必填    | 默认                  | 说明                                                                                                 |
+| ------------------------- | ------- | --------------------- | ---------------------------------------------------------------------------------------------------- |
+| `title`                   | ✅      | —                     | 文章标题，文章页渲染为 `<h1>`                                                                        |
+| `published`               | ✅      | —                     | 发布时间，由 `new-post` 按目录名生成                                                                 |
+| `description`             |         | `""`                  | 摘要与 SEO 描述，留空则由正文自动截取                                                                |
+| `image`                   |         | `""`                  | 封面图路径；留空按目录名哈希稳定选一张 `public/images/random/tb1.jpg`–`tb40.jpg`（不会每次构建乱跳） |
+| `tags`                    |         | `[]`                  | 标签数组，驱动 `/tag/` 与侧栏标签云                                                                  |
+| `category`                |         | `""`                  | 单个分类（不是数组），驱动 `/category/`                                                              |
+| `pinned`                  | `false` |                       | 置顶，排在所有文章之前                                                                               |
+| `draft`                   | `false` |                       | 草稿：**不生成页面**，任何列表/归档/RSS/搜索都没有它                                                 |
+| `private`                 | `false` |                       | 私密：页面照常生成、URL 可直连，但所有列表隐藏、不进 Pagefind 索引                                   |
+| `hotness`                 | `0`     |                       | 热门指数 0–5，热门分 = `hotness × 100 + 评论数`                                                      |
+| `comments`                | `0`     |                       | 历史评论数兜底；真实值以 `src/data/site-stats.json` 为准，没有对应条目时才用它                       |
+| `views`                   | `0`     |                       | 迁移兼容字段，**当前不渲染任何围观数**                                                               |
+| `updated`                 | —       |                       | 「最后更新于」显示的日期                                                                             |
+| `author` / `lang`         |         | `WindowsIt` / `zh_CN` | 很少需要改                                                                                           |
+| `readingTime` / `excerpt` | —       |                       | 由 remark 插件自动注入，不用手写                                                                     |
 
-规格见 [`docs/plans/2026-09-28-weather-capsule-spec.md`](docs/plans/2026-09-28-weather-capsule-spec.md)（镜像 [issue #60](https://github.com/CaiYan12/caiyan12.github.io/issues/60)），实施与验收台账见 [`docs/plans/2026-09-28-weather-capsule-plan.md`](docs/plans/2026-09-28-weather-capsule-plan.md)（子票 [#61](https://github.com/CaiYan12/caiyan12.github.io/issues/61) · [#65](https://github.com/CaiYan12/caiyan12.github.io/issues/65) · [#66](https://github.com/CaiYan12/caiyan12.github.io/issues/66) · [#67](https://github.com/CaiYan12/caiyan12.github.io/issues/67)；#62/#63/#64 是已作废的和风代理票）。
+### 配图与封面的两个细节
 
-- **天气是侧栏的子元件，只有两处**：主站桌面侧栏**首位**（在「吐槽水军」上面）与 `/domain/` 终端天气行。窄屏（侧栏不渲染）不显示天气卡，也不为它弹定位或发请求——`#sidebar` 在手机上只是 display:none、节点仍在 DOM 里，所以渲染器按侧栏是否真的渲染来过滤挂载点。数据契约在 `public/weather/weather-service.js`，卡片渲染在 `public/weather/sidebar-widget.js`，终端行在 `public/domain/js/weather.js`；两枚卡片在同一标签页共用一份会话。
-- 数据来源**只有 `wttr.in`**：浏览器定位取访客位置 → 坐标粗化到一位小数（约 10 公里）→ GET `https://wttr.in/<lat>,<lon>?format=j1&lang=zh`，一次请求拿到温度与天气。**绝不按 IP 推断位置**。
-- 关键行为：普通精度、`maximumAge: 0`、定位与天气各 8 秒超时；整页刷新才重新定位，站内 Swup 切页复用结果；成功态刷新只重取天气、不重新定位；`/domain/` 保持终端版式、成功态没有刷新按钮、失败才出现 `[重试]`；无 JS 或脚本加载失败时保留静态说明，绝不残留「天气加载中…」。
-- 失败文案按原因区分（拒绝授权／定位超时／浏览器不支持／服务不可用），浏览器完全不支持定位时不放无效的重试按钮。城市名中文优先、拿不到时显示原始地名（wttr.in 对北京坐标实测返回英文 `Beijing`）。
-- 天气文字与图标靠 `public/weather/weather-service.js` 里的两张码表（`weatherNames` / `weatherIcons`），**内容对齐上游 wttr.in 官方简中表**（`share/translations/zh-cn/conditions.txt`，46 码，核对于 2026-09-29），另加本站自译的 `149 烟霾`——上游对 149 也没有译名，实测 `lang=zh-cn` 仍返回英文 `Smoky haze`，所以本地表不能省。`pnpm test:weather` 里的 `scripts/weather-codes.test.mjs` 逐码锁住这份覆盖（缺码、译名漂移、掉默认温度计图标都会翻红）。上游加码时，改那张表 + 补这里的 UPSTREAM_CODES。
-- **城市名不取 wttr 的返回值**：实测 80 个中国坐标返回 80 个互不相同的村镇级拉丁站名（深圳是 `Dills Corner`、南昌是 `Nanchangfu`），既不是访客所在城市也不是中文。改为本地两层解析：坐标距某地级市中心 ≤120 公里用官方中文市名，境内但半径外用 wttr 的 `region` 经省表译成中文省名，境外保持原名。地级市目录 `public/weather/city-catalog.js`（367 城、gzip 3.8KB，数据源为阿里 DataV 行政区划图集）由 `pnpm build:weather-cities` 显式再生成，不参与 `pnpm build`。侧栏卡片的城市行不再重复「附近：」前缀（标题已是「附近天气」，那 39 像素是长名字的命），`/domain/` 终端行保留前缀。
-- 卡片版式为「图标 + 温度（其下天气状态）」一组、地名贴右缘，再下一条通栏参数行 `体感 32° │ 风速 11 km/h │ 湿度 75%`，每格前面带一枚小图标（温度计/风旗/水滴，几何取自站主提供的参考图、颜色走 currentColor）；格宽按内容走、整行两端铺满，数值过长时在格内省略号截断，页脚是组件状态栏 `数据：wttr.in 15:15`。三个参数取自同一份 j1 响应（`FeelsLikeC`/`windspeedKmph`/`humidity`），不额外请求上游；上游没给时整行隐藏。风向不显示，因为 wttr 的十六方位是英文。标题栏的刷新图标使用站主提供的实心双环箭头字形，路径数据逐字保留。主体区（标题栏以下）在 2026-09-30 加了一层**按 7 大类天气切换的半透明摄影壁纸**：`::before` 是照片、`::after` 是上轻下重的白纱，两层钉在盒子上压在文字之下；悬停整卡时壁纸变浓并轻微推近，与图标动效同时并存（站主裁决）。浓度是站主**明确用文字可读性换来的彩色感**：守住小字 AA（4.5:1）的上限只有 α 0.18/0.26，现值取静止 0.30 / hover 0.40、纱 0.45→0.82、饱和 ×1.35，实测最坏对比度静止 4.12:1、hover 3.66:1（跌破小字线、仍高于大字线 3.0）；提饱和那一步几乎不花对比度（`saturate()` 保亮度），是这条曲线上唯一近乎免费的操作。
-- 验证：`pnpm test:weather` 跑离线单测（29 项，含逐码覆盖、逐 `region` 中文覆盖、参数字段缺失容错与表外码「雨雾」的归类优先级）；`pnpm build && pnpm preview --port 4322` 后跑 `node scripts/sidebar-weather-smoke.mjs`（68 项，含壁纸的五条：7 类各自命中对应 webp、stale 态与成功态一致（比对 CSS 声明的 saturate 值而非写死 `none`）、无数据态两层伪元素整个不存在（定位失败与「失败且无旧数据」各一条）、以及把壁纸按 CSS 的 cover/锚点画进同源 canvas 逐像素算最坏 WCAG 比值的**真实像素采样门**——静止守 ≥4.0、hover 守 ≥3.5（这是 2026-09-30 越线裁决承诺的下限，不是 AA 的 4.5），四个浓度值全部从 CSS 自定义属性读，改浓度不用改测试；变异验证：注入 α=0.95 时七类 2.39–4.10 全部翻红）与 `node scripts/domain-weather-smoke.mjs`（29 项）（假定位到北京公开坐标，响应走 `page.route()` 桩，不访问真实 wttr.in）。原手机烟测随手机挂载一起删除，其独有的四条判据（窄屏零可见卡＋零定位＋零请求、Swup 切页与返回不重复请求、整页刷新重新定位、`#content` 内无天气节点）已并入侧栏烟测。
-- **为什么不是和风**：2026-09-28 曾按「大陆访客更快」的假设试验和风天气 + Cloudflare Worker 代理，本机全链路通过（凭据 DPAPI 隔离、45,000 次/月硬截流、真实浏览器 20/20）。但 GitHub Pages 没有可保管密钥的服务端，而站长没有 Cloudflare 账号、没有服务器、没有备案域名，`workers.dev` 默认域名又**不在 Cloudflare 中国大陆网络上**，大陆可达性从未实测——成本确定、收益未证实，故 2026-09-29 裁决搁置。代理实现整体留档在 [`docs/history/weather-qweather-proxy/`](docs/history/weather-qweather-proxy/README.md)（含搁置原因、已验证边界、配额账本终值与重启步骤），不参与任何构建与测试；决策过程全文见 [`docs/history/qweather-settingup-history-sessions.md`](docs/history/qweather-settingup-history-sessions.md)。
-- 大陆实测：`wttr.in` 在大陆直连网络下的可达性与耗时**已由站长本人实测并裁定通过**（issue #67 已关闭）。读数由站长持有、未附在仓库里，因此这里记录的是站长裁定而非可复核数字。复测工具仍在：大陆网络（如手机热点）下执行 `pnpm qa:weather-mainland`，先用 `$env:NET` / `$env:WINDOW` 标好运营商与时段，缺这两栏的读数按判据不算大陆链路证据，境外出口机只作旁证。唯一余留**已关闭（2026-09-30 站长裁定：不采证、也不另开 issue）**：浏览器定位服务在大陆能否成功**从未采证**（此事实保留，不等于已验证可用）；关闭理由是失败路径有界且可自恢复——本站绝不按 IP 回退，定位失败会显示原因与「重试定位」。
+- 换封面图后要跑 `pnpm lqips`（或 `pnpm build`）才会重新生成模糊占位与 WebP 变体。不跑也能正常显示，只是没有占位动画、也拿不到变体省流量。
+- 不设 `image` 时走 hash 兜底随机图——**这是稳定的**（同一个目录名永远挑到同一张），换文章时间戳才会变。
 
-## CI 构建与部署
+### 可见性对照
 
-- Pull Request：`build.yml` 执行 `Astro Check` 和完整 `Astro Build`，`lint.yml` 执行 Prettier 检查。
-- `main` push：`build.yml` 只执行 `Astro Check`，其中的 `Astro Build` job 会跳过；完整构建由 `deploy.yml` 执行一次后部署到 GitHub Pages，避免重复构建。
-- 手动触发 `deploy.yml`：仍执行完整构建和部署。
-- `deploy.yml` 的 `withastro/action@v6` 必须保持 `cache: false`，避免跨 run 复用 `node_modules/.astro` 中过期的 content layer 渲染结果；同一 workflow/ref 的并发部署会取消旧 run。
+| 设置            | 各列表/首页 | 归档·标签·分类 | 文章页        | RSS | OG 分享图 | 站内搜索 |
+| --------------- | ----------- | -------------- | ------------- | --- | --------- | -------- |
+| 默认（公开）    | ✅          | ✅             | ✅            | ✅  | ✅        | ✅       |
+| `draft: true`   | ❌          | ❌             | ❌ 页面不生成 | ❌  | ❌        | ❌       |
+| `private: true` | ❌          | ❌             | ✅ URL 直连   | ❌  | ✅        | ❌       |
 
-## 目录结构
+私有文章若用了公开分类（例如「技术」），分类链接照常保留；只有它独占的那个标签/分类因为不生成页面，会降级成纯文字而不是死链。
+
+### 正文可用的 Markdown 扩展
+
+| 写法                                                | 效果                                                                                                                             |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `::github{repo="owner/repo"}`                       | GitHub 仓库卡片（星标/描述/语言）。元数据来自 `pnpm fetch-repos` 的缓存，**浏览器不请求 GitHub API**；文末裸仓库链接建议都换成它 |
+| `:::letter-paper`                                   | 信纸稿纸面板（`/about/` 在用）                                                                                                   |
+| 普通 Markdown 表格                                  | 自动包 `.table-scroll`，过宽只在容器内横滚                                                                                       |
+| Mermaid 图表（三个反引号围栏 + `mermaid` 语言标注） | 客户端懒加载渲染流程图等                                                                                                         |
+| `$...$` / `$$...$$`                                 | KaTeX 数学公式                                                                                                                   |
+
+改这些插件或正文样式的维护约束在 [AGENTS.md](AGENTS.md)（当前一节「Markdown 处理器」「样式」两条）。
+
+---
+
+## 💬 微言碎语
+
+数据在 `src/data/diary.ts`，一个普通 TS 数组：
+
+```ts
+export const diary: DiaryItem[] = [
+	{
+		date: "2026-09-19 07:13", // YYYY-MM-DD HH:mm，补零
+		content: "哦对了，Z八分钱。", // 纯文本，不渲染 Markdown
+		image: "/images/diary/202609190713.jpg", // 可选
+	},
+	// …
+];
+```
+
+四条规则：
+
+1. **顺序就是数组顺序，最新在最上面，没有任何自动排序**——新条目必须手动插到数组头部。
+2. `date` 保持 `YYYY-MM-DD HH:mm` 并补零。这个字符串会原样显示在页面底部那行，不补零会看得参差不齐。
+3. `content` 是纯文本，不要写 HTML 或 Markdown 语法（不会渲染，只会露出来）。
+4. 配图放 `public/images/diary/<yyyymmddhhmmss>.jpg`，用站点根绝对路径引用。
+
+**插在哪里有额外后果**：同一份数组被三处消费——
+
+| 消费方                                    | 取多少                    |
+| ----------------------------------------- | ------------------------- |
+| `/diary/` 页面（`src/pages/diary.astro`） | 全量                      |
+| 侧栏「最新微语」（`WidgetTwitter.astro`） | 前 4 条，正文截断到 30 字 |
+| 顶部头部轮播（`Navbar.astro`）            | 前 4 条，**不截断**       |
+
+所以插进前 4 条 = 同时出现在侧栏和头部；单条过长时注意头部是固定高度、超出会被裁掉。页面标题与面包屑在 `src/pages/diary.astro` 改。
+
+---
+
+## 📷 相册 / 图片墙 / 幻灯片 / 背景图
+
+### 相册（文件夹驱动）
+
+往 `public/images/albums/<相册名>/` 放图就自动生成相册，**没有任何配置文件、也不需要命令**：
+
+- 相册名同时是页面标题和 URL（中文名没问题）。
+- 文件夹内**按文件名排序的第一张图**当封面，所以想指定封面就用 `01-xxx.jpg` 这类前缀。
+- 支持 `.jpg/.jpeg/.png/.gif/.webp/.avif`。
+- 删文件夹 = 删相册；删图 = 删照片。
+- 新图在 dev 下立刻出卡片；模糊占位与 WebP 变体仍需 `pnpm build`（或 `pnpm lqips`）。
+- 索引页与详情页的空态文案在 `src/pages/albums.astro` / `albums/[id].astro`。
+
+### 图片墙 `/images/`（全自动）
+
+取最新 40 篇文章的封面图，**没有任何东西需要手动维护**——想改图片墙就去改文章头图。
+
+### ⚠️ 三个想当然会错的地方
+
+1. **首页顶部的大轮播不是 `slideshowConfig` 挑的图。** `src/components/control/Slideshow.astro` 取的是**最新 5 篇公开文章**，每张用该文的 frontmatter `image`；只有那篇文章没设头图时，才回退到 `slideshowConfig.slides[index].image`。
+   所以「想换首页大图」的正确做法是**改这 5 篇文章的头图，或者发一篇新文章**。`slideshowConfig.slides` 只是缺图兜底，数组长度同时决定轮播张数上限（最多 5），`interval` 是切换毫秒数。
+2. **侧栏部件的标题不在配置里。** `sidebarConfig.widgets` 只管顺序和增删；「吐槽水军」「附近天气」「最新微语」这些字面硬编码在各自的 `src/components/widget/Widget*.astro` 里。想改名要动组件。
+3. **导航下拉的组名不在配置里。** 「文章归档 / 关于本站 / 附加功能 / 本站资源」四组组名和「B站 / QQ / 微信 / 订阅」写在 `Navbar.astro`（桌面）和 `MMenu.astro`（移动端全屏菜单）两处，**只改一处会导致桌面和手机不一致**。
+
+### 背景壁纸
+
+`src/config.ts` 的 `backgroundConfig.images` 列路径，图放 `public/images/bg/`。现有 4 张的来源记录在 `public/images/bg/PEXELS-SOURCES.md`。
+
+---
+
+## 📄 独立页面与数据页
+
+### 关于页 `/about/`
+
+- 正文：`src/content/spec/about.md`（一个 Markdown 文件，可用 `:::letter-paper` 信纸稿纸）。
+- 正文前的 GitHub 贡献日历由 `pnpm build` 拉取生成；没有令牌时显示回退卡而不是报错。
+- ⚠️ 同目录的 `src/content/spec/friends.md` **是孤儿文件**——全仓只有 `about.astro` 读 spec collection 且只取 `about`，友链页走的是 `friends.json`。改它不会改变任何页面。
+
+### 我的技能 `/skills/`
+
+数据 `src/data/skills.ts`，每条：`id` / `name` / `description` / `icon`（Iconify 名）/ `category` / `level` / `experience{years,months}` / `color`。
+分类与等级的**中文显示名**不在这里，在 `src/pages/skills.astro` 的 frontmatter（`categoryLabels` / `levelLabels`）。
+
+### 时间线 `/timeline/`
+
+数据 `src/data/timeline.ts`，每条：`id` / `title` / `description` / `type`(education|work|project|achievement) / `startDate` / `endDate`（留空＝至今）/ `location` / `organization` / `position` / `skills` / `achievements` / `links` / `icon` / `featured`。
+类型中文名在 `src/pages/timeline.astro` 的 `typeLabels`。按 `startDate` 倒序自动排。
+
+### 友情链接 `/friends/`
+
+数据 `src/data/friends.json`：
+
+```json
+{
+	"name": "站点名",
+	"url": "https://example.com/",
+	"description": "一句话简介",
+	"tags": ["Blog"],
+	"avatar": "/friend-icons/xxxxxxxx.png"
+}
+```
+
+- `avatar` 可以留空——构建期自动抓对方 favicon 缓存到 `public/friend-icons/`，凭 `pnpm fetch-friend-icons`（普通模式只补缺，`--refresh` 才刷新已有的）。所以**加新友链后要跑一次这条命令**，否则只有首字占位。
+- 也可以直接填一个外链图片地址（`https://.../icon.png`），绕过缓存。
+- 页面上的申请须知文案在 `src/pages/friends.astro`。
+
+### 我的项目 `/projects/`
+
+两层数据：`src/data/projects.ts` 是人工策展层（中文简介、技术栈、状态、起止日期、是否推荐），仓库的 star/语言/fork 来自构建期 GitHub 快照。只收录公开仓库，私有项目也能手工加。
+刷新：`pnpm fetch-projects`。统计卡的主人由 `siteConfig.githubUser` 决定。
+
+### 每日好书 `/books/`
+
+书单 `src/nice-books/data/books.ts`（当前 70 本，模块导入时会做字段断言，不合规则直接构建失败）：
+
+```ts
+{
+	id: "01",
+	title: "百年孤独",
+	author: ["加西亚·马尔克斯", "范晔 译"],
+	publisher: "南海出版公司",
+	firstEdition: { year: 2011, edition: "第一版" },
+	coverUrl: null,              // null = 用程序生成的 SVG 书封
+	description: "……",           // 内容简介
+	recommendationReason: "……",  // 站长荐语（第一人称）
+	excerpts: ["……"],            // 精选摘抄
+	tags: ["文学", "小说"],
+	featured: true,              // 进「站长推荐」
+}
+```
+
+`/books/`、`/books/archive/`、`/books/:id/` 三个页面全部由这一份数据生成，页面文案在 `src/pages/books/*.astro` 与 `src/nice-books/components/`。
+
+### AI 日报 `/ai-news/`
+
+- 换订阅源：`src/ai-news/config/sources.ts` 的 `DEFAULT_SOURCE`（`name` + `url`）。⚠️ `id` 必须保持 `juya-daily`，它是橘鸦定制阅读风格的唯一身份判据，改了会静默回退成通用阅读页。目标 RSS 必须返回 CORS 头，否则浏览器读不到。
+- 离线快照：`public/ai-news/snapshot/juya.xml`。断网或上游抽风时页面回退到它。刷新方法就是把当期 RSS 的 XML 原样覆盖上去。
+- 界面文案在 `src/ai-news/components/*.tsx`。
+
+### 留言板 `/guestbook/`
+
+欢迎语硬编码在 `src/pages/guestbook.astro`。评论由 Giscus 承载（`data-term="guestbook"`），**留言内容只能在 GitHub Discussions 里增删**，本地任何文件都不存留言。`src/data/guestbook.ts` 里的假留言只在 `pnpm dev` 生效，用于本地看效果。
+
+### `/domain/` 终端壳
+
+整份 `src/domain.html` 都是硬编码：`<title>`、meta description、`I'mWindowsIt`、四行自我介绍、`主站/联系` 弹窗文案、两个伪终端的命令与自述、底部 `WINDOWSIT 2018 - 2026` 和 `THX @NUTSSSS` 署名。样式在 `public/domain/css/`。
+它不走博客 Layout，天气行走公共的 `public/weather/weather-service.js`。
+
+---
+
+## ⚙️ 站点配置（`src/config.ts` 十一段）
+
+改配置 = 改站点。每一段控制什么：
+
+| 段                  | 控制什么                                                                                        |
+| ------------------- | ----------------------------------------------------------------------------------------------- |
+| `siteConfig`        | 站点标题、副标题、URL、关键词、作者、头像、建站时间、每页文章数、摘要字数、备案号、页脚附加信息 |
+| `backgroundConfig`  | 背景壁纸图片列表                                                                                |
+| `navBarConfig`      | 顶部导航：`items`（首页/微言碎语/留言板）+ 四个下拉组 + 右侧 `social`（B站/QQ/微信/RSS）        |
+| `sidebarConfig`     | 侧栏小部件的显示顺序（`hotlog` 仅首页、`related` 仅文章页，组件自己判断）                       |
+| `licenseConfig`     | 文章底部版权协议名与外链                                                                        |
+| `commentConfig`     | Giscus 开关、映射方式、表情反应、主题URL                                                        |
+| `slideshowConfig`   | 首页幻灯片开关、切换间隔、缺图兜底 banner                                                       |
+| `pioConfig`         | 看板娘开关、模型、停靠侧、尺寸与全部台词                                                        |
+| `myhkwPlayerConfig` | 明月浩空播放器开关、播放器 ID、皮肤、位置                                                       |
+| `sakuraConfig`      | 樱花环境动效数量/尺寸/透明度/速度/层级                                                          |
+| `footerConfig`      | 页脚运行天数、Emlog 致谢行                                                                      |
+
+配套的数据文件：`src/data/giscus-sync.json`（评论仓库与分类 ID，被 `config.ts` 和 Node 同步脚本共用，改这里两边同步）。
+
+---
+
+## 🔧 工程信息
+
+### 技术栈
+
+Astro 6.4.8 + TypeScript + Svelte 5（搜索组件）+ React 19（AI 日报独立页）；Tailwind CSS 3（经根 `postcss.config.mjs` 直连，**不要加回 `@astrojs/tailwind`**）；Swup.js 无刷新切页；Pagefind 构建期搜索；Giscus 评论；Fancybox 6 灯箱；Expressive Code + KaTeX。
+
+### 常用命令
+
+**日常**
+
+| 命令                                         | 作用                                                                |
+| -------------------------------------------- | ------------------------------------------------------------------- |
+| `pnpm install`                               | 安装依赖（国内先设 `registry` 为 `https://registry.npmmirror.com`） |
+| `pnpm dev`                                   | 本地开发 <http://localhost:4321>                                    |
+| `pnpm build`                                 | 完整构建到 `dist/`（16 步，见下）                                   |
+| `pnpm preview`                               | 预览构建产物（可 `--port 4322`）                                    |
+| `pnpm check`                                 | `astro check` 类型检查                                              |
+| `pnpm new-post -- <14位> [标题] [--dry-run]` | 新建文章                                                            |
+| `pnpm format`                                | Prettier 格式化 `src`、`scripts` 与 `tailwind.config.cjs`           |
+
+**数据刷新**（都不在 `pnpm build` 里，需要主动跑）
+
+| 命令                                     | 作用                                                              |
+| ---------------------------------------- | ----------------------------------------------------------------- |
+| `pnpm sync-site-stats`                   | 同步 Giscus 评论数/最新评论/吐槽水军到 `src/data/site-stats.json` |
+| `pnpm lqips`                             | 重新生成模糊占位与 WebP 变体（`--refresh` 强制全量）              |
+| `pnpm fetch-repos [--refresh]`           | 刷新 `::github{}` 卡片的仓库元数据缓存                            |
+| `pnpm fetch-projects`                    | 刷新「我的项目」快照                                              |
+| `pnpm fetch-friend-icons [--refresh]`    | 补齐/刷新友链图标                                                 |
+| `pnpm build:favicon`                     | 从 `public/images/avatar.png` 重出 favicon 到三处                 |
+| `pnpm build:weather-cities`              | 重新生成 367 个地级市目录（需网络）                               |
+| `pnpm build:weather-bg -- --from <目录>` | 重新导出天气卡 7 张壁纸（需 640px 原图）                          |
+
+**测试与冒烟**（离线单测注入 `fetchImpl`，不访问真实网络）
+
+| 命令                          | 作用                                                          |
+| ----------------------------- | ------------------------------------------------------------- |
+| `pnpm test:utils`             | `src/utils` 纯函数（排序/评分/邻篇/canonical）                |
+| `pnpm test:nice-books`        | Nice Books 数据契约与搜索                                     |
+| `pnpm test:site-stats`        | Giscus 同步                                                   |
+| `pnpm test:contributions`     | 贡献日历数据脚本                                              |
+| `pnpm test:friend-icons`      | 友链图标缓存                                                  |
+| `pnpm test:projects`          | 项目同步/缓存/合并/排序                                       |
+| `pnpm test:lib`               | `scripts/lib` 与 `src/plugins` 单测                           |
+| `pnpm test:weather`           | 天气码表与城市目录（**不在 build 链**）                       |
+| `pnpm smoke:ui`               | 主站 UI 实机烟测，需先 `build + preview`                      |
+| `pnpm test:fancybox`          | 灯箱冒烟，需先 `build + preview`                              |
+| `pnpm smoke:nice-books`       | Nice Books 三页冒烟                                           |
+| `pnpm smoke:ai-news`          | AI 日报冒烟                                                   |
+| `pnpm smoke:pelican`          | 鹈鹕骑车冒烟，需先 `build + preview --port 4322`              |
+| `pnpm qa:nice-books-geometry` | Nice Books 3D 几何检查                                        |
+| `pnpm qa:weather-mainland`    | wttr.in 大陆直连实测（须在大陆网络，`NET`/`WINDOW` 两栏必填） |
+| `pnpm audit:ledger <票册.md>` | 票册自检（刻意不接进 build 与 CI）                            |
+
+> 三类冒烟脚本的基址参数形态不同，传错会表现为「选择器等不到」的假失败：`FANCY_BASE_URL` / `UI_SMOKE_BASE_URL` / `PELICAN_BASE_URL` 传**站点根**；`NICE_BOOKS_BASE_URL` / `AI_NEWS_BASE_URL` 传**完整页面地址**。
+
+### 构建链
+
+`pnpm build` 是一条 16 步的 `&&` 链：
+
+```
+7 组单测（projects / nice-books / site-stats / utils / contributions /
+          friend-icons / lib）
+→ validate-post-slugs       文章目录名不合规 → 构建失败
+→ fetch-friend-icons        拉友链图标
+→ generate-lqips            LQIP + WebP 变体 + 两份 manifest
+→ fetch-github-projects     「我的项目」快照
+→ fetch-github-repos        ::github{} 卡片缓存
+→ fetch-github-contributions  贡献日历
+→ astro build
+→ inject-buddha-banner      给 dist 全部 HTML 注入佛祖横幅
+→ pagefind --site dist      生成搜索索引
+```
+
+**会中断构建**：任一组单测失败、文章目录名不合规、`generate-lqips` 抛错、没有有效快照时的 `fetch-github-projects`、`astro build`（含 OG 图拉字体失败）、佛祖横幅 XML 格式不符、pagefind。
+**只告警不中断**：单个友链图标拉取失败（记负缓存）、`fetch-github-repos` 单个仓库失败、`fetch-github-contributions` 的全部分支。
+
+两个已知的坑：
+
+1. **改 Markdown 插件后产物没变？** Astro 的 content layer 会复用旧渲染结果。先删 `node_modules/.astro/`，存在时再删 `.astro/data-store.json`，再构建；touch 文件无效。CI 侧 `deploy.yml` 已对 `withastro/action` 传 `cache: false`，**任何 workflow 改动都不要恢复这个缓存**。
+2. **`astro build` 报 `No fonts are loaded`** 是 OG 图端点在构建期访问 `fonts.googleapis.com` 拉字体时网络抖了，不是代码问题。用 `curl` 确认连通性后重跑即可。
+
+### 环境
+
+- **本地**：`pnpm dev` → `http://localhost:4321`。已知 dev 限制：Pio 看板娘因 Svelte hydration 报错不渲染，验证 Pio 必须 `pnpm build && pnpm preview`；dev 下评论/留言是 mock 数据。
+- **线上**：<https://caiyan12.github.io/>。GitHub Actions 部署；Fastly 边缘缓存 HTML `max-age=600` 且缓存键不含查询串（加 `?cb=` 无效），刚推送完最多等 10 分钟。验证部署是否生效看响应头 `Last-Modified`，或直接下载 run 的 `github-pages` artifact。
+
+### CI 与部署
+
+- **PR**：`build.yml` 跑 `Astro Check` + 完整 `Astro Build`；`lint.yml` 跑 `prettier --check ./src`。
+- **push 到 main**：`build.yml` 的 Build job 跳过，完整构建只由 `deploy.yml` 执行一次后部署。
+- **定时**：`deploy.yml` 每 6 小时跑一次同步评论数据再部署；同步失败会阻止当次部署，线上保留上一个成功版本。
+- `deploy.yml` 的同步步骤跑在 `pnpm install` **之前**，所以那条链路只能用 Node 内置模块——给它加任何包依赖都会让部署秒失败。
+
+### 目录结构
 
 ```
 src/
-  config.ts              ← 站点配置（标题、导航、侧栏、Giscus 等都在这里改）
-  content.config.ts      ← 文章/页面的字段定义（schema）
+  config.ts              ← 站点配置中枢（见上一节）
+  content.config.ts      ← 文章/页面的字段定义
   content/
-    posts/<yyyymmddhhmmss>/index.md   ← 文章（目录即 URL slug，可放封面图）
-    spec/about.md           ← 关于页面
-  data/
-    diary.ts             ← 微言碎语
-    friends.json         ← 友链数据源
-    friends.ts           ← 友链类型与兼容导出
-    comments.ts          ← 最新评论小部件数据
-    guestbook.ts         ← 留言板单条换一批数据
-  pages/                 ← 路由（首页/文章/归档/说说/友链/相册/留言板/…）
-  ai-news/               ← AI 日报 React 阅读器运行时
-  layouts/               ← 页面骨架（Layout / MainGridLayout）
-  components/            ← 组件（导航/侧栏/文章卡片/小部件/评论…）
-  styles/global.css      ← 主题样式（Colorful 视觉还原）
-  styles/markdown-extended.css ← Markdown 扩展组件样式（全站正文共用）
-  plugins/               ← Markdown 与构建期转换插件
-  utils/                 ← 工具函数
-  constants/             ← 构建期生成数据（项目目录、LQIP、GitHub 卡片、友链图标 manifest）
-scripts/                 ← 构建脚本（项目目录、LQIP、GitHub 数据、友链图标、新建文章、佛祖横幅）
+    posts/<14位>/index.md  ← 文章（目录即 slug）
+    spec/about.md          ← 关于页
+    spec/friends.md        ← ⚠️ 孤儿文件，无渲染入口
+  data/                  ← 微言/友链/技能/时间线/项目/留言 mock 等手改数据
+  pages/                 ← 路由
+  nice-books/            ← /books/ 独立壳（数据/lib/组件/样式）
+  ai-news/               ← /ai-news/ React 阅读器
+  layouts/ components/ plugins/ utils/ constants/
 public/
-  ai-news/snapshot/      ← AI 日报离线 RSS 快照
-  friend-icons/          ← 友链图标本地缓存（与 src/constants/friend-icons.json 一起提交）
-  images/albums/         ← 相册（每个文件夹一个相册）
-  images/_variants/      ← 构建生成的 WebP 图片变体（勿手动编辑，gitignore）
-  fonts/                 ← Font Awesome 4 图标字体（仅 woff）
-  style/                 ← 自定义光标
+  images/albums/         ← 相册（文件夹驱动）
+  images/posts/<14位>/   ← 文章配图
+  images/slide/  bg/  random/  diary/
+  weather/               ← 天气服务、图标、壁纸、城市目录
+  pio/                   ← 看板娘（vendored，自维护）
+  ai-news/snapshot/      ← AI 日报离线快照
+  vendor/                ← 3D 标签云等 vendored 库
+scripts/                 ← 构建脚本、单测、冒烟；scripts/lib/ 是共用写入器与校验器
+vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
+佛祖保佑.xml             ← 构建后注入全部 HTML 的横幅
 ```
 
-## Markdown 扩展与全站正文样式
+### Giscus 评论
 
-主站统一由 `src/layouts/Layout.astro` 引入 `src/styles/markdown-extended.css`。所有经 `MainGridLayout` 渲染的主站页面（文章、关于、归档、搜索、友链、留言板等）共享 `.post-context` 下的扩展组件样式；独立的 `/ai-news/` React 阅读页不使用这套 Layout，保持自己的运行时和视觉边界。
+文章评论区用 `pathname`，留言板用 `specific` + `data-term="guestbook"`；文章尾部的表情反应由 Giscus 原生界面显示。评论数、侧栏「最新评论」与「吐槽水军」都来自构建期同步的 `src/data/site-stats.json`，**浏览器不请求 GitHub**。
+换仓库/分类：开 Discussions → 装 giscus app → 到 [giscus.app](https://giscus.app) 生成新的 `repo / repoId / category / categoryId` → 更新 `src/data/giscus-sync.json` 与 `src/config.ts` 的 `commentConfig`。主题样式在 `public/giscus-theme.css`。
 
-- **GitHub 仓库卡片**：文章中的 `::github{repo="owner/name"}` 由 `src/plugins/remark-extended.mjs` 在构建期输出 `.github-card`。卡片左侧显示 owner 的 GitHub 头像（`https://github.com/<owner>.png?size=128`），桌面端为 `48×48`，移动端（`≤680px`）为 `40×40`；右侧显示仓库名、描述、star、fork 和语言。元数据来自 `src/constants/github-repos.json`，浏览器不请求 GitHub API；缓存缺失时保留可用的回退链接。
-- **“我的项目”自动目录**：`scripts/fetch-github-projects.mjs` 在构建期通过 GitHub GraphQL 分页读取 `CaiYan12` 的公开仓库与 Profile Pinned 顺序，排除 fork 和归档仓库，写入 `src/constants/github-projects.json`。`src/data/projects.ts` 再叠加中文简介、完整技术栈、状态等人工覆盖与私有项目；已收录 Pinned 按 GitHub 顺序置顶，其余按开始时间倒序。刷新失败时复用有效快照，没有有效快照则构建失败；页面运行时不请求 GitHub API。
-- **友链图标缓存**：`src/data/friends.json` 是友链单一数据源，`src/data/friends.ts` 仅提供 `Friend` 类型和兼容导出。`pnpm fetch-friend-icons` 只补齐缺失图标，`--refresh` 才会刷新当前友链，也会重试负缓存条目；成功资产和清单分别写入 `public/friend-icons/` 与 `src/constants/friend-icons.json`。失败时保留旧缓存，首次失败记录受控的负缓存状态并显示首字占位；普通模式命中负缓存不会重试，删除友链也保留历史记录。页面只引用本地路径，运行时不请求友链域名或 Google favicon 服务。CI 构建生成的缓存只进入当次部署 artifact；要长期复用，需在本地运行命令并提交上述资产和清单。
-- **信纸稿纸面板**（/about/ 专用）：`:::letter-paper` 容器指令由 `src/plugins/remark-extended.mjs` 输出 `.letter-paper` 稿纸面板（暖纸底 + 32px 横线 + 红装订线 + 蓝红双笔手绘涂鸦层），内部结构为巨型头部（topbar/眉题/标题/手绘线）、黄色便签贴纸（承载原"写在前面"内容）、"✎ 碎碎念"小节标题、裸 `<div class="letter-paper-body">` 横线正文（逐字符静态微随机，见 `theme-script.ts` 的 `initPaperHandwriting()`）、"✦ NOW / NEXT" 时间线与页尾签名行（签名由插件固定输出，不写入 md）。**陷阱**：micromark 容器指令的一个 `:::` 会关闭整层嵌套栈，横线区必须用裸 div 包裹而非嵌套容器指令；**字体**：稿纸整体 `var(--font-hand)` 平方时光体（global.css 元素级 reset 会切断继承，容器需显式重声明），横线对齐 `--lp-shift` 与字体度量耦合、换字体须实测。
-- **Markdown 表格**：`src/styles/global.css` 中的 `.post-context table` 与 `.table-scroll` 规则在主站正文统一生效。Markdown 表格由 `src/plugins/rehype-table-wrapper.mjs` 包裹，原生 HTML 表格由 `src/plugins/remark-extended.mjs` 包裹；表格默认满正文宽度、居中，单元格文字上下居中，边框为 `#c4c4c4`，过宽内容只在自身滚动容器内横向滚动。
-- 修改上述插件或表格/卡片样式后，应至少检查一篇旧文章和一篇新文章的桌面、移动端布局，并补跑 `pnpm check`、`pnpm exec prettier --check ./src` 与 `pnpm build`。
+### 天气胶囊
 
-## 怎么写文章
+侧栏首位的小部件，数据**只有一个上游 `wttr.in`**：浏览器定位（普通精度、不按 IP 猜）→ 坐标粗化到一位小数 → 一次请求拿温度/体感/风速/湿度；中文地名由本地 367 城目录解析。侧栏卡与 `/domain/` 终端行共用一套服务（`public/weather/weather-service.js`）。
+规格与验收台账：[`docs/plans/2026-09-28-weather-capsule-spec.md`](docs/plans/2026-09-28-weather-capsule-spec.md)、[`docs/plans/2026-09-28-weather-capsule-plan.md`](docs/plans/2026-09-28-weather-capsule-plan.md)。维护约束（码表覆盖门、对比度门、禁改理由）在 [AGENTS.md](AGENTS.md)。
 
-1. 运行 `pnpm new-post -- <yyyymmddhhmmss> [标题]` 创建文章目录；构建规则会拒绝标题或中文 slug
-2. 在目录里编辑 `index.md`，frontmatter 字段见 `src/content.config.ts`
-3. `git add . && git commit && git push` → GitHub Actions 自动构建并部署到 GitHub Pages（`https://caiyan12.github.io/`）
-
-## 文章 URL 规范（强制）
-
-- 所有 `src/content/posts/` 的直接子目录（包括公开文章、私密文章和草稿）必须严格是 14 位数字：`yyyymmddhhmmss`。
-- 文章 URL 固定为 `/posts/<yyyymmddhhmmss>/`，禁止使用文章标题、中文或其他自定义 slug。
-- 目录名是文章 `id`，站内卡片、归档、RSS、二维码和“本文链接”都会从该目录名生成 URL。
-- `published` 只有日期时，目录时间部分统一使用 `000000`；已有时分秒应原样对应目录名。
-- `pnpm build` 会先运行 `scripts/validate-post-slugs.mjs`；新增文章应使用 `pnpm new-post -- <yyyymmddhhmmss> [标题]`。
-- 文章卡片列表统一采用固定每页 10 篇的分页（`siteConfig.postsPerPage` 单一下旋钮），覆盖首页、分类、标签、月归档和热门列表。各列表根路径是第 1 页规范地址；生成的 `/page/1/` 别名仍可访问，但 canonical 指向根路径，并从 sitemap 排除。
-- 分页控件视觉统一为无圆角 40×40 方块：正常态品牌色边框、组件背景和黑字，hover 为品牌色底/边框与白字，当前/禁用态为深灰边框、组件背景和黑字；跳转输入框为 120×40 并隐藏数字箭头，导航符号为 `<<`、`<`、`>`、`>>`、`→`，移动端仅保留首、前、当前、后、末五项。
-
-## Giscus 评论
-
-文章评论区与留言板 `/guestbook/` 均已启用 Giscus，当前配置位于 `src/config.ts` 的 `commentConfig`：
-
-- 仓库：`CaiYan12/caiyan12.github.io`
-- 仓库 ID：`R_kgDOUJeNhw`
-- Discussions 分类：`Announcements`
-- 分类 ID：`DIC_kwDOUJeNh84DEonO`
-- 页面映射：文章评论区为 `pathname`；留言板为 `specific`，`data-term="guestbook"`
-- 表情反应：`reactionsEnabled: "1"`，由文章页底部 Giscus 原生界面显示；`emitMetadata: "0"`，不复制或单独同步表情数量
-- 语言：`zh-CN`
-- 主题：`https://caiyan12.github.io/giscus-theme.css`，源文件为 `public/giscus-theme.css`
-
-评论区主题沿用 Colorful 风格：白底、细边框、圆角卡片和海洋绿 hover 阴影；头像框不加阴影，站长徽标复用 `public/images/admin.png` 并显示“站长”。Giscus iframe 生成的原始身份文本仍由 Giscus 控制，主题 CSS 只做视觉替换。
-
-### 评论数自动同步
-
-- **COMMENTS**：`deploy.yml` 在构建前运行 `scripts/sync-site-stats.mjs`，通过 GitHub GraphQL 读取 `Announcements` 分类下的 Discussions（口径：顶层评论 + 全部回复），按 `posts/<14位目录名>/` 精确匹配文章后写入 `src/data/site-stats.json`（原子写入，生成结果不提交回仓库；`guestbook` 与欢迎帖不计入）。没有 Discussion 的文章回退 frontmatter 历史值。
-- **最新评论**：同一次构建期同步写入最多 20 条符合口径的评论到 `src/data/site-stats.json`；首页静态渲染最多 5 条，“换一批”只在浏览器内切换已嵌入数据，不请求 GitHub/Giscus。评论内容按展示长度截断，开发环境保留本地 mock 便于视觉验收。
-- **吐槽水军**：同一同步脚本单独读取标题为 `guestbook` 的 Discussion 顶层留言，按时间倒序写入 `guestbookComments`（最多 20 条）；侧栏 `WidgetBlogger` 每次只展示 1 条并复用最新评论的“换一批”系统，只使用构建期快照。
-- 定时同步：`deploy.yml` 每 6 小时第 17 分钟（UTC）运行，另支持 push 与手动触发；同步失败会阻止当次部署，线上保留上一个成功版本。
-- 首页卡片、文章页头部与热门排序中的吐槽数统一读取 `src/utils/site-stats.ts` 的有效值；文章页底部的表情数由 Giscus 原生界面显示，不再单独维护围观数。
-
-如需重新接入或更换仓库：
-
-1. 在 GitHub 仓库 **Settings → Features** 开启 **Discussions**
-2. 安装 [giscus app](https://github.com/apps/giscus)
-3. 到 [giscus.app](https://giscus.app) 生成新的 `repo / repoId / category / categoryId`
-4. 更新 `src/config.ts` 的 `commentConfig`，确认 `enable` 为 `true`，并保留主题文件路径
-
-## 如何添加相册
-
-在 `public/images/albums/` 下新建文件夹，放入图片即可自动生成相册。
-
-## 界面维护说明
-
-- 图片墙 `/images/` 的桌面端图片保持 `180×120` 与 `object-fit: cover`；移动断点改为流体宽度，但始终保持 `3:2` 比例，确保日期栏对齐且不产生横向溢出。
-- 响应式图片：文章封面、幻灯片、相册、图片墙经 `src/components/control/ResponsiveImage.astro`（`<picture>` + WebP 变体）渲染；变体由 `scripts/generate-lqips.mjs` 在构建时生成到 `public/images/_variants/`（480/720/1080/1440 四档）。Fancybox 灯箱仍打开原图（缩略图用变体省流量）。新增图片无需手动生成变体，构建自动处理。
-- 键盘 skip link（“跳到正文”）位于 `Layout.astro` body 首元素、Swup 容器之外——移动或包进 `main` 会导致切页后丢失；样式在 `global.css` 的 `.skip-link`（默认视觉隐藏，`:focus-visible` 归位显示）。
-- 顶部导航 QQ/微信的 hover 二维码弹层保持白色圆角卡片，四周 `10px` 内距，内部二维码裁切框统一为 `140×140`。两张现有源图的留白比例不同，裁切定位维护在 `src/styles/global.css`，更换二维码资源后需要重新检查实际码区尺寸。
-- 桌面头部标题（`#header h1`）与左侧 `100px` 浮动 logo 并排：其 `max-width` 必须为 `calc(100% - 100px)` 扣除 logo 占位。`#header` 固定 `height:180px; overflow:hidden`，若标题宽度超过 `.box` 内容宽减去浮动宽，会被挤到 logo 下方落入裁切区并与 `#head-nav` 重叠（681–1100px 区间实测触发，2026-09-04 修复）。调整头部布局或 `.box` 宽度规则后，须在 681/770/860/980/1100px 等断点复查标题位置。
-- 头部微言轮播（`#header .text`）由 `src/utils/theme-script.ts` 的 `initHeaderTicker()` 驱动：机制复刻原版 AutoScroll（每 4s 上滚一条 0.8s ease，滚完把首条 li 移到末尾无限轮转，无克隆条、任意条数无缝；hover 暂停、移出恢复；`prefers-reduced-motion` 下不启动）。条数取 `src/data/diary.ts` 前 4 条（`Navbar.astro` 的 `slice(0, 4)`）。**节奏对齐迁移前 CSS 关键帧版（勿改回原版 300ms）**；步长 `-24px` 与 `global.css` 的 `#header .text li` 行高耦合，改行高须同步；头部在 Swup 容器外，脚本随 `pagefindReady()` 初始化一次，勿加进 after-swap hook。
-- 涉及上述界面的样式调整后，应在本地开发服务器中检查主要宽度、hover 状态、裁切效果、日期/弹层对齐和页面横向溢出，并补跑 `pnpm check` 与 `pnpm build`。
-- 首页右侧文章推荐上方固定为“最新 / 手气不错”两栏，使用普通箭头＋日期列表；下方只保留一个“热门推荐”，按既有热度排序显示旗帜形序号。随机文章在构建期生成，浏览器不新增 GitHub 请求。
-- 3D 标签/分类云（`/tag/` 与 `/category/` 云集页）：由 `src/components/layout/TagCloud3D.astro` 渲染，数据与下方 `#blogtags` 药丸云同源（药丸云保留：当前项高亮 + `prefers-reduced-motion` 回退）。库为 vendored `public/vendor/svg3dtagcloud/`（npm `svg-3d-tag-cloud@0.0.20`，MIT），标签颜色走库内置 10 色调色板；hover 放大 1.15 倍、“N篇文章”tooltip 上浮已内置；实例经 `window.__tagCloud3D` 跨页交接，Swup 互切安全。
-- Pio 看板娘（`public/pio/static/`，vendored 但随本项目自维护）：
-    - 操作按钮列顺序为 `home → info → side（停靠切换）→ close`，停靠支持左/右切换并写入 `localStorage.pioSide`，加载时恢复偏好；右侧停靠时按钮列、折叠按钮（`.pio-show`）、消息框位置均已对称适配。
-    - 看板娘默认折叠，仅显示“点击召唤Pio”按钮（hover 有提示）；折叠状态记忆在 `localStorage.posterGirl`（召唤 = `1` 展开，关闭 = `0` 折叠，其余值一律折叠）。
-    - 消息框居中于人物并带底部三角尾巴，`max-width: 100%` 限制长消息左缘不溢出视口；再现按钮与操作按钮已上移避开 myhkw 播放器歌词框与展开面板。
-    - “关于我”按钮的跳转仓库由 `src/config.ts` 的 `pioConfig.dialog.link` 配置（现为 Pio 官方仓库）。
-    - 已知问题：`pnpm dev` 下 Pio 因 Svelte hydration 报错不渲染（仅 dev，生产构建正常）；排查 pio 视觉问题请用 `pnpm build && pnpm preview`。
+---
 
 ## 与 Emlog 原站的差异
 
 - 移除：IP 归属地显示、用户注册、Flash 播放器、原 Emlog 评论表情面板（现由 Giscus 原生表情反应提供）
-- 评论数据由 Giscus 承载（侧栏“最新评论”使用构建期同步快照，开发环境 mock 可在 `src/data/comments.ts` 维护）
-- 首页幻灯片图片在 `src/config.ts` 的 `slideshowConfig` 中配置
+- 评论数据由 Giscus 承载（侧栏「最新评论」使用构建期同步快照，开发环境 mock 可在 `src/data/comments.ts` 维护）
+- 首页幻灯片图片由最新文章头图驱动（见「三个想当然会错的地方」）
 
-## TODO:
+---
+
+## TODO 与远期规划
 
 以下条目为历史排行的销项索引，编号保持不变；完成记录已按惯例清理，实现细节见 git history 与 AGENTS.md 对应维护约束：优化项排行第 1–7 项于 2026-09-04 销项；内容扩充第 10 项（标签云集 `/tag/`，2026-09-04）、第 11 项（分类云集 `/category/`，2026-09-05）、第 12 项（热门页 `/hot/`，2026-09-05）、第 13 项（全站字体策略，2026-09-05）已完成；Nice Books「私人藏书桌」升级（2026-09-07）已交付，视觉契约见 `docs/nice-books-design.md`、验收记录见 `docs/nice-books-design-test.md`；TODO 13 遗留的「稿纸横线贯穿整纸」已于 2026-09-19 完成——网格改画在 `.letter-paper` 面板层，相位由脚本运行时按正文首行基线反推，头部高度无需确定化，同批把 `/about/` 装饰元件换成手绘墨迹 SVG（维护约束见 AGENTS.md「信纸稿纸」条目）；远期规划第 8 项（Astro 5 → 6）已于 2026-09-20 完成——先做 Tailwind 接入改造（去掉 @astrojs/tailwind，改由根 `postcss.config.mjs` 直连），再升 astro 6.4.8 / @astrojs/react 5.0.7 / @astrojs/svelte 8.1.2 / astro-expressive-code 0.43.1，`pnpm check` 零错误、206 页构建通过、三套 Playwright smoke（fancybox 27/27、nice-books 72/72、ai-news 9/9）全绿，样式经 24 页 15,554 个元素的计算样式逐元素比对确认零变化（详见 AGENTS.md「构建链与依赖约束」）；同批把 Astro 6 标记为 deprecated 的 `markdown.remarkPlugins` / `rehypePlugins` 迁到 `markdown.processor: unified({...})`（2026-09-20）——`@astrojs/markdown-remark` 按 astro 6.4.8 的硬钉版本 7.2.0 作直接依赖，构建告警清零，固定构建期随机后完整产物 1114 个文件（含 pagefind 索引）逐字节零差异，全站门禁（astro check 零错误 + fancybox 27/27 + nice-books 单测 51/51 与 smoke 72/72 + ai-news 9/9）全绿。
 
 ### 评估已完成、明确不实施（保留结论以防重复评估）
 
-- [x] **纯 HTML 页面资源移植**（2026-09-19 完成评估；结论：全部候选不移植，本项关闭）：源为 2020–2022 的手写多页站，实际路径 `C:\Users\Einn Tzai\Documents\HTML5网页`（本条目旧写法「文档\HTML5页面」按字面搜不到），入口 `index.html`（"WindowsIt's Music Site"）链向 `about/`、`login/`、`quesion/` 与 5 个 `tools/` 子页，全站 25 个 HTML 已逐一核对。排除理由分四类：**第三方「另存为」产物**（版权与外部依赖风险）——`!downloaded/`（Google 翻译镜像、jQuery MP4 播放器、css3 3D 翻牌）、`tools/eeslap`、`tools/burymewithmymoney`、`tools/smashthewalls`，特征为 `*_files/` 子目录 + 脚本文件名带 `.下载` + 内嵌 analytics/firebase/three.js，`login/index.html` 标题本身即下载代码片段且静态站无鉴权场景；**已被本站取代的前代模板残留**——`myblog/`、`HACKEREMPIER/`、`officialblog/`、`about/index.html`、需后端的 `_UNUSED TESTED PAGE/` 留言表单；**纯 CSS 演示无内容增量**——`tools/chemicals`（诞生石药水瓶）、`tools/newtonbai`（牛顿摆）、`tools/moonnight`（星空月景）虽零依赖可搬，但属装饰性 demo；`tools/makebridge` 系 freeCodeCamp "Santa's Helper" 教程复刻（`santaX`/`perfectAreaSize` 变量名原样），移植需去圣诞主题化并注明来源，收益不抵成本；`tools/daojishi` 倒计时硬编码 `12/31/2020 23:59:59`，原样移植即死页；**原创文字资产不宜沿用页面形态**——`quesion/`（恶搞产品文案）与 `slide/`（"HOT IDEAS" 卡片）为站主 2020 年的吐槽，若将来启用应以重新撰写的文章呈现，旧页面不搬。`MainSources/` 仅字体与两个未核授权的音视频，同样不动。
+- [x] **纯 HTML 页面资源移植**（2026-09-19 完成评估；结论：全部候选不移植，本项关闭）：源为 2020–2022 的手写多页站，实际路径 `C:\Users\Einn Tzai\Documents\HTML5网页`（本条目旧写法「文档\HTML5页面」按字面搜不到），入口 `index.html`（"WindowsIt's Music Site"）链向 `about/`、`login/`、`quesion/` 与 5 个 `tools/` 子页，全站 25 个 HTML 已逐一核对。排除理由分四类：**第三方「另存为」产物**（版权与外部依赖风险）——`!downloaded/`（Google 翻译镜像、jQuery MP4 播放器、css3 3D 翻牌）、`tools/eeslap`、`tools/burymewithmymoney`、`tools/smashthewalls`，特征为 `*_files/` 子目录 + 脚本文件名带 `.下载` + 内嵌 analytics/firebase/three.js，`login/index.html` 标题本身即下载代码片段且静态站无鉴权场景；**已被本站取代的前代模板残留**——`myblog/`、`HACKEREMPIER/`、`officialblog/`、`about/index.html`、需后端的 `_UNUSED TESTED PAGE/` 留言表单；**纯 CSS 演示无内容增量**——`tools/chemicals`（诞生石药水瓶）、`tools/newtonbai`（牛顿摆）、`tools/moonnight`（星空月景）虽零依赖可搬，但属装饰性 demo；`tools/makebridge` 系 freeCodeCamp "Santa's Helper" 教程复刻（`santaX`/`perfectAreaSize` 变量名原样），移植需去圣诞主题化并注明来源，收益不抵成本；`tools/daojishi` 倒计时硬编码 `12/31/2020 23:59:59`，原样移植即死页；**原创文字资产不宜沿用页面形态**——`quesion/`（恶搞产品文案）与`slide/`（"HOT IDEAS" 卡片）为站主 2020 年的吐槽，若将来启用应以重新撰写的文章呈现，旧页面不搬。`MainSources/` 仅字体与两个未核授权的音视频，同样不动。
 
 - [x] **原模板未移植页面评估**（2026-09-04 完成）：对 `../limh.me` 全部 12 个 page-_.php / t.php / reg.php / function/_.php 逐一核对，与 myblog 现有 14 个路由 + sidebarConfig 侧栏清单对齐。结论：已移植清单（log_list/echo_log/header/footer/side/options→config.ts/归档/微语/留言板/关于/友链/图片墙/相册/404/全部侧栏 widget/文章尾部表情/吐槽水军）无遗漏。未移植 9 项取舍：**标签云集页**已作为 TODO 10 落地为 `/tag/`（2026-09-04 完成）；**读者墙**与**微语分页+[F\*]表情码解析**移入远期规划（触发条件见该节）；分享组件（分享目标大半死链）、日历 widget（Emlog ajax 依赖，交互已被归档/时间线替代）、读者等级（Giscus 无访客邮箱数据源）不移植；前台注册（需后端写库+验证码）、评论 UA/IP 属地（Giscus 不提供该数据）、通用页面模板变体 page-test/page1/page-colorful（已被 `spec` collection 的 `[...slug]` 覆盖）为架构性/数据源排除项，永久排除。原 `module.php`（eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）维持严禁搬运。
 
@@ -212,4 +514,13 @@ public/
 
 - **11. 读者墙**（limh.me 移植评估得分 10，条件观望）：原版 `function/page-guest.php` 为评论区活跃者头像墙（Gravatar + 评论次数 top200）。技术上可行——Giscus 走 GitHub Discussions，`sync-site-stats.mjs` 可扩展按 author 聚合，`author.avatar_url` 替代 Gravatar；但当前站评论量极小，移植即空页。**触发条件：留言板/文章评论参与者明显增长（>20 人）**。
 
-- _*12. 微语分页 + [F*] 表情码解析_*（limh.me 移植评估，数据层无当前需求）：原版 `t.php` 含 pagenavi 分页与 `[F1]`–`[F18]` 表情码 → gif 替换；本站 `diary.ts` 仅 3 条数据（无分页需求）、内容零 `[F*]` 码（rg 实测）、表情 gif 资源未迁移。**触发条件：说说条数增长到单页过长（>30 条）或迁移历史说说数据含表情码时**，一并补 `public/images/face/` 资源。
+- _*12. 微语分页 + [F*] 表情码解析_*（limh.me 移植评估，数据层无当前需求）：原版 `t.php` 含 pagenavi 分页与 `[F1]`–`[F18]` 表情码 → gif 替换；本站 `diary.ts` 当前条数远不到单页过长的程度、内容零 `[F*]` 码（rg 实测）、表情 gif 资源未迁移。**触发条件：说说条数增长到单页过长（>30 条）或迁移历史说说数据含表情码时**，一并补 `public/images/face/` 资源。
+
+---
+
+## 致谢与许可
+
+- 视觉与交互还原自 Emlog **Colorful**（明月浩空）主题；看板娘来自 [Dreamer-Paul/Pio](https://github.com/Dreamer-Paul/Pio)，3D 标签云来自 `svg-3d-tag-cloud`，OG 图实现参考了 [CuteLeaf/Firefly](https://github.com/CuteLeaf/Firefly)（MIT）。各自的许可与署名保留在对应子目录。
+- 鹈鹕骑车游戏来自上游 `riba2534/claude-opus-5-5-demo`，按 ISC 声明落地，源码留档 `vendor/pelican-bike/`。
+- 背景图来源 Pexels，逐张口径见 `public/images/bg/PEXELS-SOURCES.md`。
+- 本仓库自身**没有 LICENSE 文件**，内容与代码版权归站长所有。
