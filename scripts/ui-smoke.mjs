@@ -67,10 +67,21 @@ const isKnownDead = (url) => KNOWN_DEAD.some((p) => url.startsWith(base + p));
 
 const browser = await harness.browser.launch(harness.launch);
 
+/** 文章正文里有裸的第三方视频 iframe（YouTube / Bilibili）。整套冒烟用 waitUntil:"load"
+ *  导航，而 load 要等这些子帧 —— 它们可达与否取决于本地网络当时的状态，2026-09-30 就有
+ *  两次 30s 超时把整套打断，且失败点随网络漂移，看着像新判据的锅。判据不该依赖外部
+ *  视频站的可用性，所以在 context 级别掐掉这些请求：abort 后 iframe 立刻以失败收场，
+ *  load 不再被挂住。只匹配外部域名，本地资源一条都不动。 */
+const EXTERNAL_EMBEDS =
+	/(?:youtube.com|youtu.be|player.bilibili.com|v.qq.com)/i;
+const stubExternalEmbeds = (context) =>
+	context.route(EXTERNAL_EMBEDS, (route) => route.abort("blockedbyclient"));
+
 // ---------------- 文章页标题：五档宽度下不再被裁切 ----------------
 const ctx = await browser.newContext({
 	viewport: { width: 1440, height: 900 },
 });
+stubExternalEmbeds(ctx);
 // 只有这一页挂报错采集（改前口径：其余 context 的页不入 errors）
 const page = harness.attach(await ctx.newPage());
 
@@ -319,28 +330,72 @@ check(
 await page.addStyleTag({
 	content: ".post-context .spoiler{transition-duration:2s !important}",
 });
+// 静止相位由状态定义，不由墙钟：动画全部跑完 且 底色回到纯黑。
+// 原先是 hoverOff 之后死等 2300ms —— 插桩实测这条被拉到 2s 的过渡约 420ms 就落定，
+// 2300 只是碰巧留了 300ms 余量；主线程被播放器 / Giscus / swup 挤住时就会采到中间帧。
 await hoverOff();
-await page.waitForTimeout(2300);
-const layer = await page.evaluate(() => {
-	const par = document.querySelector(".post-context .spoiler");
-	const kid = par.querySelector("strong");
-	const box = (e) => {
-		const r = e.getBoundingClientRect();
-		return { x: r.x, y: r.y, w: r.width, h: r.height };
-	};
-	const pr = box(par),
-		kr = box(kid);
-	return {
-		clip: {
-			x: Math.floor(pr.x),
-			y: Math.floor(pr.y) - 2,
-			width: Math.ceil(pr.w),
-			height: Math.ceil(pr.h) + 4,
-		},
-		left: { x: pr.x, y: pr.y, w: Math.max(6, kr.x - pr.x - 2), h: pr.h },
-		right: { x: kr.x + 2, y: kr.y, w: Math.max(6, kr.w - 4), h: kr.h },
-	};
-});
+await page.waitForFunction(
+	() => {
+		const el = document.querySelector(".post-context .spoiler");
+		return (
+			el.getAnimations().length === 0 &&
+			getComputedStyle(el).backgroundColor === "rgb(0, 0, 0)"
+		);
+	},
+	null,
+	{ timeout: 8000 },
+);
+const captureLayer = () =>
+	page.evaluate(() => {
+		const par = document.querySelector(".post-context .spoiler");
+		const kid = par.querySelector("strong");
+		const box = (e) => {
+			const r = e.getBoundingClientRect();
+			return { x: r.x, y: r.y, w: r.width, h: r.height };
+		};
+		const pr = box(par),
+			kr = box(kid);
+		return {
+			clip: {
+				x: Math.floor(pr.x),
+				y: Math.floor(pr.y) - 2,
+				width: Math.ceil(pr.w),
+				height: Math.ceil(pr.h) + 4,
+			},
+			left: {
+				x: pr.x,
+				y: pr.y,
+				w: Math.max(6, kr.x - pr.x - 2),
+				h: pr.h,
+			},
+			right: { x: kr.x + 2, y: kr.y, w: Math.max(6, kr.w - 4), h: kr.h },
+		};
+	});
+// 盒是视口坐标，而「量盒」与「截图」是两次异步调用：中间任何 reflow 或滚动锚定
+// 都会让同一组像素落到别的 content 上。所以每次采样都重新量盒，并在截图后复核它没动。
+const sameLayer = (a, b) =>
+	["clip", "left", "right"].every((k) =>
+		["x", "y", "w", "h"].every(
+			(f) => Math.abs((a[k][f] ?? 0) - (b[k][f] ?? 0)) < 0.5,
+		),
+	);
+const spoilerState = () =>
+	page.evaluate(() => {
+		const par = document.querySelector(".post-context .spoiler");
+		const bg = getComputedStyle(par).backgroundColor;
+		const m = bg.match(/rgba\([^()]*?,\s*([\d.]+)\)/);
+		const pr = par.getBoundingClientRect();
+		return {
+			alpha: m ? +m[1] : 1,
+			anims: par.getAnimations().length,
+			fonts: document.fonts.status,
+			scrollY: Math.round(scrollY),
+			px: +pr.x.toFixed(1),
+			py: +pr.y.toFixed(1),
+			pw: +pr.width.toFixed(1),
+		};
+	});
+let layer = await captureLayer();
 const meanOf = async (img, r) => {
 	const meta = await sharp(img).metadata();
 	const left = Math.max(
@@ -373,19 +428,74 @@ const meanOf = async (img, r) => {
 	return sum / n;
 };
 const shotGap = async () => {
+	for (let attempt = 0; attempt < 5; attempt++) {
+		layer = await captureLayer();
+		const img = await page.screenshot({ clip: layer.clip });
+		const after = await captureLayer();
+		if (sameLayer(layer, after)) {
+			const L = await meanOf(img, layer.left),
+				R = await meanOf(img, layer.right);
+			return {
+				gap: R - L,
+				L,
+				R,
+				state: await spoilerState(),
+				stable: true,
+			};
+		}
+	}
+	layer = await captureLayer();
 	const img = await page.screenshot({ clip: layer.clip });
-	return (await meanOf(img, layer.right)) - (await meanOf(img, layer.left));
+	const L = await meanOf(img, layer.left),
+		R = await meanOf(img, layer.right);
+	return { gap: R - L, L, R, state: await spoilerState(), stable: false };
 };
-const restGap = await shotGap();
+const rest = await shotGap();
 await hoverOn();
-await page.waitForTimeout(1000);
-const midGap = await shotGap();
-await page.waitForTimeout(1600);
-const doneGap = await shotGap();
+// 半程：底色 alpha 第一次落到 ≤0.3 且动画仍在跑。老写法是 hoverOn 后死等 1000ms，
+// 插桩实测那一刻读到的正是 α=0.18 —— 现在直接按 α 取这一相位，不再赌墙钟。
+await page
+	.waitForFunction(
+		() => {
+			const el = document.querySelector(".post-context .spoiler");
+			const m = getComputedStyle(el).backgroundColor.match(
+				/rgba\([^()]*?,\s*([\d.]+)\)/,
+			);
+			const a = m ? +m[1] : 1;
+			return a <= 0.3 && el.getAnimations().length > 0;
+		},
+		null,
+		{ timeout: 8000 },
+	)
+	.catch(() => {});
+const mid = await shotGap();
+// 「展现」必须等**整棵子树**落定，不能只等父元素：这条判据要抓的正是「子元素比父慢」，
+// 用父的 getAnimations() 当就绪信号的话，慢的子元素还在过渡中就被当成「展现后」，
+// 于是缺陷同时污染半程与展现两个读数、差值被抵消（M1′ 变异实测：注入 4s 的子层黑，
+// 半程 -16.5 / 展现 -16.3，判据照样绿）。settleSpoiler() 只看父，故这里另用一个子树版。
+const heimuRevealed = await page
+	.waitForFunction(
+		() =>
+			document
+				.querySelector(".post-context .spoiler")
+				.getAnimations({ subtree: true }).length === 0,
+		null,
+		{ timeout: 12000 },
+	)
+	.then(() => true)
+	.catch(() => false);
+const done = await shotGap();
 check(
 	"两段黑幕同步褪去（无第二层叠加；像素判据）",
-	Math.abs(restGap) <= 8 && Math.abs(midGap) <= Math.abs(doneGap) + 5,
-	`静止差 ${restGap.toFixed(1)}，半程差 ${midGap.toFixed(1)}，展现后差（加粗本身占墨基线）${doneGap.toFixed(1)}；叠层缺陷修前实测半程 -34.5`,
+	Math.abs(rest.gap) <= 8 &&
+		Math.abs(mid.gap) <= Math.abs(done.gap) + 5 &&
+		rest.state.alpha === 1 &&
+		rest.state.anims === 0 &&
+		rest.stable &&
+		mid.stable &&
+		done.stable &&
+		heimuRevealed,
+	`静止差 ${rest.gap.toFixed(1)}（底色 α=${rest.state.alpha}、动画 ${rest.state.anims}、盒 ${rest.state.px}·${rest.state.py}、字体 ${rest.state.fonts}）；半程差 ${mid.gap.toFixed(1)}（α=${mid.state.alpha}）；展现后差（加粗本身占墨基线）${done.gap.toFixed(1)}；三次采样期间布局均未移动=${rest.stable && mid.stable && done.stable}；叠层缺陷修前实测半程 -34.5`,
 );
 await hoverOff();
 checkClean("票 02");
@@ -397,6 +507,7 @@ const noJs = await browser.newContext({
 	javaScriptEnabled: false,
 	viewport: { width: 1280, height: 900 },
 });
+stubExternalEmbeds(noJs);
 const njPage = await noJs.newPage();
 
 await njPage.goto(base + "/search/", { waitUntil: "load" });
@@ -551,6 +662,7 @@ check(
 const slow = await browser.newContext({
 	viewport: { width: 1280, height: 900 },
 });
+stubExternalEmbeds(slow);
 await slow.route("**/pagefind/**", async (route) => {
 	await new Promise((r) => setTimeout(r, 700));
 	await route.continue();
@@ -2283,11 +2395,24 @@ check(
 await page.keyboard.press("Escape");
 await page.waitForTimeout(400);
 
-// Tab 首站：必须等 0.2s 过渡走完再量几何，否则会读到 translateY(-200%) 的起点（本轮踩过）
+// Tab 首站：等的是「这条 transform 过渡真的走完」，不是墙钟。
+// .skip-link 是 fixed + top:10px + translateY(-200%)、高 37px ⇒ 未展开时 top = −64，展开后 = +10。
+// 上一版把死等从 200ms 加到 400ms 是症状修复：Tab 紧跟 waitUntil:"load" 按下，而这一页还挂着
+// myhkw 播放器的 jQuery、Giscus 与 swup 的 loadOnIdle，:focus-visible 的第一帧可以晚于 400ms 才排上，
+// 于是量到过 −39（约走到 34%）。现在逐帧等到「无动画在跑 且 top 已非负」，落不下来就带着坏读数翻红。
 await page.goto(base + "/", { waitUntil: "load" });
 await page.keyboard.press("Tab");
-await page.waitForTimeout(400);
-const tabFirst = await page.evaluate(() => {
+const tabFirst = await page.evaluate(async () => {
+	const raf = () => new Promise((r) => requestAnimationFrame(r));
+	for (let i = 0; i < 90; i++) {
+		const el = document.activeElement;
+		if (
+			el.getAnimations().length === 0 &&
+			el.getBoundingClientRect().top >= 0
+		)
+			break;
+		await raf();
+	}
 	const el = document.activeElement;
 	const r = el.getBoundingClientRect();
 	return {
@@ -2530,6 +2655,901 @@ check(
 		(cursorOffenders.length
 			? `：${cursorOffenders.slice(0, 8).join("、")}${cursorOffenders.length > 8 ? ` …等 ${cursorOffenders.length} 个` : ""}`
 			: ""),
+);
+
+// ---------------- 语录条（2026-09-30 新增元件） ----------------
+// 判据全部落在计算值 / 几何 / DOM 顺序 / 文本结果上，不锁 CSS 源文本与类名字符串。
+const QUOTE_DEFAULT_EN = "The purpose of computing is insight, not numbers.";
+const QUOTE_MAX_HEIGHT = 160; // 桌面～平板：站长 2026-09-30 裁决（放回 Hoare/Kernighan 后实测最高 156.7px）
+const QUOTE_MAX_HEIGHT_NARROW = 260; // 手机 390：实测最高 251.4px（Hoare 那条排到英文 6 行）
+const QUOTE_MAX_EN_CHARS = 220; // 只挡"塞一段段落进来"；真正约束版面的是下面逐条量高度那条
+const QUOTE_MAX_ZH_CHARS = 44;
+// 站长指定的终端箭头几何：静息距边框 80px，hover 收到 70px（各向外漂 10px），
+// 正文换行宽度由它反推，箭头与文字之间至少留 16px 空气。
+const QUOTE_GUTTER = 80;
+const QUOTE_GUTTER_HOVER = 70;
+const QUOTE_CHEVRON_AIR = 16;
+// 箭头显示的最低一档视口：981 是本站 980 断点的上邻，正文列在那里最窄（实测 761px），
+// 封顶与间隙都在这一档最吃紧，必须量到（WIDTHS 里没有它）。
+const QUOTE_CHEVRON_WIDTHS = [1440, 1100, 1000, 981, 980];
+// 语录条专用的视口清单。共享的 WIDTHS（1440/1100/860/680/390）曾让一整段缺陷隐身：
+// 换句按钮要 30px 的右上角，而限宽 720px 的正文列只有在带宽 ≥788 时才退得开 ——
+// 681–788 这段没有任何一档采样落在里面，上一轮就是带着 7–12 条压字发出去的。
+const QUOTE_WIDTHS = [1440, 1100, 981, 860, 821, 820, 768, 681, 680, 390];
+// 站长的封顶裁决按形态分两档：桌面/平板 160，手机 260。
+const quoteCap = (w) => (w < 500 ? QUOTE_MAX_HEIGHT_NARROW : QUOTE_MAX_HEIGHT);
+const flat = (s) => (s ?? "").replace(/\s+/g, " ").trim();
+
+const bandPlacement = [];
+const bandStyle = [];
+const bandFrame = [];
+// 描边是站长点名的「与上方白卡区分」手段，读计算值而不是 CSS 源文本：
+// 2px / solid / 品牌绿 rgb(0, 192, 0)，四条边都要一致。
+const QUOTE_FRAME = "2px solid rgb(0, 192, 0)";
+const QUOTE_RADIUS = "5px"; // 本站卡面的既定圆角值（global.css 里到处是这个字面量，无 token）
+// 投影的静息态必须显式写成「全透明 + 零偏移」而不是 none，理由与 clip-path 那条一样：
+// 两端同型才保证是连续插值。这条字符串同时是「阴影确实淡回去了」的判据值。
+const QUOTE_SHADOW_REST = "rgba(0, 0, 0, 0) 0px 0px 0px";
+let bandPages = 0;
+for (const path of OUTLINE_PAGES) {
+	await page.setViewportSize({ width: 1440, height: 900 });
+	await page.goto(base + path, { waitUntil: "load" });
+	const got = await page.evaluate(() => {
+		const bands = [...document.querySelectorAll("[data-quote-band]")];
+		if (bands.length !== 1) return { count: bands.length };
+		const band = bands[0];
+		const wrapper = document.getElementById("wrapper");
+		const footer = document.getElementById("footer");
+		const en = band.querySelector("[data-quote-en]");
+		const btn = band.querySelector("[data-quote-reroll]");
+		const cs = getComputedStyle(band);
+		return {
+			count: 1,
+			// 四条边必须算成同一个值（谁只改一条边就该被看见）
+			border: (() => {
+				const sides = new Set(
+					["Top", "Right", "Bottom", "Left"].map(
+						(s) =>
+							`${cs["border" + s + "Width"]} ${cs["border" + s + "Style"]} ${cs["border" + s + "Color"]}`,
+					),
+				);
+				return sides.size === 1
+					? [...sides][0]
+					: `四边不一致 ${[...sides].join(" / ")}`;
+			})(),
+			radius: cs.borderTopLeftRadius,
+			afterWrapper: !!(
+				wrapper &&
+				wrapper.compareDocumentPosition(band) &
+					Node.DOCUMENT_POSITION_FOLLOWING
+			),
+			beforeFooter: !!(
+				footer &&
+				band.compareDocumentPosition(footer) &
+					Node.DOCUMENT_POSITION_FOLLOWING
+			),
+			insideMain: !!band.closest("main"),
+			insideContent: !!band.closest("#content"),
+			enFont: en ? getComputedStyle(en).fontFamily : "(缺)",
+			cursor: btn ? getComputedStyle(btn).cursor : "(缺)",
+		};
+	});
+	bandPages++;
+	if (got.count !== 1) {
+		bandPlacement.push(`${path} ⇒ 语录条 ${got.count} 个`);
+		continue;
+	}
+	if (!got.afterWrapper || !got.beforeFooter)
+		bandPlacement.push(`${path} ⇒ 不在 #wrapper 与 #footer 之间`);
+	if (got.insideMain || got.insideContent)
+		bandPlacement.push(`${path} ⇒ 落在 swup 容器内，切页会重建`);
+	if (!got.enFont.includes("Libre Baskerville"))
+		bandStyle.push(`${path} ⇒ font-family=${got.enFont}`);
+	if (!got.cursor.includes("/style/link.cur"))
+		bandStyle.push(`${path} ⇒ cursor=${got.cursor}`);
+	if (got.border !== QUOTE_FRAME || got.radius !== QUOTE_RADIUS)
+		bandFrame.push(`${path} ⇒ ${got.border} 圆角 ${got.radius}`);
+}
+const bandList = (items) =>
+	items.length
+		? `：${items.slice(0, 6).join("、")}${items.length > 6 ? ` …等 ${items.length} 处` : ""}`
+		: "";
+check(
+	"语录条：每个主站页恰好一个，挂在 #wrapper 与 #footer 之间且在 swup 容器之外",
+	bandPages === OUTLINE_PAGES.length && bandPlacement.length === 0,
+	`查 ${bandPages}/${OUTLINE_PAGES.length} 页，越界 ${bandPlacement.length} 处${bandList(bandPlacement)}`,
+);
+check(
+	"语录条：英文行落在 Libre Baskerville 上，「换一句」按钮落在站点自有手型上（读计算值）",
+	bandStyle.length === 0,
+	`越界 ${bandStyle.length} 处${bandList(bandStyle)}`,
+);
+check(
+	"语录条：四边都是 2px 品牌绿实描边、圆角 5px（描边是站长点名的「与白卡区分」手段）",
+	bandFrame.length === 0,
+	`查 ${bandPages}/${OUTLINE_PAGES.length} 页，越界 ${bandFrame.length} 处${bandList(bandFrame)}`,
+);
+
+// 揭示后的稳态：等状态类被摘掉，而不是等固定毫秒（waitForTimeout 会在慢机上假红）
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.goto(base + "/", { waitUntil: "load" });
+await page.evaluate(() =>
+	document
+		.querySelector("[data-quote-band]")
+		.scrollIntoView({ block: "center" }),
+);
+await page.waitForFunction(
+	() => {
+		const flat = (s) => (s ?? "").replace(/\s+/g, " ").trim();
+		const band = document.querySelector("[data-quote-band]");
+		if (!band) return false;
+		if (
+			band.classList.contains("is-armed") ||
+			band.classList.contains("is-revealed")
+		)
+			return false;
+		return (
+			flat(document.querySelector("[data-quote-en]").textContent).length >
+			0
+		);
+	},
+	null,
+	{ timeout: 10000 },
+);
+const revealed = await page.evaluate((defaultEn) => {
+	const flat = (s) => (s ?? "").replace(/\s+/g, " ").trim();
+	const band = document.querySelector("[data-quote-band]");
+	const en = flat(band.querySelector("[data-quote-en]").textContent);
+	const pool = Array.isArray(window.__quoteCorpus)
+		? window.__quoteCorpus
+		: [];
+	const known = new Set([defaultEn, ...pool.map((row) => row[0])]);
+	return {
+		en,
+		inCorpus: known.has(en.replace(/["“”]/g, "")),
+		corpusSize: pool.length,
+		opacity: getComputedStyle(band).opacity,
+	};
+}, QUOTE_DEFAULT_EN);
+check(
+	"语录条：滚动到它之后完成揭示，句子出自语料且已回到可见稳态",
+	revealed.opacity === "1" &&
+		revealed.en.length > 0 &&
+		revealed.inCorpus &&
+		revealed.corpusSize >= 40,
+	`corpus=${revealed.corpusSize} 出自语料=${revealed.inCorpus} 句面=${revealed.en.slice(0, 46)}… opacity=${revealed.opacity}`,
+);
+
+// 整带高度不再在这里量单句：随机到哪句就量哪句会飘，改由下面 bandGeom 那一趟
+// 把全语料逐条灌进去取最高值。
+
+// 最坏情况不是"某张背景图最暗的那一格"，而是"背后是纯黑像素"——这个下界与图无关，
+// 所以直接按它算，比抽样更硬：白纱 alpha 一旦被人调小，这条就会红。
+const bandContrast = await page.evaluate(() => {
+	const parse = (s) => {
+		const m = s.match(/rgba?\(([^)]+)\)/);
+		if (!m) return null;
+		const p = m[1].split(",").map((x) => parseFloat(x));
+		return { r: p[0], g: p[1], b: p[2], a: p.length > 3 ? p[3] : 1 };
+	};
+	const lum = (c) => {
+		const s = c / 255;
+		return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+	};
+	const ratio = (fg, bg) => {
+		const l1 = 0.2126 * lum(bg.r) + 0.7152 * lum(bg.g) + 0.0722 * lum(bg.b);
+		const l2 = 0.2126 * lum(fg.r) + 0.7152 * lum(fg.g) + 0.0722 * lum(fg.b);
+		const [hi, lo] = l1 > l2 ? [l1, l2] : [l2, l1];
+		return (hi + 0.05) / (lo + 0.05);
+	};
+	const band = document.querySelector("[data-quote-band]");
+	const veil = parse(getComputedStyle(band).backgroundColor);
+	// 背后取纯黑：veil.a 的白叠在黑上，得到的就是能守住的下界灰
+	const behind = { r: 0, g: 0, b: 0 };
+	const over = {
+		r: veil.a * veil.r + (1 - veil.a) * behind.r,
+		g: veil.a * veil.g + (1 - veil.a) * behind.g,
+		b: veil.a * veil.b + (1 - veil.a) * behind.b,
+	};
+	const small = parse(
+		getComputedStyle(band.querySelector("[data-quote-zh]")).color,
+	);
+	const large = parse(
+		getComputedStyle(band.querySelector("[data-quote-en]")).color,
+	);
+	return {
+		veilAlpha: veil.a,
+		smallRatio: ratio(small, over),
+		largeRatio: ratio(large, over),
+	};
+});
+check(
+	"语录条：白纱在「背后纯黑」的最坏情况下仍守住小字 AA 4.5:1（大字 3.0:1）",
+	bandContrast.smallRatio >= 4.5 && bandContrast.largeRatio >= 3,
+	`veil α=${bandContrast.veilAlpha}，小字 ${bandContrast.smallRatio.toFixed(2)}:1，大字 ${bandContrast.largeRatio.toFixed(2)}:1`,
+);
+
+const quoteFontLink = await page.evaluate(() => {
+	const link = document.head.querySelector("link[data-quote-font]");
+	return {
+		href: link?.href ?? "(未注入)",
+		zhFamily: getComputedStyle(document.querySelector("[data-quote-zh]"))
+			.fontFamily,
+	};
+});
+check(
+	"语录条：滚到附近才注入中文行的 CDN 样式表（不在 head 里预挂），且中文行声明了该字族",
+	quoteFontLink.href ===
+		"https://fontsapi.zeoseven.com/2401/main/result.css" &&
+		quoteFontLink.zhFamily.includes("TangXianBinSong"),
+	`link=${quoteFontLink.href}  zh font-family=${quoteFontLink.zhFamily}`,
+);
+
+const bandGeom = [];
+for (const width of QUOTE_WIDTHS) {
+	await page.setViewportSize({ width, height: 900 });
+	await page.goto(base + "/", { waitUntil: "load" });
+	await page.evaluate(() =>
+		document
+			.querySelector("[data-quote-band]")
+			.scrollIntoView({ block: "center" }),
+	);
+	await page.waitForFunction(
+		() => {
+			const band = document.querySelector("[data-quote-band]");
+			return band && !band.classList.contains("is-armed");
+		},
+		null,
+		{ timeout: 10000 },
+	);
+	const geom = await page.evaluate(() => {
+		const flat = (s) => (s ?? "").replace(/\s+/g, " ").trim();
+		const band = document.querySelector("[data-quote-band]");
+		const rect = band.getBoundingClientRect();
+		const out = {
+			overflow: Math.max(
+				0,
+				rect.right - document.documentElement.clientWidth,
+			),
+			height: rect.height,
+			wraps: band.querySelectorAll(".quote-band__word").length,
+		};
+		// 逐条把语料灌进去，量「英文首行会不会伸到换句按钮底下」。
+		// 必须先记完上面的高度再改 DOM，最后原样还原，否则这条扫描会污染其它读数。
+		const en = band.querySelector("[data-quote-en]");
+		const zh = band.querySelector("[data-quote-zh]");
+		const by = band.querySelector("[data-quote-author]");
+		const keep = [en.textContent, zh.textContent, by.textContent];
+		const btnEl = band.querySelector("[data-quote-reroll]");
+		let collide = 0;
+		let sample = "";
+		let maxH = 0;
+		let tallest = "";
+		for (const [e, z, a] of window.__quoteCorpus || []) {
+			en.textContent = `“${e}”`;
+			zh.textContent = z;
+			by.textContent = a;
+			// 同一趟扫描顺手量全语料的最高带子：只量"当前随机到的那一句"会随抽样飘，
+			// 判据要确定就得把每一条都灌一遍。
+			const hh = band.getBoundingClientRect().height;
+			if (hh > maxH) {
+				maxH = hh;
+				tallest = `${flat(e).slice(0, 26)}…（${[...e].length} 字）`;
+			}
+			const node = en.firstChild;
+			if (!node) continue;
+			const range = document.createRange();
+			range.selectNodeContents(node);
+			const first = [...range.getClientRects()].filter(
+				(x) => x.width > 0,
+			)[0];
+			if (!first) continue;
+			// 按钮矩形必须每轮重读：换句子会改带子高度，滚动锚定随之把整块挪位，
+			// 循环前抓一次会量出假重叠（首轮就这样误报了 17 条）。
+			const btn = btnEl.getBoundingClientRect();
+			if (
+				first.right > btn.left - 2 &&
+				first.bottom > btn.top + 1 &&
+				first.top < btn.bottom - 1
+			) {
+				collide++;
+				if (!sample)
+					sample = `${flat(e).slice(0, 26)}… 行尾 ${Math.round(first.right)} / 行顶 ${Math.round(first.top)} vs 按钮 ${Math.round(btn.left)}·${Math.round(btn.bottom)}`;
+			}
+		}
+		en.textContent = keep[0];
+		zh.textContent = keep[1];
+		by.textContent = keep[2];
+		out.collide = collide;
+		out.sample = sample;
+		out.maxH = maxH;
+		out.tallest = tallest;
+		return out;
+	});
+	bandGeom.push({ width, ...geom });
+}
+check(
+	"语录条：各档视口零横向溢出（词包字双层不许把句子撑出卡片）",
+	bandGeom.every((g) => g.overflow <= 1),
+	bandGeom.map((g) => `${g.width}→溢出${g.overflow.toFixed(1)}`).join("，"),
+);
+check(
+	"语录条：英文首行绝不伸到「换一句」按钮底下（全语料 × 各档视口逐条量）",
+	bandGeom.every((g) => g.collide === 0),
+	bandGeom
+		.map(
+			(g) =>
+				`${g.width}→${g.collide} 条${g.collide ? `（${g.sample}）` : ""}`,
+		)
+		.join("，"),
+);
+check(
+	"语录条：全语料逐条量的整带高度不超封顶（桌面 160 / 手机 260，站长 2026-09-30 裁决）",
+	bandGeom.every((g) => g.maxH <= quoteCap(g.width)),
+	bandGeom
+		.map(
+			(g) =>
+				`${g.width}→最高 ${g.maxH.toFixed(1)}/${quoteCap(g.width)}px（${g.tallest}）`,
+		)
+		.join("，"),
+);
+// 长度闸门只挡"塞一段段落进来"；真正约束版面的是上面那条逐条量高度的判据。
+// 擦走是按**盒子**切的，所以盒子必须贴住墨迹：盒宽比墨迹宽出太多，
+// 动画行程就全花在切空白上，文字看着是突然出现、突然消失（站长实眼抓到的缺陷）。
+const zhHug = await page.evaluate(() => {
+	const z = document.querySelector("[data-quote-zh]");
+	const range = document.createRange();
+	range.selectNodeContents(z);
+	const rects = [...range.getClientRects()].filter((x) => x.width > 0);
+	if (!rects.length) return { gap: -1 };
+	const box = z.getBoundingClientRect();
+	const left = Math.min(...rects.map((x) => x.left));
+	const right = Math.max(...rects.map((x) => x.right));
+	return {
+		gap: +(box.width - (right - left)).toFixed(1),
+		boxW: +box.width.toFixed(1),
+		inkW: +(right - left).toFixed(1),
+	};
+});
+check(
+	"语录条：中文行的盒子贴住墨迹（否则 clip-path 擦走只在切空白，看着没有动画）",
+	zhHug.gap >= 0 && zhHug.gap <= 16,
+	`盒宽 ${zhHug.boxW}px vs 墨迹 ${zhHug.inkW}px，差 ${zhHug.gap}px（容差 16px）`,
+);
+
+// —— 终端箭头（> / <）：静息距边框 80px、正文换行跟着它反推、≤980 收起 ——
+// 距离从描边的**内侧**量起（也就是 padding box 的边），这是「距离边框 80px」的读法；
+// 从外缘量会多算那 2px 描边（实测 82/62）。箭头与正文列之间的空气是算出来的常数 16px，
+// 所以下面同时量「盒子间隙」和「全语料逐条的墨迹间隙」——前者证明换行跟着箭头走，后者证明没人蹭到字。
+const chevRows = [];
+for (const width of QUOTE_CHEVRON_WIDTHS) {
+	await page.setViewportSize({ width, height: 900 });
+	await page.goto(base + "/", { waitUntil: "load" });
+	await page.evaluate(() =>
+		document
+			.querySelector("[data-quote-band]")
+			.scrollIntoView({ block: "center" }),
+	);
+	await page.waitForFunction(
+		() => {
+			const band = document.querySelector("[data-quote-band]");
+			return band && !band.classList.contains("is-armed");
+		},
+		null,
+		{ timeout: 10000 },
+	);
+	const row = await page.evaluate(
+		({ gutter, air }) => {
+			const band = document.querySelector("[data-quote-band]");
+			const L = band.querySelector(".quote-band__chevron--left");
+			const R = band.querySelector(".quote-band__chevron--right");
+			const quote = band.querySelector(".quote-band__quote");
+			const en = band.querySelector("[data-quote-en]");
+			const zh = band.querySelector("[data-quote-zh]");
+			const by = band.querySelector("[data-quote-by]");
+			const br = band.getBoundingClientRect();
+			const bw = parseFloat(getComputedStyle(band).borderTopWidth);
+			const out = {
+				n: (L ? 1 : 0) + (R ? 1 : 0),
+				hidden: !L || getComputedStyle(L).display === "none",
+				colW: +quote.getBoundingClientRect().width.toFixed(1),
+				bandInnerW: +(br.width - 2 * bw).toFixed(1),
+			};
+			if (out.hidden) return out;
+			const lr = L.getBoundingClientRect();
+			const rr = R.getBoundingClientRect();
+			out.ariaHidden =
+				L.getAttribute("aria-hidden") === "true" &&
+				R.getAttribute("aria-hidden") === "true";
+			out.glyphs = L.textContent.trim() + R.textContent.trim();
+			out.distL = +(lr.left - br.left - bw).toFixed(1);
+			out.distR = +(br.right - bw - rr.right).toFixed(1);
+			// 垂直居中：箭头的中心对带子内缘的中心
+			out.centerOff = +(
+				(lr.top + lr.bottom) / 2 -
+				(br.top + br.bottom) / 2
+			).toFixed(1);
+			out.boxGap = +(
+				quote.getBoundingClientRect().left - lr.right
+			).toFixed(1);
+			// 逐条灌全语料：随机到哪一句就量哪一句会飘，判据要确定就得每条都过一遍
+			const keep = [en.textContent, zh.textContent, by.textContent];
+			const inkOf = (el) => {
+				const range = document.createRange();
+				range.selectNodeContents(el);
+				const rects = [...range.getClientRects()].filter(
+					(x) => x.width > 0.5 && x.height > 0.5,
+				);
+				if (!rects.length) return null;
+				return {
+					left: Math.min(...rects.map((x) => x.left)),
+					right: Math.max(...rects.map((x) => x.right)),
+					top: Math.min(...rects.map((x) => x.top)),
+					bottom: Math.max(...rects.map((x) => x.bottom)),
+				};
+			};
+			const hit = (a, b) =>
+				a.left < b.right &&
+				b.left < a.right &&
+				a.top < b.bottom &&
+				b.top < a.bottom;
+			let minGap = Infinity;
+			let overlaps = 0;
+			let maxH = 0;
+			let tallest = "";
+			for (const [e, z, a] of window.__quoteCorpus || []) {
+				en.textContent = `“${e}”`;
+				zh.textContent = z;
+				by.textContent = `— ${a}`;
+				const h = band.getBoundingClientRect().height;
+				if (h > maxH) {
+					maxH = h;
+					tallest = `${(e || "").slice(0, 24)}…（${[...e].length} 字）`;
+				}
+				// 箭头与按钮的矩形必须每轮重读：换句会改带子高度，滚动锚定随之挪位
+				const l2 = L.getBoundingClientRect();
+				const r2 = R.getBoundingClientRect();
+				for (const line of [inkOf(en), inkOf(zh), inkOf(by)].filter(
+					Boolean,
+				)) {
+					minGap = Math.min(
+						minGap,
+						line.left - l2.right,
+						r2.left - line.right,
+					);
+					if (hit(line, l2) || hit(line, r2)) overlaps++;
+				}
+			}
+			[en, zh, by].forEach((el, i) => (el.textContent = keep[i]));
+			out.minGap = +minGap.toFixed(1);
+			out.overlaps = overlaps;
+			out.maxH = +maxH.toFixed(1);
+			out.tallest = tallest;
+			return out;
+		},
+		{ gutter: QUOTE_GUTTER, air: QUOTE_CHEVRON_AIR },
+	);
+	chevRows.push({ width, ...row });
+}
+const chevShown = chevRows.filter((r) => !r.hidden);
+check(
+	"语录条：左右各一枚 aria-hidden 的 > / <，距边框 80px、垂直居中，正文列跟着退到箭头内侧留 16px",
+	chevShown.length === QUOTE_CHEVRON_WIDTHS.length - 1 &&
+		chevShown.every(
+			(r) =>
+				r.n === 2 &&
+				r.ariaHidden &&
+				r.glyphs === "><" &&
+				Math.abs(r.distL - QUOTE_GUTTER) <= 1 &&
+				Math.abs(r.distR - QUOTE_GUTTER) <= 1 &&
+				Math.abs(r.centerOff) <= 1 &&
+				Math.abs(r.boxGap - QUOTE_CHEVRON_AIR) <= 1.5,
+		),
+	chevRows
+		.map(
+			(r) =>
+				`${r.width}→${r.hidden ? "隐藏" : `左 ${r.distL} 右 ${r.distR} 居中差 ${r.centerOff} 盒隙 ${r.boxGap}`}`,
+		)
+		.join("，"),
+);
+check(
+	"语录条：全语料逐条量的箭头与三行墨迹零重叠、最坏间隙 ≥15px，且整带高度仍在封顶内",
+	chevShown.every(
+		(r) =>
+			r.overlaps === 0 &&
+			r.minGap >= QUOTE_CHEVRON_AIR - 1 &&
+			r.maxH <= QUOTE_MAX_HEIGHT,
+	),
+	chevShown
+		.map(
+			(r) =>
+				`${r.width}→重叠${r.overlaps} 最坏间隙${r.minGap} 最高${r.maxH}（${r.tallest}）`,
+		)
+		.join("，"),
+);
+const chevHidden = chevRows.find((r) => r.hidden);
+check(
+	"语录条：≤980px 收起箭头，正文限宽同时退回 720px（箭头不在位时不该白吃 176px）",
+	!!chevHidden &&
+		chevHidden.n === 2 &&
+		Math.abs(chevHidden.colW - Math.min(720, chevHidden.bandInnerW - 40)) <=
+			1,
+	chevHidden
+		? `${chevHidden.width}→隐藏，正文列 ${chevHidden.colW}px（带内宽 ${chevHidden.bandInnerW}px）`
+		: "没有任何一档把箭头收起来",
+);
+
+// 悬停：两枚箭头向外漂（现值 80 → 70，即 10px）。等的是 transform 真的到位，不是固定毫秒。
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.goto(base + "/", { waitUntil: "load" });
+await page.evaluate(() =>
+	document
+		.querySelector("[data-quote-band]")
+		.scrollIntoView({ block: "center" }),
+);
+await page.waitForFunction(
+	() => {
+		const band = document.querySelector("[data-quote-band]");
+		return band && !band.classList.contains("is-armed");
+	},
+	null,
+	{ timeout: 10000 },
+);
+await page.hover("[data-quote-band]");
+const chevHover = await page.evaluate(async () => {
+	const band = document.querySelector("[data-quote-band]");
+	const L = band.querySelector(".quote-band__chevron--left");
+	const R = band.querySelector(".quote-band__chevron--right");
+	// 等的是「过渡真的结束」而不是某个中间阈值：按 −19.5 放行会读到 −19.6，
+	// 把一条本来正确的 20px 漂移判成红（本轮实测踩过）。机器快时 :hover 的过渡
+	// 可能已经跑完，所以「有动画在跑」与「已经到位」两种就绪状态都认。
+	const raf = () => new Promise((res) => requestAnimationFrame(res));
+	for (let i = 0; i < 60; i++) {
+		if (
+			L.getAnimations().length > 0 ||
+			new DOMMatrix(getComputedStyle(L).transform).e <= -19.9
+		)
+			break;
+		await raf();
+	}
+	for (const a of [...L.getAnimations(), ...R.getAnimations()]) {
+		try {
+			await a.finished;
+		} catch {
+			/* canceled */
+		}
+	}
+	const br = band.getBoundingClientRect();
+	const bw = parseFloat(getComputedStyle(band).borderTopWidth);
+	const dx = (el) =>
+		+new DOMMatrix(getComputedStyle(el).transform).e.toFixed(1);
+	return {
+		hovering: band.matches(":hover"),
+		driftL: dx(L),
+		driftR: dx(R),
+		distL: +(L.getBoundingClientRect().left - br.left - bw).toFixed(1),
+		distR: +(br.right - bw - R.getBoundingClientRect().right).toFixed(1),
+		// 垂直居中必须在漂移后仍然成立（transform 是单个属性，漏写 -50% 就会跳到顶边）
+		centerOff: +(
+			(L.getBoundingClientRect().top + L.getBoundingClientRect().bottom) /
+				2 -
+			(br.top + br.bottom) / 2
+		).toFixed(1),
+	};
+});
+check(
+	`语录条：悬停时 > 向左、< 向右各漂 ${QUOTE_GUTTER - QUOTE_GUTTER_HOVER}px（${QUOTE_GUTTER} → ${QUOTE_GUTTER_HOVER}），且不丢掉垂直居中`,
+	chevHover.hovering &&
+		chevHover.driftL === -(QUOTE_GUTTER - QUOTE_GUTTER_HOVER) &&
+		chevHover.driftR === QUOTE_GUTTER - QUOTE_GUTTER_HOVER &&
+		Math.abs(chevHover.distL - QUOTE_GUTTER_HOVER) <= 1 &&
+		Math.abs(chevHover.distR - QUOTE_GUTTER_HOVER) <= 1 &&
+		Math.abs(chevHover.centerOff) <= 1,
+	`漂移 ${chevHover.driftL}/${chevHover.driftR}px ⇒ 距边 ${chevHover.distL}/${chevHover.distR}px 居中差 ${chevHover.centerOff}（hover 命中=${chevHover.hovering}）`,
+);
+
+// 悬停投影：三行文字浮起一层轻阴影、指针离开淡回静息。
+// 判据按**结构**读而不是抄字符串：alpha > 0、纵向偏移 1–2px、模糊 ≤2px（12–13px 的小字
+// 经不起更大半径）。这样站长以后调浓淡不用改测试，而谁把这条规则删掉会当场翻红。
+// 这里同时守一件更容易出事的东西 —— .quote-band__by 的 transition 列表。
+// transition 是整体覆盖而不是追加：谁再给 __by 单写一条 transition，换句时的 opacity 淡出
+// 会静默变成瞬变，而那条退场判据只看 is-leaving 类与高度，看不见淡出没了。
+const shadowOn = await page.evaluate(() => {
+	const parse = (s) => {
+		const m = s.match(
+			/rgba?\(([^)]+)\)\s+(-?[\d.]+)px\s+(-?[\d.]+)px(?:\s+([\d.]+)px)?/,
+		);
+		if (!m) return { raw: s, alpha: -1, y: -99, blur: 99 };
+		const c = m[1].split(",").map((x) => parseFloat(x));
+		return {
+			alpha: c.length > 3 ? c[3] : 1,
+			y: +m[3],
+			blur: +(m[4] || 0),
+		};
+	};
+	const get = (s) => {
+		const cs = getComputedStyle(document.querySelector(s));
+		return { sh: parse(cs.textShadow), props: cs.transitionProperty };
+	};
+	return {
+		en: get(".quote-band__en"),
+		zh: get(".quote-band__zh"),
+		by: get(".quote-band__by"),
+		L: get(".quote-band__chevron--left"),
+		R: get(".quote-band__chevron--right"),
+	};
+});
+await page.mouse.move(5, 5);
+await page.waitForFunction(
+	() =>
+		[
+			".quote-band__en",
+			".quote-band__zh",
+			".quote-band__by",
+			".quote-band__chevron--left",
+			".quote-band__chevron--right",
+		].every(
+			(sel) =>
+				getComputedStyle(document.querySelector(sel)).textShadow ===
+				"rgba(0, 0, 0, 0) 0px 0px 0px",
+		),
+	null,
+	{ timeout: 3000 },
+);
+const shadowOff = await page.evaluate(() => {
+	const g = (s) => getComputedStyle(document.querySelector(s)).textShadow;
+	return {
+		en: g(".quote-band__en"),
+		zh: g(".quote-band__zh"),
+		by: g(".quote-band__by"),
+		L: g(".quote-band__chevron--left"),
+		R: g(".quote-band__chevron--right"),
+	};
+});
+const lifted = (x) =>
+	x.sh.alpha > 0 && x.sh.y >= 1 && x.sh.y <= 2 && x.sh.blur <= 2;
+// 箭头用更远的一档（20px 亮绿单字吃得住），但同样必须是真的有阴影
+const liftedGlyph = (x) =>
+	x.sh.alpha > 0 && x.sh.y >= 2 && x.sh.y <= 4 && x.sh.blur <= 5;
+check(
+	"语录条：悬停时三行文字与两枚箭头都浮起投影、离开淡回静息（且 __by / 箭头的既有过渡没被覆盖掉）",
+	lifted(shadowOn.en) &&
+		lifted(shadowOn.zh) &&
+		lifted(shadowOn.by) &&
+		liftedGlyph(shadowOn.L) &&
+		liftedGlyph(shadowOn.R) &&
+		shadowOn.by.props.includes("opacity") &&
+		shadowOn.by.props.includes("text-shadow") &&
+		shadowOn.L.props.includes("transform") &&
+		shadowOn.L.props.includes("text-shadow") &&
+		shadowOff.en === QUOTE_SHADOW_REST &&
+		shadowOff.zh === QUOTE_SHADOW_REST &&
+		shadowOff.by === QUOTE_SHADOW_REST &&
+		shadowOff.L === QUOTE_SHADOW_REST &&
+		shadowOff.R === QUOTE_SHADOW_REST,
+	`悬停 英 α=${shadowOn.en.sh.alpha}/y${shadowOn.en.sh.y}/b${shadowOn.en.sh.blur} 中 α=${shadowOn.zh.sh.alpha} 署名 α=${shadowOn.by.sh.alpha} 箭头 α=${shadowOn.L.sh.alpha}/y${shadowOn.L.sh.y}/b${shadowOn.L.sh.blur}；离开后 箭头=${shadowOff.L}；__by 过渡=${shadowOn.by.props} / 箭头过渡=${shadowOn.L.props}`,
+);
+
+const corpusShape = await page.evaluate(
+	({ maxEn, maxZh }) => {
+		const pool = Array.isArray(window.__quoteCorpus)
+			? window.__quoteCorpus
+			: [];
+		const tooLong = pool.filter(
+			(r) => [...r[0]].length > maxEn || [...r[1]].length > maxZh,
+		);
+		return {
+			size: pool.length,
+			tooLong: tooLong.map(
+				(r) =>
+					`${r[2]}（英 ${[...r[0]].length} / 中 ${[...r[1]].length}）`,
+			),
+		};
+	},
+	{ maxEn: QUOTE_MAX_EN_CHARS, maxZh: QUOTE_MAX_ZH_CHARS },
+);
+check(
+	"语录条：语料每条都在长度闸门内（英文 ≤220 字符、中文 ≤44 字符），且池子不小于 42 条",
+	corpusShape.size >= 42 && corpusShape.tooLong.length === 0,
+	`池 ${corpusShape.size} 条，越界 ${corpusShape.tooLong.length} 条${corpusShape.tooLong.length ? `：${corpusShape.tooLong.slice(0, 4).join("、")}` : ""}`,
+);
+
+const quoteIdle = () =>
+	page.waitForFunction(
+		() => {
+			const band = document.querySelector("[data-quote-band]");
+			return (
+				!!band &&
+				!band.dataset.quoteBusy &&
+				!band.classList.contains("is-leaving") &&
+				!band.classList.contains("is-armed")
+			);
+		},
+		null,
+		{ timeout: 12000 },
+	);
+
+/** 换一句并等它彻底空闲。必须等 quoteBusy 这个真实信号再点下一次：
+ *  换句期间按钮是被锁住的（连点不该叠两套动画），
+ *  靠固定毫秒去猜动画长度会在慢机上把第二次点击丢进锁里、变成假失败。 */
+const quoteReroll = async () => {
+	await quoteIdle();
+	const before = flat(await page.textContent("[data-quote-en]"));
+	await page.evaluate(() =>
+		document.querySelector("[data-quote-reroll]").click(),
+	);
+	await quoteIdle();
+	return { before, after: flat(await page.textContent("[data-quote-en]")) };
+};
+
+// 退场必须是**可观察到的**一段：点下去之后先进入 is-leaving、文本仍是旧句，
+// 文本只在退场跑完后才换 —— 少了这条，把退场删掉或改成瞬间换字都能骗过"换句有效"。
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.goto(base + "/", { waitUntil: "load" });
+await page.evaluate(() =>
+	document
+		.querySelector("[data-quote-band]")
+		.scrollIntoView({ block: "center" }),
+);
+await quoteIdle();
+const oldText = flat(await page.textContent("[data-quote-en]"));
+const leaveProbe = await page.evaluate((prev) => {
+	const flat = (s) => (s ?? "").replace(/\s+/g, " ").trim();
+	const band = document.querySelector("[data-quote-band]");
+	band.querySelector("[data-quote-reroll]").click();
+	return new Promise((resolve) => {
+		requestAnimationFrame(() => {
+			resolve({
+				leaving: band.classList.contains("is-leaving"),
+				chars: band.querySelectorAll(".quote-band__char").length,
+				stillOld:
+					flat(
+						document.querySelector("[data-quote-en]").textContent,
+					) === prev,
+				pinned: /^\d+(\.\d+)?px$/.test(band.style.height),
+				busy: band.dataset.quoteBusy === "1",
+			});
+		});
+	});
+}, oldText);
+await quoteIdle();
+const newText = flat(await page.textContent("[data-quote-en]"));
+check(
+	"语录条：点「换一句」先走退场（is-leaving + 逐字节点 + 钉住旧高、文本未换），退场跑完才换句并回到空闲",
+	leaveProbe.leaving &&
+		leaveProbe.busy &&
+		leaveProbe.chars > 0 &&
+		leaveProbe.stillOld &&
+		leaveProbe.pinned &&
+		newText !== oldText,
+	`leaving=${leaveProbe.leaving} busy=${leaveProbe.busy} 退场逐字数=${leaveProbe.chars} 换句前文本未变=${leaveProbe.stillOld} 高度已钉=${leaveProbe.pinned}`,
+);
+
+const swap1 = await quoteReroll();
+const swap2 = await quoteReroll();
+check(
+	"语录条：连续换两句都真的换掉（不得连抽同一句）",
+	swap1.after !== swap1.before && swap2.after !== swap2.before,
+	`两次前后是否互异：${swap1.after !== swap1.before}/${swap2.after !== swap2.before}`,
+);
+
+// 隐藏初态只在 .is-armed 之后生效 —— 反过来写，关 JS 的访客就是一条空白带子
+const noJsBand = await browser.newContext({
+	javaScriptEnabled: false,
+	viewport: { width: 1280, height: 900 },
+});
+stubExternalEmbeds(noJsBand);
+const bandNoJs = await noJsBand.newPage();
+await bandNoJs.goto(base + "/", { waitUntil: "load" });
+const floor = await bandNoJs.evaluate(() => {
+	const flat = (s) => (s ?? "").replace(/\s+/g, " ").trim();
+	const band = document.querySelector("[data-quote-band]");
+	return {
+		en: flat(band.querySelector("[data-quote-en]").textContent),
+		zh: flat(band.querySelector("[data-quote-zh]").textContent),
+		by: flat(band.querySelector("[data-quote-by]").textContent),
+		opacity: getComputedStyle(band).opacity,
+		armed: band.classList.contains("is-armed"),
+	};
+});
+await noJsBand.close();
+check(
+	"语录条：关掉 JS 时服务端默认句完整可见，且不处于隐藏初态",
+	floor.en === `“${QUOTE_DEFAULT_EN}”` &&
+		floor.zh.length > 0 &&
+		floor.by.includes("Hamming") &&
+		floor.opacity === "1" &&
+		!floor.armed,
+	`en=${floor.en} zh=${floor.zh} by=${floor.by} opacity=${floor.opacity} armed=${floor.armed}`,
+);
+
+// reduced-motion 的裁决是「撤位移、保级联」：在 armed 稳态上量，避开动画进行中的抖动
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.goto(base + "/", { waitUntil: "load" });
+const armedNormal = await page.evaluate(() => {
+	const band = document.querySelector("[data-quote-band]");
+	return {
+		transform: getComputedStyle(band).transform,
+		armed: band.classList.contains("is-armed"),
+	};
+});
+await page.emulateMedia({ reducedMotion: "reduce" });
+await page.goto(base + "/", { waitUntil: "load" });
+const armedReduce = await page.evaluate(() => {
+	const band = document.querySelector("[data-quote-band]");
+	return {
+		transform: getComputedStyle(band).transform,
+		opacity: getComputedStyle(band).opacity,
+		charTransform: band.querySelector(".quote-band__char")
+			? getComputedStyle(band.querySelector(".quote-band__char"))
+					.transform
+			: "(未切分)",
+	};
+});
+await page.emulateMedia({ reducedMotion: "no-preference" });
+check(
+	"语录条：reduced-motion 下撤位移、保级联（armed 态 transform 归 none，淡入仍在）",
+	armedNormal.armed &&
+		armedNormal.transform !== "none" &&
+		armedReduce.transform === "none" &&
+		armedReduce.opacity === "0",
+	`常规 ${armedNormal.transform} ⇒ reduced ${armedReduce.transform}（opacity=${armedReduce.opacity}，char=${armedReduce.charTransform}）`,
+);
+
+// 同一段 reduced-motion 仿真下再量箭头的 hover：撤位移意味着「悬停后 transform 的 x 分量仍为 0」。
+// 不能 hover 完立刻读 —— 覆盖漏掉时过渡刚从 0 起步，读到 0 是假绿。等 getAnimations() 跑完再读。
+await page.emulateMedia({ reducedMotion: "reduce" });
+await page.evaluate(() =>
+	document
+		.querySelector("[data-quote-band]")
+		.scrollIntoView({ block: "center" }),
+);
+await page.hover("[data-quote-band]");
+const chevReduce = await page.evaluate(async () => {
+	const band = document.querySelector("[data-quote-band]");
+	const L = band.querySelector(".quote-band__chevron--left");
+	const R = band.querySelector(".quote-band__chevron--right");
+	await new Promise((r) =>
+		requestAnimationFrame(() => requestAnimationFrame(r)),
+	);
+	const dx = (el) =>
+		+new DOMMatrix(getComputedStyle(el).transform).e.toFixed(1);
+	// 逐帧采样，而不是「等过渡跑完再读一次」：撤掉 reduced-motion 的覆盖后，
+	// getAnimations() 在样式还没重算的那一帧是空数组，于是只在结尾读一次会读到起始值 0 ——
+	// 单独撤掉那条覆盖做变异验证，实测把这条放成了假绿。
+	// 现在要求整段窗口内每一帧都恰好是 0，窗口 24 帧 ≈ 覆盖 240ms 的过渡。
+	const samples = [];
+	for (let i = 0; i < 12; i++) {
+		samples.push([dx(L), dx(R)]);
+		await new Promise((r) =>
+			requestAnimationFrame(() => requestAnimationFrame(r)),
+		);
+	}
+	return {
+		hovering: band.matches(":hover"),
+		worst: Math.max(...samples.flat().map(Math.abs)),
+		first: samples[0].join("/"),
+		last: samples[samples.length - 1].join("/"),
+		// 阴影是绘制变化、不是位移，按本站口径（撤位移、保淡入与颜色）reduced-motion 下**保留**
+		shadowAlpha: (() => {
+			const a = (sel) => {
+				const m = getComputedStyle(
+					band.querySelector(sel),
+				).textShadow.match(/rgba\([^()]*,\s*([\d.]+)\)/);
+				return m ? +m[1] : 0;
+			};
+			return Math.min(
+				a(".quote-band__en"),
+				a(".quote-band__chevron--left"),
+			);
+		})(),
+	};
+});
+await page.emulateMedia({ reducedMotion: "no-preference" });
+check(
+	"语录条：reduced-motion 下箭头悬停整段不漂移、但文字投影仍在（撤位移不撤绘制）",
+	chevReduce.hovering && chevReduce.worst === 0 && chevReduce.shadowAlpha > 0,
+	`hover 命中=${chevReduce.hovering} 12 帧采样的最大 |位移| =${chevReduce.worst}px（首帧 ${chevReduce.first}，末帧 ${chevReduce.last}），英文行阴影 α=${chevReduce.shadowAlpha}`,
 );
 
 await browser.close();
