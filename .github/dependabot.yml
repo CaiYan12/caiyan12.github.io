@@ -18,3 +18,17 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # 下面这些一律「完全不自动提」。共同点：改它们不是改一行版本号，
+      # 要么会破构建链的去重/对齐前提，要么会改写 ./src 的格式化基线，
+      # 要么需要真实浏览器产物的专项实测（AGENTS.md「构建链与依赖约束」）。
+      - dependency-name: "astro" # 精确钉；升级要连集成与 markdown.processor 一起动
+      - dependency-name: "@astrojs/react" # 精确钉，与 astro 版本配对
+      - dependency-name: "@astrojs/svelte" # 精确钉，与 astro 版本配对
+      - dependency-name: "@astrojs/markdown-remark" # astro 6.4.8 硬钉 7.2.0，升 ours 只在 .pnpm 里多出一份副本
+      - dependency-name: "astro-expressive-code" # 0.x 的 minor 即 breaking；^0.44 未经产物比对
+      - dependency-name: "@expressive-code/plugin-collapsible-sections" # 与 astro-expressive-code 同版本发布，必须同批人工升
+      - dependency-name: "@expressive-code/plugin-line-numbers" # 同上
+      - dependency-name: "satori" # 精确钉；OG 图在构建期拉字体，只能实机看
+      - dependency-name: "katex" # 全站公式渲染路径，0.16→0.18 需逐篇核对
+      - dependency-name: "@swup/astro" # package.json ^1.7.0 与 lock 1.8.0 的错位是有意的，改一侧不改另一侧 CI 直接红
+      - dependency-name: "prettier" # 3.9.9 把行内 $…$ 里的 * 当 emphasis 改写，会打断文章公式；版本变化必须人工看 ./src diff
