@@ -874,6 +874,31 @@ check(
 // ---------------- 插入项：nav 右侧社交链接的底线只向上长 ----------------
 // 旧实现 hover 改 border-bottom-width 并用 padding 补偿总高：border-width 插值被取整到整像素、
 // padding 却连续插值，中途盒高 43→42.1，居中盒子的底边因此上下抖。改法见 global.css 的 ::after。
+// 等一个元素**自己的**过渡/动画真的跑完，再取它的终态读数。三条实测约束，缺一条就假绿或挂死：
+// ① 挂在 ::after / ::before 上的过渡只有 `getAnimations({subtree:true})` 看得见
+//    （元素自身的 getAnimations() 只返回 color）；
+// ② 插值起点可比交互动作晚约 250ms，所以「动画数组为空」单独用会把「还没开始」读成「已经结束」
+//    —— 必须先逼一次样式重算把过渡创建出来；
+// ③ 必须按 `effect.target === node` 过滤，否则会被子树里无关的动画（微言轮播的 li、日历列入场）
+//    拖着甚至永不落定。
+// 兜底 maxFrames 后放行（返回 false）：真有问题的话调用方会读到中途值而翻红，比挂住好。
+// 不用 page.waitForFunction + document.querySelector(sel)：sel 里可能带 Playwright 专有的
+// `:visible`（侧栏 hover 探针就是），它在页面里不是合法 CSS，会把整套直接抛死。
+const waitOwnMotionDone = (locator, maxFrames = 240) =>
+	locator.evaluate(async (node, max) => {
+		const raf = () => new Promise((r) => requestAnimationFrame(r));
+		const mine = () =>
+			node
+				.getAnimations({ subtree: true })
+				.filter((a) => a.effect?.target === node);
+		void getComputedStyle(node, "::after").transform;
+		for (let i = 0; i < max; i++) {
+			if (mine().length === 0) return true;
+			await raf();
+		}
+		return false;
+	}, maxFrames);
+
 await page.setViewportSize({ width: 1440, height: 900 });
 await page.goto(base + "/", { waitUntil: "load" });
 await page.waitForSelector("#head-nav .m-nav li a");
@@ -904,7 +929,10 @@ await page.mouse.move(
 	navBox.y + navBox.height / 2,
 	{ steps: 3 },
 );
-await page.waitForTimeout(700);
+// 采样窗的终点由「这条过渡真的跑完」决定，而不是采满 700ms。
+// 下面三个下限（帧数 >5、min ≤3.05、max ≥5.9）要求窗内同时覆盖首尾两相位，
+// 用墙钟定窗的话，主线程被挤住时会把两端一起丢掉。
+await waitOwnMotionDone(navLink);
 const navSamples = await page.evaluate(() => {
 	window.__navOn = false;
 	return window.__navS;
@@ -1584,7 +1612,19 @@ const ticker = await (async () => {
 		const li = document.querySelector("#header .text li");
 		return li ? li.textContent.trim() : null;
 	});
-	await page.waitForTimeout(4800); // > 一个 4s 节奏
+	// 等「首条真的换了一条」，而不是死等 4800ms 去覆盖一个 4s 节奏。
+	// 轮播是 setInterval + 0.8s 过渡，主线程被播放器 / Giscus / swup 挤住时第一次推进可以晚于
+	// 4800ms —— 那时旧写法会读到没变的首条而假红。超时后照常取值，让判据红得诚实。
+	await page
+		.waitForFunction(
+			(prev) => {
+				const li = document.querySelector("#header .text li");
+				return (li ? li.textContent.trim() : null) !== prev;
+			},
+			first,
+			{ timeout: 12000 },
+		)
+		.catch(() => {});
 	const after = await page.evaluate(() => {
 		const li = document.querySelector("#header .text li");
 		const dead = [...document.querySelectorAll("body *")].filter((e) =>
@@ -2068,7 +2108,10 @@ const hoverProbe = async (path, sel, { trigger } = {}) => {
 		});
 	const idle = await geom();
 	await el.hover();
-	await page.waitForTimeout(320); // 越过 0.2s 过渡，避免取到中途插值
+	// 等这条悬停过渡真的跑完再取 hot —— 而不是死等 320ms 去「越过 0.2s 过渡」。
+	// 三条实测约束写在 waitOwnMotionDone 处（伪元素过渡、迟到的起点、必须按 target 过滤）。
+	// 没有 ::after 过渡的目标（侧栏链接 / 卡标题 / 正文内联链接）首帧即空，行为与不等待一致。
+	await waitOwnMotionDone(el);
 	const hot = await geom();
 	return { idle, hot, sel, path };
 };
@@ -2205,7 +2248,19 @@ const tickerPause = await (async () => {
 	await page.waitForTimeout(5200); // 4s 节奏 + 0.8s 过渡，留 400ms 余量
 	const during = await read();
 	await page.mouse.move(2, 2); // 移出容器，触发 mouseleave 恢复
-	await page.waitForTimeout(5200);
+	// 同上：等「移出之后首条真的又推进了」，而不是死等 5200ms。
+	// 上面那 5200ms 是**故意**保留的墙钟——它要证明的是「整段窗内没有变化」，
+	// 属否证型判据，没有布尔态能表达「一个周期已过」，缩短会把误触发放成假绿。
+	await page
+		.waitForFunction(
+			(prev) => {
+				const li = document.querySelector("#header .text li");
+				return (li ? li.textContent.trim() : null) !== prev;
+			},
+			during,
+			{ timeout: 12000 },
+		)
+		.catch(() => {});
 	const after = await read();
 	return { before, during, after };
 })();
@@ -2996,25 +3051,55 @@ check(
 // 长度闸门只挡"塞一段段落进来"；真正约束版面的是上面那条逐条量高度的判据。
 // 擦走是按**盒子**切的，所以盒子必须贴住墨迹：盒宽比墨迹宽出太多，
 // 动画行程就全花在切空白上，文字看着是突然出现、突然消失（站长实眼抓到的缺陷）。
+// 这条判据要在**桌面视口**量：上一段循环把视口留在了 390px，那里 42 条中有 7 条会换行，
+// 而换行时 fit-content 的盒子被可用宽度夹住、本就不贴墨迹（实测 390 下最大差 29.8px，
+// 1440 下 0 条换行、42 条差值全部恰好 0.0）。把换行的几何当成缺陷去断言会既吵又假。
+await page.setViewportSize({ width: 1440, height: 900 });
+// 也要等中文行字体就位：swap 前后同一行的度量不同。CDN 不可达时按回落字体量，不跳过。
+await page
+	.waitForFunction(
+		() => document.fonts.check("13px 'TangXianBinSong'"),
+		null,
+		{ timeout: 15000 },
+	)
+	.catch(() => {});
 const zhHug = await page.evaluate(() => {
 	const z = document.querySelector("[data-quote-zh]");
-	const range = document.createRange();
-	range.selectNodeContents(z);
-	const rects = [...range.getClientRects()].filter((x) => x.width > 0);
-	if (!rects.length) return { gap: -1 };
-	const box = z.getBoundingClientRect();
-	const left = Math.min(...rects.map((x) => x.left));
-	const right = Math.max(...rects.map((x) => x.right));
-	return {
-		gap: +(box.width - (right - left)).toFixed(1),
-		boxW: +box.width.toFixed(1),
-		inkW: +(right - left).toFixed(1),
-	};
+	const keep = z.textContent;
+	let worst = { gap: -1, boxW: 0, tail: "" };
+	let measured = 0;
+	let wrapped = 0;
+	for (const row of window.__quoteCorpus || []) {
+		z.textContent = row[1];
+		const range = document.createRange();
+		range.selectNodeContents(z);
+		const rects = [...range.getClientRects()].filter((x) => x.width > 0.5);
+		if (!rects.length) continue;
+		if (rects.length > 1) {
+			wrapped++;
+			continue; // 换行的行由上一条注释里的理由排除
+		}
+		measured++;
+		const box = z.getBoundingClientRect();
+		const gap = +(
+			box.width -
+			(Math.max(...rects.map((x) => x.right)) -
+				Math.min(...rects.map((x) => x.left)))
+		).toFixed(1);
+		if (gap > worst.gap)
+			worst = {
+				gap,
+				boxW: +box.width.toFixed(1),
+				tail: row[1].slice(-2),
+			};
+	}
+	z.textContent = keep;
+	return { ...worst, measured, wrapped };
 });
 check(
-	"语录条：中文行的盒子贴住墨迹（否则 clip-path 擦走只在切空白，看着没有动画）",
-	zhHug.gap >= 0 && zhHug.gap <= 16,
-	`盒宽 ${zhHug.boxW}px vs 墨迹 ${zhHug.inkW}px，差 ${zhHug.gap}px（容差 16px）`,
+	"语录条：桌面视口下中文行的盒子贴住墨迹（全语料未换行的那些，取最大差）",
+	zhHug.measured > 0 && zhHug.gap >= 0 && zhHug.gap <= 4,
+	`${zhHug.measured} 条单行里最大差 ${zhHug.gap}px（尾字「${zhHug.tail}」，盒宽 ${zhHug.boxW}，容差 4px）；桌面换行 ${zhHug.wrapped} 条`,
 );
 
 // —— 终端箭头（> / <）：静息距边框 80px、正文换行跟着它反推、≤980 收起 ——
