@@ -3,6 +3,7 @@ import Layout from "./Layout.astro";
 import Navbar from "../components/layout/Navbar.astro";
 import SideBar from "../components/layout/SideBar.astro";
 import Footer from "../components/layout/Footer.astro";
+import QuoteBand from "../components/layout/QuoteBand.astro";
 import MMenu from "../components/layout/MMenu.astro";
 import BackToTop from "../components/control/BackToTop.astro";
 
@@ -66,6 +67,9 @@ const { showSidebar = true, searchIndex = false } = Astro.props;
 			<div class="clear"></div>
 			<BackToTop />
 		</div>
+
+		<!-- 语录条：在 swup 容器之外，切页不重建 -->
+		<QuoteBand />
 
 		<Footer />
 		<MMenu />

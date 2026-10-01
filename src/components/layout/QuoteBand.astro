@@ -1,0 +1,47 @@
+---
+/**
+ * 语录条：白卡（#wrapper）之下、页脚之上的引言带。
+ *
+ * 挂载在 MainGridLayout 的 swup 容器之外，因此切页不重建、也不需要重初始化。
+ * 服务端渲染的是**固定默认句**：一是保住「无 JS 地板线」，二是让构建产物逐字节确定
+ * （改成构建期随机就会像首页「手气不错」那样每次部署让全站 HTML 变动）。
+ * 真正的随机选句由 src/utils/theme-script.ts 的 initQuoteBand() 在滚动到它时完成，
+ * 语料来自 public/quotes/quote-catalog.js。
+ */
+const DEFAULT_QUOTE = {
+	en: "The purpose of computing is insight, not numbers.",
+	zh: "计算的目的在于洞见，不在于数字。",
+	author: "Richard Hamming",
+};
+---
+
+<figure class="quote-band" data-quote-band>
+	<button
+		class="quote-band__reroll"
+		type="button"
+		data-quote-reroll
+		aria-label="换一句"
+		title="换一句"
+	>
+		<i class="fa fa-refresh" aria-hidden="true"></i>
+	</button>
+	<blockquote class="quote-band__quote" aria-live="polite">
+		<p class="quote-band__en" lang="en" data-quote-en>
+			“{DEFAULT_QUOTE.en}”
+		</p>
+		<p class="quote-band__zh" lang="zh-CN" data-quote-zh>
+			{DEFAULT_QUOTE.zh}
+		</p>
+	</blockquote>
+	<figcaption class="quote-band__by" data-quote-by>
+		—&nbsp;<span lang="en" data-quote-author>{DEFAULT_QUOTE.author}</span>
+	</figcaption>
+	<span
+		class="quote-band__chevron quote-band__chevron--left"
+		aria-hidden="true">&gt;</span
+	>
+	<span
+		class="quote-band__chevron quote-band__chevron--right"
+		aria-hidden="true">&lt;</span
+	>
+</figure>

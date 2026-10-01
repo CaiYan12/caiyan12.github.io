@@ -5173,6 +5173,17 @@ html.with-fancybox .backtop {
   --font-mono: "JetBrains Mono Variable", Consolas, "Courier New", monospace;
   --font-serif: "FZShuSong-Z01S", "方正书宋", "FangZheng ShuSong", "Noto Serif SC", "Source Han Serif SC", serif;
   --font-hand: "平方时光体", "KaiTi", "STKaiti", "楷体", "FZShuSong-Z01S", "方正书宋", serif;
+
+  /* 语录条两行字族。英文行走自托管 Libre Baskerville Variable（不经任何 CDN），
+     栈尾 Georgia 兜住 woff2 加载失败的情况。
+     中文行走 ZeoSeven FontsAPI 的「汤宪滨宋」（fontsapi.zeoseven.com/2401）——
+     站长 2026-09-30 在 8 款风格化宋体的实测样张里点名选它（样张与逐款字节见
+     output/quote-zh-specimen.png 与 docs/quotes-review.md 的字体一节）。
+     选它的理由是两项全场最低：CSS 36KB、一行 20 字命中 6 个分片 / 183.5KB。
+     这张样式表**不在 head 里**，由 theme-script 的 initQuoteBand() 在带子接近视口时注入，
+     所以它不是每页必付的开销；CDN 不可达时按栈回落到正文黑体，属可接受降级。 */
+  --font-quote: "Libre Baskerville Variable", Georgia, "Times New Roman", serif;
+  --font-quote-zh: "TangXianBinSong", var(--font-body);
 }
 
 /* 数字等宽保险（票 14）：本站现用字体下西文数字本来就等宽（实测 14px 下 "1111111"
@@ -6523,5 +6534,485 @@ body,
   /* 去位移保浓度变化（站主裁决）：只撤壁纸的 scale，不透明度照常变浓 */
   .widget:has(.weather-widget-body):hover .weather-widget-body[data-weather-kind]::before {
     transform: none;
+  }
+}
+
+/* ---------- 语录条（quote band）----------
+   白卡之下、页脚之上的引言带，挂在 swup 容器之外（MainGridLayout 里 #wrapper 与 <Footer /> 的兄弟节点）。
+   三条承重事实：
+   1. 隐藏初态**只在 .is-armed 之后**才生效。CSS 默认全部可见，所以关掉 JS 的访客看到的就是
+      服务端渲染的那句默认引用（CONTEXT.md「无 JS 地板线」）。反过来写就会是一条空白带子。
+   2. 底与圆角取 #wrapper 的语法，但**不挪用 --shadow-wrapper** —— 阴影是白卡独有的层级语义
+      （见 AGENTS.md 层叠关系表）。分隔靠一圈 2px 品牌绿描边：站长 2026-09-30 推翻原先的 1px
+      细灰线，要求「凸显与上方主体的不同」。带子贴在实拍背景图上，细灰线读不出轮廓。
+   3. 盒模型镜像 #wrapper 的断点阶梯（>1100 定宽居中 / ≤1100 转 border-box / ≤680 满幅），
+      否则带子左边缘会与上方卡片错位。#wrapper 是 content-box，1060 + 2×20 = 1100 才是它的外缘。 */
+/* 底与圆角取 #wrapper 的语法，但**不挪用 --shadow-wrapper**（阴影是白卡独有的层级语义），
+   半透白的浓度也比白卡更实一档：白卡的 rgba(255,255,255,.86) 背后是侧栏那种浅灰页面，
+   而这条带子直接压在实拍背景图上。按最坏情况（背后是纯黑像素）算，.86 的白纱只把 #666
+   的中文行/署名行抬到 4.14:1，低于小字 AA 的 4.5；.92 才给到 4.79:1。
+   按 ADR-0004 第 2 条「无障碍硬失败无条件修」取 .92 —— 肉眼上 86% 与 92% 的差别看不出来。 */
+.quote-band {
+  /* 终端箭头的两个位置旋钮（站长 2026-10-01 指定）：静息距左右边框 80px，悬停收到 70px。
+     正文的换行宽度由它反推 —— 见下面 .quote-band__quote 那条 calc，两个值是同一个来源。 */
+  --quote-gutter: 80px;
+  --quote-gutter-hover: 70px;
+  /* 悬停时三行文字的投影，分两档：英文行 19px 吃得住 2px 模糊半径，
+     中文行与署名行只有 12–13px，半径再大就糊成一团。 */
+  --quote-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+  --quote-shadow-sm: 0 1px 1px rgba(0, 0, 0, 0.13);
+  /* 两枚箭头是 20px 的亮绿单字，比正文吃得住更远的投影（站长 2026-10-01 要求「距离更远一些」） */
+  --quote-shadow-glyph: 0 2px 4px rgba(0, 0, 0, 0.22);
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 1100px;
+  margin: 0 auto 20px;
+  padding: 14px 20px 12px;
+  border: 2px solid var(--colorful-green);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.92);
+  text-align: center;
+}
+
+/* 换行宽度 = 箭头内侧再留 16px 空气，跟着 --quote-gutter 走，不再是写死的 720px。
+   算式里减掉的 20px 是带子自己的左右内距：__quote 的 100% 指的是内容盒，
+   而 --quote-gutter 是从边框（padding box）量起的。实测箭头墨迹宽 12px。
+   箭头宽是量出来的常数，改字号要重新量；判据「间隙 ≥16px」会在它蹭到文字时翻红。 */
+.quote-band__quote,
+.quote-band__by {
+  width: 100%;
+  max-width: calc(100% - 2 * (var(--quote-gutter) + 12px + 16px - 20px));
+  /* 悬停投影的静息态。显式写「零偏移 + 全透明」而不是 none —— 与 clip-path 那条同一个理由：
+     两端同型才保证是连续插值。text-shadow 会继承，所以只需挂在这两行上，
+     英文行与中文行（都在 __quote 里）自动跟着走。 */
+  text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transition:
+    opacity 150ms var(--ease-out),
+    text-shadow 160ms ease;
+}
+
+/* 换一句走 transition 而不是 keyframes：访客可以连点，keyframes 会从头重播。
+   入场结束后 JS 会把 .is-armed/.is-revealed 摘掉，动画的 forwards 填充因此不会和这里的过渡抢 opacity。 */
+.quote-band.is-swapping .quote-band__quote,
+.quote-band.is-swapping .quote-band__by {
+  opacity: 0;
+}
+
+.quote-band__quote {
+  margin: 0;
+}
+
+/* 英文行显式重声明字族是必需的：global.css 的元素级 reset（p/div{font-family:var(--font-body)}）
+   会切断继承，光靠父级设 font-family 传不下来（/about/ 稿纸踩过同一个坑）。 */
+.quote-band__en {
+  margin: 0 0 2px;
+  font-family: var(--font-quote);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--text);
+  text-align: center;
+  overflow-wrap: break-word;
+}
+
+.quote-band__zh {
+  /* 盒子必须贴住墨迹，擦走才看得见。原本它是 720px 满宽、居中文字只有 227px，
+     左右各 246px 空白 —— clip-path 按盒子切，于是 34% 的行程在切空白，
+     文字读起来是在动画 1/3 处蹦出来、2/3 处消失，等于没有动画（站长实眼抓到）。
+     fit-content 让盒宽 = 最长那一行的墨迹宽，超长时仍在 720px 内自动折行。 */
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto;
+  /* 显式写出"完全不裁"的初值，不能留 none：clip-path 在 none 与 inset() 之间是
+     **离散**插值，退场那条 transition 会直接跳到终态 —— 实测中文行在退场第 30ms
+     就整行消失，根本没有从左往右擦走。两端都是 inset() 才连得起来。 */
+  clip-path: inset(0 0 0 0);
+  font-family: var(--font-quote-zh);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--colorful-text-secondary);
+  text-align: center;
+}
+
+.quote-band__by {
+  margin: 2px 0 0;
+  font-family: var(--font-quote);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--colorful-text-secondary);
+  text-align: right;
+}
+
+/* 逐字入场：外层「词」必须是 inline-block，否则断行会发生在任意两字之间，英文句子会被腰斩 */
+.quote-band__word,
+.quote-band__char {
+  display: inline-block;
+}
+
+/* 左右留白的终端装饰：一对 > / < 夹住三行文字，纯装饰、aria-hidden，因此不参与读屏与对比度。
+   带子是 flex 纵向列，两枚绝对定位的箭头不入流，既不加高也不参与封顶；换一句时它们留在原地
+   （.is-swapping 只淡 quote 与 by）。悬停时按 --quote-gutter-hover 向外漂，见下面的 hover 块。 */
+.quote-band__chevron {
+  position: absolute;
+  top: 50%;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  line-height: 1;
+  color: var(--colorful-green);
+  /* 静息同样显式写成零偏移全透明，与三行文字那条同一个理由（两端同型才连续插值） */
+  text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  transform: translateY(-50%);
+  /* transition 是整体覆盖而不是追加：箭头本来就过渡 transform（hover 漂移），
+     加阴影必须并进同一条列表，否则写第二条会把漂移的过渡静默吃掉。
+     判据显式锁 transitionProperty 同时含 transform 与 text-shadow。 */
+  transition:
+    transform 240ms var(--ease-out),
+    text-shadow 160ms ease;
+}
+
+.quote-band__chevron--left {
+  left: var(--quote-gutter);
+}
+
+.quote-band__chevron--right {
+  right: var(--quote-gutter);
+}
+
+.quote-band__reroll {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--colorful-text-secondary);
+  transition:
+    color 160ms ease,
+    transform 240ms var(--ease-out);
+}
+
+/* 这里**故意不写 cursor**：全局 `a, button, input[type="submit"]`（特异性 0,0,1）已经给了本站手型，
+   在任何类选择器里裸写 cursor:pointer 会以 (0,1,0) 压过它、把指针静默退回系统手型 ——
+   pnpm smoke:ui 的光标负扫专门守这一条。 */
+@media (hover: hover) and (pointer: fine) {
+  .quote-band__reroll:hover {
+    color: var(--colorful-green);
+    transform: rotate(-40deg);
+  }
+
+  /* 悬停时两枚箭头向外漂（> 向左、< 向右）。位移量**不写死**，取 --quote-gutter 与
+     --quote-gutter-hover 之差（现值 80 → 70，即 10px），所以改任一旋钮都不会让两者漂得不一样远。
+     translateY(-50%) 必须一起写进 transform：transform 是单个属性，只写 translate(-10px)
+     会把垂直居中丢掉，箭头会跳到带子顶边。 */
+  .quote-band:hover .quote-band__chevron--left {
+    transform: translate(calc(var(--quote-gutter-hover) - var(--quote-gutter)), -50%);
+  }
+
+  .quote-band:hover .quote-band__chevron--right {
+    transform: translate(calc(var(--quote-gutter) - var(--quote-gutter-hover)), -50%);
+  }
+
+  /* 悬停时三行文字浮起一层极轻的投影（站长 2026-10-01 追加，要的是「淡入」）。
+     走 transition 不走 animation：指针随时进出，keyframes 会每次从头重播。
+     阴影属绘制变化、不是位移，所以 reduced-motion 下**保留**（本站口径：撤位移、保淡入与颜色）。 */
+  .quote-band:hover .quote-band__quote,
+  .quote-band:hover .quote-band__by {
+    text-shadow: var(--quote-shadow);
+  }
+
+  .quote-band:hover .quote-band__zh,
+  .quote-band:hover .quote-band__by {
+    text-shadow: var(--quote-shadow-sm);
+  }
+
+  /* 两枚箭头一起浮起，用更远的一档（20px 亮绿单字吃得住） */
+  .quote-band:hover .quote-band__chevron {
+    text-shadow: var(--quote-shadow-glyph);
+  }
+}
+
+/* —— 入场四段级联：容器落位 → 英文逐字符 → 中文整行擦入 → 署名右推 ——
+   曲线复用本站既有的 --ease-out / --ease-in-out（与 animate 技能推荐的值逐字相同），不另起一套。
+   逐字符步进由 JS 按字数反推成 --quote-step，使整句错峰窗口恒定 ≤480ms，长句不拖。 */
+@keyframes quote-band-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes quote-char-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.45em) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 中文行用整行擦入而非逐字：汉字字宽大，逐字会散成一串跳块；一笔擦过读作一句被写下 */
+@keyframes quote-zh-in {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes quote-by-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes quote-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 容器初态同样只在首次成立：换句时 .is-armed 会再挂一次，若这里不 Gate 掉，
+   整条带子会先被压成透明而容器动画又被 .is-reroll 跳过 —— 结果就是换句后一片空白。 */
+.quote-band.is-armed:not(.is-reroll) {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.quote-band.is-armed .quote-band__char {
+  opacity: 0;
+  transform: translateY(0.45em) scale(0.96);
+}
+
+.quote-band.is-armed .quote-band__zh {
+  clip-path: inset(0 100% 0 0);
+}
+
+.quote-band.is-armed .quote-band__by {
+  opacity: 0;
+  transform: translateX(8px);
+}
+
+.quote-band.is-armed .quote-band__reroll {
+  opacity: 0;
+}
+
+/* 容器那一段只在**首次**入场播：换句时卡片已经在屏幕上，再淡出淡入一次只会闪背景，
+   所以 .is-reroll 之后这一段整体跳过，带子本体只负责平滑改高度。
+   所有时长与延迟都由 JS 经 --quote-* 下发（见 writeQuoteTempo），CSS 里的 var 兜底值
+   只是防呆，实际生效的是脚本给的那一套 —— 首次与换句是两套速度。 */
+.quote-band.is-armed.is-revealed:not(.is-reroll) {
+  animation: quote-band-in 320ms var(--ease-out) forwards;
+}
+
+.quote-band.is-armed.is-revealed .quote-band__char {
+  animation: quote-char-in var(--quote-char-ms, 380ms) var(--ease-out) forwards;
+  animation-delay: calc(var(--quote-i, 0) * var(--quote-step, 22ms));
+}
+
+/* 两个真体引号各是所在词的首/末字，让它们比正文多停留一会儿（520ms 而非 380ms）：
+   句子还没开始，先落下一枚引号；句子说完，引号才收住。 */
+.quote-band.is-armed.is-revealed .quote-band__word:first-child .quote-band__char:first-child,
+.quote-band.is-armed.is-revealed .quote-band__word:last-child .quote-band__char:last-child {
+  animation-duration: 520ms;
+}
+
+.quote-band.is-armed.is-revealed .quote-band__zh {
+  animation: quote-zh-in var(--quote-zh-ms, 420ms) var(--ease-in-out) var(--quote-zh-delay, 160ms) forwards;
+}
+
+.quote-band.is-armed.is-revealed .quote-band__by {
+  animation: quote-by-in var(--quote-by-ms, 260ms) var(--ease-out) var(--quote-by-delay, 320ms) forwards;
+}
+
+.quote-band.is-armed.is-revealed .quote-band__reroll {
+  animation: quote-fade-in var(--quote-btn-ms, 200ms) var(--ease-out) var(--quote-btn-delay, 420ms) forwards;
+}
+
+/* —— 退场：与入场同序同向（站长 2026-09-30 指定，否决"倒放"）——
+   英文从左边第一个字开始依次收掉 → 中文从左往右擦走 → 署名 → 按钮。
+   用 transition 而不是 keyframes：访客可以连点，keyframes 会从头重播，
+   transition 则从当前值续算。时长同样由 JS 经 --quote-leave-* 下发。 */
+.quote-band.is-leaving .quote-band__char {
+  opacity: 0;
+  transform: translateY(0.45em) scale(0.96);
+  transition:
+    opacity var(--quote-leave-char-ms, 130ms) var(--ease-out),
+    transform var(--quote-leave-char-ms, 130ms) var(--ease-out);
+  transition-delay: calc(var(--quote-i, 0) * var(--quote-leave-step, 6ms));
+}
+
+/* 擦走方向：左内缩进 100%，即可见区从左向右消失 —— 与擦入是同一条路径 */
+.quote-band.is-leaving .quote-band__zh {
+  clip-path: inset(0 0 0 100%);
+  transition: clip-path var(--quote-leave-zh-ms, 160ms) var(--ease-in-out);
+  transition-delay: var(--quote-leave-zh-delay, 180ms);
+}
+
+.quote-band.is-leaving .quote-band__by {
+  opacity: 0;
+  transform: translateX(8px);
+  transition:
+    opacity var(--quote-leave-by-ms, 140ms) var(--ease-out),
+    transform var(--quote-leave-by-ms, 140ms) var(--ease-out);
+  transition-delay: var(--quote-leave-by-delay, 260ms);
+}
+
+.quote-band.is-leaving .quote-band__reroll {
+  opacity: 0;
+  transition: opacity var(--quote-leave-btn-ms, 120ms) var(--ease-out);
+  transition-delay: var(--quote-leave-btn-delay, 320ms);
+}
+
+/* 换行导致的高度变化。钉高→量新值→放开这一段由 JS 编排，这里只声明过渡；
+   overflow 是防收缩时文字先露出来，只在过渡这几百毫秒内生效。 */
+.quote-band.is-resizing {
+  overflow: hidden;
+  transition: height var(--quote-height-ms, 320ms) var(--ease-drawer);
+}
+
+/* 站长裁决（2026-09-30）：reduced-motion 下**撤位移、保级联** ——
+   逐字符错峰与四段节奏全留，只把 translateY / scale / translateX / clip-path 换成纯 opacity。
+   vestibular 风险来自位移，不来自淡入。 */
+@media (prefers-reduced-motion: reduce) {
+  /* 注意 :not(.is-reroll) 必须一起抄过来 —— 带 :not() 的常规规则是 (0,3,0)，
+     这里若只写 .is-armed（0,2,0）就会被它压掉，位移悄悄回潮。 */
+  .quote-band.is-armed:not(.is-reroll) {
+    transform: none;
+  }
+
+  .quote-band.is-armed .quote-band__char,
+  .quote-band.is-armed .quote-band__by {
+    opacity: 0;
+    transform: none;
+  }
+
+  .quote-band.is-armed .quote-band__zh {
+    opacity: 0;
+    clip-path: none;
+  }
+
+  .quote-band.is-armed.is-revealed {
+    animation-name: quote-fade-in;
+  }
+
+  .quote-band.is-armed.is-revealed .quote-band__char {
+    animation-name: quote-fade-in;
+  }
+
+  .quote-band.is-armed.is-revealed .quote-band__zh {
+    animation-name: quote-fade-in;
+  }
+
+  .quote-band.is-armed.is-revealed .quote-band__by {
+    animation-name: quote-fade-in;
+  }
+
+  /* 退场同理：只留 opacity 收掉，位移与擦走全部撤掉 */
+  .quote-band.is-leaving .quote-band__char,
+  .quote-band.is-leaving .quote-band__by {
+    transform: none;
+  }
+
+  .quote-band.is-leaving .quote-band__zh {
+    clip-path: none;
+    opacity: 0;
+    /* 常规那条只过渡 clip-path；撤掉擦走之后必须改过渡 opacity，否则中文行是瞬间消失 */
+    transition: opacity var(--quote-leave-zh-ms, 160ms) var(--ease-out);
+    transition-delay: var(--quote-leave-zh-delay, 200ms);
+  }
+
+  /* 尺寸变化本身就是"内容在动"，减少动态时直接跳到新高度 */
+  .quote-band.is-resizing {
+    transition: none;
+  }
+
+  /* 箭头的 hover 漂移是位移，按站长口径撤掉；特异性 (0,3,0) 与上面 hover 块那条相等，
+     靠源顺序在后取胜（把 :hover 那半边的选择器整条抄过来，少抄一半就会静默失效） */
+  .quote-band:hover .quote-band__chevron--left,
+  .quote-band:hover .quote-band__chevron--right {
+    transform: translateY(-50%);
+  }
+}
+
+/* ≤1100px：镜像 #wrapper 的这一档。#wrapper 在此转 border-box + width:100%，但它自己的
+   max-width:1060px 仍在生效，于是 1061–1100 之间卡片是 1060 而带子会排到 1100，左右各出头 20px
+   （真实浏览器实测：视口 1100 时 wrap.left=20/w=1060，band.left=0/w=1100）。 */
+@media screen and (max-width: 1100px) {
+  .quote-band {
+    max-width: 1060px;
+  }
+}
+
+/* ≤980px：收起两枚终端箭头，换行宽度同时退回写死的 720px —— 箭头不在了，
+   再按它的位置收窄正文就是凭空吃掉 176px（实测带子 861px 时正文列只剩 641px，
+   最长那句要冲到 160px 封顶外；带子 664px 时更只剩 456px）。
+   这一档沿用本站已有的 980 断点（#wrapper 在这里转 overflow:hidden + margin:0），
+   不另起魔法数字。箭头在 981 以上才有得看：那时正文列 ≥761px、与箭头之间的空气实测 16px。 */
+@media screen and (max-width: 980px) {
+  .quote-band__chevron {
+    display: none;
+  }
+
+  .quote-band__quote,
+  .quote-band__by {
+    max-width: 720px;
+  }
+}
+
+/* ≤820px：给「换一句」按钮让出它自己的横带，并把英文字号降一档（与 ≤680 同一套数值）。
+   这条不是审美选择，是算术：按钮占住右上角 right:8 + 宽 22 = 距内缘 30px，而限宽 720px 的
+   正文列只有在带子够宽时才退得到 30px 以外。按 border 2 + padding 20 解列右缘 ≤ 按钮左 − 2：
+   带宽 ≤764 时列撑满内容盒，列右缘 = 带宽 − 22，**必然**压字；带宽 >764 时列右缘 = 带宽/2 + 360，
+   要到 带宽 ≥788 才刚好不相撞（0px 余量）。所以门取 788 + 32px 空气 = 820。
+   真实浏览器实测（全语料逐条灌）：681 撞 12 条、768 撞 7 条、800 起 0 条。
+   字号降到 17px 不是顺手美化，是为了抵消 padding-top 14→28 多出来的 14px ——
+   不降档时最长那句会从 155.4px 顶到 169px，越过站定的 160 封顶。
+   底内距同步收到 10px（与 ≤680 一致）：实测只降字号时这一档最高 160.7px，仍差 0.7px 越线。 */
+@media screen and (max-width: 820px) {
+  .quote-band {
+    padding: 28px 20px 10px;
+  }
+
+  .quote-band__en {
+    font-size: 17px;
+  }
+
+  .quote-band__reroll {
+    top: 4px;
+    right: 4px;
+  }
+}
+
+/* ≤680px：带子随满幅的白卡一起失去圆角、左右贴到 8px（站长裁决的窄屏形态）。
+   padding 的四边值与上面那条的 28px 顶带一致，这里整条重写是为了把左右内距一起收到 14px。 */
+@media screen and (max-width: 680px) {
+  .quote-band {
+    max-width: none;
+    margin: 0 8px 12px;
+    padding: 28px 14px 10px;
+    border-radius: 0;
   }
 }

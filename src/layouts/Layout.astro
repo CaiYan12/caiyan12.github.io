@@ -2,6 +2,9 @@
 import "@fontsource-variable/jetbrains-mono";
 // 思源黑体可变字重（README TODO 13 字体策略：全站正文 --font-body）
 import "@fontsource-variable/noto-sans-sc";
+// 语录条英文行（--font-quote）：正体给署名，斜体给引文
+import "@fontsource-variable/libre-baskerville/wght.css";
+import "@fontsource-variable/libre-baskerville/wght-italic.css";
 import "../styles/global.css";
 import "../styles/site-toast.css";
 import "../styles/site-modal.css";
@@ -107,6 +110,12 @@ const myhkwScriptAttributes: Record<string, string> = {
 			is:inline
 			data-swup-ignore-script=""
 			src="/weather/sidebar-widget.js"
+			defer></script>
+		<!-- 语录条语料：同源静态文件，切页不重新执行（容器外的经典脚本必须标 ignore） -->
+		<script
+			is:inline
+			data-swup-ignore-script=""
+			src="/quotes/quote-catalog.js"
 			defer></script>
 	</head>
 	<body class="transition-swup-fade">
