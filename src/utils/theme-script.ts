@@ -1589,10 +1589,14 @@ function initQuoteBand() {
 
 	let current = "";
 
+	/** 展示态永远带真体引号——`QuoteBand.astro` 的 SSR 就是带引号发的，
+	 *  逐字切分若按不含引号的 `current` 重建，JS 一开引号就被抹掉，两种状态给访客的不同。 */
+	const quoteDisplay = (text: string) => `“${text}”`;
+
 	/** 入场之后英文行退回纯文本（逐字 span 已完成使命），换句才不会被逐字规则遮住 */
 	const applyQuote = (row: string[]) => {
 		current = row[0];
-		enEl.textContent = `“${row[0]}”`;
+		enEl.textContent = quoteDisplay(row[0]);
 		zhEl.textContent = row[1];
 		authorEl.textContent = row[2];
 	};
@@ -1613,7 +1617,7 @@ function initQuoteBand() {
 	/** 跑一遍内容级联（英文逐字 → 中文擦入 → 署名 → 按钮）。
 	 *  逐字符节点必须在这里现切：每次收尾后文本会拍平回纯节点，换句才不会被逐字规则遮住。 */
 	const runCascade = (tempo: QuoteTempo) => {
-		const charCount = typesetQuoteChars(enEl, current);
+		const charCount = typesetQuoteChars(enEl, quoteDisplay(current));
 		const end = writeQuoteTempo(band, "", tempo, charCount);
 		band.classList.add("is-armed", "is-revealed");
 		return end;
@@ -1668,7 +1672,7 @@ function initQuoteBand() {
 			band.style.height = `${h0}px`;
 			// 退场同样要逐字节点，所以把当前文本再切一遍；新节点必须先算一帧样式，
 			// transition 才有起点 —— 同一帧里加 class 会直接跳到终态、看不出过程。
-			const charCount = typesetQuoteChars(enEl, current);
+			const charCount = typesetQuoteChars(enEl, quoteDisplay(current));
 			const leaveEnd = writeQuoteTempo(
 				band,
 				"-leave",
