@@ -1,4 +1,4 @@
-// 从站主头像重导出站点 favicon.ico，落到三处使用点（根、/domain/、legacy 副本）。
+// 从站主头像重导出站点 favicon.ico，落到两处真实使用点（根 `/favicon.ico`、`/domain/favicon.ico`）。
 // 显式运行（pnpm build:favicon），**不参与 pnpm build**；ICO 容器手工拼装，不引第三方库。
 // 用法：node scripts/build-favicon.mjs [--from <源图>] [--out <路径> ...]
 import { readFile, writeFile } from "node:fs/promises";
@@ -6,11 +6,7 @@ import sharp from "sharp";
 
 const SIZES = [16, 32, 48, 256];
 const DEFAULT_SRC = "public/images/avatar.png";
-const DESTS = [
-	"public/favicon.ico",
-	"public/domain/favicon.ico",
-	"public/images/favicon.ico",
-];
+const DESTS = ["public/favicon.ico", "public/domain/favicon.ico"];
 
 // 浏览器对 PNG 内嵌的 ICO 条目全都认（老 IE 要 BMP-DIB，本站不覆盖），
 // 所以条目直接放 sharp 出来的 PNG，体积远小于同尺寸的 24 位 DIB。
