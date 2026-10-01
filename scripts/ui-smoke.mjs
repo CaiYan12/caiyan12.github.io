@@ -1651,12 +1651,17 @@ check(
 // max-height 的计算值本身：它必须已经小于旧 `calc(100vh - 32px)` 的阈值。
 await page.setViewportSize({ width: 390, height: 640 });
 await page.goto(base + "/domain/", { waitUntil: "load" });
-await page.waitForTimeout(900);
+// 原先这里睡 900ms。删掉：触发者是 `document` 级委托监听（src/utils/site-modal.ts 约 158 行），
+// 站点脚本是模块脚本、在 DOMContentLoaded 之前执行完，而 `waitUntil:"load"` 必然晚于它，
+// 按钮本身也是 domain/index.astro 的静态标记——点击需要的条件在 load 时已经全部成立。
 const modalBox = await (async () => {
 	const btn = page.locator(".meBox-Button a[data-site-modal]").first();
 	if (!(await btn.count())) return null;
 	await btn.click();
 	await page.waitForSelector("#site-modal[open]", { timeout: 5000 });
+	// 面板入场是 `scale(0.96) → scale(1)` / 220ms，而本判据量的正是盒底。
+	// 中途读数只会把盒量小（更不容易溢出），属假绿方向，所以这里必须等它落定再量。
+	await waitOwnMotionDone(page.locator("#site-modal .site-modal__panel"));
 	return page.evaluate(() => {
 		const panel = document.querySelector("#site-modal .site-modal__panel");
 		if (!panel) return null;
@@ -2383,7 +2388,13 @@ check(
 // 灯箱是模态 <dialog>，走顶层层：任何 z-index 都盖不住它。判据用命中测试而非比数值——
 // 数值上 .fancybox__container 算出来是 auto，比大小会得出完全错误的结论。
 await page.goto(base + "/posts/20260909092113/", { waitUntil: "load" });
-await page.waitForTimeout(600);
+// 这一处**不是冗余**：`data-fancybox` 是 `initFancybox()` 运行时打在 `.post-context img` 上的
+// （src/utils/theme-script.ts 的 setAttribute，构建期产物里没有这个属性），
+// 下面那句 querySelector 直接吃这个属性，所以必须等它出现，睡墙钟会在慢机上把
+// 「入口还没标记」读成「灯箱打不开」。等真实信号，取不到时照常走 false 分支红得诚实。
+await page
+	.waitForSelector(".prose img[data-fancybox]", { timeout: 15000 })
+	.catch(() => {});
 const opened = await page.evaluate(() => {
 	const img = document.querySelector(".prose img[data-fancybox]");
 	if (!img) return false;
@@ -2448,7 +2459,8 @@ check(
 	JSON.stringify(cover.z) + " 特效字命中=" + cover.wHit,
 );
 await page.keyboard.press("Escape");
-await page.waitForTimeout(400);
+// 这里原本睡 400ms 等灯箱关闭动画。删掉：下一句是整页 `goto`，页面状态全部重建，
+// 关闭动画走不走完对后面的读数没有任何影响。
 
 // Tab 首站：等的是「这条 transform 过渡真的走完」，不是墙钟。
 // .skip-link 是 fixed + top:10px + translateY(-200%)、高 37px ⇒ 未展开时 top = −64，展开后 = +10。
