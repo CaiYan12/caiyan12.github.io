@@ -5879,6 +5879,65 @@ body,
   font-size: 11px;
 }
 
+/* 项目卡片内部全部改为固定槽位（2026-10-02）：标题/日期单行省略、描述固定两行、
+   标签区按视口固定行数、操作区钉卡片右下角——每张卡片的元件位置与卡片高度一致，
+   不再随文案长短浮动。下方数值均为 1440px 实测计算值（字号 13px 在本卡片族）：
+   标题行高 25.19 · 标题分割线带 17（8 + 1 + 8）· 描述行高 22.75 · 日期行高 21 ·
+   标签一排 33（两排 72）· 按钮高 39 */
+.project-card {
+  position: relative;
+  /* 底部为固定操作区让位：底距 18 + 按钮高 39 + 与标签区间隔 14 − 标签自带下外边距 12 */
+  padding-bottom: 59px;
+}
+
+/* 标题固定一行：超长省略（否则窄视口下 18px 标题会折行，整卡位置全部下移） */
+.project-card .personal-card-heading h3 {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 标题与描述之间的分割线：一条占满内容宽的细线，颜色取站点发丝线 token
+   （沿用 .widget h2 / .skill-section > h3 的「标题下划线」惯例），上下各留 8px */
+.project-card .personal-card-heading {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+/* 描述固定两行：只有一行也占满两行（保证其后日期/标签的起点恒定），超出两行省略。
+   `2lh` = 两倍行高，与 line-height 同源；45.5px 为不支持 lh 单位的浏览器兜底 */
+.project-card .personal-desc {
+  display: -webkit-box;
+  overflow: hidden;
+  height: 45.5px;
+  height: 2lh;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+/* 日期固定一行：超长省略（如极长日期区间/未来追加字段） */
+.project-card .personal-meta {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 标签区固定行数：≥861px 一排（实测该宽度以上全部卡片都是一排）；
+   更窄处两排（实测 800px 起私有项目的 5 个标签会换行，390px 同样需要两排）。
+   超出槽位的标签整排隐藏，不参与布局 */
+.project-card .personal-tags {
+  height: 33px;
+  overflow: hidden;
+}
+
+@media screen and (max-width: 860px) {
+  .project-card .personal-tags {
+    height: 72px;
+  }
+}
+
 .personal-actions {
   display: flex;
   flex-wrap: wrap;
@@ -5886,18 +5945,41 @@ body,
   margin-top: 14px;
 }
 
-.personal-actions a {
+.project-card .personal-actions {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  margin: 0;
+}
+
+.personal-actions a,
+.personal-actions button {
+  border: 0;
   border-radius: 3px;
   background: var(--primary);
   padding: 7px 10px;
   color: #fff;
+  font-family: inherit;
   font-size: 12px;
+  line-height: inherit;
 }
 
 .personal-actions a:hover,
 .personal-actions a:focus-visible {
   background: var(--primary-dark);
   color: #fff;
+}
+
+/* 无公开仓库的「查看源码」：灰态但仍可点，由 [data-site-toast] 弹说明 */
+.personal-actions .is-unavailable {
+  background: #e8e8e8;
+  color: var(--colorful-text-secondary);
+}
+
+.personal-actions .is-unavailable:hover,
+.personal-actions .is-unavailable:focus-visible {
+  background: #dedede;
+  color: #555;
 }
 
 .skill-section > h3 {

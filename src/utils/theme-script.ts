@@ -180,6 +180,7 @@ let skillsDonutTooltipBound = false;
 
 let newCommentShuffleBound = false;
 let paginationJumpBound = false;
+let toastTriggerBound = false;
 const NEW_COMMENT_DISPLAY_LIMIT = 5;
 const NEW_COMMENT_LOADING_MIN_MS = 220;
 
@@ -547,6 +548,22 @@ function initCopyLink() {
 		} catch {
 			showSiteToast("复制失败，请手动复制");
 		}
+	});
+}
+
+/** 通用提示触发器：凡带 data-site-toast 的元素被点击即弹站内提示
+ *  （事件委托，Swup 切页后依然生效）。用于「不可执行但需要解释」的灰态控件，
+ *  如 /projects/ 里无公开仓库的「查看源码」 */
+function initToastTrigger() {
+	if (toastTriggerBound) return;
+	toastTriggerBound = true;
+	document.addEventListener("click", (event) => {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const trigger = target.closest<HTMLElement>("[data-site-toast]");
+		if (!trigger) return;
+		const message = trigger.dataset.siteToast?.trim();
+		if (message) showSiteToast(message);
 	});
 }
 
@@ -1784,6 +1801,7 @@ export function pagefindReady() {
 	initCanvasBoomEffect();
 	initVisibilityTitle();
 	initCopyLink();
+	initToastTrigger();
 	initProtectedEmail();
 	initNewCommentShuffle();
 	initPaginationJump();

@@ -50,7 +50,7 @@ const statusLabels = {
 								)}
 							</>
 						</div>
-						<p>{project.description}</p>
+						<p class="personal-desc">{project.description}</p>
 						<p class="personal-meta">
 							<i class="fa fa-calendar" aria-hidden="true" />{" "}
 							{project.dateDisplay === "created" ? (
@@ -81,7 +81,7 @@ const statusLabels = {
 									/>
 								</a>
 							)}
-							{project.sourceCode && (
+							{project.sourceCode ? (
 								<a
 									href={project.sourceCode}
 									target="_blank"
@@ -93,6 +93,21 @@ const statusLabels = {
 										aria-hidden="true"
 									/>
 								</a>
+							) : (
+								/* 无公开仓库：灰态固定显示，点击由 [data-site-toast]
+								   弹站内提示说明原因（theme-script 的事件委托） */
+								<button
+									type="button"
+									class="is-unavailable"
+									title="该仓库暂未公开源码"
+									data-site-toast="该仓库暂未公开源码"
+								>
+									查看源码{" "}
+									<i
+										class="fa fa-github"
+										aria-hidden="true"
+									/>
+								</button>
 							)}
 						</div>
 					</article>
