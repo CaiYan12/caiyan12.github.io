@@ -23,6 +23,7 @@ import { remarkExtended } from "./remark-extended.mjs";
 import rehypeEmailProtection from "./rehype-email-protection.mjs";
 import rehypeExternalLinks from "./rehype-external-links.mjs";
 import rehypeTableWrapper from "./rehype-table-wrapper.mjs";
+import rehypeChapterSummary from "./rehype-chapter-summary.mjs";
 
 /** @returns {{remarkPlugins: unknown[], rehypePlugins: unknown[]}} */
 export function markdownPipeline() {
@@ -43,6 +44,8 @@ export function markdownPipeline() {
 			[rehypeExternalLinks, { siteUrl: siteConfig.siteURL }],
 			[rehypeEmailProtection, { method: "base64" }],
 			rehypeTableWrapper,
+			// 须在 rehypeAutolinkHeadings 之前：章末小结盒子要求 h2 还没有锚点子节点
+			rehypeChapterSummary,
 			[
 				rehypeAutolinkHeadings,
 				{
