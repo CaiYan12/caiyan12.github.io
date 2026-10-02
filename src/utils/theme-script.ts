@@ -647,6 +647,29 @@ async function renderMermaid() {
 			`,
 			securityLevel: "strict",
 		});
+		// 字体就绪后才允许测量：mermaid 的 label 默认 white-space:nowrap，只有测量宽度
+		// 恰好等于 wrappingWidth（200px）才切换成 break-spaces 换行（addHtmlSpan 源码行为）。
+		// webfont 是按 unicode-range 分片的可变字体，图表文本进 DOM 才触发对应子集加载；
+		// 若在子集就绪前测量，字体换上后文字比按旧度量定好的节点盒宽，foreignObject
+		// 把溢出裁掉——线上长中文标签实测被单行截断。fonts.load 按本次 label 文本精确
+		// 触发所需子集，fonts.ready 兜底等在途加载；失败不阻塞渲染（走外层 catch 的降级）。
+		const sampleText = pending.map((n) => n.textContent ?? "").join("");
+		const families = bodyFont
+			.split(",")
+			.map((f) => f.trim().replace(/^["']+|["']+$/g, ""))
+			.filter(Boolean);
+		// 3s 竞速上限：字体正常亚秒就绪；病态网络下宁可退回旧的测量行为
+		// （可能轻微裁切）也不能让图表长时间不渲染——与下方 catch 的降级哲学一致
+		await Promise.race([
+			Promise.allSettled([
+				document.fonts.load(
+					`16px ${families.map((f) => `"${f}"`).join(", ")}`,
+					sampleText,
+				),
+				document.fonts.ready,
+			]),
+			new Promise((r) => setTimeout(r, 3000)),
+		]);
 		await mermaid.run({ nodes: pending });
 		pending.forEach((n) => (n.dataset.mermaidRendered = "true"));
 	} catch (error) {
