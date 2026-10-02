@@ -644,6 +644,17 @@ async function renderMermaid() {
 				[class*="edge-depth-"] {
 					stroke-width: 2px !important;
 				}
+				/* 换行终态强制（2026-10-02）：addHtmlSpan 对 label 先设 nowrap，再靠
+				   「测量宽度 === wrappingWidth」的浮点精确相等来切换 break-spaces——
+				   真实浏览器（Edge/Chrome 实测）的 table-cell 测量回不到恰好 200，
+				   等式永远失守，长中文标签被 foreignObject 单行裁切（无头 Chromium
+				   反而能过，是它掩盖了线上缺陷）。这里直接把 div 拔到换行终态：
+				   display:table 收缩适配 + mermaid 自己写的内联 max-width 兜宽度，
+				   测量即换行形态，节点盒按真实多行尺寸生成，不再依赖那个等式。 */
+				foreignObject div {
+					display: table !important;
+					white-space: break-spaces !important;
+				}
 			`,
 			securityLevel: "strict",
 		});
