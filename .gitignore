@@ -58,6 +58,7 @@ output/
 .mimosa/
 .playwright-mcp/
 .zcode/
+.zcodeignore
 .codex/
 .learnings/
 .superpowers/

@@ -890,5 +890,9 @@
 	"public:weather/bg/storm.webp": {
 		"g": "8593a23e5563415767",
 		"bytes": 7522
+	},
+	"public:images/posts/20261002071103/webapp-vibe-coding-ch0-cover.jpg": {
+		"g": "424959182030111622",
+		"bytes": 65221
 	}
 }
