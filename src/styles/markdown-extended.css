@@ -1178,106 +1178,40 @@
 }
 
 /* ---------- 章末小结边框盒（《看懂 AI 写的网站》，rehype-chapter-summary.mjs 生成） ---------- */
-/* 结构（v4）：壳 div.chapter-summary 只做定位上下文，四类直接子节点——
-     左右两枚顶角弧件 .chapter-summary-corner（各画「弧 + 竖段」，单一绘制者，与框身只在
-     直段上重叠拼接）；标题行 h2（横贯顶边的 2px 线带 flex 行，文字骑线，::after 为右段）；
-     框身 .chapter-summary-frame（左右下三边 + 底部圆角 + clip-path 裁掉顶角处侧边框的
-     竖段残留）> 正文 .chapter-summary-body。
-   视觉（站长 2026-10-02 定稿方向）：仅一圈主题绿圆角边框；标题纯文字无背景，嵌在
-   上边框左端缺口里。
-   前两版事故（改这段前必读）：
-   - v2：框身上角 > 0 且无顶边时，Chrome 的侧边框弧只画到约 45° 就斜切，与补画弧
-     在 45° 交接必留痕 → 本版框身上角一律 0，弧全由角件画，无任何弧线交接。
-   - v3：mask/clip 会裁掉悬在盒外的标题文字上半（mask 作用域止于 border-box）→
-     本版标题与角件都在壳下、不在任何 clip/mask 元素内；clip-path 只作用于
-     只装正文的框身。
-   接缝策略：左引线由左角件顶边画到缺口内自由收尾（无平接）；右段 h2::after 与
-   右角件顶边重叠 4px（同色同带宽重叠不可见）；角件竖段与框身边框重叠 ≥3px。
-   改动任一长度须同步上列重叠量。 */
-.post-context .chapter-summary {
+.post-context fieldset.chapter-summary {
   --cs-border: var(--colorful-green);
   --cs-radius: 14px;
-  position: relative;
+  min-width: 0;
   margin: 2.4em 0;
-}
-
-/* 顶角弧件：整段画出上角（竖段 4px + 弧 14px + 顶边横段），左件横段延至缺口内自由收尾 */
-.post-context .chapter-summary-corner {
-  position: absolute;
-  top: 0;
-  width: 52px;
-  height: 18px;
+  padding: 0;
   border: 2px solid var(--cs-border);
-  pointer-events: none;
+  border-radius: var(--cs-radius);
 }
 
-.post-context .chapter-summary-corner--left {
-  left: 0;
-  border-bottom: none;
-  border-right: none;
-  border-top-left-radius: var(--cs-radius);
-}
-
-/* 右件短：顶边横段仅供 h2::after 重叠衔接（重叠 4px），弧占右端 14px */
-.post-context .chapter-summary-corner--right {
-  right: 0;
-  width: 26px;
-  border-bottom: none;
-  border-left: none;
-  border-top-right-radius: var(--cs-radius);
-}
-
-/* 标题行：本身即顶边那 2px 线带；文字左缘 64px（左引线到 52px，缺口 12px），
-   右段 ::after 弹性铺到右角件上并重叠 4px。文字在壳下，永不进 clip/mask。 */
-.post-context .chapter-summary > h2 {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 0;
-  padding: 0 22px 0 64px;
-  background: none;
-  border-bottom: none;
+/* 原生 legend 在边框中开口，圆角与横线由浏览器连续绘制，不再需要拼接。 */
+.post-context .chapter-summary > legend {
+  margin-left: 52px;
+  padding: 0 12px;
+  color: inherit;
   font-size: 20px;
+  font-weight: 700;
   line-height: 1.4;
-  white-space: nowrap;
 }
 
-.post-context .chapter-summary > h2::after {
-  content: "";
-  flex: 1 1 0;
-  height: 2px;
-  background: var(--cs-border);
-}
-
-/* 锚点自链会成为 flex 项挤占顶边；图例内隐藏（标题 id 仍在 h2 上，URL 锚点不受影响） */
-.post-context .chapter-summary > h2 .anchor {
+.post-context .chapter-summary > legend .anchor {
   display: none;
 }
 
-/* 框身：上角 0（弧全由角件画），clip-path 裁掉侧边框伸进顶角区的竖段残留；
-   框身内只有正文（无悬出内容），clip 对内容无影响 */
-.post-context .chapter-summary-frame {
-  border: 2px solid var(--cs-border);
-  border-top: none;
-  border-radius: 0 0 var(--cs-radius) var(--cs-radius);
-  clip-path: polygon(16px 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%, 0 16px);
-}
-
 .post-context .chapter-summary-body {
-  padding: 30px clamp(22px, 4.5vw, 46px) 26px;
+  padding: 0 clamp(22px, 4.5vw, 46px) 26px;
 }
 
 @media screen and (max-width: 680px) {
-  .post-context .chapter-summary > h2 {
+  .post-context .chapter-summary > legend {
     font-size: 18px;
   }
 
   .post-context .chapter-summary-body {
-    padding-top: 26px;
+    padding-top: 0;
   }
 }

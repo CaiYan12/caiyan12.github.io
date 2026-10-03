@@ -1,26 +1,17 @@
 /**
  * 把章末「本章小结」小节包成可整段定性的盒子。
  *
- * 匹配规则：h2 的纯文本以「本章小结」结尾（如「0.6 本章小结」「3.12 本章小结」，
- * 《看懂 AI 写的网站》系列书稿的固定写法）→ 将该 h2 与其后直到下一个标题（h1–h6）
- * 或父级末尾的所有兄弟节点，包进四层结构：
+ * 匹配 h2 纯文本以「本章小结」结尾的节，将它与后续内容包进原生 fieldset/legend：
  *
- *   div.chapter-summary（壳：只做定位上下文，无边框、不裁切、不遮罩——
- *     ├─ div.chapter-summary-corner.--left    标题左侧的顶角弧件（弧+引线，画到缺口内自由收尾）
- *     ├─ div.chapter-summary-corner.--right   右侧顶角弧件
- *     ├─ h2（原节点，含 rehype-slug 已注入的 id；标题行，文字骑在边框线上）
- *     └─ div.chapter-summary-frame            框身：左右下三边 + 底部圆角 + clip-path 裁掉顶角直段残留
- *          └─ div.chapter-summary-body        小结正文
+ *   fieldset.chapter-summary
+ *     ├─ legend.chapter-summary-title（保留 slug id，ARIA heading level 2）
+ *     └─ div.chapter-summary-body（原小结正文）
  *
- * 为什么拆成这样（v4，前两版被站长打回的教训）：标题文字与两枚顶角弧件必须是壳的
- * 直接子节点——一旦进了带 clip-path/mask 的元素，悬在盒外的文字上半会被一并裁掉
- * （v3 的真实事故）。框身若自带顶部圆角（border-radius 上角 > 0），Chrome 对无顶边
- * 盒子的侧边框弧只画到约 45° 就斜切，与任何补画弧都会留下交接痕（v2 的事故），
- * 故框身上角为 0、顶角弧全部由角件单一绘制，与框身只在直段上重叠拼接。
+ * 浏览器原生绘制 legend 对应的边框开口，让横线和圆角保持连续，避免多段边框拼接。
  *
  * 不改写任何文本内容；正文里不是小结的东西一个字节都不动。
  * 必须注册在 rehype-autolink-headings 之前——本插件的文本匹配只看 text 子节点，
- * 先跑可以少考虑锚点图标子元素，也让标题行内部保持干净（锚点由 CSS 隐藏）。
+ * 转成 legend 后保留原 slug id 与二级标题的 ARIA 语义。
  */
 import { SKIP, visit } from "unist-util-visit";
 
@@ -60,39 +51,26 @@ export default function rehypeChapterSummary() {
 				end += 1;
 			}
 
-			const frame = element(
-				"div",
-				["chapter-summary-frame"],
+			const title = {
+				...node,
+				tagName: "legend",
+				properties: {
+					...(node.properties ?? {}),
+					className: ["chapter-summary-title"],
+					role: "heading",
+					ariaLevel: 2,
+				},
+			};
+			const wrap = element(
+				"fieldset",
+				["chapter-summary"],
 				[
+					title,
 					element(
 						"div",
 						["chapter-summary-body"],
 						siblings.slice(index + 1, end),
 					),
-				],
-			);
-			const wrap = element(
-				"div",
-				["chapter-summary"],
-				[
-					element(
-						"div",
-						[
-							"chapter-summary-corner",
-							"chapter-summary-corner--left",
-						],
-						[],
-					),
-					element(
-						"div",
-						[
-							"chapter-summary-corner",
-							"chapter-summary-corner--right",
-						],
-						[],
-					),
-					node,
-					frame,
 				],
 			);
 			parent.children.splice(index, end - index, wrap);
