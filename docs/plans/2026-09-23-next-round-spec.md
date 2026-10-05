@@ -3,7 +3,7 @@
 - 镜像 issue：**#42**（label `ready-for-agent`）
 - 拆票：`docs/plans/2026-09-23-next-round-tickets.md` = issue **#43–#48**（六张，`#42` 的 sub-issue，阻塞边为 tracker 原生链接）
 - 来源：`C:\Users\Einn Tzai\AppData\Local\Temp\myblog-handoff-20260923-next-round.md` 的 ①②③⑥，站长已于 2026-09-23 逐项裁决
-- 上位文档：`docs/plans/2026-09-21-ui-adjust-tickets.md`（上一轮票册，已收口）、`docs/ui-adjust-0921.md`（证据登记册）、`docs/adr/0002–0004`、`CONTEXT.md` 词汇表
+- 上位文档：`docs/plans/2026-09-21-ui-adjust-tickets.md`（上一轮票册，已收口）、`docs/ui-adjust-0921.md`（证据登记册）、`docs/adr/0002–0004`、`GLOSSARY.md` 词汇表
 - 动工前边界：`HEAD` == `origin/main` == `03f42e7`，工作树干净，三条工作流全绿，开放 issue 0 个
 - 本文是**裁决的固化**，不是待办清单：四项均已定案，实现阶段不得重开选项
 - 决策映射：① = 站长选「不做 + 写成约束」；② = 方案 A；③ = 方案 A；⑥ = 方案 A

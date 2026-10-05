@@ -4,15 +4,15 @@ This repository uses a single domain context.
 
 ## Before exploring
 
-- Read `CONTEXT.md` at the repository root.
+- Read `GLOSSARY.md` at the repository root.
 - Read relevant records in `docs/adr/`.
-- Use the vocabulary defined in `CONTEXT.md` in issue titles, specifications, test names, and implementation discussions.
+- Use the vocabulary defined in `GLOSSARY.md` in issue titles, specifications, test names, and implementation discussions.
 
 ## File structure
 
 ```text
 /
-├── CONTEXT.md
+├── GLOSSARY.md
 ├── docs/adr/
 └── src/
 ```

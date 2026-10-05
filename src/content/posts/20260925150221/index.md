@@ -65,7 +65,7 @@ Matt Pocock 维护着一套开源的 [Agent Skills（智能体技能）](https:/
    动手写代码前，先查清必要的项目事实：排版规范是什么？有没有可复用的 Button 或 Card？真实数据结构是什么？改动以现有代码和配置为依据，避免凭空发明。
 
 2. **需求对齐（Grill with Docs）——像好医生一样连环盘问**<br />
-   先把目标问清楚，再开始改代码：“改动的核心动机是什么？”“哪些必须保留，哪些允许推翻？”讨论中形成的术语和关键决策可以记入 `CONTEXT.md`；难以回退且有真实取舍的决策再记录为 ADR，避免换个会话就丢失背景。
+   先把目标问清楚，再开始改代码：“改动的核心动机是什么？”“哪些必须保留，哪些允许推翻？”讨论中形成的术语和关键决策可以记入 `GLOSSARY.md`；难以回退且有真实取舍的决策再记录为 ADR，避免换个会话就丢失背景。
 
 3. **草稿试吃（Prototype）——让肉眼参与拍板**<br />
    文字难以确定视觉结构时，先制作少量可运行草稿，例如侧边栏型、卡片流型或杂志型。草稿用来回答具体设计问题；选定方向后再实现生产代码，不必每个任务都先做多个原型。
@@ -103,7 +103,7 @@ Matt Pocock 维护着一套开源的 [Agent Skills（智能体技能）](https:/
 
 - When requirement or scope is unclear, grill me with questions first.
 - When visual structure or user interaction is uncertain, generate 2-3 interactive prototype variants for human review instead of assuming.
-- Record key decisions into CONTEXT.md.
+- Record key decisions into GLOSSARY.md.
 
 ## 3. Implementation
 

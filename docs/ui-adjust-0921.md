@@ -225,7 +225,7 @@
 
 - `docs/adr/0002-domain-page-independent-shell.md` —— `/domain/` 保持独立壳、只做就地最小修正；含被否方案（纳入 `Layout.astro` / logo 指回首页）与「favicon 不在范围内」。
 - `docs/adr/0003-post-title-wraps-cards-truncate.md` —— 文章页 `h1` 多行、列表卡 `h2` 保持单行省略，**同类名下故意分叉**，并记下方圆角/黑竖线被拉长的接受代价。
-- `CONTEXT.md` 新增三条术语：**独立壳**（`/ai-news/`、`/books/`、`/domain/`）、**当前页态**（`.current` + `aria-current` 成对，「算了就必须有人画」）、**无 JS 地板线**（`slot="fallback"` 只承诺静态说明，不承诺降级功能）。
+- `GLOSSARY.md` 新增三条术语：**独立壳**（`/ai-news/`、`/books/`、`/domain/`）、**当前页态**（`.current` + `aria-current` 成对，「算了就必须有人画」）、**无 JS 地板线**（`slot="fallback"` 只承诺静态说明，不承诺降级功能）。
 
 ---
 
@@ -317,7 +317,7 @@
 ## 收尾两笔（已决，2026-09-21）
 
 1. **Q37 T1 验收启用 `scripts/upgrade-style-audit.mjs` 指纹比对**。T1 六项多是「值应当变、其他一律不许变」，删死规则与 h1 降级尤其需要证明波及面为零。流程：同数据下改前 `capture --base <preview> --out output/fp-before` → 改后 capture 到 `fp-after` → `diff --verbose`；差异只允许落在本轮明确要改的项上。采集前冻结动画、种子化 `Math.random`，并按 AGENTS.md 排除 myhkw 播放器、看板娘、轮播、3D 标签云、swup 瞬时类名与带端口绝对 url。
-2. **Q38 「漂移更优则转正」已固化为 `docs/adr/0004-fidelity-policy-drift-promotion.md`**，并在 `CONTEXT.md` 加了术语 **转正基线**。ADR 同时列出被该政策保护为「不是缺陷」的四项：正文 24/25 双行高、`.post-context h4` 无上边距、药丸 20px 与六色轮换、幻灯片点 10×10。
+2. **Q38 「漂移更优则转正」已固化为 `docs/adr/0004-fidelity-policy-drift-promotion.md`**，并在 `GLOSSARY.md` 加了术语 **转正基线**。ADR 同时列出被该政策保护为「不是缺陷」的四项：正文 24/25 双行高、`.post-context h4` 无上边距、药丸 20px 与六色轮换、幻灯片点 10×10。
 
 ### T1 剩余裁决补录（Q33-Q36）
 
@@ -333,7 +333,7 @@
 - T0：8 项，裁决见「第一轮/第二轮/第三轮裁决」与「最终执行序」。
 - T1：6 项，裁决见「T1 第一轮裁决」「T1 剩余裁决补录」与「T1 执行清单」。
 - T2（死代码剩余项、`html{font-size:13px}` 是否启用、AGENTS.md 三处失真更正、`.header-ticker` 死块、768 双写法、`100dvh`）与 T3（海洋绿 vs WCAG 的三处让步、z-index 标度）**尚未开始问答**。
-- 目前**未改任何源码**；已落盘的是三份决策文档（`docs/ui-adjust-0921.md`、`docs/adr/0002、0003、0004`）、`CONTEXT.md` 四条术语，以及 gitignore 内的四个量测脚本。
+- 目前**未改任何源码**；已落盘的是三份决策文档（`docs/ui-adjust-0921.md`、`docs/adr/0002、0003、0004`）、`GLOSSARY.md` 四条术语，以及 gitignore 内的四个量测脚本。
 
 ---
 

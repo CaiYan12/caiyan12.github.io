@@ -35,16 +35,16 @@
 >
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.agents\skills\grill-with-docs\SKILL.md' -Encoding UTF8`
 > - Ran `rg -n -i 'weather|天气|domain|grill-with-docs' 'C:\Users\Einn Tzai\.codex\memories\MEMORY.md'`
-> - Ran `git status --short; rg --files -g 'AGENTS.md' -g 'CONTEXT.md' -g 'docs/weather-api-research.md' -g '*weather*' -g '*domain*' -g 'docs/agents/**'`
+> - Ran `git status --short; rg --files -g 'AGENTS.md' -g 'GLOSSARY.md' -g 'docs/weather-api-research.md' -g '*weather*' -g '*domain*' -g 'docs/agents/**'`
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.agents\skills\grilling\SKILL.md' -Encoding UTF8`
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.agents\skills\domain-modeling\SKILL.md' -Encoding UTF8`
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.agents\skills\design-flow\SKILL.md' -Encoding UTF8`
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.agents\skills\context7-mcp\SKILL.md' -Encoding UTF8`
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.codex\skills\chinese-encoding\SKILL.md' -Encoding UTF8`
-> - Ran `Get-Content -LiteralPath 'CONTEXT.md' -Encoding UTF8; Get-Content -LiteralPath 'docs\agents\domain.md' -Encoding UTF8; Get-Content -LiteralPath 'docs\weather-api-research.md' -Encoding UTF8`
+> - Ran `Get-Content -LiteralPath 'GLOSSARY.md' -Encoding UTF8; Get-Content -LiteralPath 'docs\agents\domain.md' -Encoding UTF8; Get-Content -LiteralPath 'docs\weather-api-research.md' -Encoding UTF8`
 > - Ran `Get-Content -LiteralPath 'public\domain\js\weather.js' -Encoding UTF8; Get-Content -LiteralPath 'src\domain.html' -Encoding UTF8`
 > - Ran `Get-Content -LiteralPath 'docs\agents\domain.md' -Encoding UTF8`
-> - Ran `Get-Content -LiteralPath 'CONTEXT.md' -Encoding UTF8`
+> - Ran `Get-Content -LiteralPath 'GLOSSARY.md' -Encoding UTF8`
 > - Ran `Get-Content -LiteralPath 'docs\weather-api-research.md' -Encoding UTF8 -TotalCount 90`
 > - Ran `rg -n -i 'weather|天气|domain|Sidebar|sidebarConfig' src public/domain docs/adr package.json | Select-Object -First 100`
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.agents\skills\context7-mcp\SKILL.md' -Encoding UTF8`
@@ -208,7 +208,7 @@
 >
 > - Ran `Get-ChildItem -Name -LiteralPath '.design-flow.json','DESIGN.md','designs' -ErrorAction SilentlyContinue; Get-Content -LiteralPath 'docs\adr\0002-domain-page-independent-shell.md' -Encoding UTF8`
 >
-> - Ran `rg -n 'weather|天气' .design-flow.json DESIGN.md docs/adr CONTEXT.md AGENTS.md package.json -g '!**/node_modules/**' 2>$null | Select-Object -First 70`
+> - Ran `rg -n 'weather|天气' .design-flow.json DESIGN.md docs/adr GLOSSARY.md AGENTS.md package.json -g '!**/node_modules/**' 2>$null | Select-Object -First 70`
 >
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.agents\skills\frontend-design\SKILL.md' -Encoding UTF8`
 >
@@ -266,8 +266,8 @@
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.codex\skills\chinese-encoding\SKILL.md' -Encoding UTF8 | Select-Object -Skip 70 -First 110`
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.agents\skills\domain-modeling\CONTEXT-FORMAT.md' -Encoding UTF8`
 > - Ran `Get-Content -LiteralPath '.github\workflows\deploy.yml' -Encoding UTF8 -TotalCount 65; rg -n 'schedule:|cron:|workflow_dispatch:|on:' .github/workflows/deploy.yml`
-> - Wrote `./CONTEXT.md` (+4 -0)
-> - Ran `git diff -- CONTEXT.md`
+> - Wrote `./GLOSSARY.md` (+4 -0)
+> - Ran `git diff -- GLOSSARY.md`
 >
 > </details>
 >
@@ -291,7 +291,7 @@
 >
 > </details>
 >
-> 构建期方案的时效边界已核对：站点计划任务每 6 小时部署一次，但计划任务可能延迟，部署失败时旧页面也会继续保留。因此若选静态快照，界面需要显示实际更新时间，不能写“实时”。我已把刚确定的“指定城市天气”记入 `CONTEXT.md` 术语表；实现代码尚未改动。
+> 构建期方案的时效边界已核对：站点计划任务每 6 小时部署一次，但计划任务可能延迟，部署失败时旧页面也会继续保留。因此若选静态快照，界面需要显示实际更新时间，不能写“实时”。我已把刚确定的“指定城市天气”记入 `GLOSSARY.md` 术语表；实现代码尚未改动。
 >
 > **Q4｜请给“指定城市天气”的具体地点和希望显示的中文地名（城市或区县）。我会据此核对坐标；不按 IP 或浏览器定位猜地点。**
 >
@@ -309,9 +309,9 @@
 >
 > <details><summary>Edited a file, ran a command, called 3 tools</summary>
 >
-> - Wrote `./CONTEXT.md` (+0 -4)
+> - Wrote `./GLOSSARY.md` (+0 -4)
 >
-> - Ran `git diff -- CONTEXT.md; git status --short`
+> - Ran `git diff -- GLOSSARY.md; git status --short`
 >
 > MCP tool call
 >
@@ -718,7 +718,7 @@
 >
 > Searched the web for `https://operations.osmfoundation.org/policies/nominatim/`
 >
-> - Wrote `./CONTEXT.md` (+4 -0)
+> - Wrote `./GLOSSARY.md` (+4 -0)
 >
 > - Ran `$data = Invoke-RestMethod -Uri 'https://wttr.in/39.9,116.4?format=j2&lang=zh' -TimeoutSec 20; [pscustomobject]@{area = $data.nearest_area[0].areaName[0].value; tempC = $data.current_condition[0].temp_C; description = $data.current_condition[0].weatherDesc[0].value} | ConvertTo-Json -Compress`
 >
@@ -2026,7 +2026,7 @@
 2. 试验时能否用一条**大陆直连网络**点验完整天气链路？当前机器的网络结果不能代表大陆访客。
 3. 若免费代理不稳定或无法保证零费用，是保留经实测可用的无密钥源，还是暂缓天气功能？
 
-目前只在 [CONTEXT.md](./CONTEXT.md) 记录了“访客所在地天气”术语；天气实现尚未修改。
+目前只在 [GLOSSARY.md](./GLOSSARY.md) 记录了“访客所在地天气”术语；天气实现尚未修改。
 
 > 暂时先试验和风，写入README，后期真到上限了再改
 
@@ -2037,7 +2037,7 @@
 > <details><summary>Ran 4 commands</summary>
 >
 > - Ran `Get-Content -LiteralPath 'README.md' -Encoding UTF8 -TotalCount 220`
-> - Ran `Get-Content -LiteralPath 'docs\weather-api-research.md' -Encoding UTF8 -TotalCount 28; Get-Content -LiteralPath 'CONTEXT.md' -Encoding UTF8 -TotalCount 32`
+> - Ran `Get-Content -LiteralPath 'docs\weather-api-research.md' -Encoding UTF8 -TotalCount 28; Get-Content -LiteralPath 'GLOSSARY.md' -Encoding UTF8 -TotalCount 32`
 > - Ran `rg -n -i 'qweather|和风天气|weather' package.json src public/domain/js/weather.js README.md .github/workflows docs -g '!docs/weather-api-research.md' | Select-Object -First 80`
 > - Ran `git status --short; rg -n '天气|weather|功能|开发|项目|目录|计划|待办|Roadmap|功能' README.md | Select-Object -First 100`
 >
@@ -2655,7 +2655,7 @@
 
 <details><summary>6 previous messages</summary>
 
-> 我会按你指定的 `to-spec` 流程，把已确认的访谈结论写成可验收的 SPEC，并同步修正 `CONTEXT.md` 的天气术语。先核对技能要求、仓库已有的 spec/issue 约定与当前实现边界，再落文档；未裁决的代理平台和大陆测速结果会明确列为试验关口。
+> 我会按你指定的 `to-spec` 流程，把已确认的访谈结论写成可验收的 SPEC，并同步修正 `GLOSSARY.md` 的天气术语。先核对技能要求、仓库已有的 spec/issue 约定与当前实现边界，再落文档；未裁决的代理平台和大陆测速结果会明确列为试验关口。
 >
 > <details><summary>Ran 10 commands, called 3 tools</summary>
 >
@@ -2663,7 +2663,7 @@
 >
 > - Ran `Get-Content -LiteralPath 'C:\Users\Einn Tzai\.codex\plugins\cache\openai-curated-remote\matt-skills-curated\1.1.0\skills\to-spec\SKILL.md' -Encoding UTF8`
 >
-> - Ran `git status --short; rg -n -i 'weather|天气|和风' CONTEXT.md README.md docs/adr AGENTS.md | Select-Object -First 70`
+> - Ran `git status --short; rg -n -i 'weather|天气|和风' GLOSSARY.md README.md docs/adr AGENTS.md | Select-Object -First 70`
 >
 > - Ran `Get-Content -LiteralPath 'docs\agents\issue-tracker.md' -Encoding UTF8; Get-Content -LiteralPath 'docs\agents\domain.md' -Encoding UTF8; rg --files docs | rg 'spec|SPEC|plans|adr' | Select-Object -First 70`
 >
@@ -2981,15 +2981,15 @@
 >
 > <details><summary>Created a file, edited a file, ran 7 commands</summary>
 >
-> - Ran `Get-Content -LiteralPath 'CONTEXT.md' -Encoding UTF8 -TotalCount 32; Get-Content -LiteralPath 'README.md' -Encoding UTF8 | Select-Object -Skip 50 -First 13`
+> - Ran `Get-Content -LiteralPath 'GLOSSARY.md' -Encoding UTF8 -TotalCount 32; Get-Content -LiteralPath 'README.md' -Encoding UTF8 | Select-Object -Skip 50 -First 13`
 > - Ran `rg -n 'sidebarConfig|widgets:|blogger|#sidebar|@media.*768|colorful:page:loaded|swup' src/config.ts src/components/layout/SideBar.astro src/styles/global.css src/utils/theme-script.ts src/layouts/Layout.astro | Select-Object -First 100`
 > - Ran `Get-Content -LiteralPath 'package.json' -Encoding UTF8 -TotalCount 90; rg -n 'makeHarness|UI_SMOKE_BASE_URL|pageerror|geolocation' scripts/ui-smoke.mjs scripts/lib/smoke-harness.mjs | Select-Object -First 55`
 > - Ran `Get-Content -LiteralPath 'public\domain\js\weather.js' -Encoding UTF8; Get-Content -LiteralPath 'src\domain.html' -Encoding UTF8 | Select-Object -Skip 100 -First 20`
-> - Wrote `./CONTEXT.md` (+10 -2)
+> - Wrote `./GLOSSARY.md` (+10 -2)
 > - Wrote `./docs/plans/2026-09-28-weather-capsule-spec.md` (+90 -0)
 > - Ran `git status --short; Test-Path -LiteralPath 'docs\plans\2026-09-28-weather-capsule-spec.md'`
-> - Ran `git diff --check; git diff --stat; rg -n '^## |^### |^\d+\. As an |^\*\*附近城市|^\*\*天气胶囊' 'docs/plans/2026-09-28-weather-capsule-spec.md' 'CONTEXT.md' | Select-Object -First 90`
-> - Ran `pnpm exec prettier --check 'docs/plans/2026-09-28-weather-capsule-spec.md' 'CONTEXT.md'`
+> - Ran `git diff --check; git diff --stat; rg -n '^## |^### |^\d+\. As an |^\*\*附近城市|^\*\*天气胶囊' 'docs/plans/2026-09-28-weather-capsule-spec.md' 'GLOSSARY.md' | Select-Object -First 90`
+> - Ran `pnpm exec prettier --check 'docs/plans/2026-09-28-weather-capsule-spec.md' 'GLOSSARY.md'`
 >
 > </details>
 >
@@ -3006,7 +3006,7 @@
 >
 > - Ran `git diff --check; git status --short; node -e 'import("prettier").then(async p => { const fs = await import("node:fs"); const s = fs.readFileSync("README.md", "utf8"); const f = await p.format(s,{filepath:"README.md"}); const pick = x => x.slice(x.indexOf("## 天气胶囊数据源试验"), x.indexOf("## CI 构建与部署")); console.log("weather-readme-section-prettier="+(pick(s)===pick(f))); })'`
 >
-> - Ran `pnpm exec prettier --check 'docs/plans/2026-09-28-weather-capsule-spec.md' 'CONTEXT.md'`
+> - Ran `pnpm exec prettier --check 'docs/plans/2026-09-28-weather-capsule-spec.md' 'GLOSSARY.md'`
 >
 > - Ran ``$OutputEncoding = [System.Text.Encoding]::UTF8; [Console]::OutputEncoding = [System.Text.Encoding]::UTF8; $issue = (gh issue view 60 --json number,title,state,labels,body,url | ConvertFrom-Json); $local = [System.IO.File]::ReadAllText((Resolve-Path -LiteralPath 'docs\plans\2026-09-28-weather-capsule-spec.md')).Replace("`r`n", "`n").TrimEnd(); $remote = $issue.body.Replace("`r`n", "`n").TrimEnd(); [pscustomobject]@{Number=$issue.number; State=$issue.state; ReadyForAgent=($issue.labels.name -contains 'ready-for-agent'); BodyMatchesLocal=[string]::Equals($local,$remote,[StringComparison]::Ordinal); HasOutOfScope=$remote.Contains('## Out of Scope'); Url=$issue.url} | ConvertTo-Json -Compress``
 >
@@ -3018,7 +3018,7 @@
 > </details>
 </details>
 
-已将 grilling-session 的裁决整理为 [天气胶囊 SPEC](./docs/plans/2026-09-28-weather-capsule-spec.md)，更新了 [CONTEXT.md](./CONTEXT.md:15) 的领域术语，并将完整 SPEC 发布为 [GitHub issue #60](https://github.com/CaiYan12/caiyan12.github.io/issues/60)。
+已将 grilling-session 的裁决整理为 [天气胶囊 SPEC](./docs/plans/2026-09-28-weather-capsule-spec.md)，更新了 [GLOSSARY.md](./GLOSSARY.md:15) 的领域术语，并将完整 SPEC 发布为 [GitHub issue #60](https://github.com/CaiYan12/caiyan12.github.io/issues/60)。
 
 文档区分了**可开始试验**与**可切换生产主源**：后者仍须通过大陆完整链路实测和零费用截流验证。SPEC 与术语表的 Prettier 检查、`git diff --check` 均通过；Issue 正文与本地 SPEC 一致。本轮未修改天气功能代码。
 
@@ -3513,7 +3513,7 @@
 >
 > - Ran `$utf8 = [System.Text.UTF8Encoding]::new($false,$true); $null = $utf8.GetString([System.IO.File]::ReadAllBytes((Resolve-Path -LiteralPath 'docs\plans\2026-09-28-weather-capsule-plan.md'))); $null = $utf8.GetString([System.IO.File]::ReadAllBytes((Resolve-Path -LiteralPath 'docs\plans\2026-09-28-weather-capsule-spec.md'))); 'plan-and-spec-utf8-valid'; rg -n '^\- 状态：|^\- \[x\]|^\- \[ \]' 'docs\plans\2026-09-28-weather-capsule-plan.md' | Select-Object -First 9`
 > - Ran `git diff --check; git status --short; node -e 'import("prettier").then(async p => { const fs = await import("node:fs"); const s = fs.readFileSync("README.md", "utf8"); const f = await p.format(s,{filepath:"README.md"}); const pick = x => x.slice(x.indexOf("## 天气胶囊数据源试验"), x.indexOf("## CI 构建与部署")); console.log("weather-readme-section-prettier="+(pick(s)===pick(f))); })'`
-> - Ran `pnpm exec prettier --check 'docs/plans/2026-09-28-weather-capsule-plan.md' 'docs/plans/2026-09-28-weather-capsule-spec.md' 'CONTEXT.md'`
+> - Ran `pnpm exec prettier --check 'docs/plans/2026-09-28-weather-capsule-plan.md' 'docs/plans/2026-09-28-weather-capsule-spec.md' 'GLOSSARY.md'`
 > - Ran `gh issue view 60 --json number,state,subIssues --jq '{number,state,children:[.subIssues.nodes[].number]}'`
 >
 > </details>
@@ -3835,7 +3835,7 @@ PLAN、SPEC、术语表通过 Prettier 和 UTF-8 检查；Issue 正文与票稿�
 >
 > <details><summary>Ran 3 commands</summary>
 >
-> - Ran `git diff -- CONTEXT.md README.md package.json public/domain/js/weather.js scripts/ui-smoke.mjs src/components/layout/SideBar.astro src/config.ts src/domain.html src/layouts/Layout.astro src/layouts/MainGridLayout.astro src/styles/global.css | Set-Content -LiteralPath '.superpowers/sdd/2026-09-28-weather-capsule-plan/final-review-package.md' -Encoding UTF8`
+> - Ran `git diff -- GLOSSARY.md README.md package.json public/domain/js/weather.js scripts/ui-smoke.mjs src/components/layout/SideBar.astro src/config.ts src/domain.html src/layouts/Layout.astro src/layouts/MainGridLayout.astro src/styles/global.css | Set-Content -LiteralPath '.superpowers/sdd/2026-09-28-weather-capsule-plan/final-review-package.md' -Encoding UTF8`
 > - Ran ```````$package = '.superpowers/sdd/2026-09-28-weather-capsule-plan/final-review-package.md'; $paths = @('public/weather/weather-service.js','public/weather/sidebar-widget.js','src/components/widget/WidgetWeather.astro','weather-proxy/.gitignore','weather-proxy/wrangler.jsonc','weather-proxy/src/handler.js','weather-proxy/src/index.js','weather-proxy/src/index.test.js','weather-proxy/src/local-trial.mjs','weather-proxy/src/miniflare-persistence.test.mjs','weather-proxy/src/node-cloudflare-workers.mjs','weather-proxy/src/test-hooks.mjs','scripts/domain-weather.test.mjs','scripts/domain-weather-smoke.mjs','scripts/weather-service.test.mjs','scripts/sidebar-weather-smoke.mjs','scripts/mobile-weather-smoke.mjs','scripts/weather-local-acceptance.mjs','scripts/qweather-proxy-local.ps1'); foreach ($item in $paths) { Add-Content -LiteralPath $package -Value "`n## FILE: $item`n``````text" -Encoding UTF8; Add-Content -LiteralPath $package -Value (Get-Content -LiteralPath $item -Raw -Encoding UTF8) -Encoding UTF8; Add-Content -LiteralPath $package -Value '```' -Encoding UTF8 }```````
 > - Ran `(Get-Item -LiteralPath '.superpowers/sdd/2026-09-28-weather-capsule-plan/final-review-package.md').Length`
 >
@@ -3920,7 +3920,7 @@ PLAN、SPEC、术语表通过 Prettier 和 UTF-8 检查；Issue 正文与票稿�
 >
 > - Ran `git diff --check`
 >
-> - Ran `pnpm exec prettier --check docs/plans/2026-09-28-weather-capsule-plan.md docs/plans/2026-09-28-weather-capsule-spec.md CONTEXT.md package.json src/components/widget/WidgetWeather.astro src/layouts/MainGridLayout.astro`
+> - Ran `pnpm exec prettier --check docs/plans/2026-09-28-weather-capsule-plan.md docs/plans/2026-09-28-weather-capsule-spec.md GLOSSARY.md package.json src/components/widget/WidgetWeather.astro src/layouts/MainGridLayout.astro`
 >
 > - Ran `Get-NetTCPConnection -LocalPort 4321,8787 -State Listen -ErrorAction SilentlyContinue | Sort-Object LocalPort | Select-Object LocalAddress,LocalPort,OwningProcess`
 >

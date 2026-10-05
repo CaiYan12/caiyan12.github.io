@@ -54,7 +54,7 @@ Matt Pocock Workflow 的技能旨在解决上述上下文工程问题。主要�
 
 P.S.
 
-`/grill-with-docs`是 Matt 对于 `/grill-me` 的升级版。对于基于仓库的任务，它将开启一个基于状态运行的任务：它会把从 grilling-session 向你学到概念和决策，然后通过 `/domain-modeling` 写入 CONTEXT.md（项目术语列表）。从而让问答流程简化。
+`/grill-with-docs`是 Matt 对于 `/grill-me` 的升级版。对于基于仓库的任务，它将开启一个基于状态运行的任务：它会把从 grilling-session 向你学到概念和决策，然后通过 `/domain-modeling` 写入 GLOSSARY.md（项目术语列表）。从而让问答流程简化。
 
 而对于一个空仓库起手，仅有模糊的预期想象、没有确切与细化的方案的任务，`/grill-with-docs` 将发挥有限的作用，因为它没有足够的背景知识来启动一个具体的问答流程。此时我将更建议你先使用 `/grill-me` 进行各项模糊需求的第一步细化，在建立充分的理解、上下文或初步需求文档之后再进行 `/grill-with-docs` 进行开工，此时大模型对模糊需求的理解将更为透彻，便于共识的同步。
 
