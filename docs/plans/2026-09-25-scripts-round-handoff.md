@@ -12,14 +12,14 @@
 
 把 `scripts/` 里重复了四到六份的「台子」与规则收成单一来源，并把构建期 Markdown 管线提成可 import 的模块；**产物逐字节不变**是每票的验收对象之一。
 
-| 项 | 终值 |
-|---|---|
-| 产物不变量 | **1114 文件 / norm=`7baf45a92c742f60`**，与开工前基线 `output/arch-pre-round.sha.norm` **逐行相同** |
-| 四套冒烟判据数 | **9 / 27 / 72 / 121**，全程一项未增减 |
-| 链头七组离线单测 | `test:projects` 6+7、`test:nice-books` 51、`test:site-stats` 19、`test:utils` 16、`test:contributions` 11、`test:friend-icons` 32、`test:lib` 14，各 `fail 0` |
-| 静态门禁 | `astro check` `0 errors / 0 warnings / 2 hints`；`prettier --check ./src ./scripts` 绿 |
-| 线上 | 三条工作流在 `28e5ff5` 全 success；站点根 `Last-Modified: Fri, 25 Sep 2026 02:30:13 GMT` + `Age: 0`；缝隙 A 以线上为基准 **121 项、失败 0 项**；ai-news 线上 **9/9** |
-| commit 清单 | `aeaff05` spec+票册 → `b4d74fc` 票01 → `ac4b8f9` 票02 → `87eed09` 票03 → `bb68258` 票04 → `e792124` 票05 → `d15c04f` 票06 → `ec70aec` 票07 → `013786c` 票08 → `458fd17` 台子判形修正 → 台账/收口若干（全表见票册各段状态行与 #49 的交付汇总评论） |
+| 项               | 终值                                                                                                                                                                                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 产物不变量       | **1114 文件 / norm=`7baf45a92c742f60`**，与开工前基线 `output/arch-pre-round.sha.norm` **逐行相同**                                                                                                                                               |
+| 四套冒烟判据数   | **9 / 27 / 72 / 121**，全程一项未增减                                                                                                                                                                                                             |
+| 链头七组离线单测 | `test:projects` 6+7、`test:nice-books` 51、`test:site-stats` 19、`test:utils` 16、`test:contributions` 11、`test:friend-icons` 32、`test:lib` 14，各 `fail 0`                                                                                     |
+| 静态门禁         | `astro check` `0 errors / 0 warnings / 2 hints`；`prettier --check ./src ./scripts` 绿                                                                                                                                                            |
+| 线上             | 三条工作流在 `28e5ff5` 全 success；站点根 `Last-Modified: Fri, 25 Sep 2026 02:30:13 GMT` + `Age: 0`；缝隙 A 以线上为基准 **121 项、失败 0 项**；ai-news 线上 **9/9**                                                                              |
+| commit 清单      | `aeaff05` spec+票册 → `b4d74fc` 票01 → `ac4b8f9` 票02 → `87eed09` 票03 → `bb68258` 票04 → `e792124` 票05 → `d15c04f` 票06 → `ec70aec` 票07 → `013786c` 票08 → `458fd17` 台子判形修正 → 台账/收口若干（全表见票册各段状态行与 #49 的交付汇总评论） |
 
 **新增的可复用模块**：`scripts/lib/post-slug.mjs`、`scripts/lib/atomic-write.mjs`（+ `atomic-write.test.mjs`）、`scripts/lib/smoke-harness.mjs`（+ `smoke-harness.test.mjs`）、`src/plugins/pipeline.mjs`。
 

@@ -37,6 +37,7 @@
 ## T0 · 工具层（产物无关）
 
 ### 01. 把已有的纯函数测试接进 build 门禁
+
 > Issue: #50
 
 **Blocked by**: 无（可立即开始）
@@ -55,6 +56,7 @@
 **证据**：commit `b4d74fc`；红/绿两份构建日志 `output/arch-red-build.log`（exit 1，指名到组）与 `output/arch-t01-build.log`（`EXIT=0`）。三组新门禁测试跑完 `git status` 不变（friend-icons 的写盘全在 `os.tmpdir()` 的 `mkdtemp` 夹具内、`fsImpl` 注入），本票不引入仓库副作用。
 
 ### 02. 文章 slug 规则单源（只收正则）
+
 > Issue: #51
 
 **Blocked by**: 无（可立即开始）
@@ -73,6 +75,7 @@
 **证据**：commit `ac4b8f9`。判据链：`grep` 命中 5→1 → 造不合规目录红（exit 1）→ 还原绿（22 个目录通过）→ 同码双跑标定噪声归零（122 raw / 0 norm）→ 改前/改后 norm 同值 `7baf45a92c742f60`。构建改写的两个 constants 文件按既有规程 `git checkout --` 还原。
 
 ### 03. 原子写 JSON 收进 scripts/lib
+
 > Issue: #52
 
 **Blocked by**: 无（可立即开始）
@@ -92,6 +95,7 @@
 **证据**：commit `87eed09`。`test:lib`（5 项）已进 `pnpm build` 链头；其余四组改后读数 `test:friend-icons` 32、`test:projects` 6+7、`test:contributions` 11、`test:site-stats` 19，全部 exit 0。两把变异刀（短路回滚 / 删孤儿清理）各翻红一次，其中第二把先因我测试的洞漏过、补断言后才咬住——这条已在 commit 正文与 spec 里如实记着。
 
 ### 04. 冒烟测试台（tracer：台子 + ai-news 迁移）
+
 > Issue: #53
 
 **Blocked by**: 无（可立即开始）。本票是票 05／06／07 的前置。
@@ -116,6 +120,7 @@
 ## T0 · 台子推广
 
 ### 05. 迁移 fancybox-smoke 到测试台
+
 > Issue: #54
 
 **Blocked by**: 04
@@ -134,6 +139,7 @@
 **证据**：commit `e792124`。迁移前后同 dist 逐行同读数（27/0 失败）；分流语义由两次真实注入分别取到红（本地报错 → exit 1）与绿（外部报错 → 仅 NOTE、exit 0），不是「它本来就是绿的」。
 
 ### 06. 迁移 nice-books-smoke 到测试台
+
 > Issue: #55
 
 **Blocked by**: 04
@@ -152,6 +158,7 @@
 **证据**：commit `d15c04f`。前后日志 `output/nb-{before,after}.log`（各 `72/72`），判据名比对 `output/nb-{before,after}.names`（`diff` 空输出）。
 
 ### 07. 迁移 ui-smoke 到测试台（缝隙 A 本体）
+
 > Issue: #56
 
 **Blocked by**: 04
@@ -172,6 +179,7 @@
 ## T1 · 会被构建消费的一项
 
 ### 08. 把 Markdown 管线提成可 import 的 seam
+
 > Issue: #57
 
 **Blocked by**: 无（可立即开始）。建议排在最后做。
@@ -190,19 +198,20 @@
 
 **证据**：commit `013786c`。三段式对照表（`dist` 聚合）：
 
-| 阶段 | 代码态 | 文件数 | raw | norm |
-|---|---|---|---|---|
-| A | HEAD（改前） | 1114 | `10b00986915ec5e6` | `7baf45a92c742f60` |
-| B | HEAD（改前，第二次） | 1114 | `839713c255bb140c` | `7baf45a92c742f60` |
-| C | 改后 | 1114 | `006510b564febc43` | `7baf45a92c742f60` |
-| D | 变异（autolink prepend） | 1114 | `0875e2dc9a8f64af` | **`c24d624817f41ae4`** ← 20 个 HTML 与基线不同 |
-| E | 还原后重建 | 1114 | `ac6b293c52fcfae4` | `7baf45a92c742f60` |
+| 阶段 | 代码态                   | 文件数 | raw                | norm                                           |
+| ---- | ------------------------ | ------ | ------------------ | ---------------------------------------------- |
+| A    | HEAD（改前）             | 1114   | `10b00986915ec5e6` | `7baf45a92c742f60`                             |
+| B    | HEAD（改前，第二次）     | 1114   | `839713c255bb140c` | `7baf45a92c742f60`                             |
+| C    | 改后                     | 1114   | `006510b564febc43` | `7baf45a92c742f60`                             |
+| D    | 变异（autolink prepend） | 1114   | `0875e2dc9a8f64af` | **`c24d624817f41ae4`** ← 20 个 HTML 与基线不同 |
+| E    | 还原后重建               | 1114   | `ac6b293c52fcfae4` | `7baf45a92c742f60`                             |
 
 清单原文：`output/t1-{A,B,C,D,E}.sha`（raw 逐文件）与 `.norm` 后缀（剥随机块）。本轮开工以来的 norm 一直是同一个值，说明票 01–08 对产物整体中立。
 
 ## 收尾
 
 ### 09. 全链验证与交付
+
 > Issue: #58
 
 **Blocked by**: 01–08 全部

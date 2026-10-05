@@ -82,7 +82,7 @@
 - [x] 7.2 死代码/死数据与共享化：skills.ts 悬空 projects 字段整体移除（含接口，约 30 处）、projects.ts 死 image 字段移除、`#totop` 节点删除、content-utils 三处恒假 draft 过滤删除、navBarConfig.type 移除、Search.svelte `any`→Pagefind 最小接口、Pio.svelte 轮询加 100ms/100 次上限、令牌解析抽 scripts/lib/github-token.mjs（三脚本共用，fail-open/fail-closed 语义由调用方决定）、洗牌抽 src/utils/shuffle.ts（theme-script + WidgetNewLog 共用；sync-site-stats 带注入实现职责不同保留）、escapeHtml 双份保留互加同步注释（tsconfig allowJs=false 无法跨语言共享）、githubUser 入 siteConfig（projects.astro / contributions-calendar 改引）、站名副本消除（pioConfig welcome、ai-news meta）、5 页 description 改引用 siteConfig.author
 - [x] 7.3 .gitignore 补 .learnings/（git rm -r --cached 移出 3 文件）与 .superpowers/
 - [x] 7.4 三 workflow 共 12 处第三方 action 钉 commit SHA（checkout/setup-node/pnpm-action-setup/withastro-action/deploy-pages，tag→SHA 经 git ls-remote 解析）
-- [x] 7.5 Swup 重初始化协议规则写入 AGENTS.md（容器内 colorful:page:loaded + dataset 守卫；容器外仅 pagefindReady 一次 + *Bound 守卫；astro:* 仅限容器外 before-swap 清理；theme-script 拆分为远期独立一期）
+- [x] 7.5 Swup 重初始化协议规则写入 AGENTS.md（容器内 colorful:page:loaded + dataset 守卫；容器外仅 pagefindReady 一次 + _Bound 守卫；astro:_ 仅限容器外 before-swap 清理；theme-script 拆分为远期独立一期）
 - [x] 7.6 README TODO 8 补记 pnpm audit 触发（维持不实施，前置 Tailwind 改造）
 - [x] 7.7 README 常用命令补 test:utils 与 format 说明；CHANGELOG 新增 2026-09-06 批次记录
 - [x] 验证：format/check/build 全绿、38 例单测全过（utils 9 + sync 15 + contributions 10 + fixture 4）；preview 抽查 /tag/ /category/ /hot/ /tag/GitHub/ 均正常渲染

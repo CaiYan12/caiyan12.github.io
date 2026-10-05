@@ -29,6 +29,7 @@
 ## T0 · 独立项：文档、工具与约束
 
 ### 01. triage 标签文档对齐 GitHub 现实
+
 > Issue: #43
 
 **Blocked by**: 无（可立即开始）
@@ -45,6 +46,7 @@
 **证据**：commit `bc329f6`（文档）+ `b96ea8d`（spec 计数更正）。当日 `gh label list` 全量输出留档 `output/t01-labels-before.json`，本票收尾重取 `output/t01-labels-after.json`，两者逐字节相同。
 
 ### 02. 票册自检脚本提为 `scripts/` 一等判据 + `--offline`
+
 > Issue: #44
 
 **Blocked by**: 无（可立即开始）
@@ -57,12 +59,13 @@
 - [x] `--offline` 跳过唯一依赖网络的镜像票规则（R5），结论行显式写「R5 未验（离线）」；**不得**在跳过该规则时打印无保留 GREEN　〔三种形态各跑一次：① 离线跑上一轮票册 → `26 段 / 0 条不合规 → GREEN（R5 未验：离线）`，exit 0；② 用旧快照在线跑 → `→ GREEN`（无「未验」字样），exit 0；③ 快照缺失又不带 `--offline` → exit 2 并打印刷新命令与「或加 --offline 跳过 R5」〕
 - [x] `package.json` 注册 `audit:ledger` 入口；联网快照的刷新命令写进脚本头注释，沿用 `curl` + `$(gh auth token)` 形态　〔`"audit:ledger": "node scripts/ledger-audit.mjs"`；头注释含 curl 形态的快照刷新命令，且注明长中文与令牌都不经 argv〕
 - [x] 对**上一轮已收口票册**跑离线一次：GREEN，读数含「N 段 / 0 条不合规」，并留档　〔26 段 / 0 条不合规 / exit 0（见判据 2 的 ① ）〕
-- [x] 变异验证一次：在临时副本上留一条未勾判据 → 必须 RED 且点名规则号 + 段落 + 行号；副本删除，正式票册未被改动（`git status` 干净为证）　〔只把副本里第一条 `- [x]` 改回 `- [ ]` → `FAIL R3 判据未勾 | 01（output/mutation-ledger.md:28） | 在工作树干净状态下采集**改前**样式指纹基线（24 页逐元素，含 \`::bef…` + `26 段 / 1 条不合规 → RED`，exit 1。RED 与 GREEN 两个退出码分别脱离管道单独复验（管道会把 `$?` 变成 `tail` 的）。副本已删，`git status` 只剩两个构建改写的 constants 文件〕
+- [x] 变异验证一次：在临时副本上留一条未勾判据 → 必须 RED 且点名规则号 + 段落 + 行号；副本删除，正式票册未被改动（`git status` 干净为证）　〔只把副本里第一条 `- [x]` 改回 `- [ ]` → `FAIL R3 判据未勾 | 01（output/mutation-ledger.md:28） | 在工作树干净状态下采集**改前**样式指纹基线（24 页逐元素，含 \`::bef…`+`26 段 / 1 条不合规 → RED`，exit 1。RED 与 GREEN 两个退出码分别脱离管道单独复验（管道会把 `$?`变成`tail` 的）。副本已删，`git status` 只剩两个构建改写的 constants 文件〕
 - [x] 未串入 `pnpm build` / `build.yml` / `deploy.yml`（`git diff --name-only` 里不得出现这三个文件），也不引入任何新依赖　〔本票 diff 只含 `AGENTS.md`、`package.json`（新增一行 script）、`scripts/ledger-audit.mjs`；无新依赖。开册期对本票册跑一次 → `6 段 / 38 条不合规 → RED`，与「本文件怎么用」里预告的预期一致〕
 
 **证据**：commit `ad392ad`。`pnpm check` 0 errors / 0 warnings（2 hints 为既有第三方提示）；`prettier --check ./src ./scripts package.json` 全绿（新脚本首跑被 Prettier 判为不合规，`--write` 后行为不变、仍 26 段 0 不合规）。
 
 ### 03. 微言轮播「无悬停视觉反馈」的反向判据
+
 > Issue: #45
 
 **Blocked by**: 无（可立即开始；约束文本已随 `144849c` 写进 `AGENTS.md`）
@@ -84,6 +87,7 @@
 ## T1 · `#blogtags` 挂点迁移（expand → contract）
 
 ### 04. 药丸样式改由类挂点承载（双挂点共存，id 暂不撤回）
+
 > Issue: #46
 
 **Blocked by**: 无（可与 T0 并行；但票 05 强依赖本票）
@@ -91,7 +95,6 @@
 **Delivers**：标签/分类药丸的样式改由类挂点提供，正文云与侧栏云在页面上与改前**逐像素相同**；这一步刻意让新旧两种挂点共存，使「撤回重复 id」变成一次独立的、可单独回滚的收缩。
 
 > 状态：已验收（`ced004f`）@2026-09-24
->
 
 - [x] 在**改动前的干净 HEAD** 上重新 capture 一份 before 指纹（不复用上一轮终版基线——上一轮 T1/T2 中途动过药丸样式，复用会把不属于本轮的差异算进来），端口保持 4399　〔`output/fp-r2-before`，23 页，`capture` exit 0。端口 4399、`pnpm build` exit 0 后起 preview；采集时源码侧只有票 03 的冒烟改动，站点文件与 `82e1ef9` 相同〕
 - [x] `TagPillCloud.astro` 两团云都带上类挂点，且此步 **id 原样保留**（expand 阶段零撤回）；除挂点外 DOM 结构、层级、`aria-current`、`is-current`、`.tag-count`、`{" "}` 空白与 `&times;` 实体的既有约定一个字节都不动　〔产物 `dist/tag/index.html` 里两处 `<ul id="blogtags" class="blogtags">`；组件 diff 只有 `<ul>` 一行与头注释〕
@@ -107,6 +110,7 @@
 > 预览：**通过**（站长 2026-09-24 确认；本票 commit 已在本地、未推送远程）
 
 ### 05. 撤回侧栏那份 id + 全站重复 id 负扫常驻
+
 > Issue: #47
 
 **Blocked by**: 04
@@ -128,7 +132,6 @@
 
 > 预览：**通过**（站长 2026-09-24 确认；同一预览点覆盖了 expand 与 contract 两步）
 
-
 ## T1 的视觉 A/B（票 04／05 的补充证据，2026-09-24）
 
 线上 `origin/main`（`669b254`）本轮未推送，它**就是迁移前的构建**——拿它和本地 `:4399` 的迁移后构建对同一元素出图，是唯一不需要重建就能得到的「改前像素」。
@@ -143,6 +146,7 @@
 ## 收尾
 
 ### 06. 全链验证与交付
+
 > Issue: #48
 
 **Blocked by**: 01–05 全部

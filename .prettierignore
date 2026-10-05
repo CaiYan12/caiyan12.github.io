@@ -1,2 +1,8 @@
 # vendored 第三方库（Font Awesome 4）
 src/styles/font-awesome.css
+# Historical session transcript, retained verbatim
+docs/history/qweather-settingup-history-sessions.md
+# Original Colorful theme stylesheet kept as a reference snapshot
+docs/reference/colorful-original.css
+# Literal source snippets in this plan must retain their exact formatting
+docs/plans/2026-09-25-pelican-bike-tickets.md

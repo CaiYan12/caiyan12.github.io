@@ -17,10 +17,10 @@
 
 当前仓库 Weather 表直接给出的两行如下；表中 `Auth`、`HTTPS`、`CORS` 是目录字段，不是服务方完整条款。
 
-| 条目 | Description | Auth | HTTPS | CORS | 官方目录来源 |
-|:---|:---|:---:|:---:|:---:|:---|
-| Open-Meteo | Global weather forecast API for non-commercial use | No | Yes | Yes | [Weather 表](https://github.com/public-apis/public-apis/blob/master/README.md#L2098-L2137) |
-| wttr.in | Weather in your terminal, supports JSON output | No | Yes | Yes | [Weather 表](https://github.com/public-apis/public-apis/blob/master/README.md#L2098-L2137) |
+| 条目       | Description                                        | Auth | HTTPS | CORS | 官方目录来源                                                                               |
+| :--------- | :------------------------------------------------- | :--: | :---: | :--: | :----------------------------------------------------------------------------------------- |
+| Open-Meteo | Global weather forecast API for non-commercial use |  No  |  Yes  | Yes  | [Weather 表](https://github.com/public-apis/public-apis/blob/master/README.md#L2098-L2137) |
+| wttr.in    | Weather in your terminal, supports JSON output     |  No  |  Yes  | Yes  | [Weather 表](https://github.com/public-apis/public-apis/blob/master/README.md#L2098-L2137) |
 
 该仓库的 README 将自身定位为免费公共 API 目录，但目录的“免费”定位不能推导出每个服务的商业授权、可用性保证或稳定配额；这些项目必须回到服务提供方资料核对。[public-apis README](https://github.com/public-apis/public-apis#try-public-apis-for-free)
 
@@ -50,13 +50,13 @@
 
 官方 Pricing 的免费/开放层列出以下限制：
 
-| 限制 | 免费/开放层 | 官方来源 |
-|:---|:---:|:---|
-| 每分钟 | 600 calls/min | [Pricing](https://open-meteo.com/en/pricing) |
-| 每小时 | 5,000 calls/hour | [Pricing](https://open-meteo.com/en/pricing) |
-| 每天 | 10,000 calls/day | [Pricing](https://open-meteo.com/en/pricing) · [Terms & Privacy](https://open-meteo.com/en/terms) |
-| 每月 | 300,000 calls/month | [Pricing](https://open-meteo.com/en/pricing) |
-| 免费层可用性 | 无 uptime guarantee | [Pricing](https://open-meteo.com/en/pricing) |
+| 限制         |     免费/开放层     | 官方来源                                                                                          |
+| :----------- | :-----------------: | :------------------------------------------------------------------------------------------------ |
+| 每分钟       |    600 calls/min    | [Pricing](https://open-meteo.com/en/pricing)                                                      |
+| 每小时       |  5,000 calls/hour   | [Pricing](https://open-meteo.com/en/pricing)                                                      |
+| 每天         |  10,000 calls/day   | [Pricing](https://open-meteo.com/en/pricing) · [Terms & Privacy](https://open-meteo.com/en/terms) |
+| 每月         | 300,000 calls/month | [Pricing](https://open-meteo.com/en/pricing)                                                      |
+| 免费层可用性 | 无 uptime guarantee | [Pricing](https://open-meteo.com/en/pricing)                                                      |
 
 此外，官方说明一次请求的计费/调用量会随变量数量和时间范围增加；超过 10 个天气变量或单地点超过两周的数据范围会按多次 API call 计算。[Pricing FAQ](https://open-meteo.com/en/pricing)
 
@@ -86,12 +86,12 @@
 
 ## 面向 GitHub Pages 的选型判断
 
-| 需求 | 更直接的路径 | 依据与边界 |
-|:---|:---|:---|
-| 已有固定经纬度，取 current/hourly/daily 结构化数据 | Open-Meteo | Forecast API 明确要求经纬度；免费层无 key、支持 CORS；需遵守非商业、配额和署名条件。[Forecast API](https://open-meteo.com/en/docs) · [README](https://github.com/open-meteo/open-meteo#readme) · [Terms](https://open-meteo.com/en/terms) |
-| 只有城市名，希望服务端完成地点解析 | wttr.in | 官方 README 文档化支持城市/地点名和 IP 定位；但公开资料对价格、商业授权、配额和 SLA 的说明较少。[wttr.in README](https://github.com/chubin/wttr.in#readme) · [官方容量错误页](https://github.com/chubin/wttr.in/blob/master/share/static/malformed-response.html) |
-| 纯静态前端不能暴露私密 key | 两者的无 key 公共路径 | Open-Meteo 免费层明确无 key；wttr.in 的目录条目为 Auth No，官方示例也无 key。Open-Meteo 商业端点例外，需要后端代理来隐藏 key。[Open-Meteo Pricing](https://open-meteo.com/en/pricing) · [public-apis Weather 条目](https://github.com/public-apis/public-apis/blob/master/README.md#L2098-L2137) · [wttr.in README](https://github.com/chubin/wttr.in#readme) |
-| 需要可审计的配额与授权边界 | Open-Meteo 的免费层资料更明确 | Open-Meteo 公开列出分钟/小时/日/月限制、非商业条件和无 uptime guarantee；wttr.in 资料显示容量风险，但没有同等完整的正式配额表。[Open-Meteo Pricing](https://open-meteo.com/en/pricing) · [Open-Meteo Terms](https://open-meteo.com/en/terms) · [wttr.in 官方容量错误页](https://github.com/chubin/wttr.in/blob/master/share/static/malformed-response.html) |
+| 需求                                               | 更直接的路径                  | 依据与边界                                                                                                                                                                                                                                                                                                                                                    |
+| :------------------------------------------------- | :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 已有固定经纬度，取 current/hourly/daily 结构化数据 | Open-Meteo                    | Forecast API 明确要求经纬度；免费层无 key、支持 CORS；需遵守非商业、配额和署名条件。[Forecast API](https://open-meteo.com/en/docs) · [README](https://github.com/open-meteo/open-meteo#readme) · [Terms](https://open-meteo.com/en/terms)                                                                                                                     |
+| 只有城市名，希望服务端完成地点解析                 | wttr.in                       | 官方 README 文档化支持城市/地点名和 IP 定位；但公开资料对价格、商业授权、配额和 SLA 的说明较少。[wttr.in README](https://github.com/chubin/wttr.in#readme) · [官方容量错误页](https://github.com/chubin/wttr.in/blob/master/share/static/malformed-response.html)                                                                                             |
+| 纯静态前端不能暴露私密 key                         | 两者的无 key 公共路径         | Open-Meteo 免费层明确无 key；wttr.in 的目录条目为 Auth No，官方示例也无 key。Open-Meteo 商业端点例外，需要后端代理来隐藏 key。[Open-Meteo Pricing](https://open-meteo.com/en/pricing) · [public-apis Weather 条目](https://github.com/public-apis/public-apis/blob/master/README.md#L2098-L2137) · [wttr.in README](https://github.com/chubin/wttr.in#readme) |
+| 需要可审计的配额与授权边界                         | Open-Meteo 的免费层资料更明确 | Open-Meteo 公开列出分钟/小时/日/月限制、非商业条件和无 uptime guarantee；wttr.in 资料显示容量风险，但没有同等完整的正式配额表。[Open-Meteo Pricing](https://open-meteo.com/en/pricing) · [Open-Meteo Terms](https://open-meteo.com/en/terms) · [wttr.in 官方容量错误页](https://github.com/chubin/wttr.in/blob/master/share/static/malformed-response.html)   |
 
 ## 本次 CORS 核对记录
 

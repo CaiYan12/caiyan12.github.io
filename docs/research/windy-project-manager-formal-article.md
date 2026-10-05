@@ -13,25 +13,25 @@
 
 ### 直接证据
 
-| 文章主张 | 直接证据 | 结论边界 |
-| --- | --- | --- |
-| 项目记录不含运行时扫描结果 | `D:\Dev\windy-project-mgr\src-tauri\src\project\types.rs:6-23`、`src-tauri\src\scanner\mod.rs:44-64` | 仅说明当前模型与扫描路径，不说明未来版本不会改变 |
-| 项目与设置使用版本化 JSON 和原子写入 | `D:\Dev\windy-project-mgr\src-tauri\src\project\store.rs:9-64,101-121`、`src-tauri\src\project\settings.rs:1-9` | 原子替换降低截断风险，不等于数据库事务 |
-| 扫描器根目录特征检查并可单项降级 | `D:\Dev\windy-project-mgr\src-tauri\src\scanner\mod.rs:1-5,54-64,159-224` | 不递归、不做 AST，不能推断完整源码理解 |
-| Git 走系统 CLI、离线、不执行 fetch | `D:\Dev\windy-project-mgr\src-tauri\src\git\mod.rs:1-6,68-95,164-217` | 读取的是本地已有引用，不保证远端同步 |
-| Windows Git 子进程隐藏控制台窗口 | `D:\Dev\windy-project-mgr\src-tauri\src\git\mod.rs:8-14,114-130,220-235` | 这是 Git 扫描子进程契约，不覆盖所有外部进程 |
-| Run/Build 为分离式启动 | `D:\Dev\windy-project-mgr\src-tauri\src\launch\mod.rs:1-7,316-359`、`src-tauri\src\commands\actions.rs:49-62` | 成功只表示拉起，不表示命令退出成功 |
-| 前端通过 Tauri IPC 调用 Rust | `D:\Dev\windy-project-mgr\src\lib\api.ts:1-3,54-112`、`src-tauri\src\commands\scan.rs:1-17` | 具体 command 名称以源码为准 |
-| 添加流程先枚举脚本、后创建记录 | `D:\Dev\windy-project-mgr\src\components\AddProjectDialog.tsx:55-112,175-236` | 脚本枚举只覆盖根目录 bat/cmd/ps1 |
-| 当前自动化验证通过 | 本轮 `pnpm test`：8 files / 87 tests；`pnpm build`：tsc + Vite 通过；`cargo test --manifest-path src-tauri/Cargo.toml`：155 tests passed | 证明当前工作区测试通过，不是所有 Windows 环境的统计保证 |
-| 真实桌面路径 | 2026-08-31 通过 `pnpm tauri dev` 的 Tauri 窗口完成 Add Project、Dashboard 搜索、Detail、Settings，截图保存在博客资源目录 | 截图证明本机当前路径，不替代完整发布验收 |
+| 文章主张                             | 直接证据                                                                                                                                 | 结论边界                                                |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| 项目记录不含运行时扫描结果           | `D:\Dev\windy-project-mgr\src-tauri\src\project\types.rs:6-23`、`src-tauri\src\scanner\mod.rs:44-64`                                     | 仅说明当前模型与扫描路径，不说明未来版本不会改变        |
+| 项目与设置使用版本化 JSON 和原子写入 | `D:\Dev\windy-project-mgr\src-tauri\src\project\store.rs:9-64,101-121`、`src-tauri\src\project\settings.rs:1-9`                          | 原子替换降低截断风险，不等于数据库事务                  |
+| 扫描器根目录特征检查并可单项降级     | `D:\Dev\windy-project-mgr\src-tauri\src\scanner\mod.rs:1-5,54-64,159-224`                                                                | 不递归、不做 AST，不能推断完整源码理解                  |
+| Git 走系统 CLI、离线、不执行 fetch   | `D:\Dev\windy-project-mgr\src-tauri\src\git\mod.rs:1-6,68-95,164-217`                                                                    | 读取的是本地已有引用，不保证远端同步                    |
+| Windows Git 子进程隐藏控制台窗口     | `D:\Dev\windy-project-mgr\src-tauri\src\git\mod.rs:8-14,114-130,220-235`                                                                 | 这是 Git 扫描子进程契约，不覆盖所有外部进程             |
+| Run/Build 为分离式启动               | `D:\Dev\windy-project-mgr\src-tauri\src\launch\mod.rs:1-7,316-359`、`src-tauri\src\commands\actions.rs:49-62`                            | 成功只表示拉起，不表示命令退出成功                      |
+| 前端通过 Tauri IPC 调用 Rust         | `D:\Dev\windy-project-mgr\src\lib\api.ts:1-3,54-112`、`src-tauri\src\commands\scan.rs:1-17`                                              | 具体 command 名称以源码为准                             |
+| 添加流程先枚举脚本、后创建记录       | `D:\Dev\windy-project-mgr\src\components\AddProjectDialog.tsx:55-112,175-236`                                                            | 脚本枚举只覆盖根目录 bat/cmd/ps1                        |
+| 当前自动化验证通过                   | 本轮 `pnpm test`：8 files / 87 tests；`pnpm build`：tsc + Vite 通过；`cargo test --manifest-path src-tauri/Cargo.toml`：155 tests passed | 证明当前工作区测试通过，不是所有 Windows 环境的统计保证 |
+| 真实桌面路径                         | 2026-08-31 通过 `pnpm tauri dev` 的 Tauri 窗口完成 Add Project、Dashboard 搜索、Detail、Settings，截图保存在博客资源目录                 | 截图证明本机当前路径，不替代完整发布验收                |
 
 ## 官方文档来源
 
 1. Tauri 官方文档仓库：<https://github.com/tauri-apps/tauri-docs/blob/v2/src/content/docs/develop/calling-rust.mdx>
-   - 通过 Context7 `/tauri-apps/tauri-docs` 查询了 Tauri 2 command 注册与前端 `invoke` 调用模型。
+    - 通过 Context7 `/tauri-apps/tauri-docs` 查询了 Tauri 2 command 注册与前端 `invoke` 调用模型。
 2. 项目远程仓库主页：<https://github.com/CaiYan12/windy-project-mgr>
-   - 文章只把它作为项目入口；实现事实以本地工作区为准。
+    - 文章只把它作为项目入口；实现事实以本地工作区为准。
 
 ## 图片来源
 

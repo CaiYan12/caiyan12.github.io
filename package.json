@@ -36,7 +36,7 @@
 		"test:utils": "node --import ./scripts/test-hooks.mjs --test \"src/utils/*.test.ts\"",
 		"test:nice-books": "node --import ./scripts/test-hooks.mjs --test \"src/nice-books/**/*.test.ts\"",
 		"astro": "astro",
-		"format": "prettier --write ./src ./scripts tailwind.config.cjs"
+		"format": "prettier --write ./src ./scripts ./docs tailwind.config.cjs"
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.9.10",

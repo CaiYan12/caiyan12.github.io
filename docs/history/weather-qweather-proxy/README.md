@@ -16,16 +16,16 @@
 
 ## 本目录内容
 
-| 文件 | 作用 |
-| --- | --- |
-| `wrangler.jsonc` | Cloudflare Worker 配置：`workers_dev: true`、`WEATHER_ALLOWED_ORIGINS`（含 `https://caiyan12.github.io` 与本地 4321/4322）、`WEATHER_QUOTA` Durable Object 绑定与 `new_sqlite_classes` 迁移 |
-| `src/handler.js` | 代理主体：来源与频率限制、粗化坐标校验、和风城市搜索＋实时天气两次上游调用、规范化响应、通用错误不回传上游细节；**45,000 次/月硬截流**（免费档 50,000 之内的安全阈值），计数器是 SQLite 后端的 Durable Object（Workers 免费档只支持这一种 DO 存储后端） |
-| `src/index.js`、`src/node-cloudflare-workers.mjs`、`src/test-hooks.mjs` | 入口与测试期的 `cloudflare:workers` 桩 |
-| `src/index.test.js` | 离线合同测试 16 项（配额并发不能超发、账期或共享用量不明时 fail closed） |
-| `src/miniflare-persistence.test.mjs` | Miniflare 重启后计数器持久性 1 项（经 `pnpm dlx wrangler@4.142.0` 跑） |
-| `src/local-trial.mjs` | 本机 Miniflare 试跑装配 |
-| `qweather-proxy-local.ps1` | DPAPI 启动器：从本机加密凭据读取 API Host/KEY 注入 Miniflare 进程，**不把密钥放进命令行参数、环境变量导出或文件**；`-Mode live` 需 `-ConfirmQWeatherUsage` 并显式传入账期与「本月代理外已调用数」 |
-| `weather-local-acceptance.mjs` | 真实浏览器 Live 验收 20 项：构建产物无凭据标记、代理健康入口、假定位北京公开坐标下 `/domain/`＋桌面卡＋手机卡的来源与署名、浏览器网络请求只到 `127.0.0.1:8787` |
+| 文件                                                                    | 作用                                                                                                                                                                                                                                                    |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wrangler.jsonc`                                                        | Cloudflare Worker 配置：`workers_dev: true`、`WEATHER_ALLOWED_ORIGINS`（含 `https://caiyan12.github.io` 与本地 4321/4322）、`WEATHER_QUOTA` Durable Object 绑定与 `new_sqlite_classes` 迁移                                                             |
+| `src/handler.js`                                                        | 代理主体：来源与频率限制、粗化坐标校验、和风城市搜索＋实时天气两次上游调用、规范化响应、通用错误不回传上游细节；**45,000 次/月硬截流**（免费档 50,000 之内的安全阈值），计数器是 SQLite 后端的 Durable Object（Workers 免费档只支持这一种 DO 存储后端） |
+| `src/index.js`、`src/node-cloudflare-workers.mjs`、`src/test-hooks.mjs` | 入口与测试期的 `cloudflare:workers` 桩                                                                                                                                                                                                                  |
+| `src/index.test.js`                                                     | 离线合同测试 16 项（配额并发不能超发、账期或共享用量不明时 fail closed）                                                                                                                                                                                |
+| `src/miniflare-persistence.test.mjs`                                    | Miniflare 重启后计数器持久性 1 项（经 `pnpm dlx wrangler@4.142.0` 跑）                                                                                                                                                                                  |
+| `src/local-trial.mjs`                                                   | 本机 Miniflare 试跑装配                                                                                                                                                                                                                                 |
+| `qweather-proxy-local.ps1`                                              | DPAPI 启动器：从本机加密凭据读取 API Host/KEY 注入 Miniflare 进程，**不把密钥放进命令行参数、环境变量导出或文件**；`-Mode live` 需 `-ConfirmQWeatherUsage` 并显式传入账期与「本月代理外已调用数」                                                       |
+| `weather-local-acceptance.mjs`                                          | 真实浏览器 Live 验收 20 项：构建产物无凭据标记、代理健康入口、假定位北京公开坐标下 `/domain/`＋桌面卡＋手机卡的来源与署名、浏览器网络请求只到 `127.0.0.1:8787`                                                                                          |
 
 ## 搁置时已验证到什么程度
 
