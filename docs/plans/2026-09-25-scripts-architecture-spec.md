@@ -21,9 +21,9 @@
 
 把重复的东西收成**有窄 interface 的 module**，并且每一票都用「产物字节」而不是「看起来对」来验收：
 
-| 档 | 含义 | 判据 |
-|---|---|---|
-| **T0 产物无关** | 改动不进气泡、不写 dist | `git diff --name-only` 只允许 `scripts/`、`package.json`、`docs/`；再跑一次 `pnpm build` 证明产物与基线一致 |
+| 档                | 含义                                                     | 判据                                                                                                                                                                                                                                         |
+| ----------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **T0 产物无关**   | 改动不进气泡、不写 dist                                  | `git diff --name-only` 只允许 `scripts/`、`package.json`、`docs/`；再跑一次 `pnpm build` 证明产物与基线一致                                                                                                                                  |
 | **T1 逐字节相同** | 改动可能被构建消费（`src/plugins/`、`astro.config.mjs`） | 三段式：① 同一 HEAD 连跑两次完整构建，证明 `dist` 自等（先排除随机与缓存干扰）；② 改码；③ 第三次与基线比——`dist/_astro/**` 逐字节 + 全部 HTML 剥掉侧栏「文章推荐」随机块后相同。两侧都先删 `node_modules/.astro` 与 `.astro/data-store.json` |
 
 已核实 T0 的前提成立：`astro.config.mjs` 不 import 任何 `scripts/` 文件；`src/` 里唯一含 `scripts` 的引用是 `src/nice-books/scripts/shared`（另一个目录）。
@@ -43,6 +43,7 @@
 11. **两套 nice-books QA 脚本本批不迁**，只靠第四参数位预留形状。
 12. **流程**：spec + 8 票镜像 issue（parent = spec issue，`gh` 原生 `--parent`/`--blocked-by`）、一票一 commit、**无预览点**、全部完成后等站长同意推送。
 13. **（2026-09-25 实施期中途追加，站长裁决）票 06／07 在票 05 之后暂停**，等「console 报错全量清点门禁」（另一会话在做的票）先落地，那两票接在其后做；届时它们的「PASS 数不减」判据要与那条零报错判据**同批评测**，不得让迁移降低 console 报错的可见性。票 08 照原序完成——它只动 `astro.config.mjs` 与新建 `src/plugins/pipeline.mjs`，不碰任何 smoke 文件，其判据也不读 console 报错。
+
 - **事实登记（写本条时三次核验）**：该门禁在票册（233 行，`grep 票 10` 与 `R7` 命中 0）与 `AGENTS.md`（449 行，命中 0）里都还没有对应段落，`gh issue view 79` / `80` 均返回 "Could not resolve to an issue"（本仓库最大 issue 为 #58）。故本轮**不据未落地的说法改任何判据或阻塞边**；等它真进台账，再按上面那半条把判据补进票 06／07。
 
 ## User Stories
@@ -88,12 +89,12 @@
 ### 票 04 · 冒烟测试台 + ai-news 迁移（T0，tracer bullet）
 
 - 新 `scripts/lib/smoke-harness.mjs`：`makeHarness({envVar, defaultBase, launch?, ignoreExternal?})` → `{check, checkClean, finish, base}`。
-  - `check(name, ok, detail = "", extra = undefined)`；`extra` 预留不消费。
-  - `base` = `process.env[envVar] ?? defaultBase`，启动时**回显实际 base 与形态**（缓解 AGENTS.md 记的「三种形态传错就是假失败」）。
-  - `checkClean(label)`：按票归属报「本段无新增 console/pageerror」，`errors` 数组由台子持有（`ui-smoke` 现有能力上移，其余 smoke 可选调用）。
-  - `finish()`：输出与退出码格式**逐字不变**。
-  - `launch` 可注入，默认 headless `chromium.launch()`。
-  - `ignoreExternal` 由调用点传入，台子不预设清单。
+    - `check(name, ok, detail = "", extra = undefined)`；`extra` 预留不消费。
+    - `base` = `process.env[envVar] ?? defaultBase`，启动时**回显实际 base 与形态**（缓解 AGENTS.md 记的「三种形态传错就是假失败」）。
+    - `checkClean(label)`：按票归属报「本段无新增 console/pageerror」，`errors` 数组由台子持有（`ui-smoke` 现有能力上移，其余 smoke 可选调用）。
+    - `finish()`：输出与退出码格式**逐字不变**。
+    - `launch` 可注入，默认 headless `chromium.launch()`。
+    - `ignoreExternal` 由调用点传入，台子不预设清单。
 - 新 `scripts/lib/smoke-harness.test.mjs`（进 build 门禁）：灌一条 canned console error → 必须记 FAIL；灌一条外部错误 → 必须不计 FAIL。两条各先红后绿（变异式自证）。
 - `ai-news-smoke.mjs`（114 行，最小）退化为薄 adapter。判据：**同一份 dist、不重建**，迁移前后 PASS 数与失败集合完全一致（9 项）。
 

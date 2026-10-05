@@ -28,11 +28,11 @@
 
 ## 验收缝隙（seams，全部复用既有，零新增）
 
-| 缝隙 | 本体 | 本轮用途 |
-|---|---|---|
-| A | `pnpm smoke:ui`（`scripts/ui-smoke.mjs`，`UI_SMOKE_BASE_URL` 传**站点根**；先 build + preview，端口保持 4399） | ① 的反向 hover 判据；② 的全站重复 id 负扫 + 药丸计算值等价 |
-| B | `node scripts/upgrade-style-audit.mjs` 的 23 页逐元素指纹（`capture`/`diff`） | ② 的「改名同值」漂移归因 |
-| C（脚本自证） | 直接跑 `pnpm audit:ledger` 与一次变异验证 | ⑥ 的可用性与其判据确实咬人 |
+| 缝隙          | 本体                                                                                                           | 本轮用途                                                   |
+| ------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| A             | `pnpm smoke:ui`（`scripts/ui-smoke.mjs`，`UI_SMOKE_BASE_URL` 传**站点根**；先 build + preview，端口保持 4399） | ① 的反向 hover 判据；② 的全站重复 id 负扫 + 药丸计算值等价 |
+| B             | `node scripts/upgrade-style-audit.mjs` 的 23 页逐元素指纹（`capture`/`diff`）                                  | ② 的「改名同值」漂移归因                                   |
+| C（脚本自证） | 直接跑 `pnpm audit:ledger` 与一次变异验证                                                                      | ⑥ 的可用性与其判据确实咬人                                 |
 
 - ① **只能**走缝隙 A：缝隙 B 的采集排除表里 `#header .text` 整族被显式排除（`scripts/upgrade-style-audit.mjs` 约 97 行），它对头部轮播算不出任何东西。
 - 缝隙 B 不驱动 hover／focus，所以 ① 在 B 上必然零漂移，**那不能当「验过了」**。
