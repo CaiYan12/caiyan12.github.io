@@ -1,0 +1,57 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+import { getCollection } from "astro:content";
+import {
+	getSeriesNeighbors,
+	getSortedPosts,
+	type Post,
+} from "../../utils/content-utils";
+
+// 仅在文章页侧栏显示：从 URL 提取当前文章 slug（与 WidgetRelatedPosts 同法），
+// 该文属于文集时按 seriesOrder 列出全部成员。侧栏在 swup 容器 <main> 内，换页时整个
+// <main> 被替换，构建期判定自动重新求值——零客户端脚本。
+const slug = Astro.url.pathname.replace(/\/+$/, "").split("/")[2];
+let members: Post[] = [];
+let seriesSlug = "";
+
+if (slug) {
+	const allPosts = await getCollection("posts");
+	// 归属判定用 getSeriesNeighbors(...).series：私密成员上 isSeriesMember 与它口径分叉
+	// （getSortedPosts 先过滤私密帖，会返回 series: null），故此处一律以 series 为准。
+	const { series } = getSeriesNeighbors(allPosts, slug);
+	if (series) {
+		seriesSlug = series.slug;
+		// 组内成员序列取自 getSortedPosts，再按 seriesOrder 升序（不跟发布时间、不含 pinned）
+		members = getSortedPosts(allPosts)
+			.filter((p) => p.data.series === series.slug)
+			.sort(
+				(a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0),
+			);
+	}
+}
+---
+
+{
+	seriesSlug && (
+		<WidgetLayout title="文集目录" icon="fa-list-ol">
+			<ol class="series-toc">
+				{members.map((member) => (
+					<li class:list={[member.id === slug && "current"]}>
+						<a
+							href={`/posts/${member.id}/`}
+							title={member.data.title}
+							aria-current={
+								member.id === slug ? "page" : undefined
+							}
+						>
+							{member.data.title}
+						</a>
+					</li>
+				))}
+			</ol>
+			<div class="series-toc-more">
+				<a href={`/series/${seriesSlug}/`}>查看目录 &raquo;</a>
+			</div>
+		</WidgetLayout>
+	)
+}

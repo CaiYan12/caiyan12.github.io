@@ -5363,6 +5363,29 @@ body,
   white-space: nowrap;
 }
 
+/* 侧栏文集目录（WidgetSeries）：行样式沿用 .widget li，这里只补有序列表复位与
+   「当前章」高亮。GLOSSARY「当前页态」要求：.current 一旦计算就必须有消费它的样式。 */
+#sidebar .series-toc {
+  margin: 0;
+  padding: 5px 0 10px 5px;
+  list-style: none;
+}
+
+#sidebar .series-toc li.current {
+  border-bottom-color: var(--colorful-green);
+  font-weight: 700;
+}
+
+#sidebar .series-toc li.current a {
+  color: var(--colorful-green-accessible);
+}
+
+#sidebar .series-toc-more {
+  margin: 0;
+  padding: 0 10px 10px 5px;
+  font-size: 12px;
+}
+
 .post-related li .title a {
   display: block;
   overflow: hidden;
