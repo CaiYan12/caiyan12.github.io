@@ -32,7 +32,7 @@ const ALL_MEMBERS = Object.values(MEMBERS).flat();
 // 非成员样本必须是**公开**文章：20260728000000 虽是置顶帖，但 private:true 会被
 // getSortedPosts 的 isPublicPost 剔出时间线，拿它验证「非成员页不出现文集 UI」
 // 天然为真，咬不住「公开非成员被误加文集 UI」。20260927082016 实测 private:false、
-// draft:false、series:none，且紧邻本书五章在时间线上的位置——它改造前的「下一篇（右）」
+// draft:false、series:none，且紧邻本书四章（第〇–第三章）在时间线上的位置——它改造前的「下一篇（右）」
 // 正指向第〇章，故还能顺带咬住「非成员导航跳过整块」。
 const NON_MEMBER = "20260927082016";
 // 实测该非成员序列里它更早的一篇（它是最新的非成员，故 next 恒为 null）。

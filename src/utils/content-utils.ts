@@ -155,6 +155,19 @@ export function resolveSeriesMeta(slug: string): {
 }
 
 /**
+ * 取某文集的全部（公开）成员，按 `seriesOrder` 升序。
+ *
+ * 分组按同 `series` 值，与 seriesList 无关；顺序由 `seriesOrder` 决定，不跟发布时间、不含 pinned。
+ * `?? 0` 仅防御缺省，合法构建下不可达：schema 保证 `series` 非空字符串，series-integrity
+ * 规则 3 保证「带 series 必带 seriesOrder」，缺失会在 `astro build` 时响亮失败。
+ */
+export function getSeriesMembers(posts: Post[], slug: string): Post[] {
+	return getSortedPosts(posts)
+		.filter((p) => p.data.series === slug)
+		.sort((a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0));
+}
+
+/**
  * 解析文集封面：显式 `cover` → 按 `seriesOrder` 升序取首位带 `image` 的成员头图 → `null`。
  *
  * 刻意**不直接调用 `getCover()`**：它的兜底是 `/images/random/tb{n}.jpg`——由 slug 字符合计
@@ -170,10 +183,9 @@ export function resolveSeriesCover(
 	posts: Post[],
 ): string | null {
 	if (series.cover) return series.cover;
-	const first = posts
-		.filter((post) => post.data.series === series.slug)
-		.sort((a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0))
-		.find((post) => post.data.image);
+	const first = getSeriesMembers(posts, series.slug).find(
+		(post) => post.data.image,
+	);
 	return first?.data.image || null;
 }
 
@@ -206,14 +218,7 @@ export function getSeriesNeighbors(
 	const target = sorted.find((p) => p.id === slug);
 	if (target && isSeriesMember(target)) {
 		const seriesSlug = target.data.series!;
-		// 分组按同 series 值，与 seriesList 无关；顺序由 seriesOrder 决定，不跟发布时间
-		const members = sorted
-			.filter((p) => p.data.series === seriesSlug)
-			// `?? 0` 是防御性取值，正常构建下不可达：series-integrity 规则 3 保证
-			// 「带 series 必带 seriesOrder」，缺失会在 `astro build` 时响亮失败。
-			.sort(
-				(a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0),
-			);
+		const members = getSeriesMembers(sorted, seriesSlug);
 		const idx = members.findIndex((p) => p.id === slug);
 		const meta = resolveSeriesMeta(seriesSlug);
 		return {

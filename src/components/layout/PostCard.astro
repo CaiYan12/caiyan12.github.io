@@ -4,8 +4,9 @@ import dayjs from "dayjs";
 import {
 	getCover,
 	getExcerpt,
-	getSeriesNeighbors,
 	isNewPost,
+	isSeriesMember,
+	resolveSeriesMeta,
 } from "../../utils/content-utils";
 import { siteConfig } from "../../config";
 import { getEffectiveComments } from "../../utils/site-stats";
@@ -23,9 +24,11 @@ const cover = getCover(post);
 const excerpt = getExcerpt(post, siteConfig.excerptLength);
 const showNew = isNewPost(post);
 const showHot = post.data.hotness >= 4;
-// 归属判定与相邻导航同源：私有成员在 getSeriesNeighbors 里被 getSortedPosts 滤掉，故 series 为 null。
-// 只取 .series 的 name 渲染徽章（不含章号），无需全量文章列表——单篇即可得出「公开成员 / 非成员」的正确归属。
-const series = getSeriesNeighbors([post], post.id).series;
+// 归属徽章只取文集名（不含章号）。列表页只喂公开文章，此处与 getSeriesNeighbors().series 口径一致；
+// 私密成员上两者会分叉（getSortedPosts 先滤掉私密帖），见 WidgetSeries 的注释。
+const seriesName = isSeriesMember(post)
+	? resolveSeriesMeta(post.data.series!).name
+	: null;
 ---
 
 <article class="post-list" role="article">
@@ -56,9 +59,9 @@ const series = getSeriesNeighbors([post], post.id).series;
 				)
 			}
 			{
-				series && (
+				seriesName && (
 					<>
-						<span class="series-label">《{series.name}》</span>
+						<span class="series-label">《{seriesName}》</span>
 						<i class="series-arrow" />
 					</>
 				)

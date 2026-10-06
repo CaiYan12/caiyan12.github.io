@@ -3,10 +3,9 @@ import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import SeriesListing from "../../components/layout/SeriesListing.astro";
 import { getCollection } from "astro:content";
 import {
-	getSortedPosts,
+	getSeriesMembers,
 	isPublicPost,
 	resolveSeriesCover,
-	resolveSeriesMeta,
 } from "../../utils/content-utils";
 import {
 	checkSeriesIntegrity,
@@ -37,38 +36,32 @@ export async function getStaticPaths() {
 	}
 
 	const publicPosts = allPosts.filter(isPublicPost);
-	const sortedPosts = getSortedPosts(publicPosts);
 	return seriesList.map((series) => {
-		const meta = resolveSeriesMeta(series.slug);
-		// 成员按 seriesOrder 升序（组内顺序不跟发布时间）
-		const posts = sortedPosts
-			.filter((post) => post.data.series === series.slug)
-			.sort(
-				(a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0),
-			);
+		// series 本身来自 seriesList，元数据直接取元素（unit 的缺省与 resolveSeriesMeta 一致）
+		const posts = getSeriesMembers(publicPosts, series.slug);
 		return {
 			params: { slug: series.slug },
-			props: { meta, posts, cover: resolveSeriesCover(series, posts) },
+			props: { series, posts, cover: resolveSeriesCover(series, posts) },
 		};
 	});
 }
 
-const { meta, posts, cover } = Astro.props;
-const rootUrl = `/series/${meta.slug}/`;
+const { series, posts, cover } = Astro.props;
+const rootUrl = `/series/${series.slug}/`;
 const pages = Math.max(1, Math.ceil(posts.length / siteConfig.postsPerPage));
 const pagePosts = posts.slice(0, siteConfig.postsPerPage);
 ---
 
 <MainGridLayout
-	title={`文集：${meta.name}`}
-	description={meta.description}
+	title={`文集：${series.name}`}
+	description={series.description}
 	image={cover ?? undefined}
 	canonicalUrl={rootUrl}
 	nextUrl={pages > 1 ? getPaginationUrl(rootUrl, 2) : undefined}
 >
 	<SeriesListing
-		name={meta.name}
-		unit={meta.unit}
+		name={series.name}
+		unit={series.unit ?? "篇"}
 		totalCount={posts.length}
 		posts={pagePosts}
 		current={1}

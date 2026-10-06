@@ -2,8 +2,8 @@
 import WidgetLayout from "./WidgetLayout.astro";
 import { getCollection } from "astro:content";
 import {
+	getSeriesMembers,
 	getSeriesNeighbors,
-	getSortedPosts,
 	type Post,
 } from "../../utils/content-utils";
 
@@ -21,12 +21,7 @@ if (slug) {
 	const { series } = getSeriesNeighbors(allPosts, slug);
 	if (series) {
 		seriesSlug = series.slug;
-		// 组内成员序列取自 getSortedPosts，再按 seriesOrder 升序（不跟发布时间、不含 pinned）
-		members = getSortedPosts(allPosts)
-			.filter((p) => p.data.series === series.slug)
-			.sort(
-				(a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0),
-			);
+		members = getSeriesMembers(allPosts, series.slug);
 	}
 }
 ---

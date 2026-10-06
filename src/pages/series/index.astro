@@ -8,15 +8,17 @@
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import ListingHeader from "../../components/layout/ListingHeader.astro";
 import { getCollection } from "astro:content";
-import { isPublicPost, resolveSeriesCover } from "../../utils/content-utils";
+import {
+	getSeriesMembers,
+	isPublicPost,
+	resolveSeriesCover,
+} from "../../utils/content-utils";
 import { seriesList } from "../../data/series";
 
 const allPosts = await getCollection("posts");
 const publicPosts = allPosts.filter(isPublicPost);
 const cards = seriesList.map((series) => {
-	const members = publicPosts.filter(
-		(post) => post.data.series === series.slug,
-	);
+	const members = getSeriesMembers(publicPosts, series.slug);
 	return {
 		name: series.name,
 		description: series.description,
