@@ -3,7 +3,7 @@
 - 来源：`docs/plans/2026-10-06-collection-series-spec.md`（spec）／ 父规格 issue #76
 - 已发布：本册 **10 张票 = issue #77–#86**，全部挂在 #76 下为 sub-issue，阻塞边为 tracker 原生链接；每张票标题下的 `> Issue: #NN` 即其镜像
 - 证据登记册：本册各票的 **证据** 行；决策全文与 23 条已定默认值在 spec 文档与 issue #76
-- 动工前边界：当前 `HEAD` == `origin/main` == `2baadc8`。**注意**：本册与 spec、ADR 0007 尚未提交，动工前应先提交这批文档，届时边界改为该提交
+- 动工前边界：`b29183b` —— 本册、spec、ADR 0007、`AGENTS.md`、`GLOSSARY.md` 的落地提交（其父 `2baadc8` 即当时的 `origin/main`）。`feat/series` 集成分支在该提交之后建立；分支下除本行的边界更正外，没有先于票 01 的其它提交
 - 上位决策：`docs/adr/0007-series-closed-reading-sequence.md`；`GLOSSARY.md` 的「文集 / 文集成员 / 非成员文章 / 文集目录 / 文集封面」五个词条；`AGENTS.md` 的「元件设计约束」与「文档写作约定」（锚点用「选择器 + 文件路径」，行号写「约」）
 - 评审来源：2026-10-06 的 grilling 逐题裁决（五轮 + 三次追加事项），全文见 spec 文档的逐条裁决
 - **硬约束（站长原话）**：「关于元件设计：最大化复用现有设计资产，若要求新元件，最大化复用现有设计风格与 taste」；「文集属性我偏好用 markdown 文章的 frontmatter 判定，若 frontmatter 内有文集属性，即判定属于某个文集」
