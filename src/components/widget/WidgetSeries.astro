@@ -1,0 +1,61 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+import { getCollection } from "astro:content";
+import {
+	getSeriesMembers,
+	getSeriesNeighbors,
+	type Post,
+} from "../../utils/content-utils";
+
+// 仅在文章页侧栏显示：从 URL 提取当前文章 slug（与 WidgetRelatedPosts 同法），
+// 该文属于文集时按 seriesOrder 列出全部成员。侧栏在 swup 容器 <main> 内，换页时整个
+// <main> 被替换，构建期判定自动重新求值——零客户端脚本。
+const slug = Astro.url.pathname.replace(/\/+$/, "").split("/")[2];
+let members: Post[] = [];
+let seriesSlug = "";
+let seriesName = "";
+
+if (slug) {
+	const allPosts = await getCollection("posts");
+	// 归属判定用 getSeriesNeighbors(...).series：私密成员上 isSeriesMember 与它口径分叉
+	// （getSortedPosts 先过滤私密帖，会返回 series: null），故此处一律以 series 为准。
+	const { series } = getSeriesNeighbors(allPosts, slug);
+	if (series) {
+		seriesSlug = series.slug;
+		seriesName = series.name;
+		members = getSeriesMembers(allPosts, series.slug);
+	}
+}
+---
+
+{
+	seriesSlug && (
+		<WidgetLayout title="文集目录" icon="fa-list-ol" class="widget-series">
+			{/* 标题栏 actions 槽：与「换一批」同族（图标 + 文字，hover 变绿），导航用 <a> */}
+			<a
+				slot="actions"
+				class="series-toc-link"
+				href={`/series/${seriesSlug}/`}
+				title={`查看《${seriesName}》目录`}
+			>
+				<i class="fa fa-book" aria-hidden="true" />
+				<span>查看目录</span>
+			</a>
+			<ol class="series-toc">
+				{members.map((member) => (
+					<li class:list={[member.id === slug && "current"]}>
+						<a
+							href={`/posts/${member.id}/`}
+							title={member.data.title}
+							aria-current={
+								member.id === slug ? "page" : undefined
+							}
+						>
+							{member.data.title}
+						</a>
+					</li>
+				))}
+			</ol>
+		</WidgetLayout>
+	)
+}

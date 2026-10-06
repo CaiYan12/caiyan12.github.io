@@ -3,13 +3,15 @@ title: "《看懂 AI 写的网站》第一章：L0 基础环境——Web 运行�
 published: 2026-10-02 08:13:31
 description: "《看懂 AI 写的网站：现代 Web 开发从底层到部署》第一章。L0 基础环境是网页得以运行的地方——操作系统、命令行、浏览器与网络四样东西。读完你应能判断「'node' 不是内部或外部命令」「端口被占用」「404」这类报错属于哪一侧，以及 AI 说「换个端口」「试试 127.0.0.1」时它在动什么。"
 image: /images/posts/20261002081331/webapp-vibe-coding-ch1-cover.jpg
-tags: [AI编程, Vibe Coding, 看懂AI写的网站]
+tags: [AI编程, Vibe Coding]
 category: 技术
 draft: false
 private: false
 views: 0
 comments: 0
 hotness: 0
+series: "webapp-vibe-coding"
+seriesOrder: 1
 ---
 
 ## 本章导读

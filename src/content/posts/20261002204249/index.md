@@ -3,13 +3,15 @@ title: "《看懂 AI 写的网站》第三章：L2 JavaScript——网页为什�
 published: 2026-10-02 20:42:49
 description: "《看懂 AI 写的网站：现代 Web 开发从底层到部署》第三章。L2 是「页面的行为」层：JavaScript 让页面对操作做出反应。这一章讲语言本身、DOM 与事件、模块/异步/网络请求，以及 AI 输出里最常见的几类报错——目标是看懂 AI 写的那几行，而不是学会写。"
 image: /images/posts/20261002204249/webapp-vibe-coding-ch3-cover.jpg
-tags: [AI编程, Vibe Coding, 看懂AI写的网站]
+tags: [AI编程, Vibe Coding]
 category: 技术
 draft: false
 private: false
 views: 0
 comments: 0
 hotness: 0
+series: "webapp-vibe-coding"
+seriesOrder: 3
 ---
 
 ## 本章导读

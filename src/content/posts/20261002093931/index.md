@@ -3,13 +3,15 @@ title: "《看懂 AI 写的网站》第二章：L1 Web 基础——浏览器如�
 published: 2026-10-02 09:39:31
 description: "《看懂 AI 写的网站：现代 Web 开发从底层到部署》第二章。L1 是浏览器直接认识的一层：HTML 描述结构、CSS 描述外观，浏览器把它们变成 DOM 与渲染树再画出画面。读完你应能看懂「规则被更高优先级压住」「父元素设成 display: flex」「外边距折叠」「不在渲染树里」这些话在说浏览器的哪一部分。"
 image: /images/posts/20261002093931/webapp-vibe-coding-ch2-cover.jpg
-tags: [AI编程, Vibe Coding, 看懂AI写的网站]
+tags: [AI编程, Vibe Coding]
 category: 技术
 draft: false
 private: false
 views: 0
 comments: 0
 hotness: 0
+series: "webapp-vibe-coding"
+seriesOrder: 2
 ---
 
 ## 本章导读

@@ -58,6 +58,7 @@ export const navBarConfig = {
 		{ name: "全部文章", url: "/archive/" },
 		{ name: "标签分类", url: "/tag/" },
 		{ name: "文章分类", url: "/category/" },
+		{ name: "文集精选", url: "/series/" },
 		{ name: "热门推荐", url: "/hot/" },
 	],
 	/** 关于本站下拉菜单 */
@@ -108,6 +109,7 @@ export const sidebarConfig = {
 		"newcomm",
 		"link",
 		"twitter",
+		"series",
 	],
 };
 

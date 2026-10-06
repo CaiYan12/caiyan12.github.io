@@ -4,10 +4,11 @@ import Giscus from "../../components/comment/Giscus.astro";
 import dayjs from "dayjs";
 import { getCollection, render } from "astro:content";
 import {
+	buildSeriesNote,
 	getCategoryList,
 	getCover,
 	getHotPosts,
-	getNeighbors,
+	getSeriesNeighbors,
 	getTagList,
 	isPublicPost,
 } from "../../utils/content-utils";
@@ -45,7 +46,9 @@ const routedTags = new Set(getTagList(publicPosts).map(({ name }) => name));
 const routedCategories = new Set(
 	getCategoryList(publicPosts).map(({ name }) => name),
 );
-const { prev, next } = getNeighbors(allPosts, post.id);
+const { prev, next, series } = getSeriesNeighbors(allPosts, post.id);
+// 归属两行只在成员文章页渲染（非成员 series === null）；末章 = 组内没有下一篇，末尾行改收尾文案
+const seriesNote = series ? buildSeriesNote(series, next === null) : null;
 const hotPosts = getHotPosts(allPosts, 6).filter((p) => p.id !== post.id);
 const postUrl = new URL(`/posts/${post.id}/`, siteConfig.siteURL);
 const cover = getCover(post);
@@ -186,6 +189,17 @@ const starLevel = (comments: number) => {
 				</ul>
 			</address>
 
+			{
+				seriesNote && (
+					<p class="post-series">
+						{seriesNote.top.prefix} ·{" "}
+						<a href={seriesNote.top.link.href}>
+							{seriesNote.top.link.label}
+						</a>
+					</p>
+				)
+			}
+
 			<div class="post-context prose">
 				<PostToc headings={headings} />
 				<Content />
@@ -257,6 +271,23 @@ const starLevel = (comments: number) => {
 				<div class="cutline">
 					<span>正文到此结束</span>
 				</div>
+
+				{
+					seriesNote && (
+						<p class="post-series">
+							{seriesNote.bottom.prefix}
+							{seriesNote.bottom.link && (
+								<>
+									{" "}
+									·{" "}
+									<a href={seriesNote.bottom.link.href}>
+										{seriesNote.bottom.link.label}
+									</a>
+								</>
+							)}
+						</p>
+					)
+				}
 
 				<div class="post-navigation">
 					{

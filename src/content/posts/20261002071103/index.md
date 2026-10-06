@@ -3,13 +3,15 @@ title: "《看懂 AI 写的网站》第〇章：开始之前——先建立现�
 published: 2026-10-02 07:11:03
 description: "《看懂 AI 写的网站：现代 Web 开发从底层到部署》全书导论：这本书训练的是判断力而不是动手能力——给出两种读法、「六问法则」与「AI 黑话翻译」两个体例，以及 L0–L12 十三层技术栈全景图与两对核心区分（源码/构建产物、开发/生产环境）。"
 image: /images/posts/20261002071103/webapp-vibe-coding-ch0-cover.jpg
-tags: [AI编程, Vibe Coding, 看懂AI写的网站]
+tags: [AI编程, Vibe Coding]
 category: 技术
 draft: false
 private: false
 views: 0
 comments: 0
 hotness: 0
+series: "webapp-vibe-coding"
+seriesOrder: 0
 ---
 
 ## 本章导读

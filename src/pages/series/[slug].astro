@@ -1,0 +1,72 @@
+---
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import SeriesListing from "../../components/layout/SeriesListing.astro";
+import { getCollection } from "astro:content";
+import {
+	getSeriesMembers,
+	isPublicPost,
+	resolveSeriesCover,
+} from "../../utils/content-utils";
+import {
+	checkSeriesIntegrity,
+	checkSeriesCovers,
+} from "../../utils/series-integrity";
+import { seriesList } from "../../data/series";
+import { getPaginationUrl } from "../../utils/pagination";
+import { siteConfig } from "../../config";
+import { join } from "node:path";
+
+export async function getStaticPaths() {
+	const allPosts = await getCollection("posts");
+
+	// 内容完整性校验（规则 1–4）：任一违规都让构建当场失败，逐条指名文件与原因。
+	// 规则 1–3 是 series-integrity 的纯函数；规则 4（cover 落盘）是唯一用 node:fs 的一条，
+	// 在此传入 public 目录（用 cwd 定位，import.meta.url 在 astro build 打包产物里会扑空）。
+	const violations = [
+		...checkSeriesIntegrity(allPosts, seriesList),
+		...checkSeriesCovers(seriesList, join(process.cwd(), "public")),
+	];
+	if (violations.length > 0) {
+		throw new Error(
+			`文集内容完整性校验失败（${violations.length} 项）：\n` +
+				violations
+					.map((v) => `  - ${v.source}：${v.reason}`)
+					.join("\n"),
+		);
+	}
+
+	const publicPosts = allPosts.filter(isPublicPost);
+	return seriesList.map((series) => {
+		// series 本身来自 seriesList，元数据直接取元素（unit 的缺省与 resolveSeriesMeta 一致）
+		const posts = getSeriesMembers(publicPosts, series.slug);
+		return {
+			params: { slug: series.slug },
+			props: { series, posts, cover: resolveSeriesCover(series, posts) },
+		};
+	});
+}
+
+const { series, posts, cover } = Astro.props;
+const rootUrl = `/series/${series.slug}/`;
+const pages = Math.max(1, Math.ceil(posts.length / siteConfig.postsPerPage));
+const pagePosts = posts.slice(0, siteConfig.postsPerPage);
+---
+
+<MainGridLayout
+	title={`文集：${series.name}`}
+	description={series.description}
+	image={cover ?? undefined}
+	canonicalUrl={rootUrl}
+	nextUrl={pages > 1 ? getPaginationUrl(rootUrl, 2) : undefined}
+>
+	<SeriesListing
+		name={series.name}
+		unit={series.unit ?? "篇"}
+		totalCount={posts.length}
+		posts={pagePosts}
+		current={1}
+		total={pages}
+		rootUrl={rootUrl}
+		cover={cover}
+	/>
+</MainGridLayout>

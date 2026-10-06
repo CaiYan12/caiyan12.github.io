@@ -1630,9 +1630,6 @@
 
 /* ---------- 响应式断点（对应原主题移动端） ---------- */
 @media (max-width: 768px) {
-  /* 原先此处的 `.main-grid{grid-template-columns:1fr}` 是 no-op，已删：
-     `.main-grid` 的基础声明是 `display:block`（见下面「.main-grid」定义处，
-     源顺序晚于层内那条 `display:grid`，同特异性因此胜出），网格列对它无效。 */
   #sidebar {
     display: none;
   }
@@ -2435,19 +2432,28 @@ html[data-liquid-glass="on"] #nav li ul {
   width: 100%;
 }
 
+/* 两栏布局：float 改 grid（列宽 20px + 255px 与旧浮体几何逐像素等价，
+   五宽度真实浏览器对比见票 06）。grid item 自建 BFC，替代原 #sidebar
+   overflow:hidden 的 BFC 语义。 */
 .main-grid {
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 255px;
+  column-gap: 20px;
+  align-items: stretch;
   margin: 0;
 }
 
 #content {
-  float: left;
   box-sizing: border-box;
-  width: calc(100% - 275px);
+  width: auto;
   min-width: 0;
   padding-right: 10px;
   border-right: 1px dashed #ccc;
   line-height: 25px;
+}
+
+.main-grid-full {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .main-grid-full #content {
@@ -2457,9 +2463,9 @@ html[data-liquid-glass="on"] #nav li ul {
 }
 
 #sidebar {
-  float: right;
   display: block;
-  overflow: hidden;
+  /* clip 保持裁切语义但不创建滚动容器——否则 #sidebar 内的 sticky 永远钉不住 */
+  overflow: clip;
   width: 255px;
   color: #808080;
   font-size: 12px;
@@ -2592,7 +2598,8 @@ html[data-liquid-glass="on"] #nav li ul {
 
 .good-label,
 .new-label,
-.hot-label {
+.hot-label,
+.series-label {
   position: relative;
   top: -2px;
   margin: 0;
@@ -2611,10 +2618,17 @@ html[data-liquid-glass="on"] #nav li ul {
 .hot-label {
   background: #ffba00;
 }
+/* 文集徽章是第四种语义（归属，而非置顶/近期/热门的状态），故独立类名：
+   置顶与近期更新同为绿色，与文集成员卡上必然共现的「近期更新」会连成一条色带；
+   热门黄又自带语义。取既有 token --colorful-text-secondary（#666）作中性色。 */
+.series-label {
+  background: var(--colorful-text-secondary);
+}
 
 .good-arrow,
 .new-arrow,
-.hot-arrow {
+.hot-arrow,
+.series-arrow {
   position: relative;
   top: -3px;
   display: inline-block;
@@ -2632,6 +2646,9 @@ html[data-liquid-glass="on"] #nav li ul {
 }
 .hot-arrow {
   border-left-color: #ffba00;
+}
+.series-arrow {
+  border-left-color: var(--colorful-text-secondary);
 }
 
 .post-meta,
@@ -4886,6 +4903,12 @@ html.with-fancybox .backtop {
 }
 
 @media screen and (max-width: 768px) {
+  /* 单列：侧栏整体隐藏后不留空的 255px 列。必须写在 .main-grid 基础定义
+     （约 2442 行）之后——同特异性靠源顺序取胜，放早了就是 no-op。 */
+  .main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   #sidebar,
   #head-nav .m-nav {
     display: none !important;
@@ -5361,6 +5384,62 @@ body,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 侧栏文集目录（WidgetSeries）：行样式沿用 .widget li，这里只补有序列表复位与
+   「当前章」高亮。GLOSSARY「当前页态」要求：.current 一旦计算就必须有消费它的样式。 */
+/* 粘性跟随：滚过自然位置后钉在视口顶 10px（站点无固定顶栏），直到 #content
+   底部把它顶上去。纯 CSS sticky，零客户端脚本。前置：#sidebar overflow 用
+   clip（见 .main-grid 定义处），且链条上无其他滚动容器祖先；≤980px 时
+   #wrapper 转 overflow:hidden（sticky 失效但布局不破，属优雅降级）。 */
+#sidebar .widget.widget-series {
+  position: sticky;
+  top: 10px;
+}
+
+#sidebar .series-toc {
+  margin: 0;
+  padding: 5px 0 10px 5px;
+  list-style: none;
+}
+
+#sidebar .series-toc li.current {
+  font-weight: 700;
+}
+
+#sidebar .series-toc li.current a {
+  color: var(--colorful-green-accessible);
+}
+
+/* 标题栏 actions 槽的「查看目录」：盒子/字体/颜色/指针逐项对齐
+   「换一批」（.newcomment-refresh）；指针走 --cursor-link token，
+   不许裸写 cursor: pointer（会被 smoke:ui 的手型负扫咬住）。
+   带 #sidebar 前缀是为了压过下面那条 #sidebar a:hover（无障碍绿 +
+   下划线，特异性更高）——标题栏动作族的 hover 是品牌绿无线。 */
+#sidebar a.series-toc-link {
+  float: right;
+  height: 30px;
+  margin: 0 0 0 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--colorful-text-secondary);
+  cursor: var(--cursor-link);
+  font: inherit;
+  font-size: 12px;
+  line-height: 30px;
+  text-indent: 0;
+  transition: color 180ms ease-out;
+}
+
+#sidebar a.series-toc-link .fa {
+  margin-right: 3px;
+}
+
+#sidebar a.series-toc-link:hover,
+#sidebar a.series-toc-link:focus-visible {
+  color: var(--colorful-green);
+  text-decoration: none;
 }
 
 .post-related li .title a {
@@ -7097,4 +7176,49 @@ body,
     padding: 28px 14px 10px;
     border-radius: 0;
   }
+}
+
+/* ---------- 文集总览页卡片的封面左位（票 04） ----------
+   .post-thumbnail 在总览卡上放到 240×135，≤680px 降为 150×84；差异只由 .series-thumb
+   这条 modifier 承担，既有 .post-thumbnail 规则一位不动（文章卡外观不受影响）。
+   尺寸口径按票册字面值：实测既有 .post-thumbnail 生效版是 160×120（外框 168×128），
+   spec 的 150×90 与现状不符，此处仍照票册取 240×135 / 150×84。 */
+.post-thumbnail.series-thumb {
+  width: 240px;
+  height: 135px;
+}
+
+.post-thumbnail.series-thumb img {
+  width: 240px;
+  height: 135px;
+}
+
+@media screen and (max-width: 680px) {
+  .post-thumbnail.series-thumb {
+    width: 150px;
+    height: 84px;
+  }
+
+  .post-thumbnail.series-thumb img {
+    width: 150px;
+    height: 84px;
+  }
+}
+
+/* ---------- 文章页顶部 / 末尾归属两行（票 05） ----------
+   取 .post-metaa 的小灰字规格：12px + --text-light + 链接 hover --primary；
+   刻意不写下边框——上方 .post-metaa 已画过一条 1px dotted 分隔线，再画会连成双线。
+   字体与色值全部取自既有 token（--text-light / --primary），不引入新设计语言。
+   顶部那行在 ≤768px 也保留（侧栏章节目录在窄屏隐藏，移动端入口就靠它）。 */
+.post-series {
+  color: var(--text-light);
+  font-size: 12px;
+}
+
+.post-series a {
+  color: var(--text-light);
+}
+
+.post-series a:hover {
+  color: var(--primary);
 }

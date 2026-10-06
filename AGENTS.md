@@ -232,21 +232,24 @@ Your agent and bash are running on:
 
 ### Triage labels
 
-五个默认标签串（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`）是技能侧的**约定词表**，与角色名一一对应，不另设映射。2026-09-24 实测本仓库 GitHub 端只有 `wontfix` 与 `ready-for-agent` 两个；2026-10-06 补建 `needs-triage`（#fbca04）、`needs-info`（#d4c5f9）、`ready-for-human`（#1d76db），五个角色现全部可用（`gh label list --limit 100` 共 16 个标签）。贴标签前仍先 `gh label list` 核可用值。见 `docs/agents/triage-labels.md`。
+五个默认标签串（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`）是技能侧的**约定词表**，与角色名一一对应，不另设映射。2026-09-24 实测本仓库 GitHub 端只有 `wontfix` 与 `ready-for-agent` 两个；2026-10-06 补建 `needs-triage`（#fbca04）、`needs-info`（#d4c5f9）、`ready-for-human`（#1d76db），五个角色现全部可用。贴标签前仍先 `gh label list` 核可用值（现值现测，本文件不记标签总数）。见 `docs/agents/triage-labels.md`。
 
 ### 文档写作约定（2026-09-22 立，Q45-B）
 
 - **约束以「选择器 + 文件路径」为锚点**，行号只作辅助且必须写「约」。本轮 UI 整改里三次误判的根源都是拿旧行号当现值（药丸样式记录漂了约 220 行、`.prose code` 的定位两次都错）。
 - 带日期的历史实测数字**保留原样**（它们是那次测量的记录，不是当前事实）；需要当前值就重新测。
 - 无法本地复核的数字（第三方图种数量、历史构建文件数）标 `UNKNOWN` 或明确写「未复核」，不得当作改动依据。
+- **本文件（`AGENTS.md`）不写会随仓库增长的计数**（ADR 份数、标签个数、模块数……）。这类现值一改就漂，而且没有 CI 看管——`lint.yml` 只跑 `prettier --check ./src ./docs`，`AGENTS.md` 不在检查范围内。需要数字时现测，别在这里留一份快照。
 
 ### Domain docs
 
-单上下文布局：根 `GLOSSARY.md` 术语表 + `docs/adr/`（0001–0006 共六份）。探索、命名或写 issue 前先取用 `GLOSSARY.md` 的既定称呼；ADR 只记「难以回退、有真实取舍、令人意外」的决策。见 `docs/agents/domain.md`。
+单上下文布局：根 `GLOSSARY.md` 术语表 + `docs/adr/`（按序编号；**本文件不记份数**，需要现值就 `ls docs/adr/`）。探索、命名或写 issue 前先取用 `GLOSSARY.md` 的既定称呼；ADR 只记「难以回退、有真实取舍、令人意外」的决策。见 `docs/agents/domain.md`。
 
 ## 项目背景
 
 WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月浩空）主题迁移而来的纯静态 Astro 博客。视觉必须还原 Colorful 原版（海洋绿 `#00c000` 主色、白底圆角卡片、自定义光标），技术栈对齐 `D:\pages\mizuki`。迁移任务的完整背景与取舍见 `D:\pages\emlog-to-astro-migration-prompt.md`。
+
+**元件设计约束（2026-10-06 站长声明）**：新增任何元件前，先最大化复用站内既有设计资产；确需新元件时，其风格与 taste 必须最大化继承既有元件。落地优先级：**直接引用现成组件 → 复用既有类名的 DOM 语法 → 才新写样式**，且新样式的色值 / 字号 / 线型一律取自 `global.css` 既有 token，不引入新设计语言。复用前先看有没有现成的：`ListingHeader.astro`（列表页头）、`WidgetLayout.astro`（侧栏小部件外框）、`PostCard.astro` + `Pagination.astro`（卡片与分页）、`ResponsiveImage.astro` + `getLqipProps()`（带 LQIP 的图）。图标限定在 vendored 的 **Font Awesome 4** 内（`fa-book-open`、`fa-clone`、`fa-layer-group` 这类 FA5+ 新名在本仓库不存在）。
 
 ## 常用命令
 

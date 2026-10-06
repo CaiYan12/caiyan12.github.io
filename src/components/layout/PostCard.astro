@@ -1,7 +1,13 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import dayjs from "dayjs";
-import { getCover, getExcerpt, isNewPost } from "../../utils/content-utils";
+import {
+	getCover,
+	getExcerpt,
+	isNewPost,
+	isSeriesMember,
+	resolveSeriesMeta,
+} from "../../utils/content-utils";
 import { siteConfig } from "../../config";
 import { getEffectiveComments } from "../../utils/site-stats";
 
@@ -18,6 +24,11 @@ const cover = getCover(post);
 const excerpt = getExcerpt(post, siteConfig.excerptLength);
 const showNew = isNewPost(post);
 const showHot = post.data.hotness >= 4;
+// 归属徽章只取文集名（不含章号）。列表页只喂公开文章，此处与 getSeriesNeighbors().series 口径一致；
+// 私密成员上两者会分叉（getSortedPosts 先滤掉私密帖），见 WidgetSeries 的注释。
+const seriesName = isSeriesMember(post)
+	? resolveSeriesMeta(post.data.series!).name
+	: null;
 ---
 
 <article class="post-list" role="article">
@@ -44,6 +55,14 @@ const showHot = post.data.hotness >= 4;
 					<>
 						<span class="hot-label">热门</span>
 						<i class="hot-arrow" />
+					</>
+				)
+			}
+			{
+				seriesName && (
+					<>
+						<span class="series-label">《{seriesName}》</span>
+						<i class="series-arrow" />
 					</>
 				)
 			}
