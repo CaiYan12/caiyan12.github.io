@@ -13,6 +13,7 @@ import {
 const slug = Astro.url.pathname.replace(/\/+$/, "").split("/")[2];
 let members: Post[] = [];
 let seriesSlug = "";
+let seriesName = "";
 
 if (slug) {
 	const allPosts = await getCollection("posts");
@@ -21,6 +22,7 @@ if (slug) {
 	const { series } = getSeriesNeighbors(allPosts, slug);
 	if (series) {
 		seriesSlug = series.slug;
+		seriesName = series.name;
 		members = getSeriesMembers(allPosts, series.slug);
 	}
 }
@@ -29,6 +31,16 @@ if (slug) {
 {
 	seriesSlug && (
 		<WidgetLayout title="文集目录" icon="fa-list-ol" class="widget-series">
+			{/* 标题栏 actions 槽：与「换一批」同族（图标 + 文字，hover 变绿），导航用 <a> */}
+			<a
+				slot="actions"
+				class="series-toc-link"
+				href={`/series/${seriesSlug}/`}
+				title={`查看《${seriesName}》目录`}
+			>
+				<i class="fa fa-book" aria-hidden="true" />
+				<span>查看目录</span>
+			</a>
 			<ol class="series-toc">
 				{members.map((member) => (
 					<li class:list={[member.id === slug && "current"]}>
@@ -44,9 +56,6 @@ if (slug) {
 					</li>
 				))}
 			</ol>
-			<div class="series-toc-more">
-				<a href={`/series/${seriesSlug}/`}>查看目录 &raquo;</a>
-			</div>
 		</WidgetLayout>
 	)
 }

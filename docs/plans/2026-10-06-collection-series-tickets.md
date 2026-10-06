@@ -158,7 +158,7 @@
 - [x] 「查看目录」指向 `/series/<slug>/`
 - [x] `pnpm check` 与 `pnpm build` 全绿
 
-**证据**：commit `d080186`。红证据两条：注掉 `widgetMap` 的 `series` 注册 → 产物目录计数 1→0；撤掉 `.current` 消费样式 → CSS 规则消失而 HTML 仍带 `class="current"`（「算了但没人画」）。还原后回绿。站长 2026-10-06 目视后调整：series 移至侧栏末位并加 CSS 粘性跟随，覆盖票面「排在 related 之前」的定位；布局机制由浮体改为 grid（列宽逐像素等价，真实浏览器五宽度对比验证）。站长 2026-10-06 目视后再移除 `.current` 的绿色底边框（`border-bottom-color: var(--colorful-green)` 一条）——分割线回默认 `1px dashed #ccc`，文字的加粗与绿色高亮保留；该绿边框是本票加的，且末章因 `.widget li:last-child { border-bottom: none }` 本就不显示，前后行为不一致。
+**证据**：commit `d080186`。红证据两条：注掉 `widgetMap` 的 `series` 注册 → 产物目录计数 1→0；撤掉 `.current` 消费样式 → CSS 规则消失而 HTML 仍带 `class="current"`（「算了但没人画」）。还原后回绿。站长 2026-10-06 目视后调整：series 移至侧栏末位并加 CSS 粘性跟随，覆盖票面「排在 related 之前」的定位；布局机制由浮体改为 grid（列宽逐像素等价，真实浏览器五宽度对比验证）。站长 2026-10-06 目视后再移除 `.current` 的绿色底边框（`border-bottom-color: var(--colorful-green)` 一条）——分割线回默认 `1px dashed #ccc`，文字的加粗与绿色高亮保留；该绿边框是本票加的，且末章因 `.widget li:last-child { border-bottom: none }` 本就不显示，前后行为不一致。站长 2026-10-06 目视后调整：「查看目录」由元件左下角移入标题栏 actions 槽（对齐「换一批」的图标/hover/指针），原 `series-toc-more` 块删除。
 
 ### 07. 文集封面
 

@@ -12,11 +12,13 @@
 // 判据总数写死在 EXPECTED_CHECKS：同批固定后不得增减（沿用 #49 的不变量做法）。
 // 改判据必须同时改这个常量，否则脚本以退出码 2 拒绝运行——防止「顺手加一条」
 // 让基线漂走而不被察觉。
-// 当前 35 = 原 32 + 3 条粘性判据（站长 2026-10-06 目视后新增粘性需求：
-// 侧栏文集目录滚过自然位置后贴顶、被 #content 底部顶住、回滚归位）。
+// 当前 36 = 原 32 + 3 条粘性判据（站长 2026-10-06 目视后新增粘性需求：
+// 侧栏文集目录滚过自然位置后贴顶、被 #content 底部顶住、回滚归位）
+// + 1 条标题栏入口判据（站长 2026-10-06 目视后把「查看目录」由元件左下角
+// 移入标题栏 actions 槽，原底部入口 series-toc-more 删除，需防回归）。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const EXPECTED_CHECKS = 35;
+const EXPECTED_CHECKS = 36;
 
 // 组成员与序号：与 src/data/series.ts 及六篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
@@ -231,6 +233,23 @@ check(
 	JSON.stringify(ch3Sidebar?.links) ===
 		JSON.stringify(MEMBERS["webapp-vibe-coding"].map((id) => `/posts/${id}/`)),
 	`${ch3Sidebar?.links?.join(",")}`,
+);
+// 标题栏 actions 槽的「查看目录」（站长 2026-10-06 目视后由左下角移入）：
+// 在 h2 内且指向该文集目录页；旧的底部入口 .series-toc-more 必须已不存在。
+const ch3TocLink = await page.evaluate(() => {
+	const link = document.querySelector("#sidebar h2 a.series-toc-link");
+	return {
+		exists: link !== null,
+		href: link?.getAttribute("href") ?? null,
+		moreGone: document.querySelector("#sidebar .series-toc-more") === null,
+	};
+});
+check(
+	"第三章：「查看目录」在标题栏 actions 槽且指向 /series/webapp-vibe-coding/",
+	ch3TocLink.exists &&
+		ch3TocLink.href === "/series/webapp-vibe-coding/" &&
+		ch3TocLink.moreGone,
+	`exists=${ch3TocLink.exists} href=${ch3TocLink.href} moreGone=${ch3TocLink.moreGone}`,
 );
 await goto(`/posts/${NON_MEMBER}/`);
 const nmSidebar = await sidebarSeries();
