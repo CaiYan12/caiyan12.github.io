@@ -16,7 +16,7 @@
 
 - **组内前后篇可以跨月、跨年**，与发布时间无关。`seriesOrder` 只在组内比较，不参与任何全站排序——首页、归档、分类、标签、热门各列表页的排序完全不变。
 - **`pinned` 在组内不生效**。全站唯一置顶帖 `20260728000000` 不属于任何文集，因此这条结论目前没有可见后果；将来若有成员文章被置顶，它仍排在首页第一位，但在文集里的位置只由 `seriesOrder` 决定。
-- **草稿与私密帖不占位次**。组内序列只用 `isPublicPost` 通过的文章，与 `getNeighbors()` 既有口径一致（`getSortedPosts()` 内部过滤，`src/utils/content-utils.ts` 约 `:14`）。注意私密帖仍有自己的页面——`src/pages/posts/[...slug].astro` 的 `getStaticPaths` 只过滤 `draft`，所以私密帖自己看得到前后篇，别人看不到它。
+- **草稿与私密帖不占位次**。组内序列只用 `isPublicPost` 通过的文章，与 `getNeighbors()` 既有口径一致（`getSortedPosts()` 内部过滤，`src/utils/content-utils.ts` 约 `:14`）。注意私密帖仍有自己的页面——`src/pages/posts/[...slug].astro` 的 `getStaticPaths` 只过滤 `draft`，别人看不到它。**（2026-10-06 实现期更正：初稿此处写「私密帖自己看得到前后篇」，与行为不符——`getNeighbors()` 与 `getSeriesNeighbors()` 都从 `getSortedPosts()` 取时间线，而后者过滤 `private`，实测私密帖自身页面的 prev/next 亦为 null。）**
 - **顺序错误必须在构建期响亮失败**。校验写成 `src/utils/series-integrity.ts` 的纯函数，由 `/series/[slug].astro` 的 `getStaticPaths` 调用并 `throw`，`astro build` 随之失败。四条规则：`series` 值必须已在 `src/data/series.ts` 登记；同一文集内 `seriesOrder` 不得重复；带 `series` 的文章必须同时带 `seriesOrder`；`cover` 指向的文件必须存在。**刻意不建独立 `.mjs` 校验脚本**：仓库没有 YAML 解析依赖，而现有 `scripts/validate-post-slugs.mjs` 从不读 frontmatter，手写正则解析的失效模式是**静默漏读**（非预期写法读不到字段，违规不报错）——正是这条要防的东西。理由：一个顺序悄悄错掉的文集看起来完全正常。
 - **一篇只能属于一个文集**（`series: string`，不是数组）。B 站专栏文集受同一约束，其开放平台「文集下文章列表修改」接口原文为「一篇文章只能属于一个文集，因此如果传入的文章id已归属某个文集，则该id修改不会生效，其他未归属的id会生效」（`bilibili.apifox.cn/api-23903138`），文章提交接口的 `list_id` 也是标量而非数组（`open.bilibili.com/doc/4/b14b77b6-8889-8c8b-2e83-17c5a4c550fb`）。将来若要放开，`series` 需改成数组，且左右按钮的归属要重新定义。
 - **进度分母取已发布篇数**（`第 3 / 4 章`），不引入计划总数。已知代价：每发一章，此前所有成员文章页面上的分母都会变。站长在 2026-10-06 的裁决里明确选择接受这一点，审计不得把它当缺陷上报。

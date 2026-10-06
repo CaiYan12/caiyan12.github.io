@@ -271,6 +271,7 @@ pnpm test:site-stats # Giscus 同步单测（fetchImpl/输出路径全注入，�
 pnpm test:utils      # src/utils 纯函数单测（content-utils 排序/评分/邻篇 + pagination canonical）
 pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl，不访问真实网络）
 pnpm smoke:ai-news   # AI 日报入口/详情/返回/离线快照 Playwright Smoke；AI_NEWS_BASE_URL 传**完整页面地址**
+pnpm smoke:series    # 文集（series）接线烟测，36 条判据：组内相邻 href／组内边界不渲染／非成员跳过整块／两行提示／侧栏目录／三页 200+封面／粘性跟随；SERIES_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形），需先 `pnpm build && pnpm preview --port 4322`；**不进 CI 只手工跑**
 pnpm qa:nice-books-geometry  # Nice Books 统一 3D 几何运行时检查（默认 127.0.0.1:4321；NICE_BOOKS_BASE_URL 可覆盖。注意另一个 `scripts/nice-books-design-qa.mjs` 默认才是 4322 preview）
 pnpm smoke:nice-books  # Nice Books 三页 Playwright Smoke；支持 NICE_BOOKS_BASE_URL 指向 build + preview
 pnpm test:fancybox     # 灯箱 Playwright Smoke（关闭不跳位/焦点归还/定位按钮/下载新标签页/中文文案，需先 build + preview；FANCY_BASE_URL 可覆盖地址）
@@ -480,7 +481,7 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 
 ### 工具函数
 
-`src/utils/content-utils.ts`：`getSortedPosts`（置顶+时间）、`getTagList`、`getCategoryList`、`getArchiveList`（YYYY年M月）、`getHotPosts`（hotness*100+comments 排序）、`getNeighbors`（前一篇/后一篇）、`getCover`（frontmatter image 兜底 hash 选 `public/images/random/tb1-40.jpg`）
+`src/utils/content-utils.ts`：`getSortedPosts`（置顶+时间）、`getTagList`、`getCategoryList`、`getArchiveList`（YYYY年M月）、`getHotPosts`（hotness*100+comments 排序）、`getNeighbors`（前一篇/后一篇）、`getCover`（frontmatter image 兜底 hash 选 `public/images/random/tb1-40.jpg`）、`getSeriesMembers`（同 series 值按 seriesOrder 升序）、`getSeriesNeighbors`（组内相邻／非成员跳过整块，返回 prev/next/series）、`isSeriesMember`（只看 frontmatter 有无 series 属性）、`resolveSeriesMeta`（slug → name/unit/description，未登记回退 slug/篇）、`resolveSeriesCover`（显式 cover → 序号升序首位带 image 成员 → null）、`buildSeriesNote`（文章页两行提示文案，index 为 0 基）；另有 `src/utils/series-integrity.ts`（文集完整性四规则，由 /series/[slug].astro 的 getStaticPaths 调用并 throw）
 
 ## 加入文章的流程
 
