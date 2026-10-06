@@ -4,6 +4,15 @@ import { friends } from "../../data/friends";
 ---
 
 <WidgetLayout title="友情链接" icon="fa-link">
+	<a
+		slot="actions"
+		class="widget-more-link"
+		href="/friends/"
+		title="查看友情链接"
+	>
+		<i class="fa fa-external-link" aria-hidden="true" />
+		<span>更多详情</span>
+	</a>
 	<ul id="link">
 		{
 			friends.map((f) => (

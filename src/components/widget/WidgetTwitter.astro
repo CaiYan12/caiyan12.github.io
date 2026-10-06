@@ -7,6 +7,10 @@ const latest = [...diary].slice(0, 4);
 ---
 
 <WidgetLayout title="最新微语" icon="fa-twitter">
+	<a slot="actions" class="widget-more-link" href="/diary/" title="查看更多微言碎语">
+		<i class="fa fa-comment-o" aria-hidden="true" />
+		<span>更多详情</span>
+	</a>
 	<ul class="widget-twitter-list">
 		{
 			latest.map((item) => (

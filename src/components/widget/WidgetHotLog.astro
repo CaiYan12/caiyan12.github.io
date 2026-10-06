@@ -14,6 +14,15 @@ const isHomePage =
 {
 	isHomePage && (
 		<WidgetLayout title="热门推荐" icon="fa-fire">
+			<a
+				slot="actions"
+				class="widget-more-link"
+				href="/hot/"
+				title="查看热门推荐"
+			>
+				<i class="fa fa-fire" aria-hidden="true" />
+				<span>更多详情</span>
+			</a>
 			<ul id="hotlog">
 				{hotPosts.map((post, index) => (
 					<li>

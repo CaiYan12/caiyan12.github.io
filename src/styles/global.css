@@ -2720,8 +2720,9 @@ html[data-liquid-glass="on"] #nav li ul {
 }
 
 .goon a:hover {
-  background: transparent;
-  color: var(--colorful-green);
+  border-color: var(--colorful-green-accessible);
+  background: color-mix(in srgb, var(--colorful-green-accessible) 12%, transparent);
+  color: var(--colorful-green-accessible);
 }
 
 .pagenavi {
@@ -3941,6 +3942,8 @@ html[data-liquid-glass="on"] #nav li ul {
   line-height: 30px;
   text-align: center;
   white-space: nowrap;
+  /* 与「换一批」「查看目录」同族的标题栏动作过渡 */
+  transition: color 180ms ease-out;
 }
 
 #sidebar .tab_nav li:last-child {
@@ -3952,6 +3955,20 @@ html[data-liquid-glass="on"] #nav li ul {
   background: #fff;
   color: var(--colorful-text-secondary);
   font-weight: bold;
+}
+
+/* 未选中的 tab hover 变品牌绿；选中态（.hover）有自己的白底身份，
+   不参与 hover 变色。focus-visible 与 hover 同效，键盘可达。
+   图标显式跟随（对齐 .newcomment-refresh .fa / .series-toc-link .fa
+   的显式写法），不依赖继承链。 */
+#sidebar .tab_nav li:not(.hover):hover,
+#sidebar .tab_nav li:not(.hover):focus-visible {
+  color: var(--colorful-green);
+}
+
+#sidebar .tab_nav li:not(.hover):hover .fa,
+#sidebar .tab_nav li:not(.hover):focus-visible .fa {
+  color: var(--colorful-green);
 }
 
 #sidebar .tab_box {
@@ -5098,7 +5115,10 @@ html.with-fancybox .backtop {
   .post-list::after,
   #readerwall .avatar,
   #newcomment .avatar,
-  .newcomment-refresh {
+  .newcomment-refresh,
+  .weather-widget__refresh,
+  #sidebar .tab_nav li,
+  #sidebar a.widget-more-link {
     animation: none;
     transition: none;
   }
@@ -5270,6 +5290,26 @@ body,
   text-decoration: none;
 }
 
+/* 侧栏标签云集只显示前 4 行。li 用 flex 换行（不用 inline 流）：
+   inline-block 药丸按基线对齐，行距会被祖先行高的 strut 顶高，切不准；
+   flex 行高纯由盒模型决定。行距（--tag-pitch）= 药丸高 20（.blogtags a：
+   line-height 14 + 上下 padding 3×2）+ 行距 4（同规则 margin-top）。
+   li 自带的 5px 上下 padding 必须归零：否则切点整体下移，max-height
+   不论取多少都会在第 5 行药丸上沿漏出一丝。归零后切点 =
+   rows × pitch，恒落在行边界上，与药丸外的间距（ul.blogtags 的
+   padding）无关。改药丸尺寸/边距时同步 --tag-pitch 即可。
+   全量列表走标题栏「更多详情」进 /tag/。 */
+#sidebar .blogtags .tag-cloud-items {
+  --tag-rows: 4;
+  --tag-pitch: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  padding: 0;
+  max-height: calc(var(--tag-rows) * var(--tag-pitch));
+  overflow: hidden;
+}
+
 .search-panel button,
 #mmenu .msearch input[type="submit"] {
   background-color: var(--colorful-green-accessible);
@@ -5411,12 +5451,14 @@ body,
   color: var(--colorful-green-accessible);
 }
 
-/* 标题栏 actions 槽的「查看目录」：盒子/字体/颜色/指针逐项对齐
+/* 标题栏 actions 槽的导航链接（「查看目录」.series-toc-link、
+   四大栏目的「更多详情」.widget-more-link）：盒子/字体/颜色/指针逐项对齐
    「换一批」（.newcomment-refresh）；指针走 --cursor-link token，
    不许裸写 cursor: pointer（会被 smoke:ui 的手型负扫咬住）。
    带 #sidebar 前缀是为了压过下面那条 #sidebar a:hover（无障碍绿 +
    下划线，特异性更高）——标题栏动作族的 hover 是品牌绿无线。 */
-#sidebar a.series-toc-link {
+#sidebar a.series-toc-link,
+#sidebar a.widget-more-link {
   float: right;
   height: 30px;
   margin: 0 0 0 8px;
@@ -5432,12 +5474,15 @@ body,
   transition: color 180ms ease-out;
 }
 
-#sidebar a.series-toc-link .fa {
+#sidebar a.series-toc-link .fa,
+#sidebar a.widget-more-link .fa {
   margin-right: 3px;
 }
 
 #sidebar a.series-toc-link:hover,
-#sidebar a.series-toc-link:focus-visible {
+#sidebar a.series-toc-link:focus-visible,
+#sidebar a.widget-more-link:hover,
+#sidebar a.widget-more-link:focus-visible {
   color: var(--colorful-green);
   text-decoration: none;
 }
@@ -6298,6 +6343,9 @@ body,
   font-size: 12px;
   line-height: 30px;
   text-indent: 0;
+  /* 与「换一批」（.newcomment-refresh）、「查看目录」（.series-toc-link）
+     同族的标题栏动作过渡，保持侧栏 actions 一致 */
+  transition: color 180ms ease-out;
 }
 
 .weather-widget__refresh[hidden] {

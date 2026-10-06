@@ -5,12 +5,29 @@ import { getCategoryList } from "../../utils/content-utils";
 
 const allPosts = await getCollection("posts");
 const categories = getCategoryList(allPosts);
+// 侧栏上限：#blogsort li 是 min-width:110px 的浮动项，~278px 容器恒定两列，
+// 4 行 = 8 项。在数据侧截断而非 CSS 切高，浮动行不会被腰斩；全量走「更多详情」。
+const SIDEBAR_ROW_LIMIT = 4;
+const SIDEBAR_COLUMN_COUNT = 2;
+const visibleCategories = categories.slice(
+	0,
+	SIDEBAR_ROW_LIMIT * SIDEBAR_COLUMN_COUNT,
+);
 ---
 
 <WidgetLayout title="文章分类" icon="fa-folder-open-o">
+	<a
+		slot="actions"
+		class="widget-more-link"
+		href="/category/"
+		title="查看分类云集"
+	>
+		<i class="fa fa-folder-open" aria-hidden="true" />
+		<span>更多详情</span>
+	</a>
 	<ul id="blogsort">
 		{
-			categories.map((cat) => (
+			visibleCategories.map((cat) => (
 				<li>
 					<i class="fa fa-angle-right" aria-hidden="true" />
 					<a href={`/category/${encodeURIComponent(cat.name)}/`}>
