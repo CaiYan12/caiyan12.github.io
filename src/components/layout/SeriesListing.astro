@@ -1,0 +1,52 @@
+---
+/**
+ * 单文集页列表体（第 1 页与 page/N 分页变体共用同一渲染）。
+ * 只引用 ListingHeader（页头）/ PostCard（成员卡）/ Pagination（分页）三个既有组件——
+ * 文集页要的是成员清单而不是药丸云，故不像标签页/分类页那样渲染 TagPillCloud。
+ * 数据获取（getStaticPaths / paginate）由各页面文件负责。
+ */
+import ListingHeader from "./ListingHeader.astro";
+import PostCard from "./PostCard.astro";
+import Pagination from "./Pagination.astro";
+import type { Post } from "../../utils/content-utils";
+import { getPaginationUrl } from "../../utils/pagination";
+
+interface Props {
+	name: string;
+	/** 量词（章 / 篇），用于计数行「共 N 章」 */
+	unit: string;
+	/** 当前文集下的成员总数（post-context 统计行口径） */
+	totalCount: number;
+	/** 当前页成员（第 1 页为手写切片，分页变体来自 Astro paginate），已按 seriesOrder 升序 */
+	posts: Post[];
+	current: number;
+	total: number;
+	rootUrl: string;
+}
+
+const { name, unit, totalCount, posts, current, total, rootUrl } = Astro.props;
+---
+
+<div class="page series-page">
+	<ListingHeader
+		icon="fa-book"
+		title={name}
+		crumbs={[
+			{ label: "文章文集", href: "/series/" },
+			{ label: name, icon: "fa-book" },
+		]}
+	/>
+
+	<div class="post-context">
+		<p>共 {totalCount} {unit}</p>
+	</div>
+</div>
+
+{posts.map((post) => <PostCard post={post} />)}
+
+<Pagination
+	current={current}
+	total={total}
+	urlTemplate={getPaginationUrl(rootUrl, "{n}")}
+	firstPageUrl={rootUrl}
+/>

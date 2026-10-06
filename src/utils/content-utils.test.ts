@@ -10,6 +10,7 @@ import {
 	getNeighbors,
 	getSeriesNeighbors,
 	isSeriesMember,
+	resolveSeriesMeta,
 	getCover,
 	getExcerpt,
 	type Post,
@@ -241,6 +242,55 @@ test("getSeriesNeighbors：组内按 seriesOrder 相邻、边界不渲染、非�
 	assert.equal(u.series?.slug, "not-registered");
 	assert.equal(u.series?.name, "not-registered");
 	assert.equal(u.series?.unit, "篇");
+
+	// 登记过的 slug：name / unit / index / total 取登记元数据与组内 0 基位置，
+	// 必须区别于未登记回退值（name = slug、"篇"），否则与占位实现同形、咬不住
+	const registered = [
+		fakePost({
+			id: "r0",
+			published: d("2026-01-03"),
+			series: "webapp-vibe-coding",
+			seriesOrder: 0,
+		}),
+		fakePost({
+			id: "r1",
+			published: d("2026-01-01"),
+			series: "webapp-vibe-coding",
+			seriesOrder: 1,
+		}),
+		fakePost({
+			id: "r2",
+			published: d("2026-01-02"),
+			series: "webapp-vibe-coding",
+			seriesOrder: 2,
+		}),
+	];
+	const regMid = getSeriesNeighbors(registered, "r1");
+	assert.equal(regMid.prev?.id, "r0");
+	assert.equal(regMid.next?.id, "r2");
+	assert.equal(regMid.series?.slug, "webapp-vibe-coding");
+	assert.equal(regMid.series?.name, "看懂 AI 写的网站"); // 登记名，非 slug
+	assert.equal(regMid.series?.unit, "章"); // 登记量词，非回退值 "篇"
+	assert.equal(regMid.series?.index, 1); // 组内 0 基位置
+	assert.equal(regMid.series?.total, 3);
+});
+
+test("resolveSeriesMeta：登记过的 slug 取到 name / unit", () => {
+	const meta = resolveSeriesMeta("webapp-vibe-coding");
+	assert.equal(meta.slug, "webapp-vibe-coding");
+	assert.equal(meta.name, "看懂 AI 写的网站");
+	// 量词取自登记表（"章"），而非未登记回退值 "篇"
+	assert.equal(meta.unit, "章");
+	assert.ok(meta.description.length > 0);
+});
+
+test("resolveSeriesMeta：未登记的 slug 回退为 name = slug、unit = 篇、description = 空", () => {
+	assert.deepEqual(resolveSeriesMeta("not-registered"), {
+		slug: "not-registered",
+		name: "not-registered",
+		unit: "篇",
+		description: "",
+	});
 });
 
 test("getCover：frontmatter image 优先；无图时 slug hash 稳定映射到 1..40 缩略图", () => {

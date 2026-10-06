@@ -1,6 +1,7 @@
 import type { CollectionEntry } from "astro:content";
 import dayjs from "dayjs";
 import { getEffectiveComments } from "./site-stats";
+import { seriesList } from "../data/series";
 
 export type Post = CollectionEntry<"posts">;
 
@@ -131,6 +132,29 @@ export function isSeriesMember(post: Post): boolean {
 }
 
 /**
+ * 解析文集元数据（名、量词、简介）。
+ *
+ * 从 `src/data/series.ts` 的登记表取值；查不到时回退为 `{ slug, name: slug, unit: "篇", description: "" }`。
+ * 这条回退是纯防御：正常构建下不可达（`series` 值未登记是内容错误，由构建期校验响亮失败），
+ * 它的存在只是为了让「有属性即属于某文集」在后半段也成立——不会因查不到文集名而整块不渲染。
+ */
+export function resolveSeriesMeta(slug: string): {
+	slug: string;
+	name: string;
+	unit: string;
+	description: string;
+} {
+	const meta = seriesList.find((s) => s.slug === slug);
+	if (!meta) return { slug, name: slug, unit: "篇", description: "" };
+	return {
+		slug: meta.slug,
+		name: meta.name,
+		unit: meta.unit ?? "篇",
+		description: meta.description,
+	};
+}
+
+/**
  * 获取文集内相邻文章。
  *
  * - 文章属于文集时：取同 `series` 值的成员（组内序列只用 `isPublicPost` 通过的文章，按 `seriesOrder` 升序），
@@ -138,11 +162,8 @@ export function isSeriesMember(post: Post): boolean {
  * - 文章不属于任何文集时：把带 `series` 属性的文章从 `getSortedPosts` 结果里剔除，得到非成员序列，
  *   复用既有 `getNeighbors()` 取相邻项——非成员的时间线因此跳过整个文集。
  *
- * 返回的 `series`：非成员为 `null`；成员为 `{ slug, name, unit, index, total }`，`index` 为该文在组内升序序列中的 0 基位置。
- *
- * TODO(票 02)：`src/data/series.ts` 与 `resolveSeriesMeta(slug)` 落地后，此处的 `name` / `unit` 应改为由
- * `resolveSeriesMeta` 提供（含 `description`），与 spec 的元数据回退一致。当前 `name` 暂取 `slug`、`unit` 暂取 `"篇"`，
- * 正是 `resolveSeriesMeta` 查不到时的防御回退值；本票无消费方（两行提示属票 05、侧栏目录属票 06），不产生用户可见错误。
+ * 返回的 `series`：非成员为 `null`；成员为 `{ slug, name, unit, index, total }`，`index` 为该文在组内升序序列中的 0 基位置，
+ * `name` / `unit` 取自 `resolveSeriesMeta(slug)`（即登记元数据，未登记时回退为 slug / "篇"）。
  */
 export function getSeriesNeighbors(
 	posts: Post[],
@@ -169,14 +190,15 @@ export function getSeriesNeighbors(
 				(a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0),
 			);
 		const idx = members.findIndex((p) => p.id === slug);
+		const meta = resolveSeriesMeta(seriesSlug);
 		return {
 			// 序号更小的为上一篇
 			prev: idx - 1 >= 0 ? members[idx - 1] : null,
 			next: idx + 1 < members.length ? members[idx + 1] : null,
 			series: {
 				slug: seriesSlug,
-				name: seriesSlug,
-				unit: "篇",
+				name: meta.name,
+				unit: meta.unit,
 				index: idx,
 				total: members.length,
 			},

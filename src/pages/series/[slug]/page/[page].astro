@@ -1,0 +1,66 @@
+---
+import MainGridLayout from "../../../../layouts/MainGridLayout.astro";
+import SeriesListing from "../../../../components/layout/SeriesListing.astro";
+import { getCollection } from "astro:content";
+import type { GetStaticPaths } from "astro";
+import {
+	getSortedPosts,
+	isPublicPost,
+	resolveSeriesMeta,
+} from "../../../../utils/content-utils";
+import { seriesList } from "../../../../data/series";
+import { getPaginationUrl, getPageMeta } from "../../../../utils/pagination";
+import { siteConfig } from "../../../../config";
+
+export const getStaticPaths = (async ({ paginate }) => {
+	const allPosts = await getCollection("posts");
+	const publicPosts = allPosts.filter(isPublicPost);
+	const sortedPosts = getSortedPosts(publicPosts);
+	return seriesList.flatMap(({ slug }) => {
+		const meta = resolveSeriesMeta(slug);
+		return paginate(
+			// 成员按 seriesOrder 升序（组内顺序不跟发布时间）
+			sortedPosts
+				.filter((post) => post.data.series === slug)
+				.sort(
+					(a, b) =>
+						(a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0),
+				),
+			{
+				params: { slug },
+				props: { meta },
+				pageSize: siteConfig.postsPerPage,
+			},
+		);
+	});
+}) satisfies GetStaticPaths;
+
+const { page, meta } = Astro.props;
+const rootUrl = `/series/${meta.slug}/`;
+const pageMeta = getPageMeta(
+	{ title: `文集：${meta.name}`, description: meta.description },
+	page.currentPage,
+);
+---
+
+<MainGridLayout
+	title={pageMeta.title}
+	description={pageMeta.description}
+	canonicalUrl={getPaginationUrl(rootUrl, page.currentPage)}
+	prevUrl={page.currentPage > 1
+		? getPaginationUrl(rootUrl, page.currentPage - 1)
+		: undefined}
+	nextUrl={page.currentPage < page.lastPage
+		? getPaginationUrl(rootUrl, page.currentPage + 1)
+		: undefined}
+>
+	<SeriesListing
+		name={meta.name}
+		unit={meta.unit}
+		totalCount={page.total}
+		posts={page.data}
+		current={page.currentPage}
+		total={page.lastPage}
+		rootUrl={rootUrl}
+	/>
+</MainGridLayout>
