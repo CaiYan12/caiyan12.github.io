@@ -5404,7 +5404,6 @@ body,
 }
 
 #sidebar .series-toc li.current {
-  border-bottom-color: var(--colorful-green);
   font-weight: 700;
 }
 
