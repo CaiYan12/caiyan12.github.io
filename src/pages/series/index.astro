@@ -1,0 +1,84 @@
+---
+/**
+ * 文集总览页：列出站内全部文集。
+ * 顺序即 `src/data/series.ts` 的数组顺序（作者意图本身是全序，不需要像 getTagList 那样为并列名次兜底）。
+ * 卡面语法照 PostCard 抄：根 .post-list、左位 .post-thumbnail（.series-thumb modifier 放到 240×135）、
+ * 右侧标题与 .post-excerpt、底部 .goon；不新造第四种卡面语法。
+ */
+import MainGridLayout from "../../layouts/MainGridLayout.astro";
+import ListingHeader from "../../components/layout/ListingHeader.astro";
+import { getCollection } from "astro:content";
+import { isPublicPost } from "../../utils/content-utils";
+import { seriesList } from "../../data/series";
+
+const allPosts = await getCollection("posts");
+const publicPosts = allPosts.filter(isPublicPost);
+const cards = seriesList.map((series) => ({
+	name: series.name,
+	description: series.description,
+	unit: series.unit ?? "篇",
+	count: publicPosts.filter((post) => post.data.series === series.slug)
+		.length,
+	url: `/series/${series.slug}/`,
+}));
+---
+
+<MainGridLayout title="文章文集" description="全站文集总览">
+	<div class="page series-page">
+		<ListingHeader
+			icon="fa-sitemap"
+			title="文章文集"
+			crumbs={[{ label: "文章文集", icon: "fa-sitemap" }]}
+		/>
+
+		<div class="post-context">
+			<p>共 {cards.length} 个文集</p>
+			{cards.length === 0 && <p>暂无文集。</p>}
+		</div>
+	</div>
+
+	{
+		cards.map((card) => {
+			// 封面：本票恒为 null（封面实现属票 07）。票 07 把这一行换成
+			// resolveSeriesCover(series, members) 的返回值；为 null 时左位不渲染，文字占满整行。
+			const cover: string | null = null;
+			return (
+				<article class="post-list" role="article">
+					<header class="post-header">
+						<h2>
+							<a rel="bookmark" title={card.name} href={card.url}>
+								{card.name}
+							</a>
+						</h2>
+					</header>
+
+					<div class="post-meta">
+						<span>
+							共 {card.count} {card.unit}
+						</span>
+					</div>
+
+					<div class="post-content">
+						{cover && (
+							<div class="post-thumbnail series-thumb">
+								<a href={card.url}>
+									<img
+										src={cover}
+										alt={card.name}
+										title={card.name}
+										loading="lazy"
+									/>
+								</a>
+							</div>
+						)}
+						<div class="post-excerpt">{card.description}</div>
+						<div class="clear" />
+						<div class="goon">
+							<a href={card.url}>进入目录&raquo;</a>
+						</div>
+					</div>
+				</article>
+			);
+		})
+	}
+</MainGridLayout>

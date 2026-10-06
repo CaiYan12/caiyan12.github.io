@@ -7098,3 +7098,30 @@ body,
     border-radius: 0;
   }
 }
+
+/* ---------- 文集总览页卡片的封面左位（票 04） ----------
+   .post-thumbnail 在总览卡上放到 240×135，≤680px 降为 150×84；差异只由 .series-thumb
+   这条 modifier 承担，既有 .post-thumbnail 规则一位不动（文章卡外观不受影响）。
+   尺寸口径按票册字面值：实测既有 .post-thumbnail 生效版是 160×120（外框 168×128），
+   spec 的 150×90 与现状不符，此处仍照票册取 240×135 / 150×84。 */
+.post-thumbnail.series-thumb {
+  width: 240px;
+  height: 135px;
+}
+
+.post-thumbnail.series-thumb img {
+  width: 240px;
+  height: 135px;
+}
+
+@media screen and (max-width: 680px) {
+  .post-thumbnail.series-thumb {
+    width: 150px;
+    height: 84px;
+  }
+
+  .post-thumbnail.series-thumb img {
+    width: 150px;
+    height: 84px;
+  }
+}
