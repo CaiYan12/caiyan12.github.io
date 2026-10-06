@@ -186,6 +186,8 @@ export function getSeriesNeighbors(
 		// 分组按同 series 值，与 seriesList 无关；顺序由 seriesOrder 决定，不跟发布时间
 		const members = sorted
 			.filter((p) => p.data.series === seriesSlug)
+			// `?? 0` 是防御性取值，正常构建下不可达：series-integrity 规则 3 保证
+			// 「带 series 必带 seriesOrder」，缺失会在 `astro build` 时响亮失败。
 			.sort(
 				(a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0),
 			);
