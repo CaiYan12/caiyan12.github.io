@@ -119,7 +119,7 @@
 - [x] 不带 `data-no-swup`；不进 Pagefind 索引
 - [x] `pnpm check` 与 `pnpm build` 全绿
 
-**证据**：commit `3bb3729`。`pnpm build` **220 页** exit 0（+1 即 `/series/`）。红证据两条：临时删导航项 → 产物中 `文章文集` 与 `href="/series/"` 命中 2→0；卡序反转让「共 4 章／共 2 篇」对调。**已记档偏差**：票面「`.post-thumbnail` 是 150×90」是错误前提，实测 160×120（外框 168×128）；总览卡 modifier 照票面字面值 240×135 实现，待站长目视裁决（票 10 清单）。
+**证据**：commit `3bb3729`。`pnpm build` **220 页** exit 0（+1 即 `/series/`）。红证据两条：临时删导航项 → 产物中 `文章文集` 与 `href="/series/"` 命中 2→0；卡序反转让「共 4 章／共 2 篇」对调。**已记档偏差**：票面「`.post-thumbnail` 是 150×90」是错误前提，实测 160×120（外框 168×128）；总览卡 modifier 照票面字面值 240×135 实现，待站长目视裁决（票 10 清单）。**目视后改名（2026-10-06 站长指令）**：导航项「文章文集」改为「文集精选」，并同步总览页标题与面包屑、目录页面包屑共 5 处（`src/config.ts`、`src/pages/series/index.astro` ×3、`src/components/layout/SeriesListing.astro`）；冒烟不断言该文案，32 项判据不受影响。
 
 ### 05. 文章页的归属两行
 
