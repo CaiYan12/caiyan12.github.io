@@ -2592,7 +2592,8 @@ html[data-liquid-glass="on"] #nav li ul {
 
 .good-label,
 .new-label,
-.hot-label {
+.hot-label,
+.series-label {
   position: relative;
   top: -2px;
   margin: 0;
@@ -2611,10 +2612,17 @@ html[data-liquid-glass="on"] #nav li ul {
 .hot-label {
   background: #ffba00;
 }
+/* 文集徽章是第四种语义（归属，而非置顶/近期/热门的状态），故独立类名：
+   置顶与近期更新同为绿色，与文集成员卡上必然共现的「近期更新」会连成一条色带；
+   热门黄又自带语义。取既有 token --colorful-text-secondary（#666）作中性色。 */
+.series-label {
+  background: var(--colorful-text-secondary);
+}
 
 .good-arrow,
 .new-arrow,
-.hot-arrow {
+.hot-arrow,
+.series-arrow {
   position: relative;
   top: -3px;
   display: inline-block;
@@ -2632,6 +2640,9 @@ html[data-liquid-glass="on"] #nav li ul {
 }
 .hot-arrow {
   border-left-color: #ffba00;
+}
+.series-arrow {
+  border-left-color: var(--colorful-text-secondary);
 }
 
 .post-meta,

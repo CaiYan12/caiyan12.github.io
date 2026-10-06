@@ -1,7 +1,12 @@
 ---
 import type { CollectionEntry } from "astro:content";
 import dayjs from "dayjs";
-import { getCover, getExcerpt, isNewPost } from "../../utils/content-utils";
+import {
+	getCover,
+	getExcerpt,
+	getSeriesNeighbors,
+	isNewPost,
+} from "../../utils/content-utils";
 import { siteConfig } from "../../config";
 import { getEffectiveComments } from "../../utils/site-stats";
 
@@ -18,6 +23,9 @@ const cover = getCover(post);
 const excerpt = getExcerpt(post, siteConfig.excerptLength);
 const showNew = isNewPost(post);
 const showHot = post.data.hotness >= 4;
+// 归属判定与相邻导航同源：私有成员在 getSeriesNeighbors 里被 getSortedPosts 滤掉，故 series 为 null。
+// 只取 .series 的 name 渲染徽章（不含章号），无需全量文章列表——单篇即可得出「公开成员 / 非成员」的正确归属。
+const series = getSeriesNeighbors([post], post.id).series;
 ---
 
 <article class="post-list" role="article">
@@ -44,6 +52,14 @@ const showHot = post.data.hotness >= 4;
 					<>
 						<span class="hot-label">热门</span>
 						<i class="hot-arrow" />
+					</>
+				)
+			}
+			{
+				series && (
+					<>
+						<span class="series-label">《{series.name}》</span>
+						<i class="series-arrow" />
 					</>
 				)
 			}
