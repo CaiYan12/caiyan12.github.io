@@ -8,6 +8,8 @@ import {
 	getTagList,
 	getCategoryList,
 	getNeighbors,
+	getSeriesNeighbors,
+	isSeriesMember,
 	getCover,
 	getExcerpt,
 	type Post,
@@ -151,6 +153,94 @@ test("getNeighbors：prev 为更早一篇、next 为更新一篇；首末篇与�
 	assert.equal(single.prev, null);
 	assert.equal(single.next, null);
 	assert.deepEqual(getNeighbors(posts, "nope"), { prev: null, next: null });
+});
+
+test("isSeriesMember：只看 frontmatter 有没有 series 属性，不查登记表", () => {
+	assert.equal(isSeriesMember(fakePost({ series: "matt-pocock" })), true);
+	assert.equal(isSeriesMember(fakePost({})), false);
+});
+
+test("getSeriesNeighbors：组内按 seriesOrder 相邻、边界不渲染、非成员跳过整块", () => {
+	// 组内三篇：published 顺序与 seriesOrder 相反，证明组内顺序跟 seriesOrder 而非发布时间
+	const posts = [
+		fakePost({
+			id: "s0",
+			published: d("2026-01-03"),
+			series: "demo",
+			seriesOrder: 0,
+		}),
+		fakePost({
+			id: "s1",
+			published: d("2026-01-01"),
+			series: "demo",
+			seriesOrder: 1,
+		}),
+		fakePost({
+			id: "s2",
+			published: d("2026-01-02"),
+			series: "demo",
+			seriesOrder: 2,
+		}),
+	];
+	// 组内中间篇：prev 为序号更小、next 为序号更大
+	const mid = getSeriesNeighbors(posts, "s1");
+	assert.equal(mid.prev?.id, "s0");
+	assert.equal(mid.next?.id, "s2");
+	assert.equal(mid.series?.total, 3);
+	// 首篇 prev === null、末篇 next === null（不跨出文集）
+	assert.equal(getSeriesNeighbors(posts, "s0").prev, null);
+	assert.equal(getSeriesNeighbors(posts, "s0").next?.id, "s1");
+	assert.equal(getSeriesNeighbors(posts, "s2").prev?.id, "s1");
+	assert.equal(getSeriesNeighbors(posts, "s2").next, null);
+
+	// 单篇文集：两侧皆 null
+	const single = getSeriesNeighbors(
+		[fakePost({ id: "only", series: "demo", seriesOrder: 0 })],
+		"only",
+	);
+	assert.equal(single.prev, null);
+	assert.equal(single.next, null);
+	assert.equal(single.series?.total, 1);
+
+	// 非成员跳过整块：成员夹在两篇非成员之间，非成员只与非成员相邻
+	const mixed = [
+		fakePost({ id: "old", published: d("2026-01-01") }),
+		fakePost({
+			id: "m0",
+			published: d("2026-01-02"),
+			series: "demo",
+			seriesOrder: 0,
+		}),
+		fakePost({ id: "new", published: d("2026-01-03") }),
+	];
+	const old = getSeriesNeighbors(mixed, "old");
+	assert.equal(old.prev, null);
+	assert.equal(old.next?.id, "new"); // 跳过 m0
+	assert.equal(old.series, null);
+	const free = getSeriesNeighbors(mixed, "new");
+	assert.equal(free.prev?.id, "old"); // 跳过 m0
+	assert.equal(free.series, null);
+
+	// 判定只看属性：两篇 series 值相同即互为相邻，即使该 slug 未登记（无 seriesList 记录）
+	const unregistered = [
+		fakePost({
+			id: "u0",
+			published: d("2026-01-01"),
+			series: "not-registered",
+			seriesOrder: 0,
+		}),
+		fakePost({
+			id: "u1",
+			published: d("2026-01-02"),
+			series: "not-registered",
+			seriesOrder: 1,
+		}),
+	];
+	const u = getSeriesNeighbors(unregistered, "u0");
+	assert.equal(u.next?.id, "u1");
+	assert.equal(u.series?.slug, "not-registered");
+	assert.equal(u.series?.name, "not-registered");
+	assert.equal(u.series?.unit, "篇");
 });
 
 test("getCover：frontmatter image 优先；无图时 slug hash 稳定映射到 1..40 缩略图", () => {

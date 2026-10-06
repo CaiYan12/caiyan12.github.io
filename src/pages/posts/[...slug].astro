@@ -7,7 +7,7 @@ import {
 	getCategoryList,
 	getCover,
 	getHotPosts,
-	getNeighbors,
+	getSeriesNeighbors,
 	getTagList,
 	isPublicPost,
 } from "../../utils/content-utils";
@@ -45,7 +45,7 @@ const routedTags = new Set(getTagList(publicPosts).map(({ name }) => name));
 const routedCategories = new Set(
 	getCategoryList(publicPosts).map(({ name }) => name),
 );
-const { prev, next } = getNeighbors(allPosts, post.id);
+const { prev, next } = getSeriesNeighbors(allPosts, post.id);
 const hotPosts = getHotPosts(allPosts, 6).filter((p) => p.id !== post.id);
 const postUrl = new URL(`/posts/${post.id}/`, siteConfig.siteURL);
 const cover = getCover(post);
