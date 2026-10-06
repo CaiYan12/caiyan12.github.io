@@ -227,16 +227,20 @@
 
 > Issue: #86
 
+> 状态：已验收（`d1f10ea`）@2026-10-06
+
 **Blocked by**: 03（#79）、09（#85）
 
 **Delivers**：本批收口，构建与 CI 全绿、站长目视通过、文档与票册同步完成。
 
-- [ ] `pnpm check` 0 error；`prettier --check ./src ./docs` 全绿
-- [ ] `pnpm build` 全绿（含 `test:utils` 与新增校验）
-- [ ] `pnpm smoke:series` 跑通并把读数记入本册 09 的**证据**行
-- [ ] 后台留 `astro dev`（`http://localhost:4321`）给站长逐页核对；清单：`/posts/20261002204249/`（末章无右按钮、两行、侧栏目录）、`/posts/20261002071103/`（首章无左按钮）、`/posts/20261006110122/`（左按钮 = Matt 另一篇；右按钮不再指 7-28 那篇）、`/series/webapp-vibe-coding/`、`/series/matt-pocock/`、`/series/`、首页与 `/archive/` 徽章、≤680px 表现、临时换封面后变体重建
-- [ ] 复用核对：侧栏 `WidgetSeries` 外框与既有 widget 同族；总览卡与文章卡同族；两行提示与 `.post-metaa` 同字号同色；目录页页头与 `/tag/` 索引页结构一致
-- [ ] 文档同步：`GLOSSARY.md` 五词条已在；`docs/adr/0007-…` 已在；`AGENTS.md` 的元件设计约束已在
-- [ ] 提交后 CI 三条工作流全绿（lint / build and check / deploy）
-- [ ] 本册逐票勾完，`pnpm audit:ledger docs/plans/2026-10-06-collection-series-tickets.md` 得 GREEN
-- [ ] 站长明确同意后再推送
+- [x] `pnpm check` 0 error；`prettier --check ./src ./docs` 全绿
+- [x] `pnpm build` 全绿（含 `test:utils` 与新增校验）
+- [x] `pnpm smoke:series` 跑通并把读数记入本册 09 的**证据**行
+- [x] 后台留 `astro dev`（`http://localhost:4321`）给站长逐页核对；清单：`/posts/20261002204249/`（末章无右按钮、两行、侧栏目录）、`/posts/20261002071103/`（首章无左按钮）、`/posts/20261006110122/`（左按钮 = Matt 另一篇；右按钮不再指 7-28 那篇）、`/series/webapp-vibe-coding/`、`/series/matt-pocock/`、`/series/`、首页与 `/archive/` 徽章、≤680px 表现、临时换封面后变体重建
+- [x] 复用核对：侧栏 `WidgetSeries` 外框与既有 widget 同族；总览卡与文章卡同族；两行提示与 `.post-metaa` 同字号同色；目录页页头与 `/tag/` 索引页结构一致
+- [x] 文档同步：`GLOSSARY.md` 五词条已在；`docs/adr/0007-…` 已在；`AGENTS.md` 的元件设计约束已在
+- [x] 提交后 CI 三条工作流全绿（lint / build and check / deploy）
+- [x] 本册逐票勾完，`pnpm audit:ledger docs/plans/2026-10-06-collection-series-tickets.md` 得 GREEN
+- [x] 站长明确同意后再推送
+
+**证据**：merge commit `d1f10ea`（PR #87，merge 方法 = merge commit，九票原始 sha 原样进入 main 祖先链，R4 由此成立）。CI 三条工作流在 `d1f10ea` 上全绿：Lint ✅ / Build and Check ✅ / Deploy to GitHub Pages ✅（完整构建链随 withastro/action 真实执行，站点已上线）。`pnpm smoke:series` 读数 **合计 36 项，失败 0 项**（基线 32 → 35 粘性 → 36 标题栏入口，两次提升均有据并写进脚本头注释与票 09 证据行）。站长 2026-10-06 逐页目视通过，并追加四项调整（均各自成 commit）：导航项改名「文集精选」（`1992cc9`）、侧栏目录移至末位并 CSS 粘性跟随（`b8b042f`，`.main-grid` 浮体转 grid，真实浏览器五宽度 80 组几何读数 0 差异）、当前章分割线回中性（`9a470dd`）、「查看目录」移入标题栏 actions 槽并补 hover 过渡（`fd8d0af` + `65cd263`）。三处文档更正（AGENTS.md 补 smoke:series 与五个新 util、ADR 0007:19、spec 位次表私密帖）已报备站长、未擅动。
