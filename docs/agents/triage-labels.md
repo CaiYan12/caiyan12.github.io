@@ -30,4 +30,18 @@ Consequences for whoever follows this table:
 2. If a role's label is genuinely needed, create it first (`gh label create …`) and then say so in the ticket, or record the decision to keep using only the two existing labels.
 3. `AGENTS.md`（"Triage labels" 一节）records the same measured conclusion and is the authoritative copy — if the two documents ever disagree, that section of `AGENTS.md` wins, because it carries the actual observation rather than the vocabulary the skills assume.
 
-This document deliberately does **not** drop the three missing strings: they are what the engineering skills speak, and removing them would silently break the role → label mapping those skills expect.
+This document deliberately does **not** drop the three strings that were then missing: they are what the engineering skills speak, and removing them would silently break the role → label mapping those skills expect.
+
+## Current state (re-measured and completed 2026-10-06)
+
+`gh label list --limit 100` on `CaiYan12/caiyan12.github.io` now returns **16** labels. The three role strings absent on 2026-09-24 were created on 2026-10-06:
+
+| Label             | Color     | Description                              |
+| ----------------- | --------- | ---------------------------------------- |
+| `needs-triage`    | `#fbca04` | Maintainer needs to evaluate this issue  |
+| `needs-info`      | `#d4c5f9` | Waiting on reporter for more information |
+| `ready-for-human` | `#1d76db` | Requires human implementation            |
+
+All five role strings in the table at the top of this file now exist in the tracker, so the mapping is directly usable: no `not found` failures, no create-then-use detour. The two from the earlier measurement are still present and unchanged — `wontfix` ("This will not be worked on", GitHub default) and `ready-for-agent` ("Spec ready for agent implementation", `#0e8a16`).
+
+Point 3 of the earlier section still stands: `AGENTS.md`（"Triage labels" 一节）is the authoritative copy of this repo's label reality — if the two documents ever disagree, that section wins, because it carries the actual observation rather than the vocabulary the skills assume.

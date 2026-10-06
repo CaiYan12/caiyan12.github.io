@@ -232,7 +232,7 @@ Your agent and bash are running on:
 
 ### Triage labels
 
-五个默认标签串（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`）是技能侧的**约定词表**，与角色名一一对应，不另设映射；但本仓库 GitHub 端实际只存在 `wontfix` 与 `ready-for-agent` 两个（`needs-triage`/`needs-info`/`ready-for-human` 从未创建，`gh issue create --label needs-triage` 会直接报 not found）。贴标签前先 `gh label list` 核可用值，或先建再用。见 `docs/agents/triage-labels.md`。
+五个默认标签串（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`）是技能侧的**约定词表**，与角色名一一对应，不另设映射。2026-09-24 实测本仓库 GitHub 端只有 `wontfix` 与 `ready-for-agent` 两个；2026-10-06 补建 `needs-triage`（#fbca04）、`needs-info`（#d4c5f9）、`ready-for-human`（#1d76db），五个角色现全部可用（`gh label list --limit 100` 共 16 个标签）。贴标签前仍先 `gh label list` 核可用值。见 `docs/agents/triage-labels.md`。
 
 ### 文档写作约定（2026-09-22 立，Q45-B）
 
@@ -242,7 +242,7 @@ Your agent and bash are running on:
 
 ### Domain docs
 
-单上下文布局：根 `GLOSSARY.md` 术语表 + `docs/adr/`（0001–0005 共五份）。探索、命名或写 issue 前先取用 `GLOSSARY.md` 的既定称呼；ADR 只记「难以回退、有真实取舍、令人意外」的决策。见 `docs/agents/domain.md`。
+单上下文布局：根 `GLOSSARY.md` 术语表 + `docs/adr/`（0001–0006 共六份）。探索、命名或写 issue 前先取用 `GLOSSARY.md` 的既定称呼；ADR 只记「难以回退、有真实取舍、令人意外」的决策。见 `docs/agents/domain.md`。
 
 ## 项目背景
 
