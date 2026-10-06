@@ -12,9 +12,11 @@
 // 判据总数写死在 EXPECTED_CHECKS：同批固定后不得增减（沿用 #49 的不变量做法）。
 // 改判据必须同时改这个常量，否则脚本以退出码 2 拒绝运行——防止「顺手加一条」
 // 让基线漂走而不被察觉。
+// 当前 35 = 原 32 + 3 条粘性判据（站长 2026-10-06 目视后新增粘性需求：
+// 侧栏文集目录滚过自然位置后贴顶、被 #content 底部顶住、回滚归位）。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const EXPECTED_CHECKS = 32;
+const EXPECTED_CHECKS = 35;
 
 // 组成员与序号：与 src/data/series.ts 及六篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
@@ -237,6 +239,86 @@ check(
 	nmSidebar === null,
 	`result=${JSON.stringify(nmSidebar)}`,
 );
+
+// —— 4b. 粘性跟随（站长 2026-10-06 目视后新增，纯 CSS sticky）：三条判据全部
+// 真滚动测量。注意 series 现排在侧栏末位，自然位置较深，滚动量按实测自然位置
+// 推导而非写死（写死会随 widget 增删失真）。
+// 「被 content 底顶住」一条用 360 高的专用视口：默认 720 高下页尾残留（footer 等
+// 约 229px）大于 widget 高（约 190px），滚到底时 content 底仍在视口内较深处，
+// widget 永远到不了钳位区间——顶起状态物理不可达；360 高下可达且宽度仍 1280，
+// 不触发移动端断点。
+const stickyCtx = await browser.newContext({
+	viewport: { width: 1280, height: 360 },
+});
+const stickyPage = harness.attach(await stickyCtx.newPage());
+const sp = stickyPage;
+await sp.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
+const stickyProbe = async () =>
+	sp.evaluate(() => {
+		const widget = document.querySelector(
+			"#sidebar .widget.widget-series",
+		);
+		const content = document.querySelector("#content");
+		if (!widget || !content) return null;
+		const wr = widget.getBoundingClientRect();
+		const cr = content.getBoundingClientRect();
+		// sticky 钳位对齐的是外边距盒（.widget 有 10px margin-bottom），
+		// 故一并量出 margin-bottom 供「底边重合」判据换算。
+		const mb = parseFloat(getComputedStyle(widget).marginBottom) || 0;
+		return {
+			widgetTop: +wr.top.toFixed(1),
+			widgetMarginBoxBottom: +(wr.bottom + mb).toFixed(1),
+			contentBottom: +cr.bottom.toFixed(1),
+			scrollY: Math.round(window.scrollY),
+		};
+	});
+// 自然位置（文档坐标）：滚回顶部后量。
+await sp.evaluate(() => window.scrollTo(0, 0));
+await sp.waitForTimeout(100);
+const natural = await stickyProbe();
+const naturalDocTop = natural.widgetTop + natural.scrollY;
+// 判据 a：滚过自然位置 400px → 钉在视口顶 10px（容差 ±2）。
+await sp.evaluate((y) => window.scrollTo(0, y), naturalDocTop + 400);
+await sp.waitForTimeout(100);
+const pinned = await stickyProbe();
+check(
+	"粘性：滚过自然位置后 widget 贴视口顶 10px（±2）",
+	pinned !== null && Math.abs(pinned.widgetTop - 10) <= 2,
+	`scrollY=${pinned?.scrollY} widgetTop=${pinned?.widgetTop}（自然位置 docTop=${naturalDocTop}）`,
+);
+// 判据 b：滚到页底 → widget 底被 content 底顶住：底边与 content 底重合（±1），
+// 且离开贴顶位（top < 10）。懒加载图片会撑开页高，滚到底后等 content 底稳定再量。
+await sp.evaluate(() => window.scrollTo(0, Number.MAX_SAFE_INTEGER));
+await sp.evaluate(async () => {
+	let last = -1;
+	for (let i = 0; i < 30; i++) {
+		const c = document
+			.querySelector("#content")
+			.getBoundingClientRect().bottom;
+		if (Math.abs(c - last) < 0.5) break;
+		last = c;
+		await new Promise((r) => setTimeout(r, 100));
+	}
+});
+const pushed = await stickyProbe();
+check(
+	"粘性：滚到页底，widget 底被 content 底顶住（外边距盒底与 content 底重合 ±1）且离开贴顶位",
+	pushed !== null &&
+		Math.abs(pushed.widgetMarginBoxBottom - pushed.contentBottom) <=
+			1 &&
+		pushed.widgetTop < 10,
+	`scrollY=${pushed?.scrollY} widgetTop=${pushed?.widgetTop} marginBoxBottom=${pushed?.widgetMarginBoxBottom} contentBottom=${pushed?.contentBottom}`,
+);
+// 判据 c：滚回顶部 → 回到自然位置（top > 10，未钉住）。
+await sp.evaluate(() => window.scrollTo(0, 0));
+await sp.waitForTimeout(100);
+const back = await stickyProbe();
+check(
+	"粘性：滚回顶部后 widget 回到自然位置（top > 10，未钉住）",
+	back !== null && back.widgetTop > 10,
+	`scrollY=${back?.scrollY} widgetTop=${back?.widgetTop}（自然 docTop=${naturalDocTop}）`,
+);
+await stickyCtx.close();
 
 // —— 5. 目录页与总览页：200 + 封面（含 og:image）——
 let status = await goto(`/series/webapp-vibe-coding/`);

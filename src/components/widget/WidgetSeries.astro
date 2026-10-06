@@ -28,7 +28,7 @@ if (slug) {
 
 {
 	seriesSlug && (
-		<WidgetLayout title="文集目录" icon="fa-list-ol">
+		<WidgetLayout title="文集目录" icon="fa-list-ol" class="widget-series">
 			<ol class="series-toc">
 				{members.map((member) => (
 					<li class:list={[member.id === slug && "current"]}>

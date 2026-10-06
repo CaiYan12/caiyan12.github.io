@@ -2,12 +2,14 @@
 interface Props {
 	title: string;
 	icon?: string;
+	/** 修饰类（如 WidgetSeries 的 "widget-series" 用于粘性定位）；不传则零差异 */
+	class?: string;
 }
 
-const { title, icon } = Astro.props;
+const { title, icon, class: className } = Astro.props;
 ---
 
-<section class="widget">
+<section class:list={["widget", className]}>
 	{
 		icon && (
 			<span class="icon">

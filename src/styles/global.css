@@ -1630,9 +1630,6 @@
 
 /* ---------- 响应式断点（对应原主题移动端） ---------- */
 @media (max-width: 768px) {
-  /* 原先此处的 `.main-grid{grid-template-columns:1fr}` 是 no-op，已删：
-     `.main-grid` 的基础声明是 `display:block`（见下面「.main-grid」定义处，
-     源顺序晚于层内那条 `display:grid`，同特异性因此胜出），网格列对它无效。 */
   #sidebar {
     display: none;
   }
@@ -2435,19 +2432,28 @@ html[data-liquid-glass="on"] #nav li ul {
   width: 100%;
 }
 
+/* 两栏布局：float 改 grid（列宽 20px + 255px 与旧浮体几何逐像素等价，
+   五宽度真实浏览器对比见票 06）。grid item 自建 BFC，替代原 #sidebar
+   overflow:hidden 的 BFC 语义。 */
 .main-grid {
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 255px;
+  column-gap: 20px;
+  align-items: stretch;
   margin: 0;
 }
 
 #content {
-  float: left;
   box-sizing: border-box;
-  width: calc(100% - 275px);
+  width: auto;
   min-width: 0;
   padding-right: 10px;
   border-right: 1px dashed #ccc;
   line-height: 25px;
+}
+
+.main-grid-full {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .main-grid-full #content {
@@ -2457,9 +2463,9 @@ html[data-liquid-glass="on"] #nav li ul {
 }
 
 #sidebar {
-  float: right;
   display: block;
-  overflow: hidden;
+  /* clip 保持裁切语义但不创建滚动容器——否则 #sidebar 内的 sticky 永远钉不住 */
+  overflow: clip;
   width: 255px;
   color: #808080;
   font-size: 12px;
@@ -4897,6 +4903,12 @@ html.with-fancybox .backtop {
 }
 
 @media screen and (max-width: 768px) {
+  /* 单列：侧栏整体隐藏后不留空的 255px 列。必须写在 .main-grid 基础定义
+     （约 2442 行）之后——同特异性靠源顺序取胜，放早了就是 no-op。 */
+  .main-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   #sidebar,
   #head-nav .m-nav {
     display: none !important;
@@ -5376,6 +5388,15 @@ body,
 
 /* 侧栏文集目录（WidgetSeries）：行样式沿用 .widget li，这里只补有序列表复位与
    「当前章」高亮。GLOSSARY「当前页态」要求：.current 一旦计算就必须有消费它的样式。 */
+/* 粘性跟随：滚过自然位置后钉在视口顶 10px（站点无固定顶栏），直到 #content
+   底部把它顶上去。纯 CSS sticky，零客户端脚本。前置：#sidebar overflow 用
+   clip（见 .main-grid 定义处），且链条上无其他滚动容器祖先；≤980px 时
+   #wrapper 转 overflow:hidden（sticky 失效但布局不破，属优雅降级）。 */
+#sidebar .widget.widget-series {
+  position: sticky;
+  top: 10px;
+}
+
 #sidebar .series-toc {
   margin: 0;
   padding: 5px 0 10px 5px;

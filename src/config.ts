@@ -105,11 +105,11 @@ export const sidebarConfig = {
 		"archive",
 		"newlog",
 		"hotlog",
-		"series",
 		"related",
 		"newcomm",
 		"link",
 		"twitter",
+		"series",
 	],
 };
 

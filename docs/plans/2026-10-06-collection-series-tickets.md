@@ -158,7 +158,7 @@
 - [x] 「查看目录」指向 `/series/<slug>/`
 - [x] `pnpm check` 与 `pnpm build` 全绿
 
-**证据**：commit `d080186`。红证据两条：注掉 `widgetMap` 的 `series` 注册 → 产物目录计数 1→0；撤掉 `.current` 消费样式 → CSS 规则消失而 HTML 仍带 `class="current"`（「算了但没人画」）。还原后回绿。
+**证据**：commit `d080186`。红证据两条：注掉 `widgetMap` 的 `series` 注册 → 产物目录计数 1→0；撤掉 `.current` 消费样式 → CSS 规则消失而 HTML 仍带 `class="current"`（「算了但没人画」）。还原后回绿。站长 2026-10-06 目视后调整：series 移至侧栏末位并加 CSS 粘性跟随，覆盖票面「排在 related 之前」的定位；布局机制由浮体改为 grid（列宽逐像素等价，真实浏览器五宽度对比验证）。
 
 ### 07. 文集封面
 
