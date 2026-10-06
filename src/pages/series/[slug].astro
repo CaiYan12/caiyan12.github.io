@@ -5,6 +5,7 @@ import { getCollection } from "astro:content";
 import {
 	getSortedPosts,
 	isPublicPost,
+	resolveSeriesCover,
 	resolveSeriesMeta,
 } from "../../utils/content-utils";
 import {
@@ -37,22 +38,22 @@ export async function getStaticPaths() {
 
 	const publicPosts = allPosts.filter(isPublicPost);
 	const sortedPosts = getSortedPosts(publicPosts);
-	return seriesList.map(({ slug }) => {
-		const meta = resolveSeriesMeta(slug);
+	return seriesList.map((series) => {
+		const meta = resolveSeriesMeta(series.slug);
 		// 成员按 seriesOrder 升序（组内顺序不跟发布时间）
 		const posts = sortedPosts
-			.filter((post) => post.data.series === slug)
+			.filter((post) => post.data.series === series.slug)
 			.sort(
 				(a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0),
 			);
 		return {
-			params: { slug },
-			props: { meta, posts },
+			params: { slug: series.slug },
+			props: { meta, posts, cover: resolveSeriesCover(series, posts) },
 		};
 	});
 }
 
-const { meta, posts } = Astro.props;
+const { meta, posts, cover } = Astro.props;
 const rootUrl = `/series/${meta.slug}/`;
 const pages = Math.max(1, Math.ceil(posts.length / siteConfig.postsPerPage));
 const pagePosts = posts.slice(0, siteConfig.postsPerPage);
@@ -61,6 +62,7 @@ const pagePosts = posts.slice(0, siteConfig.postsPerPage);
 <MainGridLayout
 	title={`文集：${meta.name}`}
 	description={meta.description}
+	image={cover ?? undefined}
 	canonicalUrl={rootUrl}
 	nextUrl={pages > 1 ? getPaginationUrl(rootUrl, 2) : undefined}
 >
@@ -72,5 +74,6 @@ const pagePosts = posts.slice(0, siteConfig.postsPerPage);
 		current={1}
 		total={pages}
 		rootUrl={rootUrl}
+		cover={cover}
 	/>
 </MainGridLayout>

@@ -12,6 +12,7 @@ import {
 	isSeriesMember,
 	resolveSeriesMeta,
 	buildSeriesNote,
+	resolveSeriesCover,
 	getCover,
 	getExcerpt,
 	type Post,
@@ -376,4 +377,85 @@ test("getExcerpt：frontmatter excerpt 优先；否则剥离 Markdown 粗读正�
 	const long = getExcerpt(fakePost({ body: "字".repeat(200) }), 120);
 	assert.equal(long.length, 121);
 	assert.ok(long.endsWith("…"));
+});
+
+test("resolveSeriesCover：显式 cover 优先；否则按 seriesOrder 升序取首个带 image 的成员；否则 null", () => {
+	const demo = { slug: "demo", name: "Demo", description: "" };
+
+	// 1) 显式 cover 优先——即使序号 0 的成员也带 image，也不该被成员头图顶掉
+	assert.equal(
+		resolveSeriesCover({ ...demo, cover: "/images/series/demo.jpg" }, [
+			fakePost({
+				id: "s0",
+				series: "demo",
+				seriesOrder: 0,
+				image: "/images/posts/a.jpg",
+			}),
+		]),
+		"/images/series/demo.jpg",
+	);
+
+	// 2) 无 cover：取序号 0 且带 image 的成员（输入乱序，按 seriesOrder 升序判定）
+	assert.equal(
+		resolveSeriesCover(demo, [
+			fakePost({
+				id: "s1",
+				series: "demo",
+				seriesOrder: 1,
+				image: "/images/posts/b.jpg",
+			}),
+			fakePost({
+				id: "s0",
+				series: "demo",
+				seriesOrder: 0,
+				image: "/images/posts/a.jpg",
+			}),
+		]),
+		"/images/posts/a.jpg",
+	);
+
+	// 3) 序号 0 无 image：向后取第一篇有 image 的（序号 1）
+	assert.equal(
+		resolveSeriesCover(demo, [
+			fakePost({ id: "s0", series: "demo", seriesOrder: 0 }),
+			fakePost({
+				id: "s1",
+				series: "demo",
+				seriesOrder: 1,
+				image: "/images/posts/c.jpg",
+			}),
+			fakePost({
+				id: "s2",
+				series: "demo",
+				seriesOrder: 2,
+				image: "/images/posts/d.jpg",
+			}),
+		]),
+		"/images/posts/c.jpg",
+	);
+
+	// 4) 成员全部无 image → null（不落回 getCover 的随机缩略图）
+	assert.equal(
+		resolveSeriesCover(demo, [
+			fakePost({ id: "s0", series: "demo", seriesOrder: 0 }),
+			fakePost({ id: "s1", series: "demo", seriesOrder: 1 }),
+		]),
+		null,
+	);
+
+	// 5) 未登记的 series（无任何同 slug 成员）→ null；不相关 slug 的 image 不参与
+	assert.equal(
+		resolveSeriesCover(
+			{ slug: "not-registered", name: "not-registered", description: "" },
+			[
+				fakePost({
+					id: "other",
+					series: "elsewhere",
+					seriesOrder: 0,
+					image: "/images/posts/z.jpg",
+				}),
+			],
+		),
+		null,
+	);
 });

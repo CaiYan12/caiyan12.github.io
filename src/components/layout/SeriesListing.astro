@@ -8,7 +8,9 @@
 import ListingHeader from "./ListingHeader.astro";
 import PostCard from "./PostCard.astro";
 import Pagination from "./Pagination.astro";
+import ResponsiveImage from "../control/ResponsiveImage.astro";
 import type { Post } from "../../utils/content-utils";
+import { getLqipProps } from "../../utils/lqip-utils";
 import { getPaginationUrl } from "../../utils/pagination";
 
 interface Props {
@@ -22,12 +24,36 @@ interface Props {
 	current: number;
 	total: number;
 	rootUrl: string;
+	/** 文集封面（显式 cover 或首位带 image 的成员头图）；null 时不渲染顶部横幅 */
+	cover?: string | null;
 }
 
-const { name, unit, totalCount, posts, current, total, rootUrl } = Astro.props;
+const { name, unit, totalCount, posts, current, total, rootUrl, cover } =
+	Astro.props;
 ---
 
 <div class="page series-page">
+	{
+		cover && (
+			/* 顶部封面：插在 ListingHeader 之前，与文章页「图 → 标题」同序；
+			   复用文章页 .page .post-cover 范式（260px 横幅 + 底缘渐隐 + object-fit: cover），
+			   零新 CSS——目录页容器本就是 .page，选择器直接命中，窄屏无媒体查询覆盖仍为 260px */
+			<figure class="post-cover lqip-wrap">
+				<div
+					class="lqip-placeholder"
+					style={getLqipProps(cover).style}
+					aria-hidden="true"
+				/>
+				<ResponsiveImage
+					src={cover}
+					alt={name}
+					title={name}
+					loading="eager"
+					sizes="(max-width: 680px) 100vw, (max-width: 1000px) calc(100vw - 40px), 660px"
+				/>
+			</figure>
+		)
+	}
 	<ListingHeader
 		icon="fa-book"
 		title={name}

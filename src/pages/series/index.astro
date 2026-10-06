@@ -8,22 +8,32 @@
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import ListingHeader from "../../components/layout/ListingHeader.astro";
 import { getCollection } from "astro:content";
-import { isPublicPost } from "../../utils/content-utils";
+import { isPublicPost, resolveSeriesCover } from "../../utils/content-utils";
 import { seriesList } from "../../data/series";
 
 const allPosts = await getCollection("posts");
 const publicPosts = allPosts.filter(isPublicPost);
-const cards = seriesList.map((series) => ({
-	name: series.name,
-	description: series.description,
-	unit: series.unit ?? "篇",
-	count: publicPosts.filter((post) => post.data.series === series.slug)
-		.length,
-	url: `/series/${series.slug}/`,
-}));
+const cards = seriesList.map((series) => {
+	const members = publicPosts.filter(
+		(post) => post.data.series === series.slug,
+	);
+	return {
+		name: series.name,
+		description: series.description,
+		unit: series.unit ?? "篇",
+		count: members.length,
+		url: `/series/${series.slug}/`,
+		// 封面：显式 cover 或首位带 image 的成员头图
+		cover: resolveSeriesCover(series, members),
+	};
+});
 ---
 
-<MainGridLayout title="文章文集" description="全站文集总览">
+<MainGridLayout
+	title="文章文集"
+	description="全站文集总览"
+	image={cards[0]?.cover ?? undefined}
+>
 	<div class="page series-page">
 		<ListingHeader
 			icon="fa-sitemap"
@@ -39,9 +49,8 @@ const cards = seriesList.map((series) => ({
 
 	{
 		cards.map((card) => {
-			// 封面：本票恒为 null（封面实现属票 07）。票 07 把这一行换成
-			// resolveSeriesCover(series, members) 的返回值；为 null 时左位不渲染，文字占满整行。
-			const cover: string | null = null;
+			// 封面：为 null 时左位不渲染，文字占满整行
+			const cover = card.cover;
 			return (
 				<article class="post-list" role="article">
 					<header class="post-header">

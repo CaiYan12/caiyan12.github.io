@@ -1,7 +1,7 @@
 import type { CollectionEntry } from "astro:content";
 import dayjs from "dayjs";
 import { getEffectiveComments } from "./site-stats";
-import { seriesList } from "../data/series";
+import { seriesList, type SeriesMeta } from "../data/series";
 
 export type Post = CollectionEntry<"posts">;
 
@@ -152,6 +152,29 @@ export function resolveSeriesMeta(slug: string): {
 		unit: meta.unit ?? "篇",
 		description: meta.description,
 	};
+}
+
+/**
+ * 解析文集封面：显式 `cover` → 按 `seriesOrder` 升序取首位带 `image` 的成员头图 → `null`。
+ *
+ * 刻意**不直接调用 `getCover()`**：它的兜底是 `/images/random/tb{n}.jpg`——由 slug 字符合计
+ * 取模选出的无关缩略图（`public/images/random/` 下 40 张）。作为列表卡片缩略图无妨，但把一张
+ * 与文集毫无关系的随机图当成「文集封面」是让无关图冒充封面，故这里落到 `null`，由调用侧不渲染。
+ * 这条偏离是有意的，不要简化回 `getCover()`。
+ *
+ * `posts` 应为该文集的成员（调用侧已按 `seriesOrder` 升序排好或另行排序，这里再按 `seriesOrder`
+ * 升序排一次以自足）；返回 `null` 表示无封面可用。
+ */
+export function resolveSeriesCover(
+	series: SeriesMeta,
+	posts: Post[],
+): string | null {
+	if (series.cover) return series.cover;
+	const first = posts
+		.filter((post) => post.data.series === series.slug)
+		.sort((a, b) => (a.data.seriesOrder ?? 0) - (b.data.seriesOrder ?? 0))
+		.find((post) => post.data.image);
+	return first?.data.image || null;
 }
 
 /**
