@@ -9,8 +9,13 @@ const tags = getTagList(allPosts);
 ---
 
 <WidgetLayout title="标签云集" icon="fa-tags">
-	<a slot="actions" class="widget-more-link" href="/tag/" title="查看标签云集">
-		<i class="fa fa-tag" aria-hidden="true" />
+	<a
+		slot="actions"
+		class="widget-more-link"
+		href="/tag/"
+		title="查看标签云集"
+	>
+		<i class="fa fa-tag" aria-hidden="true"></i>
 		<span>更多详情</span>
 	</a>
 	<TagPillCloud items={tags} base="tag" showCount={false} dedupeId />
