@@ -11,6 +11,7 @@ import {
 	getSeriesNeighbors,
 	isSeriesMember,
 	resolveSeriesMeta,
+	buildSeriesNote,
 	getCover,
 	getExcerpt,
 	type Post,
@@ -290,6 +291,60 @@ test("resolveSeriesMeta：未登记的 slug 回退为 name = slug、unit = 篇�
 		name: "not-registered",
 		unit: "篇",
 		description: "",
+	});
+});
+
+test("buildSeriesNote：0 基进度、量词取登记表；末章换收尾文案与 /series/ 链接", () => {
+	const meta = {
+		slug: "webapp-vibe-coding",
+		name: "看懂 AI 写的网站",
+		unit: "章",
+		index: 3,
+		total: 4,
+	};
+	// 非末章：顶部有目录链接，末尾与顶部同前缀且无链接
+	const mid = buildSeriesNote(meta, false);
+	assert.equal(mid.top.prefix, "本文属于《看懂 AI 写的网站》· 第 3 / 4 章");
+	assert.deepEqual(mid.top.link, {
+		href: "/series/webapp-vibe-coding/",
+		label: "目录",
+	});
+	assert.equal(
+		mid.bottom.prefix,
+		"本文属于《看懂 AI 写的网站》· 第 3 / 4 章",
+	);
+	assert.equal(mid.bottom.link, null);
+
+	// 末章：末尾换成收尾文案，链接指向总览页
+	const last = buildSeriesNote(meta, true);
+	assert.equal(last.bottom.prefix, "《看懂 AI 写的网站》已读完");
+	assert.deepEqual(last.bottom.link, {
+		href: "/series/",
+		label: "看其它文集",
+	});
+
+	// 0 基刻意不加 1：第〇章（index 0）渲染为「第 0 / 4 章」，与书自身编号一致
+	const ch0 = buildSeriesNote({ ...meta, index: 0 }, false);
+	assert.equal(ch0.top.prefix, "本文属于《看懂 AI 写的网站》· 第 0 / 4 章");
+
+	// 量词取登记表：篇
+	const matt = buildSeriesNote(
+		{
+			slug: "matt-pocock",
+			name: "Matt Pocock 技能选讲",
+			unit: "篇",
+			index: 1,
+			total: 2,
+		},
+		true,
+	);
+	assert.equal(
+		matt.top.prefix,
+		"本文属于《Matt Pocock 技能选讲》· 第 1 / 2 篇",
+	);
+	assert.deepEqual(matt.top.link, {
+		href: "/series/matt-pocock/",
+		label: "目录",
 	});
 });
 

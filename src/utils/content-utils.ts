@@ -211,6 +211,53 @@ export function getSeriesNeighbors(
 	return { prev, next, series: null };
 }
 
+/** 归属两行里的链接（href + 可见文案） */
+export interface SeriesNoteLink {
+	href: string;
+	label: string;
+}
+
+/** 文章页归属两行的纯内容模型：文案与链接分离，标记由调用侧渲染 */
+export interface SeriesNote {
+	/** 顶部一行：「本文属于《X》· 第 N / M <unit>」+ 「目录」链接 */
+	top: { prefix: string; link: SeriesNoteLink };
+	/** 末尾一行：非末章同顶部前缀且无链接；末章换成收尾文案 + 「看其它文集」链接 */
+	bottom: { prefix: string; link: SeriesNoteLink | null };
+}
+
+/**
+ * 由文集元数据拼出文章页顶部 / 末尾两行的文案与链接。
+ *
+ * `series.index` 是 0 基，**这里不加 1**：本站《看懂 AI 写的网站》自身从第〇章起
+ * （`seriesOrder: 0`），于是第〇章渲染为「第 0 / 4 章」——这与书自身编号一致，是有意结果。
+ * 分母 `series.total` 取已发布成员数，量词 `series.unit` 取登记表。
+ * `isLast` 为真（组内没有下一章）时末尾行换成收尾文案，链接指向文集总览页 `/series/`。
+ */
+export function buildSeriesNote(
+	series: {
+		slug: string;
+		name: string;
+		unit: string;
+		index: number;
+		total: number;
+	},
+	isLast: boolean,
+): SeriesNote {
+	const belonging = `本文属于《${series.name}》· 第 ${series.index} / ${series.total} ${series.unit}`;
+	return {
+		top: {
+			prefix: belonging,
+			link: { href: `/series/${series.slug}/`, label: "目录" },
+		},
+		bottom: isLast
+			? {
+					prefix: `《${series.name}》已读完`,
+					link: { href: "/series/", label: "看其它文集" },
+				}
+			: { prefix: belonging, link: null },
+	};
+}
+
 /** 判断是否为近期更新（15 天内，对应 log_list 的 new-label） */
 export function isNewPost(post: Post): boolean {
 	return (

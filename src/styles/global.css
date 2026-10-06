@@ -7159,3 +7159,21 @@ body,
     height: 84px;
   }
 }
+
+/* ---------- 文章页顶部 / 末尾归属两行（票 05） ----------
+   取 .post-metaa 的小灰字规格：12px + --text-light + 链接 hover --primary；
+   刻意不写下边框——上方 .post-metaa 已画过一条 1px dotted 分隔线，再画会连成双线。
+   字体与色值全部取自既有 token（--text-light / --primary），不引入新设计语言。
+   顶部那行在 ≤768px 也保留（侧栏章节目录在窄屏隐藏，移动端入口就靠它）。 */
+.post-series {
+  color: var(--text-light);
+  font-size: 12px;
+}
+
+.post-series a {
+  color: var(--text-light);
+}
+
+.post-series a:hover {
+  color: var(--primary);
+}
