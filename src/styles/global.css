@@ -5429,6 +5429,7 @@ body,
   font-size: 12px;
   line-height: 30px;
   text-indent: 0;
+  transition: color 180ms ease-out;
 }
 
 #sidebar a.series-toc-link .fa {
