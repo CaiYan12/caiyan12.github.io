@@ -1706,9 +1706,10 @@ check(
 		? `面板底边=${modalBox.panelBottom}、${modalBox.ctlTag} 底边=${modalBox.ctlBottom} vs 视口高=${modalBox.innerH}`
 		: "-",
 );
-// 票 17 那条被删的网格声明：判据不是「源码里没这行」，而是宿主确实用不上它——
-// `.main-grid` 的计算 display 必须是 block（因此任何 grid-template-columns 都无效），
-// 且正文列在窄屏仍占满其容器。
+// 票 17（2026-10-07 方案 A 重写）：判据守**布局行为**，不守某个 display 关键字。
+// global.css 的 ≤768px 规则刻意保留 display:grid、只把列定义收成单列（写法理由见该处注释），
+// 旧期望「计算 display 为 block」与 CSS 演进脱节，曾长期存量红。现在的行为断言：
+// 窄屏下 .main-grid 是单列网格（计算列轨道 = 1）、#sidebar 隐藏、正文列占满容器。
 await page.goto(base + "/", { waitUntil: "load" });
 await page.waitForTimeout(400);
 const gridProof = await page.evaluate(() => {
@@ -1718,16 +1719,25 @@ const gridProof = await page.evaluate(() => {
 	const gr = g.getBoundingClientRect();
 	const cr = c.getBoundingClientRect();
 	return {
-		display: getComputedStyle(g).display,
+		// 计算后的列轨道数：≤768px 规则只留 minmax(0, 1fr) 一条轨道 → 1
+		cols: getComputedStyle(g).gridTemplateColumns.trim().split(/\s+/)
+			.length,
+		sidebarHidden: (() => {
+			const s = document.querySelector("#sidebar");
+			return s ? getComputedStyle(s).display === "none" : false;
+		})(),
 		fit: Math.abs(cr.width - gr.width) <= 1,
 		w: [Math.round(cr.width), Math.round(gr.width)],
 	};
 });
 check(
-	"票 17：.main-grid 计算 display 为 block（被删的网格列声明对其无效）且正文列占满容器",
-	!!gridProof && gridProof.display === "block" && gridProof.fit === true,
+	"票 17：窄屏 .main-grid 单列（侧栏隐藏）且正文列占满容器",
+	!!gridProof &&
+		gridProof.cols === 1 &&
+		gridProof.sidebarHidden &&
+		gridProof.fit === true,
 	gridProof
-		? `display=${gridProof.display} 宽 ${gridProof.w.join("/")} 占满=${gridProof.fit}`
+		? `列=${gridProof.cols} 侧栏隐藏=${gridProof.sidebarHidden} 宽 ${gridProof.w.join("/")} 占满=${gridProof.fit}`
 		: "缺 .main-grid / #content",
 );
 

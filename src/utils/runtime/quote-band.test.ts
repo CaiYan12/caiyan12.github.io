@@ -83,12 +83,16 @@ test("pickOtherFrom：剔除当前句；剔完为空回退整池；空池 undefi
 	for (let i = 0; i < 60; i++) {
 		assert.notEqual(pickOtherFrom(pool, "b")?.[0], "b");
 	}
-	// 顺序契约：候选列表保持池内顺序（过滤不改排序），随机数钉 0.5 → 取过滤表第 2 项 c
-	const fixed = (value: number) => () => value;
-	const originalRandom = Math.random;
-	Math.random = fixed(0.5);
-	assert.equal(pickOtherFrom(pool, "b")?.[0], "c");
-	Math.random = originalRandom;
+	// 顺序契约：候选列表保持池内顺序（过滤不改排序）；注入确定性序列取第 1 项 → c
+	const fixedIndex = (value: number) => () => value;
+	assert.equal(pickOtherFrom(pool, "b", fixedIndex(1))?.[0], "c");
+	// 上限契约：注入函数收到的 upperBound 必须是候选列表长度（此处 2）
+	let seenBound = -1;
+	pickOtherFrom(pool, "b", (upperBound) => {
+		seenBound = upperBound;
+		return 0;
+	});
+	assert.equal(seenBound, 2);
 	// 语料只剩当前句：回退整池（返回当前句自身），不返回 undefined
 	assert.equal(pickOtherFrom([["a", "", ""]], "a")?.[0], "a");
 	assert.equal(pickOtherFrom([], "a"), undefined);

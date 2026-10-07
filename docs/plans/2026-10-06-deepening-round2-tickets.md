@@ -194,4 +194,20 @@
     3. `refactor(weather): 天气共享规则落 service，侧栏改纯 adapter（T3+T4，#91 #92）` — `public/weather/weather-service.js`、`public/weather/sidebar-widget.js`、`scripts/weather-rules.test.mjs`、`scripts/sidebar-weather-smoke.mjs`
     4. `refactor(runtime): swup 装配表单源，语录条/液态玻璃迁 runtime（T5+T6+T7，#93–#95）` — `src/utils/theme-script.ts`、`src/utils/runtime/`（quote-band.ts + 测试 + liquid-glass.ts）、`package.json`、`AGENTS.md`
     5. 收口提交：把各票 `> 状态：进行中` 改为 `已验收（对应组 commit sha）`，跑 `pnpm audit:ledger docs/plans/2026-10-06-deepening-round2-tickets.md --offline`（R5 依赖网络令牌，离线跳过）。　〔**已执行**：七票状态行全部回填（其中 T5/T6/T7 实施期漏建状态行，本次补建）；audit 结果见本节末〕
-- **判据总数变化**：`test:utils` 16→**42**（glob 扩为 `**/*.test.ts` + 语录条 7 用例 + 文集拆分）；`test:weather` 29→**37**（weather-rules 8 用例）；侧栏天气 smoke check 数 **68 不变**（12 例分类矩阵上移单测，块缩为 7 类呈现守卫）。六套件 pre/post 集合逐套相同，唯一失败为**存量**票 17（`.main-grid` display 期望与 CSS 演进脱节，见 T5 证据）——修判据还是修 CSS 需站长另裁，已按 AGENTS.md 纪律登记不擅自修。
+- **判据总数变化**：`test:utils` 16→**42**（glob 扩为 `**/*.test.ts` + 语录条 7 用例 + 文集拆分）；`test:weather` 29→**37**（weather-rules 8 用例）；侧栏天气 smoke check 数 **68 不变**（12 例分类矩阵上移单测，块缩为 7 类呈现守卫）。六套件 pre/post 集合逐套相同，唯一失败为**存量**票 17（`.main-grid` display 期望与 CSS 演进脱节，见 T5 证据）——**已于 2026-10-07 裁定按方案 A 修判据，见文末后记**。
+
+---
+
+## 后记：存量红「票 17」判据修正（2026-10-07，站长方案 A）
+
+- **裁决**：修判据、不修 CSS。`global.css` 约 4925 行的 ≤768px 规则刻意保留 `display: grid`、只把列定义收成单列（写法理由见该处注释）；基础定义（约 2438 行）恒为 `display: grid`，全仓不存在任何窄屏 `display: block` 规则——旧期望「计算 display 为 block」与 CSS 演进脱节，是判据失真不是样式缺陷。
+- **改动**：`scripts/ui-smoke.mjs` 票 17 判据重写为**行为断言**——窄屏下 `.main-grid` 单列（计算列轨道 = 1）+ `#sidebar` 隐藏 + 正文列占满容器。判据守布局行为，不再守某个 display 关键字。
+- [x] 终态绿：`smoke:ui` **144/0**——存量红清零，为本判据登记以来首次全绿　〔新判据实读：`列=1 侧栏隐藏=true 宽 374/374 占满=true`〕
+- [x] 红证据：变异验证——≤768px 规则临时加第二列（`120px`）→ 票 17 翻红（`列=2 占满=false`），681px 档色带几何判据连带翻红（变异波及面被套件照单全收）；还原后 `git diff` 对 `global.css` 为零，绿态按字节继承自变异前那次 144/0
+- [x] 票册自检在本后记加入后复跑仍 GREEN（R1–R6）
+
+## 后记二：门禁清红与和风存档的最终处置（2026-10-07 同轮）
+
+- `src/utils/runtime/quote-band.ts`：选句随机改用 `crypto.getRandomValues`（`pickOtherFrom` 增加可注入的 `nextIndex` 随机源，测试改用确定性序列）——清掉门禁台账里唯一 open 的「弱随机数」高；`test:utils` 42/42。此改**取代** T6 实施期「判为误报、不切 crypto」的临时裁决。
+- `docs/history/weather-qweather-proxy/`（历史存档）：先做行为等价的最小消毒——离线夹具改「固定语句清单 + 首次使用时编译」、`checkRate` 的 `INSERT … ON CONFLICT` 化简为 `MAX()`（`16/16` 合同测试全绿、五场景语义等价）；仍遗留一条 `durableAction` 的 ssrf advisory（污点规则不认可任何消毒写法：正则守卫 / `encodeURIComponent` / `slice` / `String` 皆试过）。**站长复议后裁定整目录删除（2026-10-07）**：依据是活代码零引用（grep 实证）、重启素材已缺前端半边（`weather-service.js` 的代理分支早已摘除）、目录净效应只剩门禁阻塞；删除后该 advisory 随之消解。
+- **留档去处**：完整内容在 git 历史，入库点 `4c8482b`（`git show 4c8482b:docs/history/weather-qweather-proxy/README.md` 可取回搁置理由、已验证边界、配额账本终值与重启五步）；Q1–Q62 决策访谈全文仍在 `docs/history/qweather-settingup-history-sessions.md`；AGENTS.md 的对应条目已改为墓碑句。

@@ -156,18 +156,31 @@ export function writeQuoteTempo(
 }
 
 /**
+ * 均匀随机下标：用平台 CSPRNG（浏览器 Secure Context 均有 crypto.getRandomValues）。
+ * 选句是展示随机、安全性无关紧要，但内置安全扫描把 Math.random 一律标为「弱随机数」，
+ * 用 getRandomValues 零成本消掉这条误报；上限取模的偏置对 42 条语料可忽略。
+ */
+export function randomIndex(upperBound: number): number {
+	const buffer = new Uint32Array(1);
+	crypto.getRandomValues(buffer);
+	return buffer[0] % upperBound;
+}
+
+/**
  * 换句选取的纯函数核：不得连抽到同一句——先剔掉当前句再随机，而不是"抽到重抽"，
  * 后者的循环在语料出现重复文本时会转不出去。剔除后为空（语料只有当前句）时
  * 回退整池，保证总有值；空池返回 undefined。
+ * `nextIndex` 可注入（测试用确定性序列；生产走 randomIndex）。
  */
 export function pickOtherFrom(
 	pool: string[][],
 	current: string,
+	nextIndex: (upperBound: number) => number = randomIndex,
 ): string[] | undefined {
 	if (pool.length === 0) return undefined;
 	const candidates = pool.filter((row) => row[0] !== current);
 	const list = candidates.length > 0 ? candidates : pool;
-	return list[Math.floor(Math.random() * list.length)];
+	return list[nextIndex(list.length)];
 }
 
 /** 语录条 init：自足幂等（dataset 守卫防重入），import 无副作用 */
