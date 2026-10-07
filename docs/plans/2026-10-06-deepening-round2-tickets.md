@@ -44,7 +44,7 @@
 
 **Blocked by**: 无（可立即开始）
 
-> 状态：进行中 @2026-10-06
+> 状态：已验收（8aa9754）
 
 **Delivers**：发新章零页面改动成为常态——目录页、分页、侧栏目录的文集数据全部来自一个 module；「调用方备料被无视」的 interface 谎言与「篇」缺省散布消除。
 
@@ -66,7 +66,7 @@
 
 **Blocked by**: T1
 
-> 状态：进行中 @2026-10-07
+> 状态：已验收（8aa9754）
 
 **Delivers**：相邻导航单遍排序；「非成员时间线跳过文集」「组内边界 null」「0 基文案」等 ADR 0007 语义拥有单测锁。
 
@@ -88,7 +88,7 @@
 
 **Blocked by**: 无（可立即开始；执行序仍按 T1→T7）
 
-> 状态：进行中 @2026-10-07
+> 状态：已验收（737565e）
 
 **Delivers**：终端天气行与侧栏天气胶囊成为同一条规则的两个消费者（两个 adapter 证明 seam 是真的）；45 码单测兼任分歧探测器。本票**纯增量**，不改动侧栏一行。
 
@@ -108,7 +108,7 @@
 
 **Blocked by**: T3
 
-> 状态：进行中 @2026-10-07
+> 状态：已验收（737565e）
 
 **Delivers**：侧栏删两份手写规则；12 个图标用例的回归反馈从「每例数秒开真实页面」变成毫秒级单测；冒烟只留几何 / ARIA / 状态机 / 壁纸判据。
 
@@ -130,6 +130,8 @@
 
 **Blocked by**: 无（可立即开始；执行序仍按 T1→T7）
 
+> 状态：已验收（981ed4a）
+
 **Delivers**：swup 三轨生命周期收成一张表；后续 19 块迁移有了形状模板。本票迁 **0 块**，纯协议收敛，行为等价由六套件锁。
 
 - [x] `src/utils/runtime/` 目录建立；装配表 24 行、行序 = 现 `pagefindReady` 调用序；`pagefindReady` 与 `initSwupHooks` 从表驱动　〔**实施期更正**：目录实体随 T6 首个模块落地（git 不追踪空目录），T5 的表落在 theme-script.ts 内；**表形状修订**：单 bool 布尔表达不了两轨顺序——after-swap 重跑序（fancybox 3、lqip 4）与表序（lqip 8、fancybox 19）本就不同，故行形状为 `{ init, swap? }`，swap 号显式承载重跑序，两轨各自逐项保序〕
@@ -145,6 +147,8 @@
 > Issue: #94
 
 **Blocked by**: T5
+
+> 状态：已验收（981ed4a）
 
 **Delivers**：语录条有名字、可单测；tracer 形状首次走通——改语录条只开一个文件。
 
@@ -162,6 +166,8 @@
 
 **Blocked by**: T5、T6（同文件装配区，串行退回）
 
+> 状态：已验收（981ed4a）
+
 **Delivers**：液态玻璃有名字、样式指纹零差异；tracer 两块验证完形状定稿，后续 19 块照此复制不再重新设计。
 
 - [x] 液态玻璃块迁入 `runtime/liquid-glass.ts`（同 T6 守卫约定：自足幂等、import 无副作用）；Layout 的 SVG defs 与 z-index 修补不动　〔theme-script 1815→1321 行；SDF/贴图/滤镜安装/measureHidden/initLiquidGlass 整体迁出；Layout 零 diff〕
@@ -176,11 +182,16 @@
 
 ## 收口说明（2026-10-07）
 
-- **提交状态**：Mimosa 提交门禁拦下全部 commit——存量 high 三条在 `docs/history/weather-qweather-proxy/`（历史存档，非本轮引入）；T6 新文件另有一条「Math.random 弱随机」非阻断提示，已裁决为误报（见 T6 证据，如站长不同意可改 `crypto.getRandomValues`，行为无差）。**七票代码与验证全部完成**，落地按既有协议由站长终端执行。
-- **推荐提交序**（T1/T2 同文件、T5–T7 同文件，按篇合并成组，每组独立可构建）：
+- **提交状态**：四组提交已全部落地（见下 sha），工作树干净；门禁本轮**放行**（先前记录的存量 high 三条在 `docs/history/weather-qweather-proxy/`，属历史存档目录，本轮四组文件集不触及其门禁规则）。T6 新文件另有「Math.random 弱随机」非阻断提示，已裁决为误报（见 T6 证据，如站长不同意可改 `crypto.getRandomValues`，行为无差）。**尚未 push。**
+- **已落地提交**（`f141d08` 之上）：
+    1. `9fe68fc` `docs(arch): 落地结构加深第二轮 spec（#88）、七票票册（#89–#95）与组内序列词条` — `docs/plans/2026-10-06-deepening-round2-spec.md`、`docs/plans/2026-10-06-deepening-round2-tickets.md`、`GLOSSARY.md`
+    2. `8aa9754` `refactor(series): 文集取数收进 series module，相邻单遍重写（T1+T2，#89 #90）` — `src/utils/series.ts`、`src/utils/series.test.ts`、`src/utils/content-utils.ts`、`src/utils/content-utils.test.ts`、`src/pages/series/index.astro`、`src/pages/series/[slug].astro`、`src/pages/series/[slug]/page/[page].astro`、`src/components/widget/WidgetSeries.astro`、`src/components/layout/PostCard.astro`、`src/pages/posts/[...slug].astro`
+    3. `737565e` `refactor(weather): 天气共享规则落 service，侧栏改纯 adapter（T3+T4，#91 #92）` — `public/weather/weather-service.js`、`public/weather/sidebar-widget.js`、`scripts/weather-rules.test.mjs`、`scripts/sidebar-weather-smoke.mjs`
+    4. `981ed4a` `refactor(runtime): swup 装配表单源，语录条/液态玻璃迁 runtime（T5+T6+T7，#93–#95）` — `src/utils/theme-script.ts`、`src/utils/runtime/`（quote-band.ts + 测试 + liquid-glass.ts）、`package.json`、`AGENTS.md`
+- **原提交清单**（存档用，实际已按上列 sha 落地）：
     1. `docs(arch): 落地结构加深第二轮 spec（#88）、七票票册（#89–#95）与组内序列词条` — `docs/plans/2026-10-06-deepening-round2-spec.md`、`docs/plans/2026-10-06-deepening-round2-tickets.md`、`GLOSSARY.md`
     2. `refactor(series): 文集取数收进 series module，相邻单遍重写（T1+T2，#89 #90）` — `src/utils/series.ts`、`src/utils/series.test.ts`、`src/utils/content-utils.ts`、`src/utils/content-utils.test.ts`、`src/pages/series/index.astro`、`src/pages/series/[slug].astro`、`src/pages/series/[slug]/page/[page].astro`、`src/components/widget/WidgetSeries.astro`、`src/components/layout/PostCard.astro`、`src/pages/posts/[...slug].astro`
     3. `refactor(weather): 天气共享规则落 service，侧栏改纯 adapter（T3+T4，#91 #92）` — `public/weather/weather-service.js`、`public/weather/sidebar-widget.js`、`scripts/weather-rules.test.mjs`、`scripts/sidebar-weather-smoke.mjs`
     4. `refactor(runtime): swup 装配表单源，语录条/液态玻璃迁 runtime（T5+T6+T7，#93–#95）` — `src/utils/theme-script.ts`、`src/utils/runtime/`（quote-band.ts + 测试 + liquid-glass.ts）、`package.json`、`AGENTS.md`
-    5. 收口提交：把各票 `> 状态：进行中` 改为 `已验收（对应组 commit sha）`，跑 `pnpm audit:ledger docs/plans/2026-10-06-deepening-round2-tickets.md --offline`（R5 依赖网络令牌，离线跳过）。
+    5. 收口提交：把各票 `> 状态：进行中` 改为 `已验收（对应组 commit sha）`，跑 `pnpm audit:ledger docs/plans/2026-10-06-deepening-round2-tickets.md --offline`（R5 依赖网络令牌，离线跳过）。　〔**已执行**：七票状态行全部回填（其中 T5/T6/T7 实施期漏建状态行，本次补建）；audit 结果见本节末〕
 - **判据总数变化**：`test:utils` 16→**42**（glob 扩为 `**/*.test.ts` + 语录条 7 用例 + 文集拆分）；`test:weather` 29→**37**（weather-rules 8 用例）；侧栏天气 smoke check 数 **68 不变**（12 例分类矩阵上移单测，块缩为 7 类呈现守卫）。六套件 pre/post 集合逐套相同，唯一失败为**存量**票 17（`.main-grid` display 期望与 CSS 演进脱节，见 T5 证据）——修判据还是修 CSS 需站长另裁，已按 AGENTS.md 纪律登记不擅自修。
