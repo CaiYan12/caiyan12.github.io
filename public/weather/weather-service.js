@@ -109,7 +109,10 @@
 		return error;
 	}
 
-	function roundedCoordinates(coords) {
+	// 坐标验证 + 0.1° 粗化的共享契约：非法返回 null（null = 无法粗化）。
+	// 终端侧在 fetch 流程里把它翻译成 serviceError（请求参数非法属异常路径，语义不变），
+	// 侧栏天气胶囊直接消费数字对（显示与缓存键）——同一份验证规则，不再各写一份。
+	function roundCoordinates(coords) {
 		const { latitude, longitude } = coords ?? {};
 		if (
 			typeof latitude !== "number" ||
@@ -121,12 +124,20 @@
 			longitude < -180 ||
 			longitude > 180
 		) {
-			throw serviceError("invalid_location", []);
+			return null;
 		}
-
 		return {
-			lat: (Math.round(latitude * 10) / 10).toFixed(1),
-			lon: (Math.round(longitude * 10) / 10).toFixed(1),
+			latitude: Math.round(latitude * 10) / 10,
+			longitude: Math.round(longitude * 10) / 10,
+		};
+	}
+
+	function roundedCoordinates(coords) {
+		const rounded = roundCoordinates(coords);
+		if (!rounded) throw serviceError("invalid_location", []);
+		return {
+			lat: rounded.latitude.toFixed(1),
+			lon: rounded.longitude.toFixed(1),
 		};
 	}
 
@@ -226,17 +237,80 @@
 		return areaName || null;
 	}
 
+	// —— 侧栏天气胶囊的文案与格式规则（service 是共享规则的正典居所，侧栏自 T4 起改从 Capsule 消费；
+	//    终端天气行有自己的状态栏文案，不经这些函数） ——
+
+	function locationErrorMessage(error) {
+		if (error?.code === 1) {
+			return "定位权限被拒绝，请在浏览器设置中允许位置访问后重试";
+		}
+		if (error?.code === 2) {
+			return "设备暂时无法获取位置，请检查定位服务后重试";
+		}
+		if (error?.code === 3) return "定位超时，请重试";
+		return "暂时无法获取位置，请重试";
+	}
+
+	function weatherErrorMessage(error, hasStaleWeather) {
+		if (hasStaleWeather) {
+			// 「旧数据」标记与下方重试按钮已在同一张卡上说明其余信息，
+			// 这句再长就会在 233px 侧栏里被省略号截掉。
+			return "天气更新失败";
+		}
+		return error?.reason === "timeout"
+			? "天气请求超时，请重试"
+			: "天气暂不可用，请重试";
+	}
+
+	function formatTime(timestamp) {
+		const date = new Date(timestamp);
+		if (!Number.isFinite(date.getTime())) return "";
+		// 页脚已是「数据：wttr.in 14:36」的组件状态栏语序，时间不再自带「获取于」前缀。
+		return `${String(date.getHours()).padStart(2, "0")}:${String(
+			date.getMinutes(),
+		).padStart(2, "0")}`;
+	}
+
+	function sourceLabel(weather) {
+		if (weather.source === "wttr.in") return "wttr.in";
+		return String(weather.source ?? "天气来源");
+	}
+
+	// 「天气文字+码 → kind」的共享规则：终端天气行与侧栏天气胶囊是它的两个消费者
+	// （终端经下面的 KIND_ICONS 映射出 emoji，侧栏经 data-weather-kind 驱动图标与壁纸层）。
+	// 优先级逐段锁死「雷→雪→雾→雨→晴→阴→云」：wttr 的 2xx 段同时含雷暴(200)、雪(227/230)、
+	// 雾(248/260) 与冻毛毛雨(263–284)，且「小雨夹雪(317)」要求雪排在雨前——任何按码段判定
+	// 都会把其中三类归错。只按中文天气文字归类，code 仅保留 113 的「晴」语义。
+	// 无任何匹配（且非 113）返回 null：终端回退 🌡️、侧栏回退 cloud，分叉由各自 adapter 吸收。
+	function weatherKind(condition, code) {
+		const text = String(condition ?? "");
+		if (/雷/u.test(text)) return "storm";
+		if (/雪|雹|冰/u.test(text)) return "snow";
+		if (/雾|霾/u.test(text)) return "fog";
+		if (/雨/u.test(text)) return "rain";
+		if (/晴/u.test(text) || String(code ?? "") === "113") return "clear";
+		if (/阴/u.test(text)) return "overcast";
+		if (/云/u.test(text)) return "cloud";
+		return null;
+	}
+
+	// 终端天气行的 emoji：码表优先（与 normalizeWttr 既有输出逐项一致），表外走共享 kind 映射。
+	// 「阴」在 kind 里单列（侧栏壁纸要区分阴天与多云），终端侧两者同为 ☁️——由这张映射吸收。
+	const KIND_ICONS = {
+		storm: "⛈️",
+		snow: "🌨️",
+		fog: "🌫️",
+		rain: "🌧️",
+		clear: "☀️",
+		overcast: "☁️",
+		cloud: "☁️",
+	};
+
 	function conditionIcon(condition, code) {
 		if (weatherIcons[Number(code)]) {
 			return weatherIcons[Number(code)];
 		}
-		if (/雷/u.test(condition)) return "⛈️";
-		if (/雪|雹|冰/u.test(condition)) return "🌨️";
-		if (/雾|霾/u.test(condition)) return "🌫️";
-		if (/雨/u.test(condition)) return "🌧️";
-		if (/晴/u.test(condition)) return "☀️";
-		if (/云|阴/u.test(condition)) return "☁️";
-		return "🌡️";
+		return KIND_ICONS[weatherKind(condition, code)] ?? "🌡️";
 	}
 
 	function firstValue(value) {
@@ -390,5 +464,11 @@
 		createWeatherService,
 		weatherService,
 		resolveCityName,
+		weatherKind,
+		roundCoordinates,
+		locationErrorMessage,
+		weatherErrorMessage,
+		formatTime,
+		sourceLabel,
 	});
 })();

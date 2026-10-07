@@ -622,25 +622,18 @@ try {
 		} while (false);
 	}
 
-	// 图标归类判据：wttr 的 2xx 段同时含雷暴(200)、雪(227/230)、雾(248/260) 与
-	// 冻毛毛雨(263–284)，任何按码段判定都会把其中三类归错，故逐码锁住可见图层。
-	// 最后一例不走码表（码 999 表外），用 lang_zh 造一个同时含「雨」与「雾」的描述，
-	// 钉住 AGENTS.md 记的优先级「雾/霾 在 雨 之前」——终端侧那份已由
-	// scripts/weather-service.test.mjs 的同名用例锁住，两边缺任何一边都能悄悄漂回去。
+	// 文字→kind 的分类矩阵已上移到 scripts/weather-rules.test.mjs（12 例含雪先于雨、
+	// 雾先于雨的优先级钉子）。冒烟只守 adapter 呈现层：7 类各一页，图标文件与
+	// 壁纸层必须按共享 kind 命中——分类错归的回归由单测当场红，不再逐例开真实页面。
 	{
 		const kindCases = [
 			{ code: "200", kind: "storm" },
 			{ code: "227", kind: "snow" },
 			{ code: "248", kind: "fog" },
 			{ code: "263", kind: "rain" },
-			{ code: "149", kind: "fog" },
-			{ code: "350", kind: "snow" },
-			{ code: "179", kind: "snow" },
-			{ code: "317", kind: "snow" },
 			{ code: "113", kind: "clear" },
 			{ code: "122", kind: "overcast" },
 			{ code: "119", kind: "cloud" },
-			{ code: "999", lang_zh: "雨雾", kind: "fog" },
 		];
 		const seen = [];
 		for (const kindCase of kindCases) {
@@ -696,7 +689,7 @@ try {
 			await page.close();
 		}
 		check(
-			"天气图标按中文天气文字归类，2xx 段不得整段判为雷暴",
+			"侧栏图标按共享 kind 呈现（7 类各一页；文字→kind 分类已由 weather-rules 单测锁定）",
 			seen.length === kindCases.length &&
 				seen.every(
 					(row, i) =>
@@ -706,7 +699,7 @@ try {
 				),
 			JSON.stringify(seen),
 		);
-		// 12 例归类里 7 个 kind 全部出现过，所以这一条同时覆盖 7 张壁纸
+		// 7 类各出现一次，所以这一条覆盖全部 7 张壁纸
 		check(
 			"7 类天气各自命中对应壁纸，且带可挪动的取景锚点与白纱层",
 			seen.length === kindCases.length &&

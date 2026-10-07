@@ -3,6 +3,18 @@
 		return;
 	}
 
+	// 共享规则自 service 经 Capsule 消费：文字→kind 分类、坐标验证与粗化、
+	// 定位/天气文案与时间格式的正典都在 weather-service.js，
+	// 由 scripts/weather-rules.test.mjs 逐条锁定；本文件只做 adapter 呈现。
+	const {
+		weatherKind,
+		roundCoordinates,
+		locationErrorMessage,
+		weatherErrorMessage,
+		formatTime,
+		sourceLabel,
+	} = window.WeatherCapsule;
+
 	const state = {
 		status: "idle",
 		coordinates: null,
@@ -11,67 +23,6 @@
 		locationError: "",
 		weatherError: "",
 	};
-
-	function roundedCoordinates(coords) {
-		const { latitude, longitude } = coords ?? {};
-		if (
-			typeof latitude !== "number" ||
-			!Number.isFinite(latitude) ||
-			latitude < -90 ||
-			latitude > 90 ||
-			typeof longitude !== "number" ||
-			!Number.isFinite(longitude) ||
-			longitude < -180 ||
-			longitude > 180
-		) {
-			return null;
-		}
-		return {
-			latitude: Math.round(latitude * 10) / 10,
-			longitude: Math.round(longitude * 10) / 10,
-		};
-	}
-
-	function locationErrorMessage(error) {
-		if (error?.code === 1) {
-			return "定位权限被拒绝，请在浏览器设置中允许位置访问后重试";
-		}
-		if (error?.code === 2) {
-			return "设备暂时无法获取位置，请检查定位服务后重试";
-		}
-		if (error?.code === 3) return "定位超时，请重试";
-		return "暂时无法获取位置，请重试";
-	}
-
-	function weatherErrorMessage(error, hasStaleWeather) {
-		if (hasStaleWeather) {
-			// 「旧数据」标记与下方重试按钮已在同一张卡上说明其余信息，
-			// 这句再长就会在 233px 侧栏里被省略号截掉。
-			return "天气更新失败";
-		}
-		return error?.reason === "timeout"
-			? "天气请求超时，请重试"
-			: "天气暂不可用，请重试";
-	}
-
-	function iconKind(weather) {
-		const condition = String(
-			weather.condition ?? weather.description ?? "",
-		);
-		const code = String(weather.conditionCode ?? "").toLowerCase();
-		// 只按中文天气文字归类：wttr 的 2xx 段同时含雷暴(200)、雪(227/230)、
-		// 雾(248/260) 与冻毛毛雨(263–284)，任何按码段判定都会把其中三类归错。
-		if (/雷/u.test(condition)) return "storm";
-		if (/雪|雹|冰/u.test(condition)) return "snow";
-		if (/雾|霾/u.test(condition)) return "fog";
-		if (/雨/u.test(condition)) return "rain";
-		if (/晴/u.test(condition) || code === "113") {
-			return "clear";
-		}
-		// 阴（Overcast）不能沿用带日头的「多云」图
-		if (/阴/u.test(condition)) return "overcast";
-		return "cloud";
-	}
 
 	function setExternalLink(anchor, rawUrl, label) {
 		anchor.textContent = label;
@@ -85,20 +36,6 @@
 		} catch {
 			anchor.removeAttribute("href");
 		}
-	}
-
-	function formatTime(timestamp) {
-		const date = new Date(timestamp);
-		if (!Number.isFinite(date.getTime())) return "";
-		// 页脚已是「数据：wttr.in 14:36」的组件状态栏语序，时间不再自带「获取于」前缀。
-		return `${String(date.getHours()).padStart(2, "0")}:${String(
-			date.getMinutes(),
-		).padStart(2, "0")}`;
-	}
-
-	function sourceLabel(weather) {
-		if (weather.source === "wttr.in") return "wttr.in";
-		return String(weather.source ?? "天气来源");
 	}
 
 	// 参数行小图标：几何逐字保留站主给的参考图，只留 d —— 不带 iconfont 的
@@ -230,7 +167,13 @@
 			state.status === "weather-error" || state.weather.stale === true;
 		card.querySelector("[data-weather-stale]").hidden = !stale;
 		const icon = card.querySelector("[data-weather-icon]");
-		const iconKindName = iconKind(state.weather);
+		// 文字→kind 的分类已单源到 service（weatherKind），无匹配回退 cloud
+		// 与旧 iconKind 的 else 分支一致；本文件只负责把 kind 呈现成图标与壁纸。
+		const iconKindName =
+			weatherKind(
+				state.weather.condition ?? state.weather.description,
+				state.weather.conditionCode,
+			) ?? "cloud";
 		icon.dataset.weatherKind = iconKindName;
 		icon.src = `/weather/icons/${iconKindName}.svg`;
 		// 同一份 kind 镜像到卡片根：壁纸层挂在 body 上，需要按天气换图
@@ -290,7 +233,7 @@
 		try {
 			navigator.geolocation.getCurrentPosition(
 				(position) => {
-					state.coordinates = roundedCoordinates(position?.coords);
+					state.coordinates = roundCoordinates(position?.coords);
 					if (!state.coordinates) {
 						state.status = "location-error";
 						state.locationError = "暂时无法获取位置，请重试";
