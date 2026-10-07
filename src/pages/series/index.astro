@@ -8,27 +8,17 @@
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import ListingHeader from "../../components/layout/ListingHeader.astro";
 import { getCollection } from "astro:content";
-import {
-	getSeriesMembers,
-	isPublicPost,
-	resolveSeriesCover,
-} from "../../utils/content-utils";
-import { seriesList } from "../../data/series";
+import { listSeries } from "../../utils/series";
 
-const allPosts = await getCollection("posts");
-const publicPosts = allPosts.filter(isPublicPost);
-const cards = seriesList.map((series) => {
-	const members = getSeriesMembers(publicPosts, series.slug);
-	return {
-		name: series.name,
-		description: series.description,
-		unit: series.unit ?? "篇",
-		count: members.length,
-		url: `/series/${series.slug}/`,
-		// 封面：显式 cover 或首位带 image 的成员头图
-		cover: resolveSeriesCover(series, members),
-	};
-});
+// 文集取数全部来自 series module：顺序 = 登记表顺序，成员/封面/量词缺省由 module 单源给出
+const cards = listSeries(await getCollection("posts")).map((view) => ({
+	name: view.series.name,
+	description: view.series.description,
+	unit: view.series.unit,
+	count: view.count,
+	url: `/series/${view.series.slug}/`,
+	cover: view.cover,
+}));
 ---
 
 <MainGridLayout

@@ -4,14 +4,13 @@ import Giscus from "../../components/comment/Giscus.astro";
 import dayjs from "dayjs";
 import { getCollection, render } from "astro:content";
 import {
-	buildSeriesNote,
 	getCategoryList,
 	getCover,
 	getHotPosts,
-	getSeriesNeighbors,
 	getTagList,
 	isPublicPost,
 } from "../../utils/content-utils";
+import { buildSeriesNote, getSeriesNeighbors } from "../../utils/series";
 import { siteConfig } from "../../config";
 import { getEffectiveComments } from "../../utils/site-stats";
 import QRCode from "qrcode";

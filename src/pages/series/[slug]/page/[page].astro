@@ -3,25 +3,19 @@ import MainGridLayout from "../../../../layouts/MainGridLayout.astro";
 import SeriesListing from "../../../../components/layout/SeriesListing.astro";
 import { getCollection } from "astro:content";
 import type { GetStaticPaths } from "astro";
-import {
-	getSeriesMembers,
-	isPublicPost,
-	resolveSeriesCover,
-} from "../../../../utils/content-utils";
+import { getSeriesView } from "../../../../utils/series";
 import { seriesList } from "../../../../data/series";
 import { getPaginationUrl, getPageMeta } from "../../../../utils/pagination";
 import { siteConfig } from "../../../../config";
 
 export const getStaticPaths = (async ({ paginate }) => {
 	const allPosts = await getCollection("posts");
-	const publicPosts = allPosts.filter(isPublicPost);
-	return seriesList.flatMap((series) => {
-		const { slug } = series;
-		// series 本身来自 seriesList，元数据直接取元素（unit 的缺省与 resolveSeriesMeta 一致）
-		const members = getSeriesMembers(publicPosts, slug);
-		return paginate(members, {
-			params: { slug },
-			props: { series, cover: resolveSeriesCover(series, members) },
+	return seriesList.flatMap((registered) => {
+		// 元数据/成员/封面都来自 view：series.unit 已补缺省，模板不再写 `?? "篇"`
+		const view = getSeriesView(allPosts, registered.slug);
+		return paginate(view.members, {
+			params: { slug: registered.slug },
+			props: { series: view.series, cover: view.cover },
 			pageSize: siteConfig.postsPerPage,
 		});
 	});
@@ -49,7 +43,7 @@ const pageMeta = getPageMeta(
 >
 	<SeriesListing
 		name={series.name}
-		unit={series.unit ?? "篇"}
+		unit={series.unit}
 		totalCount={page.total}
 		posts={page.data}
 		current={page.currentPage}

@@ -2,11 +2,7 @@
 import MainGridLayout from "../../layouts/MainGridLayout.astro";
 import SeriesListing from "../../components/layout/SeriesListing.astro";
 import { getCollection } from "astro:content";
-import {
-	getSeriesMembers,
-	isPublicPost,
-	resolveSeriesCover,
-} from "../../utils/content-utils";
+import { getSeriesView } from "../../utils/series";
 import {
 	checkSeriesIntegrity,
 	checkSeriesCovers,
@@ -35,13 +31,16 @@ export async function getStaticPaths() {
 		);
 	}
 
-	const publicPosts = allPosts.filter(isPublicPost);
-	return seriesList.map((series) => {
-		// series 本身来自 seriesList，元数据直接取元素（unit 的缺省与 resolveSeriesMeta 一致）
-		const posts = getSeriesMembers(publicPosts, series.slug);
+	return seriesList.map((registered) => {
+		// 元数据/成员/封面都来自 view：series.unit 已补缺省，模板不再写 `?? "篇"`
+		const view = getSeriesView(allPosts, registered.slug);
 		return {
-			params: { slug: series.slug },
-			props: { series, posts, cover: resolveSeriesCover(series, posts) },
+			params: { slug: registered.slug },
+			props: {
+				series: view.series,
+				posts: view.members,
+				cover: view.cover,
+			},
 		};
 	});
 }
@@ -61,7 +60,7 @@ const pagePosts = posts.slice(0, siteConfig.postsPerPage);
 >
 	<SeriesListing
 		name={series.name}
-		unit={series.unit ?? "篇"}
+		unit={series.unit}
 		totalCount={posts.length}
 		posts={pagePosts}
 		current={1}
