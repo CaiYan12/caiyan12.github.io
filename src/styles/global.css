@@ -3138,6 +3138,66 @@ html[data-liquid-glass="on"] #nav li ul {
   margin: 0 0 15px;
 }
 
+/* 正文段落首行缩进 2 字符（随字号滑块缩放，故用 em 不用 px）。
+   挂点 `.post-body` 只加在两处真的渲染 markdown 正文的容器上：文章页与 /about/ 信纸页。
+   列表页（/tag/xxx/、/category/xxx/、/series/xxx/）的 `.post-context` 不带它，
+   统计行"共 N 篇文章"因此不被缩进。
+   原版主题对正文段落零 text-indent —— 本规则是 ADR 0004 意义上的已转正偏离，
+   审计时勿按"漂移"修回原版。 */
+.post-body p {
+  text-indent: 2em;
+}
+
+/* 例外一：图片段（<p><img …></p>）整段就是一张图。`.post-context img` 是行内图，
+   缩进会把图右移 2em，满宽图因此溢出容器。 */
+.post-body p:has(> img:only-child) {
+  text-indent: 0;
+}
+
+/* 例外二：提示块 / 警示块的首行标题不是正文段落，缩进会把它顶歪。 */
+.post-body .admonition-title,
+.post-body .markdown-alert-title {
+  text-indent: 0;
+}
+
+/* 例外三：引用块盒子已有左边框与内距，段内再缩 2em 在窄盒里显得憋屈。 */
+.post-body blockquote p {
+  text-indent: 0;
+}
+
+/* 例外四：图形内标签。mermaid 把节点文字渲染成 SVG foreignObject 里的 <p>，
+   缩进会把标签顶出节点框；实测全站三百余个这类 <p>（计数随 mermaid 渲染完成度浮动），
+   是最大的一处误伤面。 */
+.post-body svg p {
+  text-indent: 0;
+}
+
+/* 例外五：表格单元格段落。单元格自带内距，窄格里再缩 2em 只吃掉行宽。 */
+.post-body td p,
+.post-body th p {
+  text-indent: 0;
+}
+
+/* 例外六：列表项段落。条目已有编号/符号与 padding-left 提供缩进，段内不再缩。 */
+.post-body li p {
+  text-indent: 0;
+}
+
+/* 例外七：模板与元件生成的非正文段落——"最后更新于…"、文集提示行。
+   文集提示行在文章头尾各有一处，尾处落在正文容器内，不排除会出现"同一行头不缩尾缩"。 */
+.post-body .post-last-updated,
+.post-body .post-series {
+  text-indent: 0;
+}
+
+/* 例外八：/about/ 信纸页的居中装饰标题——98px 的"关于我"大标题与副标题都由
+   `.paper-hero-heading` 居中，缩进会把整行顶歪。（同一页的右对齐日期落款在
+   markdown-extended.css 里那条 `text-align: right` 规则内就地关掉。） */
+.post-body .paper-hero-title,
+.post-body .paper-hero-sub {
+  text-indent: 0;
+}
+
 .post-context ul:not([class]) {
   margin: 0.8em 0;
   padding-left: 1.4em;

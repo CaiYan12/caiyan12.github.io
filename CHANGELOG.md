@@ -1,5 +1,15 @@
 # 更新日志
 
+## 2026-10-10：文章页与 /about/ 正文段落首行缩进
+
+- 正文段落加首行缩进 `2em`（= 2 字符），规则 `global.css` 的 `.post-body p`，紧邻既有那条 `.post-context p { margin }`。用 `em` 不用 `px`：`.post-context` 的字号由字号滑块写内联 px（12–24），`em` 才能跟着缩放；基准字号实测 13px，故文章页默认缩进 26px。
+- 挂点 `.post-body` 只加在两处真的渲染 markdown 正文的容器上——文章页（`[...slug].astro`）与 `/about/` 信纸页（`about.astro`）。`/tag/xxx/`、`/category/xxx/`、`/series/xxx/` 的统计行共用 `.post-context` 但**不带**此挂点，因此写成 `.post-context p` 会连它们一起缩进——这条边界由反向判据守着。
+- 原版主题对正文段落零 `text-indent`，本规则是 ADR 0004 意义上的**已转正偏离**（中文长文段段首行缩进是阅读惯例，原版缺失属主题年代局限），审计时勿按"漂移"修回原版。
+- **八条例外 + 两处就地归零**（均为实测得来，非预设）：图片段 `<p><img …></p>`（`.post-context img` 是行内图，缩进会把图右移 2em 并溢出容器）、`.admonition-title` / `.markdown-alert-title`、`blockquote` 内段落（含嵌套）、**mermaid 图内标签**（节点文字是 SVG `foreignObject` 里的 `<p>`，全站三百余个，是最大的一处误伤面）、表格单元格段落 `td/th`、列表项段落 `li`（条目已有编号/符号与 `padding-left`）、模板与元件段落 `.post-last-updated` / `.post-series`（文集提示行在文章头尾各一处，只有尾处落在正文容器内）、`/about/` 的居中装饰标题 `.paper-hero-title` / `.paper-hero-sub`。另有两处**不另起规则、直接写进既有那条里**：右对齐的日期落款写进 `markdown-extended.css` 的 `.letter-paper-body p:last-child`（那条本来就是 `text-align: right`；右对齐单行再吃 `text-indent` 会被顶离右缘），逐字 span 写进 `.paper-hand-char`（见下条）。
+- **踩坑：`text-indent` 是可继承属性，会打进 `display: inline-block` 子元素并各自生效。** 稿纸的逐字符微随机把每个字包成 `inline-block`（= 独立块容器），段落那条缩进因此继承进每一个字、每个字各自缩进一次——实测稿纸正文各段高度翻到三倍（64→192 / 128→352 / 192→544px）、面板高度 2691→4771px，而字符矩形数与网格相位变量一个没变，很容易被误读成"CDN 字体换了"。判定手段：**同一浏览器会话内摘/挂挂点类做 A/B**，可完全排除字体时序噪声（跨会话重开浏览器时会误判）。解法是给 `.paper-hand-char` 显式 `text-indent: 0`，缩进只留在段落首行。**复核口径必须是"段落内所有 `inline-block` 后代的 `text-indent` 都为 0"这条扫描**，不是看段落自身的缩进值——段落值全程都是对的。
+- 验证（一次性实机量测，未加常驻判据，共 34 项全绿）：`/about/` 15 个段落分类完备（2 个装饰标题 + 1 个右对齐落款无缩进；便签 2 段 38px、稿纸正文 9 段 36px、署名行 26px），稿纸网格相位（`--lp-shift` / `--lp-cycle` / `--lp-baseline`）与首段行盒 offsetY 在挂/摘挂点两态下逐值相同、面板高度零增量；文章页按段落形态穷举扫描 29 篇——普通正文 2392 / 章末小结正文 25 / 提示块正文 18 全 2em，图片段 18、图形内标签 318、表格单元格 252、列表项 33、引用块 104、提示块标题 15、模板段落 7 全 0；字号滑块 24px→48px、12px→24px；`/about/` 在 1440/1100/860/680/390 五档零横向溢出；`/tag/习题/`、`/category/技术/`、`/series/matt-pocock/` 三处反向判据通过。`pnpm check` 0 error、`prettier --check ./src ./docs` 干净。
+- `pnpm smoke:ui` 144 项中「票 20：卡片标题悬停零布局位移」失败（合计位移 30px，来自 `.post-list .post-header h2 a` 的 `left` 变化）。**与本改动无关**：把本次源文件 stash 掉、`pnpm exec astro build` 重建后同一条判据以同一读数复现（首页无 `.post-body`，新规则结构上匹配不到它）。
+
 ## 2026-09-19：相册内容改版与灯箱交互修正
 
 - 相册改版为文件夹驱动的三册结构（日常随手拍 32 / 背景收藏 11 / 轻松一刻 47，共 90 张）：一张 11.9MB 的 13624×2936 全景截图压到 3000×646 / 324KB，一张 425×10000 的超长图移出站点；补齐两篇文章与全部相册图此前缺失的 LQIP/manifest 条目（相册 LQIP 74 条、变体 53 条，零指向已删文件的残留）。

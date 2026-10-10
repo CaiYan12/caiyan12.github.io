@@ -812,12 +812,20 @@
 .post-context .letter-paper-body .paper-hand-char {
   display: inline-block;
   font-family: var(--font-hand);
+  /* 每个字都是 inline-block，即一个独立的块容器；而 `text-indent` 是**可继承**属性，
+     段落那条首行缩进（global.css 的 `.post-body p`）会继承进每一个字、让每个字各自
+     缩进一次——实测稿纸各段高度翻到三倍（64→192 / 128→352 / 192→544px），
+     面板高度 2691→4771px。缩进只应作用在段落首行，故此处显式归零。 */
+  text-indent: 0;
 }
 
 /* 末段 = 日期落款，信纸式右对齐 */
 .post-context .letter-paper-body p:last-child {
   margin-bottom: 0;
   text-align: right;
+  /* 右对齐段落不能再吃首行缩进（缩进规则见 global.css 的 `.post-body p`）：
+     右对齐单行加上 text-indent 会把整行往左顶 2em，落款贴不到右缘。 */
+  text-indent: 0;
 }
 
 /* 纸张尾行（参考 about.html footer：虚线分隔 + 两端布局） */
