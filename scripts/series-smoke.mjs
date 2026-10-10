@@ -12,15 +12,18 @@
 // 判据总数写死在 EXPECTED_CHECKS：同批固定后不得增减（沿用 #49 的不变量做法）。
 // 改判据必须同时改这个常量，否则脚本以退出码 2 拒绝运行——防止「顺手加一条」
 // 让基线漂走而不被察觉。
-// 当前 36 = 原 32 + 3 条粘性判据（站长 2026-10-06 目视后新增粘性需求：
+// 当前 39 = 原 32 + 3 条粘性判据（站长 2026-10-06 目视后新增粘性需求：
 // 侧栏文集目录滚过自然位置后贴顶、被 #content 底部顶住、回滚归位）
 // + 1 条标题栏入口判据（站长 2026-10-06 目视后把「查看目录」由元件左下角
-// 移入标题栏 actions 槽，原底部入口 series-toc-more 删除，需防回归）。
+// 移入标题栏 actions 槽，原底部入口 series-toc-more 删除，需防回归）
+// + 3 条 = 第四章（20261010081019）并入本书（2026-10-10）：组内相邻判据随成员数
+// 增 1 条（4 → 5）；末章由第三章改为第四章，原挂在第三章的「末章收尾」判据拆成
+// 「第三章改判非末章文案 1 条 + 第四章顶部行 1 条 + 第四章收尾 1 条」，故净 +2。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const EXPECTED_CHECKS = 36;
+const EXPECTED_CHECKS = 39;
 
-// 组成员与序号：与 src/data/series.ts 及六篇文章的 frontmatter 同批核对。
+// 组成员与序号：与 src/data/series.ts 及七篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
 const MEMBERS = {
 	"webapp-vibe-coding": [
@@ -28,6 +31,7 @@ const MEMBERS = {
 		"20261002081331",
 		"20261002093931",
 		"20261002204249",
+		"20261010081019",
 	],
 	"matt-pocock": ["20260919135000", "20261006110122"],
 };
@@ -44,8 +48,10 @@ const NON_MEMBER_PREV = "20260925150221";
 
 // 两个文集目录页当前都不写 cover，封面走「按 seriesOrder 升序取首位带 image 的成员」回退。
 const COVER = {
-	"webapp-vibe-coding": "/images/posts/20261002071103/webapp-vibe-coding-ch0-cover.jpg",
-	"matt-pocock": "/images/posts/20260919135000/matt-pocock-workflow-cover.jpg",
+	"webapp-vibe-coding":
+		"/images/posts/20261002071103/webapp-vibe-coding-ch0-cover.jpg",
+	"matt-pocock":
+		"/images/posts/20260919135000/matt-pocock-workflow-cover.jpg",
 };
 const SERIES_NAME = {
 	"webapp-vibe-coding": "看懂 AI 写的网站",
@@ -144,7 +150,11 @@ check(
 	nmNav.prev === `/posts/${NON_MEMBER_PREV}/`,
 	`prev=${nmNav.prev}`,
 );
-check(`非成员 ${NON_MEMBER}：无 next（它是最新的非成员）`, nmNav.next === null, `next=${nmNav.next}`);
+check(
+	`非成员 ${NON_MEMBER}：无 next（它是最新的非成员）`,
+	nmNav.next === null,
+	`next=${nmNav.next}`,
+);
 check(
 	`非成员 ${NON_MEMBER}：左右按钮都不落在任何文集成员上（跳过整块）`,
 	![nmNav.prev, nmNav.next].some((h) =>
@@ -156,21 +166,16 @@ check(
 // —— 3. 顶部与末尾两行：成员在、末章改收尾、非成员整块不渲染 ——
 await goto(`/posts/20261002071103/`);
 const ch0Notes = await seriesNotes();
+check("第〇章：两行都在", ch0Notes.length === 2, `count=${ch0Notes.length}`);
 check(
-	"第〇章：两行都在",
-	ch0Notes.length === 2,
-	`count=${ch0Notes.length}`,
-);
-check(
-	"第〇章：顶部行 = 第 0 / 4 章 + 目录链接",
-	ch0Notes[0]?.text ===
-		`本文属于《看懂 AI 写的网站》· 第 0 / 4 章 · 目录` &&
+	"第〇章：顶部行 = 第 0 / 5 章 + 目录链接",
+	ch0Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 0 / 5 章 · 目录` &&
 		ch0Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
 	`${ch0Notes[0]?.text} | ${ch0Notes[0]?.links?.join(",")}`,
 );
 check(
-	"第〇章：末尾行 = 第 0 / 4 章（非末章，不收尾）",
-	ch0Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 0 / 4 章` &&
+	"第〇章：末尾行 = 第 0 / 5 章（非末章，不收尾）",
+	ch0Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 0 / 5 章` &&
 		ch0Notes[1]?.links.length === 0,
 	`${ch0Notes[1]?.text} | ${ch0Notes[1]?.links?.join(",")}`,
 );
@@ -178,17 +183,31 @@ check(
 await goto(`/posts/20261002204249/`);
 const ch3Notes = await seriesNotes();
 check(
-	"第三章：顶部行 = 第 3 / 4 章 + 目录链接",
-	ch3Notes[0]?.text ===
-		`本文属于《看懂 AI 写的网站》· 第 3 / 4 章 · 目录` &&
+	"第三章：顶部行 = 第 3 / 5 章 + 目录链接",
+	ch3Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 3 / 5 章 · 目录` &&
 		ch3Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
 	`${ch3Notes[0]?.text}`,
 );
 check(
-	"第三章（末章）：末尾行改收尾 → 《…》已读完 · 看其它文集 → /series/",
-	ch3Notes[1]?.text === `《看懂 AI 写的网站》已读完 · 看其它文集` &&
-		ch3Notes[1]?.links[0] === `/series/`,
+	"第三章（非末章）：末尾行 = 第 3 / 5 章（收尾已移交给第四章）",
+	ch3Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 3 / 5 章` &&
+		ch3Notes[1]?.links.length === 0,
 	`${ch3Notes[1]?.text} | ${ch3Notes[1]?.links?.join(",")}`,
+);
+
+await goto(`/posts/20261010081019/`);
+const ch4Notes = await seriesNotes();
+check(
+	"第四章：顶部行 = 第 4 / 5 章 + 目录链接",
+	ch4Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 4 / 5 章 · 目录` &&
+		ch4Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
+	`${ch4Notes[0]?.text}`,
+);
+check(
+	"第四章（末章）：末尾行改收尾 → 《…》已读完 · 看其它文集 → /series/",
+	ch4Notes[1]?.text === `《看懂 AI 写的网站》已读完 · 看其它文集` &&
+		ch4Notes[1]?.links[0] === `/series/`,
+	`${ch4Notes[1]?.text} | ${ch4Notes[1]?.links?.join(",")}`,
 );
 
 await goto(`/posts/20261006110122/`);
@@ -218,20 +237,22 @@ check(
 await goto(`/posts/20261002204249/`);
 const ch3Sidebar = await sidebarSeries();
 check(
-	"第三章：侧栏有章节目录，4 条成员链接",
-	ch3Sidebar !== null && ch3Sidebar.items === 4,
+	"第三章：侧栏有章节目录，5 条成员链接",
+	ch3Sidebar !== null && ch3Sidebar.items === 5,
 	`items=${ch3Sidebar?.items ?? "无"}`,
 );
 check(
-	"第三章：当前章带 .current 与 aria-current=\"page\"",
+	'第三章：当前章带 .current 与 aria-current="page"',
 	ch3Sidebar?.currentHref === `/posts/20261002204249/` &&
 		ch3Sidebar?.currentAria === "page",
 	`current=${ch3Sidebar?.currentHref} aria=${ch3Sidebar?.currentAria}`,
 );
 check(
-	"第三章：侧栏目录的链接按 seriesOrder 升序 = 四章顺序",
+	"第三章：侧栏目录的链接按 seriesOrder 升序 = 五章顺序",
 	JSON.stringify(ch3Sidebar?.links) ===
-		JSON.stringify(MEMBERS["webapp-vibe-coding"].map((id) => `/posts/${id}/`)),
+		JSON.stringify(
+			MEMBERS["webapp-vibe-coding"].map((id) => `/posts/${id}/`),
+		),
 	`${ch3Sidebar?.links?.join(",")}`,
 );
 // 标题栏 actions 槽的「查看目录」（站长 2026-10-06 目视后由左下角移入）：
@@ -274,9 +295,7 @@ const sp = stickyPage;
 await sp.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
 const stickyProbe = async () =>
 	sp.evaluate(() => {
-		const widget = document.querySelector(
-			"#sidebar .widget.widget-series",
-		);
+		const widget = document.querySelector("#sidebar .widget.widget-series");
 		const content = document.querySelector("#content");
 		if (!widget || !content) return null;
 		const wr = widget.getBoundingClientRect();
@@ -323,8 +342,7 @@ const pushed = await stickyProbe();
 check(
 	"粘性：滚到页底，widget 底被 content 底顶住（外边距盒底与 content 底重合 ±1）且离开贴顶位",
 	pushed !== null &&
-		Math.abs(pushed.widgetMarginBoxBottom - pushed.contentBottom) <=
-			1 &&
+		Math.abs(pushed.widgetMarginBoxBottom - pushed.contentBottom) <= 1 &&
 		pushed.widgetTop < 10,
 	`scrollY=${pushed?.scrollY} widgetTop=${pushed?.widgetTop} marginBoxBottom=${pushed?.widgetMarginBoxBottom} contentBottom=${pushed?.contentBottom}`,
 );
@@ -352,13 +370,21 @@ const bookOg = await page.evaluate(() =>
 		.querySelector('meta[property="og:image"]')
 		?.getAttribute("content"),
 );
-check("目录页 /series/webapp-vibe-coding/ 返回 200", status === 200, `status=${status}`);
+check(
+	"目录页 /series/webapp-vibe-coding/ 返回 200",
+	status === 200,
+	`status=${status}`,
+);
 check(
 	"目录页封面走回退 = 本书第〇章头图",
 	bookCover?.src === COVER["webapp-vibe-coding"],
 	`src=${bookCover?.src ?? "无"}`,
 );
-check("目录页封面 alt/title 取文集名", bookCover?.alt === SERIES_NAME["webapp-vibe-coding"], `alt=${bookCover?.alt}`);
+check(
+	"目录页封面 alt/title 取文集名",
+	bookCover?.alt === SERIES_NAME["webapp-vibe-coding"],
+	`alt=${bookCover?.alt}`,
+);
 check(
 	"目录页 og:image = 同一张封面（非站点头像）",
 	typeof bookOg === "string" && bookOg.endsWith(COVER["webapp-vibe-coding"]),
@@ -366,10 +392,16 @@ check(
 );
 
 status = await goto(`/series/matt-pocock/`);
-const mattCover = await page.evaluate(() =>
-	document.querySelector("figure.post-cover img")?.getAttribute("src") ?? null,
+const mattCover = await page.evaluate(
+	() =>
+		document.querySelector("figure.post-cover img")?.getAttribute("src") ??
+		null,
 );
-check("目录页 /series/matt-pocock/ 返回 200", status === 200, `status=${status}`);
+check(
+	"目录页 /series/matt-pocock/ 返回 200",
+	status === 200,
+	`status=${status}`,
+);
 check(
 	"Matt 目录页封面走回退 = workflow-cover",
 	mattCover === COVER["matt-pocock"],
@@ -378,11 +410,14 @@ check(
 
 status = await goto(`/series/`);
 const overview = await page.evaluate(() => ({
-	thumbCount: document.querySelectorAll(".post-thumbnail.series-thumb").length,
-	thumbSrcs: [...document.querySelectorAll(".post-thumbnail.series-thumb img")].map(
-		(i) => i.getAttribute("src"),
-	),
-	og: document.querySelector('meta[property="og:image"]')?.getAttribute("content"),
+	thumbCount: document.querySelectorAll(".post-thumbnail.series-thumb")
+		.length,
+	thumbSrcs: [
+		...document.querySelectorAll(".post-thumbnail.series-thumb img"),
+	].map((i) => i.getAttribute("src")),
+	og: document
+		.querySelector('meta[property="og:image"]')
+		?.getAttribute("content"),
 }));
 check("总览页 /series/ 返回 200", status === 200, `status=${status}`);
 check(

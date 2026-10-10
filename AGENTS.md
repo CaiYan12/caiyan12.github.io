@@ -271,7 +271,7 @@ pnpm test:site-stats # Giscus 同步单测（fetchImpl/输出路径全注入，�
 pnpm test:utils      # src/utils 纯函数单测（content-utils 排序/评分/邻篇 + pagination canonical）
 pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl，不访问真实网络）
 pnpm smoke:ai-news   # AI 日报入口/详情/返回/离线快照 Playwright Smoke；AI_NEWS_BASE_URL 传**完整页面地址**
-pnpm smoke:series    # 文集（series）接线烟测，36 条判据：组内相邻 href／组内边界不渲染／非成员跳过整块／两行提示／侧栏目录／三页 200+封面／粘性跟随；SERIES_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形），需先 `pnpm build && pnpm preview --port 4322`；**不进 CI 只手工跑**
+pnpm smoke:series    # 文集（series）接线烟测，39 条判据：组内相邻 href／组内边界不渲染／非成员跳过整块／两行提示／侧栏目录／三页 200+封面／粘性跟随；SERIES_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形），需先 `pnpm build && pnpm preview --port 4322`；**不进 CI 只手工跑**
 pnpm qa:nice-books-geometry  # Nice Books 统一 3D 几何运行时检查（默认 127.0.0.1:4321；NICE_BOOKS_BASE_URL 可覆盖。注意另一个 `scripts/nice-books-design-qa.mjs` 默认才是 4322 preview）
 pnpm smoke:nice-books  # Nice Books 三页 Playwright Smoke；支持 NICE_BOOKS_BASE_URL 指向 build + preview
 pnpm test:fancybox     # 灯箱 Playwright Smoke（关闭不跳位/焦点归还/定位按钮/下载新标签页/中文文案，需先 build + preview；FANCY_BASE_URL 可覆盖地址）
