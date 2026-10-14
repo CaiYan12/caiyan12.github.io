@@ -375,13 +375,17 @@ check(
 		pushed.stackTop < 10,
 	`scrollY=${pushed?.scrollY} stackTop=${pushed?.stackTop} marginBoxBottom=${pushed?.stackMarginBoxBottom} contentBottom=${pushed?.contentBottom}`,
 );
-// 判据 c：滚回顶部 → 回到自然位置（top > 10，未钉住）。
+// 判据 c：滚回顶部 → 回到自然位置（top > 10，未钉住）。加「与自然位置 docTop
+// 一致（±2）」的双向断言：单侧 `top > 10` 在 sticky 被整个删掉时依然为真
+// （元素本来就在自然位置），变异自证咬不住「完全没粘」这一形态（#97 实测）。
 await sp.evaluate(() => window.scrollTo(0, 0));
 await sp.waitForTimeout(100);
 const back = await stickyProbe();
 check(
-	"粘性：滚回顶部后容器回到自然位置（top > 10，未钉住）",
-	back !== null && back.stackTop > 10,
+	"粘性：滚回顶部后容器回到自然位置（top > 10，且与自然 docTop 一致 ±2，未钉住）",
+	back !== null &&
+		back.stackTop > 10 &&
+		Math.abs(back.stackTop + back.scrollY - naturalDocTop) <= 2,
 	`scrollY=${back?.scrollY} stackTop=${back?.stackTop}（自然 docTop=${naturalDocTop}）`,
 );
 await stickyCtx.close();
