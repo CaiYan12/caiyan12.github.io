@@ -35,9 +35,15 @@
 // ⑤360px 视口容器不溢出（#97 容器弹性高度的承载判据，此前空转缺第二条成员）；
 // ⑥两处地标可访问名称不同；⑦条目可聚焦且按 DOM 顺序排列（聚焦第一个 = 顶部目录
 // 之后紧邻的侧栏链接）。
+// + 7 条 = T3（#99）激活态跟随阅读位置（2026-10-14）：①页顶零点亮（首标题越线
+// 前「没有正在阅读的章节」是有意状态）；②越过第 3 个标题后激活第 3 条；③高亮
+// 真的被画出来（激活项与相邻项计算样式差异，不锁颜色字符串）；④aria-current 用
+// 文档内位置语义 location；⑤激活项保持在容器可见范围内（直接设 scrollTop 的
+// reveal 生效）；⑥目录内滚动不冒泡页面本体（scrollIntoView 禁用的回归守卫）；
+// ⑦页底兜底点亮最后一条。全部真滚动测量。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const EXPECTED_CHECKS = 49;
+const EXPECTED_CHECKS = 56;
 
 // 组成员与序号：与 src/data/series.ts 及七篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
@@ -554,6 +560,158 @@ check(
 		`stackBottom=${flexProbe?.stackBottom} viewportH=${flexProbe?.viewportH} articleVisible=${flexProbe?.articleVisible} scrollShrinks=${flexProbe?.scrollShrinks}`,
 	);
 	await flexCtx.close();
+}
+
+// —— 4d. 激活态跟随阅读位置（T3/#99）：滚动正文时侧栏目录点亮对应条目 ——
+// 全部真滚动测量：等的是「高亮真的被画出来」（计算样式差异）这类真实状态，
+// 不 waitForTimeout。判定线 10px 与粘性钳位同值（规格实现决策 18）。
+{
+	const spyCtx = await browser.newContext({
+		viewport: { width: 1280, height: 720 },
+	});
+	const spyPage = harness.attach(await spyCtx.newPage());
+	const sp2 = spyPage;
+	await sp2.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
+
+	const tocSpyProbe = () =>
+		sp2.evaluate(() => {
+			const lis = [
+				...document.querySelectorAll("#sidebar .article-toc li"),
+			];
+			if (lis.length === 0) return null;
+			const scroller = document
+				.querySelector("#sidebar [data-article-toc]")
+				?.closest?.("[data-article-toc]");
+			const scrollEl =
+				scroller ??
+				document.querySelector("#sidebar [data-article-toc]");
+			const current = lis.findIndex((li) =>
+				li.classList.contains("current"),
+			);
+			// 「高亮真的被画出来」断言计算值差异，不锁颜色字符串：
+			// 激活项的 fontWeight 或 color 必须与相邻未激活项不同。
+			const cur = lis[current];
+			const other = lis[current === 0 ? 1 : current - 1];
+			const cs = (el) => getComputedStyle(el.querySelector("a"));
+			const highlighted =
+				current === -1 ||
+				cs(cur).fontWeight !== cs(other).fontWeight ||
+				cs(cur).color !== cs(other).color;
+			// 激活项是否在容器可见范围内（未点亮时此项无意义，恒真放行）
+			const itemTop = cur?.offsetTop ?? 0;
+			const itemBottom = itemTop + (cur?.offsetHeight ?? 0);
+			const itemVisible =
+				current === -1 ||
+				(itemTop >= scrollEl.scrollTop &&
+					itemBottom <= scrollEl.scrollTop + scrollEl.clientHeight);
+			return {
+				count: lis.length,
+				current,
+				highlighted,
+				itemVisible,
+				pageY: window.scrollY,
+				scrollerTop: scrollEl.getBoundingClientRect().top,
+				currentHref: lis[current]
+					?.querySelector("a")
+					?.getAttribute("href"),
+				currentAria: lis[current]
+					?.querySelector("a")
+					?.getAttribute("aria-current"),
+				// 采集口径与运行时同源：h2/h3/h4 带 id（该文 h2/h3 混排，
+				// 只取 h2 会让「滚到第 3 个标题」对错目录索引）。
+				headings: [
+					...document.querySelectorAll(
+						".post-body :is(h2,h3,h4)[id]",
+					),
+				]
+					.slice(0, lis.length)
+					.map((h) =>
+						Math.round(
+							h.getBoundingClientRect().top + window.scrollY,
+						),
+					),
+			};
+		});
+
+	// 判据 1：页顶时零点亮（首标题距判定线还远）。
+	await sp2.evaluate(() => window.scrollTo(0, 0));
+	await sp2.waitForFunction(() => window.scrollY === 0, { timeout: 5000 });
+	const top = await tocSpyProbe();
+	check(
+		"激活态：页顶（首标题越线前）侧栏目录零点亮",
+		top !== null && top.current === -1,
+		`current=${top?.current} count=${top?.count}`,
+	);
+
+	// 判据 2：滚过第 3 个标题（docY + 50）→ 激活第 3 条；高亮真的被画出来
+	// （计算样式差异）；aria-current 用「文档内位置」语义 location；
+	// 激活项在容器可视内；页面本体不被目录滚动改变。标题坐标表取的是
+	// h2/h3/h4 混排（与运行时采集同源），滚到 headings[2] 越线即激活索引 2。
+	const target = top.headings[2] + 50;
+	await sp2.evaluate((y) => window.scrollTo(0, y), target);
+	await sp2.waitForFunction(
+		() =>
+			document.querySelector("#sidebar .article-toc li.current") !== null,
+		{ timeout: 5000 },
+	);
+	const mid = await tocSpyProbe();
+	check(
+		"激活态：越过第 3 个标题后激活第 3 条（rAF 后读取）",
+		mid !== null && mid.current === 2,
+		`current=${mid?.current}（滚至 docY=${target}）`,
+	);
+	check(
+		"激活态：高亮真的被画出来（激活项与相邻项计算样式不同）",
+		mid !== null && mid.current !== -1 && mid.highlighted,
+		`current=${mid?.current} highlighted=${mid?.highlighted}`,
+	);
+	check(
+		"激活态：aria-current 用文档内位置语义 location（非 page）",
+		mid?.currentAria === "location",
+		`aria-current=${mid?.currentAria}`,
+	);
+	check(
+		"激活态：激活项保持在目录容器可见范围内",
+		mid !== null && mid.itemVisible,
+		`itemVisible=${mid?.itemVisible} current=${mid?.current}`,
+	);
+	check(
+		"激活态：目录内滚动不冒泡页面（激活前后页面 Y 未被目录滚动改变）",
+		mid !== null && Math.abs(mid.pageY - target) <= 2,
+		`pageY=${mid?.pageY} 期望=${target}`,
+	);
+
+	// 判据 3：滚到页底 → 最后一条被点亮（页底兜底分支）。
+	await sp2.evaluate(() => window.scrollTo(0, Number.MAX_SAFE_INTEGER));
+	await sp2.evaluate(async () => {
+		// 懒加载会撑开页高：等文档高度稳定再读（与粘性判据 b 同法）。
+		let last = -1;
+		for (let i = 0; i < 30; i++) {
+			const h = document.documentElement.scrollHeight;
+			if (Math.abs(h - last) < 0.5) break;
+			last = h;
+			await new Promise((r) => setTimeout(r, 100));
+		}
+	});
+	await sp2.waitForFunction(
+		() => {
+			const lis = [
+				...document.querySelectorAll("#sidebar .article-toc li"),
+			];
+			return (
+				lis.length > 0 &&
+				lis[lis.length - 1].classList.contains("current")
+			);
+		},
+		{ timeout: 5000 },
+	);
+	const bottom = await tocSpyProbe();
+	check(
+		"激活态：滚到页底，最后一条被点亮（页底兜底）",
+		bottom !== null && bottom.current === bottom.count - 1,
+		`current=${bottom?.current} count=${bottom?.count}`,
+	);
+	await spyCtx.close();
 }
 
 // —— 5. 目录页与总览页：200 + 封面（含 og:image）——

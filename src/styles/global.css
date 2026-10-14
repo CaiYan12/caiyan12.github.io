@@ -7397,3 +7397,16 @@ body,
 #sidebar .article-toc li a:hover {
   color: var(--primary);
 }
+
+/* 激活态（#99/T3）：照抄 .series-toc li.current 两条（字重 700 + 无障碍绿），
+   词汇表「当前页态」约定——运行时算出 .current 就必须有人消费它；纯函数返回
+   -1 时运行时清掉所有条目。带 #sidebar 前缀两段式，(1,2,1) 压得过上面那条
+   #sidebar a:hover（(1,1,1)），hover 时高亮不被下划线绿顶掉。不新增光标规则
+   （手型由既有 #sidebar a 提供，smoke:ui 有手型负扫）。 */
+#sidebar .article-toc li.current {
+  font-weight: 700;
+}
+
+#sidebar .article-toc li.current a {
+  color: var(--colorful-green-accessible);
+}
