@@ -22,6 +22,11 @@
 // + 3 条 = 第五章（20261011101832，L4 Node.js）并入本书（2026-10-11）：组内相邻判据
 // 随成员数再增 1 条（5 → 6）；末章由第四章移到第五章，原挂在第四章的「末章收尾」
 // 判据拆成「第四章改判非末章文案 1 条 + 第五章顶部行 1 条 + 第五章收尾 1 条」，故净 +2。
+// #97（侧栏粘性栈预重构）：**判据数不变，仍是 42**，只把三条粘性判据的量测对象从
+// 「小部件自身」（#sidebar .widget.widget-series）换成「承担粘性的共享容器」
+// （#sidebar [data-widget-stack]）——粘性已由容器独家承担，量旧元素会恒为「未钉住」。
+// 该票是预重构、读者可见行为不变，故不新增判据：把「两个小部件不重叠」加在这里只会
+// 是单子项恒真的空转，那条留给引入第二个成员的 T2。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
 const EXPECTED_CHECKS = 42;
@@ -300,11 +305,15 @@ check(
 );
 
 // —— 4b. 粘性跟随（站长 2026-10-06 目视后新增，纯 CSS sticky）：三条判据全部
-// 真滚动测量。注意 series 现排在侧栏末位，自然位置较深，滚动量按实测自然位置
+// 真滚动测量。**量测对象是粘性容器（[data-widget-stack]），不是小部件自身**——
+// #97 起粘性由「包住文集目录的共享容器」独家承担（小部件自粘会让第二个成员
+// 互相压住，ADR 0008），故三条判据跟着换锚点；原来的 #sidebar .widget.widget-series
+// 不再带 sticky，量它会恒为「未钉住」。
+// 注意 series 现排在侧栏末位，自然位置较深，滚动量按实测自然位置
 // 推导而非写死（写死会随 widget 增删失真）。
 // 「被 content 底顶住」一条用 360 高的专用视口：默认 720 高下页尾残留（footer 等
-// 约 229px）大于 widget 高（约 190px），滚到底时 content 底仍在视口内较深处，
-// widget 永远到不了钳位区间——顶起状态物理不可达；360 高下可达且宽度仍 1280，
+// 约 229px）大于容器高（约 200px），滚到底时 content 底仍在视口内较深处，
+// 容器永远到不了钳位区间——顶起状态物理不可达；360 高下可达且宽度仍 1280，
 // 不触发移动端断点。
 const stickyCtx = await browser.newContext({
 	viewport: { width: 1280, height: 360 },
@@ -314,17 +323,18 @@ const sp = stickyPage;
 await sp.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
 const stickyProbe = async () =>
 	sp.evaluate(() => {
-		const widget = document.querySelector("#sidebar .widget.widget-series");
+		const stack = document.querySelector("#sidebar [data-widget-stack]");
 		const content = document.querySelector("#content");
-		if (!widget || !content) return null;
-		const wr = widget.getBoundingClientRect();
+		if (!stack || !content) return null;
+		const wr = stack.getBoundingClientRect();
 		const cr = content.getBoundingClientRect();
-		// sticky 钳位对齐的是外边距盒（.widget 有 10px margin-bottom），
-		// 故一并量出 margin-bottom 供「底边重合」判据换算。
-		const mb = parseFloat(getComputedStyle(widget).marginBottom) || 0;
+		// sticky 钳位对齐的是外边距盒；容器是 <div>，没有 .widget 那 10px
+		// margin-bottom（那 10px 在容器内的最后一个 .widget 上），故这里量到的
+		// margin-bottom 是 0——仍一并换算，免得将来给容器加外边距时判据失真。
+		const mb = parseFloat(getComputedStyle(stack).marginBottom) || 0;
 		return {
-			widgetTop: +wr.top.toFixed(1),
-			widgetMarginBoxBottom: +(wr.bottom + mb).toFixed(1),
+			stackTop: +wr.top.toFixed(1),
+			stackMarginBoxBottom: +(wr.bottom + mb).toFixed(1),
 			contentBottom: +cr.bottom.toFixed(1),
 			scrollY: Math.round(window.scrollY),
 		};
@@ -333,17 +343,17 @@ const stickyProbe = async () =>
 await sp.evaluate(() => window.scrollTo(0, 0));
 await sp.waitForTimeout(100);
 const natural = await stickyProbe();
-const naturalDocTop = natural.widgetTop + natural.scrollY;
+const naturalDocTop = natural.stackTop + natural.scrollY;
 // 判据 a：滚过自然位置 400px → 钉在视口顶 10px（容差 ±2）。
 await sp.evaluate((y) => window.scrollTo(0, y), naturalDocTop + 400);
 await sp.waitForTimeout(100);
 const pinned = await stickyProbe();
 check(
-	"粘性：滚过自然位置后 widget 贴视口顶 10px（±2）",
-	pinned !== null && Math.abs(pinned.widgetTop - 10) <= 2,
-	`scrollY=${pinned?.scrollY} widgetTop=${pinned?.widgetTop}（自然位置 docTop=${naturalDocTop}）`,
+	"粘性：滚过自然位置后容器贴视口顶 10px（±2）",
+	pinned !== null && Math.abs(pinned.stackTop - 10) <= 2,
+	`scrollY=${pinned?.scrollY} stackTop=${pinned?.stackTop}（自然位置 docTop=${naturalDocTop}）`,
 );
-// 判据 b：滚到页底 → widget 底被 content 底顶住：底边与 content 底重合（±1），
+// 判据 b：滚到页底 → 容器底被 content 底顶住：底边与 content 底重合（±1），
 // 且离开贴顶位（top < 10）。懒加载图片会撑开页高，滚到底后等 content 底稳定再量。
 await sp.evaluate(() => window.scrollTo(0, Number.MAX_SAFE_INTEGER));
 await sp.evaluate(async () => {
@@ -359,20 +369,20 @@ await sp.evaluate(async () => {
 });
 const pushed = await stickyProbe();
 check(
-	"粘性：滚到页底，widget 底被 content 底顶住（外边距盒底与 content 底重合 ±1）且离开贴顶位",
+	"粘性：滚到页底，容器底被 content 底顶住（外边距盒底与 content 底重合 ±1）且离开贴顶位",
 	pushed !== null &&
-		Math.abs(pushed.widgetMarginBoxBottom - pushed.contentBottom) <= 1 &&
-		pushed.widgetTop < 10,
-	`scrollY=${pushed?.scrollY} widgetTop=${pushed?.widgetTop} marginBoxBottom=${pushed?.widgetMarginBoxBottom} contentBottom=${pushed?.contentBottom}`,
+		Math.abs(pushed.stackMarginBoxBottom - pushed.contentBottom) <= 1 &&
+		pushed.stackTop < 10,
+	`scrollY=${pushed?.scrollY} stackTop=${pushed?.stackTop} marginBoxBottom=${pushed?.stackMarginBoxBottom} contentBottom=${pushed?.contentBottom}`,
 );
 // 判据 c：滚回顶部 → 回到自然位置（top > 10，未钉住）。
 await sp.evaluate(() => window.scrollTo(0, 0));
 await sp.waitForTimeout(100);
 const back = await stickyProbe();
 check(
-	"粘性：滚回顶部后 widget 回到自然位置（top > 10，未钉住）",
-	back !== null && back.widgetTop > 10,
-	`scrollY=${back?.scrollY} widgetTop=${back?.widgetTop}（自然 docTop=${naturalDocTop}）`,
+	"粘性：滚回顶部后容器回到自然位置（top > 10，未钉住）",
+	back !== null && back.stackTop > 10,
+	`scrollY=${back?.scrollY} stackTop=${back?.stackTop}（自然 docTop=${naturalDocTop}）`,
 );
 await stickyCtx.close();
 
