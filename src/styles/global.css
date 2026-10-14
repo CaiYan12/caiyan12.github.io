@@ -7360,14 +7360,30 @@ body,
    写根层级两段式（#sidebar .article-toc），特异性 (1,1,0) 压得过层内
    .widget li 的虚线底。 */
 #sidebar .widget-article-toc {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 47px minmax(0, 1fr);
+  grid-template-rows: 30px minmax(0, 1fr);
   min-height: 0;
   overflow: visible;
 }
 
+/* 标题栏与图标同行（.widget > .icon 的 float 在 grid 容器内失效，不显式定位
+   就是「图标一行、标题被挤到下一行」）；内容占第二行，跨两列。 */
+#sidebar .widget-article-toc > .icon {
+  grid-area: 1 / 1;
+  float: none;
+}
+
+#sidebar .widget-article-toc > h2 {
+  grid-area: 1 / 2;
+  /* 既有标题栏的 10px 文字缩进（.widget > .icon + h2）是给「h2 绕排浮动图标」
+     的结构用的；此处 h2 已被 grid 定位到图标列右侧，再吃那条就是双倍缩进
+     （实测文字比最新微语/文集目录右 10px）。归零对齐同族。 */
+  text-indent: 0;
+}
+
 #sidebar .widget-article-toc .article-toc-scroll {
-  flex: 1 1 auto;
+  grid-area: 2 / 1 / 3 / -1;
   max-height: 45vh;
   min-height: 0;
   overflow-y: auto;
