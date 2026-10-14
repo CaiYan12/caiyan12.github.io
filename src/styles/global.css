@@ -7345,3 +7345,55 @@ body,
 .post-series a:hover {
   color: var(--primary);
 }
+
+/* ---------- 侧栏「文章目录」小部件（#98/T2） ----------
+   外框沿用 .widget 家族；列表用 <ol>，故照 .series-toc 抄有序列表复位（H9：
+   #sidebar 没有 ol 通配规则，不复位就是十进制序号裸奔）。
+   缩进口径与顶部目录 .post-toc li 同源：每级 18px、基准 depth 2（同一算式）。
+   单行截断照 #hotlog li a 范式（display:block + min-width:0 缺一不可——
+   缺 min-width:0 时 flex/grid 子项的 min-content 底会顶掉 ellipsis）。
+   内滚层：容器（.widget-stack）是 flex column + max-height 的弹性外壳。链条
+   上两层都要 min-height: 0（规格决定 9，A9 第 3/4 层）：本元件自身是 flex
+   子项，flex-shrink 要肯收缩必须 min-height 不锁在 min-content——实测缺它时
+   360px 视口下容器被 220 + 194px 的两个小部件撑到 414px 溢出；45vh 上限与
+   overflow-y 落在内层 nav 上（放在粘性容器上会破坏它的弹性高度语义）。
+   写根层级两段式（#sidebar .article-toc），特异性 (1,1,0) 压得过层内
+   .widget li 的虚线底。 */
+#sidebar .widget-article-toc {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: visible;
+}
+
+#sidebar .widget-article-toc .article-toc-scroll {
+  flex: 1 1 auto;
+  max-height: 45vh;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+#sidebar .article-toc {
+  margin: 0;
+  padding: 5px 0 10px 5px;
+  list-style: none;
+}
+
+#sidebar .article-toc li {
+  margin: 0;
+  padding-left: calc((var(--toc-depth) - 2) * 18px);
+  line-height: 1.9;
+}
+
+#sidebar .article-toc li a {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #333;
+}
+
+#sidebar .article-toc li a:hover {
+  color: var(--primary);
+}

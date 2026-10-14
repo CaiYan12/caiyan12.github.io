@@ -27,9 +27,17 @@
 // （#sidebar [data-widget-stack]）——粘性已由容器独家承担，量旧元素会恒为「未钉住」。
 // 该票是预重构、读者可见行为不变，故不新增判据：把「两个小部件不重叠」加在这里只会
 // 是单子项恒真的空转，那条留给引入第二个成员的 T2。
+// + 7 条 = T2（#98）侧栏「文章目录」小部件上线（2026-10-14）：第二条成员进入粘性栈，
+// #97 预留的「两个小部件不重叠」在此兑现。七条 = ①侧栏条目与顶部目录同源（href
+// 序列逐项相等，两处是同一份内容的两种放置）；②零标题文章（20260909092113，实测
+// 全站唯一公开零标题样本）不出现空目录盒；③条目带 title 且单行（getClientRects
+// 长度 1）；④两个小部件不重叠（.widget-series 外边距盒底 ≤ 文章目录顶，±0.5）；
+// ⑤360px 视口容器不溢出（#97 容器弹性高度的承载判据，此前空转缺第二条成员）；
+// ⑥两处地标可访问名称不同；⑦条目可聚焦且按 DOM 顺序排列（聚焦第一个 = 顶部目录
+// 之后紧邻的侧栏链接）。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const EXPECTED_CHECKS = 42;
+const EXPECTED_CHECKS = 49;
 
 // 组成员与序号：与 src/data/series.ts 及七篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
@@ -389,6 +397,164 @@ check(
 	`scrollY=${back?.scrollY} stackTop=${back?.stackTop}（自然 docTop=${naturalDocTop}）`,
 );
 await stickyCtx.close();
+
+// —— 4c. 侧栏「文章目录」（T2/#98）：运行时采集、同源、降级、几何 ——
+// 采集是模块脚本运行时行为：waitUntil:"load" 必然晚于它执行完（AGENTS.md 承重
+// 事实 ②），无需为「还没填」加保险睡眠；判据一律读状态，不 waitForTimeout。
+await goto(`/posts/20261002204249/`);
+const tocProbe = await page.evaluate(() => {
+	const widget = document.querySelector(
+		'#sidebar [data-article-toc] ol, #sidebar nav[aria-label="侧栏文章目录"] ol',
+	);
+	const topToc = document.querySelector(".post-toc nav ol");
+	const widgetOl = document.querySelector("#sidebar .article-toc");
+	if (!widget || !topToc || !widgetOl) {
+		return { widget: !!widget, topToc: !!topToc, widgetOl: !!widgetOl };
+	}
+	const sideLinks = [...widgetOl.querySelectorAll("li a")];
+	const topLinks = [...topToc.querySelectorAll("li a")];
+	return {
+		sideHrefs: sideLinks.map((a) => a.getAttribute("href")),
+		topHrefs: topLinks.map((a) => a.getAttribute("href")),
+		allTitled: sideLinks.every(
+			(a) =>
+				a.getAttribute("title") === a.textContent?.replace(/\s+/g, " "),
+		),
+		singleLine: sideLinks.every((a) => a.getClientRects().length === 1),
+		focusableOrder: sideLinks.every(
+			(a, i) =>
+				a.tabIndex !== -1 && sideLinks.indexOf(sideLinks[i]) === i, // DOM 顺序即数组顺序
+		),
+		sideLabel: document
+			.querySelector("#sidebar nav[aria-label]")
+			?.getAttribute("aria-label"),
+		topLabel: document
+			.querySelector(".post-toc nav")
+			?.getAttribute("aria-label"),
+	};
+});
+check(
+	"侧栏文章目录与顶部目录同源：条目 href 序列逐项相等",
+	tocProbe.sideHrefs?.length > 0 &&
+		JSON.stringify(tocProbe.sideHrefs) ===
+			JSON.stringify(tocProbe.topHrefs),
+	`side=${tocProbe.sideHrefs?.length} top=${tocProbe.topHrefs?.length}`,
+);
+check(
+	"侧栏条目带 title 全文且单行（getClientRects().length === 1）",
+	tocProbe.allTitled && tocProbe.singleLine,
+	`allTitled=${tocProbe.allTitled} singleLine=${tocProbe.singleLine}`,
+);
+check(
+	"侧栏条目为可聚焦链接且按 DOM 顺序排列",
+	tocProbe.focusableOrder === true,
+	`focusableOrder=${tocProbe.focusableOrder}`,
+);
+check(
+	"两处导航地标可访问名称不同（侧栏文章目录 vs 文章目录）",
+	tocProbe.sideLabel != null &&
+		tocProbe.topLabel != null &&
+		tocProbe.sideLabel !== tocProbe.topLabel,
+	`side="${tocProbe.sideLabel}" top="${tocProbe.topLabel}"`,
+);
+
+// 零标题降级：20260909092113 是全站唯一公开零标题样本（另两篇私密/草稿不生成页）。
+// 该文不属于任何文集，故侧栏两件都不出现才是对的（User Story 18 + 19 叠加）。
+await goto(`/posts/20260909092113/`);
+const zeroTitleProbe = await page.evaluate(() => ({
+	articleTocGone:
+		document.querySelector("#sidebar [data-article-toc]") === null &&
+		document.querySelector("#sidebar .article-toc") === null,
+	seriesTocAlsoAbsent:
+		document.querySelector("#sidebar .series-toc") === null,
+}));
+check(
+	"零标题文章：侧栏不出现文章目录空盒（运行时移除）",
+	zeroTitleProbe.articleTocGone === true,
+	`articleTocGone=${zeroTitleProbe.articleTocGone}`,
+);
+
+// 两个小部件不重叠（#97 裁决留给 T2 兑现的一条）：量 .widget-series 的外边距盒
+// 底与文章目录元件盒顶，前者 ≤ 后者（±0.5 容差）。自然位置下量——粘性钉住时
+// 二者是同一容器的子项、天然不重叠，量不出真实缺陷。
+await goto(`/posts/20261002204249/`);
+const overlapProbe = await page.evaluate(() => {
+	const series = document.querySelector("#sidebar .widget.widget-series");
+	const article = document.querySelector(
+		"#sidebar .widget.widget-article-toc",
+	);
+	if (!series || !article) return null;
+	const sr = series.getBoundingClientRect();
+	const ar = article.getBoundingClientRect();
+	const mb = parseFloat(getComputedStyle(series).marginBottom) || 0;
+	return {
+		seriesMarginBoxBottom: +(sr.bottom + mb).toFixed(1),
+		articleTop: +ar.top.toFixed(1),
+		gap: +(ar.top - (sr.bottom + mb)).toFixed(1),
+	};
+});
+check(
+	"两个小部件不重叠：文集目录外边距盒底 ≤ 文章目录顶（±0.5）",
+	overlapProbe !== null &&
+		overlapProbe.seriesMarginBoxBottom <= overlapProbe.articleTop + 0.5,
+	`gap=${overlapProbe?.gap} seriesBottom=${overlapProbe?.seriesMarginBoxBottom} articleTop=${overlapProbe?.articleTop}`,
+);
+
+// 容器弹性（票面修订为 T2 负责补测）：360px 高视口（宽度仍 1280，见 A8 不触发
+// 移动断点）下装下两个小部件——外壳不溢出视口，文章目录的内滚层收缩。
+{
+	const flexCtx = await browser.newContext({
+		viewport: { width: 1280, height: 360 },
+	});
+	const flexPage = harness.attach(await flexCtx.newPage());
+	const fp = flexPage;
+	await fp.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
+	// 相位与粘性判据同法：**先滚过自然位置让容器钉住**，再量——自然位置下容器
+	// 本来就在文档深处，stackBottom ≤ 视口高恒为假，量不出任何缺陷。
+	const naturalFlex = await fp.evaluate(
+		() =>
+			document
+				.querySelector("#sidebar [data-widget-stack]")
+				.getBoundingClientRect().top + window.scrollY,
+	);
+	await fp.evaluate((y) => window.scrollTo(0, y), naturalFlex + 400);
+	await fp.waitForFunction(
+		() => {
+			const st = document
+				.querySelector("#sidebar [data-widget-stack]")
+				?.getBoundingClientRect();
+			return st && Math.abs(st.top - 10) <= 2; // 钉稳（与粘性判据 a 同口径）
+		},
+		{ timeout: 5000 },
+	);
+	const flexProbe = await fp.evaluate(() => {
+		const stack = document.querySelector("#sidebar [data-widget-stack]");
+		const article = document.querySelector(
+			"#sidebar .widget.widget-article-toc",
+		);
+		const scroll = document.querySelector(
+			"#sidebar .widget-article-toc .article-toc-scroll",
+		);
+		if (!stack || !article || !scroll) return null;
+		const st = stack.getBoundingClientRect();
+		const sr = article.getBoundingClientRect();
+		return {
+			stackBottom: +st.bottom.toFixed(1),
+			viewportH: window.innerHeight,
+			articleVisible: sr.top >= 0 && sr.bottom <= window.innerHeight,
+			scrollShrinks: scroll.scrollHeight > scroll.clientHeight, // 长列表确实在内滚
+		};
+	});
+	check(
+		"360px 视口：钉住后粘性容器不溢出视口，文章目录在小部件内滚动",
+		flexProbe !== null &&
+			flexProbe.stackBottom <= flexProbe.viewportH &&
+			flexProbe.articleVisible &&
+			flexProbe.scrollShrinks,
+		`stackBottom=${flexProbe?.stackBottom} viewportH=${flexProbe?.viewportH} articleVisible=${flexProbe?.articleVisible} scrollShrinks=${flexProbe?.scrollShrinks}`,
+	);
+	await flexCtx.close();
+}
 
 // —— 5. 目录页与总览页：200 + 封面（含 og:image）——
 let status = await goto(`/series/webapp-vibe-coding/`);
