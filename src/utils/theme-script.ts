@@ -12,6 +12,7 @@ import { showSiteToast } from "./site-toast";
 import { shuffleArray } from "./shuffle";
 import { initQuoteBand } from "./runtime/quote-band";
 import { initLiquidGlass } from "./runtime/liquid-glass";
+import { initArticleToc } from "./runtime/article-toc";
 
 declare global {
 	interface Window {
@@ -1313,6 +1314,7 @@ const runtimeTable: RuntimeEntry[] = [
 	{ init: renderMermaid, swap: 6 },
 	{ init: initPaperHandwriting, swap: 7 },
 	{ init: initQuoteBand },
+	{ init: initArticleToc, swap: 8 },
 	{ init: initSwupHooks },
 ];
 
