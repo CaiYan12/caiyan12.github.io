@@ -63,3 +63,5 @@ output/
 .learnings/
 .superpowers/
 .design-flow.json
+# CodeGraph 本地索引（本机生成，不入库）
+.codegraph/
