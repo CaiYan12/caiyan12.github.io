@@ -4,9 +4,62 @@
 // 故各自单独证红——反例输入构造成「只违反该条规则」的最小形状。
 import test from "node:test";
 import assert from "node:assert/strict";
-import { pickActiveIndex } from "./article-toc";
+import {
+	pickActiveIndex,
+	buildArticleTocItem,
+	collectArticleTocEntries,
+} from "./article-toc";
 
-// 常用基础盘：四条标题，文档坐标 1000/2000/3000/4000，视口 720，文档总高 6000。
+// ---- 最小 DOM 桩（照 quote-band.test.ts 先例）：只实现这两个纯函数用到的面 ----
+type FakeLi = {
+	style: { props: Record<string, string>; setProperty(k: string, v: string) };
+	children: FakeEl[];
+	appendChild(c: FakeEl): void;
+};
+
+type FakeEl = { tagName?: string; id?: string } & Record<string, unknown>;
+
+function makeLi(): FakeLi {
+	const li: FakeLi = {
+		style: {
+			props: {},
+			setProperty(k, v) {
+				this.props[k] = v;
+			},
+		},
+		children: [],
+		appendChild(c) {
+			li.children.push(c);
+		},
+	};
+	return li;
+}
+
+// makeEl(tag, attrs)：li 走结构桩；标题桩支持 tagName/id/textContent
+function makeEl(tag: string, attrs: Record<string, string> = {}): FakeEl {
+	if (tag === "li") return makeLi() as unknown as FakeEl;
+	const el: FakeEl = {
+		tagName: tag.toUpperCase(),
+		id: attrs.id,
+		textContent: "",
+		attrs: {},
+	};
+	el.setAttribute = (name: string, value: string) => {
+		(el.attrs as Record<string, string>)[name] = value;
+	};
+	return el;
+}
+
+// 文档桩：createElement 记 tag；查询选择器由调用方按测试用例注入。
+function makeDoc(
+	create: (tag: string) => FakeEl,
+	queryAll: (sel: string) => FakeEl[],
+): Document {
+	return {
+		createElement: create,
+		querySelectorAll: queryAll,
+	} as unknown as Document;
+} // 常用基础盘：四条标题，文档坐标 1000/2000/3000/4000，视口 720，文档总高 6000。
 const TOPS = [1000, 2000, 3000, 4000];
 const VIEW = 720;
 const DOC = 6000;
@@ -67,4 +120,94 @@ test("空标题数组返回 -1（不激活）", () => {
 test("单条标题的两种状态：越线 0、页底也是 0", () => {
 	assert.equal(pickActiveIndex([1000], 1000, VIEW, DOC), 0);
 	assert.equal(pickActiveIndex([1000], DOC - VIEW, VIEW, DOC), 0);
+});
+
+// ---- buildArticleTocItem：渲染结构契约（此前无消费者、审查裁定补测而非删导出）----
+
+function newLi(
+	doc: Document,
+	entry: Parameters<typeof buildArticleTocItem>[1],
+) {
+	return buildArticleTocItem(doc, entry) as unknown as FakeLi;
+}
+
+test("buildArticleTocItem：li 带层级变量、a 的 href/title/text 与条目一致", () => {
+	const doc = makeDoc(
+		(tag) => makeEl(tag),
+		() => [],
+	);
+	const li = newLi(doc, { slug: "sec-2", text: "部署与回滚", depth: 3 });
+	assert.equal(li.style.props["--toc-depth"], "3");
+	assert.equal(li.children.length, 1);
+	const a = li.children[0] as unknown as {
+		attrs: Record<string, string>;
+		textContent: string;
+	};
+	assert.equal(a.attrs.href, "#sec-2");
+	assert.equal(a.attrs.title, "部署与回滚");
+	assert.equal(a.textContent, "部署与回滚");
+});
+
+test("buildArticleTocItem：depth 取值 2–4 原样写入，不夹取", () => {
+	const doc = makeDoc(
+		(tag) => makeEl(tag),
+		() => [],
+	);
+	const h2 = newLi(doc, { slug: "a", text: "甲", depth: 2 });
+	const h4 = newLi(doc, { slug: "c", text: "丙", depth: 4 });
+	assert.equal(h2.style.props["--toc-depth"], "2");
+	assert.equal(h4.style.props["--toc-depth"], "4");
+});
+
+test("buildArticleTocItem：text 逐字透传（空白归一是 collect 侧职责，不在此重复）", () => {
+	const doc = makeDoc(
+		(tag) => makeEl(tag),
+		() => [],
+	);
+	const raw = "  多  词  标题  ";
+	const li = newLi(doc, { slug: "b", text: raw, depth: 2 });
+	const a = li.children[0] as unknown as {
+		attrs: Record<string, string>;
+		textContent: string;
+	};
+	// title 与 textContent 都取 entry.text 原文；若在此处再做 trim/归一会与
+	// collect 的输出不一致（双源），故契约是逐字透传。
+	assert.equal(a.attrs.title, raw);
+	assert.equal(a.textContent, raw);
+});
+
+// ---- collectArticleTocEntries：采集契约 ----
+
+/** 根元素桩：querySelectorAll("h2[id], h3[id], h4[id]") 返回注入的标题序列 */
+function makeRoot(headings: FakeEl[]): Element {
+	return {
+		querySelectorAll: (sel: string) =>
+			sel === "h2[id], h3[id], h4[id]" ? headings : [],
+	} as unknown as Element;
+}
+
+test("collectArticleTocEntries：DOM 顺序 + depth 映射（h2/h3/h4 → 2/3/4）", () => {
+	const h2 = makeEl("h2", { id: "intro" });
+	h2.textContent = "  前言  ";
+	const h3 = makeEl("h3", { id: "setup" });
+	h3.textContent = "安装";
+	const h4 = makeEl("h4", { id: "deep" });
+	h4.textContent = "细节";
+	const entries = collectArticleTocEntries(makeRoot([h2, h3, h4]));
+	assert.deepEqual(entries, [
+		{ slug: "intro", text: "前言", depth: 2 },
+		{ slug: "setup", text: "安装", depth: 3 },
+		{ slug: "deep", text: "细节", depth: 4 },
+	]);
+});
+
+test("collectArticleTocEntries：无 id 或空白文本的标题被剔除；空输入返回空数组", () => {
+	const noId = makeEl("h2");
+	noId.textContent = "没 id";
+	const blank = makeEl("h3", { id: "blank" });
+	blank.textContent = "   \n  ";
+	const entries = collectArticleTocEntries(makeRoot([noId, blank]));
+	assert.deepEqual(entries, []);
+	// 完全空的容器
+	assert.deepEqual(collectArticleTocEntries(makeRoot([])), []);
 });

@@ -173,16 +173,17 @@ export function initArticleToc() {
 
 	/** 激活项变化时让它滚进容器可见范围：直接设 scrollTop（不用 scrollIntoView，
 	 *  那会冒泡滚动页面本身——粘性侧栏 + 几何判据站点上属难查抖动源）。
-	 *  条目坐标换算进滚动容器坐标系：li 的 offsetParent 是 .widget（section），
-	 *  不是内滚 nav，先减掉滚动容器自身的偏移再与 scrollTop 比较。 */
+	 *  条目坐标用 getBoundingClientRect 差值换算进滚动容器坐标系（纯视口坐标
+	 *  差 + scrollTop，不依赖 offsetParent 链的定位模型）。 */
 	const reveal = (index: number) => {
 		if (index < 0) return;
 		const scroller = list.closest<HTMLElement>("[data-article-toc]");
 		const li = lis[index] as HTMLElement;
 		if (!scroller || !li) return;
 		const itemTop =
-			li.offsetTop -
-			((list as HTMLElement).offsetTop - scroller.offsetTop);
+			li.getBoundingClientRect().top -
+			scroller.getBoundingClientRect().top +
+			scroller.scrollTop;
 		const itemBottom = itemTop + li.offsetHeight;
 		if (itemTop < scroller.scrollTop) {
 			scroller.scrollTop = itemTop;
