@@ -230,6 +230,8 @@ Your agent and bash are running on:
 
 本仓库（`CaiYan12/caiyan12.github.io`）的 issue 与 spec 记在 GitHub Issues，一律用 `gh` CLI 读写；PR 不作为需求入口。见 `docs/agents/issue-tracker.md`。
 
+`/wayfinder` 的地图/子票/阻塞边操作也走 GitHub：子票用原生 sub-issues，阻塞用原生 issue dependencies（该仓库两者均已启用，`blocked_by` 取的是数据库 id 不是 `#number`）。**五个 `wayfinder:*` 标签当前不存在**，建图前须先 `gh label create`，否则 `--label` 会 not found 且什么都不建。实测细节见 `docs/agents/issue-tracker.md` 的「Wayfinding reality」一节。
+
 ### Triage labels
 
 五个默认标签串（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`）是技能侧的**约定词表**，与角色名一一对应，不另设映射。2026-09-24 实测本仓库 GitHub 端只有 `wontfix` 与 `ready-for-agent` 两个；2026-10-06 补建 `needs-triage`（#fbca04）、`needs-info`（#d4c5f9）、`ready-for-human`（#1d76db），五个角色现全部可用。贴标签前仍先 `gh label list` 核可用值（现值现测，本文件不记标签总数）。见 `docs/agents/triage-labels.md`。
