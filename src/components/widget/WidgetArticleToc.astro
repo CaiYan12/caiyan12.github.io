@@ -17,7 +17,11 @@ import { initArticleToc } from "../../utils/runtime/article-toc";
 	</nav>
 </WidgetLayout>
 
-<script>
-	import { initArticleToc } from "../../utils/runtime/article-toc";
-	initArticleToc();
-</script>
+{
+	/* 初始化唯一入口是 theme-script.ts 的装配表（{ init: initArticleToc, swap: 8 }，
+    #100/T4）：初始装载按表序执行、swup after-swap 按 swap 号重跑。这里**不**再放
+    <script> 调 init——Astro 会把组件脚本打包内联进 swup 容器 <main>，而
+    @swup/scripts-plugin（reloadScripts 默认 true）在每次换页后重跑正文脚本，
+    那条路径绕过装配表与守卫归属，且与装配表行形成双入口（#100 红证据实测：
+    注释掉 swap:8 后换页判据仍绿，即这条影子路径在顶）。 */
+}

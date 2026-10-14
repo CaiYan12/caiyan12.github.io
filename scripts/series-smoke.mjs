@@ -41,9 +41,16 @@
 // 文档内位置语义 location；⑤激活项保持在容器可见范围内（直接设 scrollTop 的
 // reveal 生效）；⑥目录内滚动不冒泡页面本体（scrollIntoView 禁用的回归守卫）；
 // ⑦页底兜底点亮最后一条。全部真滚动测量。
+// + 6 条 = T4（#100）换页生命周期（2026-10-14）：目录随 swup 换页换新、高亮重置。
+// 六条全部经**站内链接**点击触发 swup（page.goto 不经过 swup，测不出换页）：
+// ①长文（20261002204249，全站标题最多）切到短文（20260925150221）条目换成新文章
+// 的（条数与 href 均变）；②换页后无上一篇残留的 .current / aria-current；③切到
+// 零标题文章（20260909092113）后目录元件被移除；④再切回有标题文章目录重建；
+// ⑤来回切 3 次条目数恒定（无重复堆积，监听器只绑一次的回归守卫）；⑥换页后目录
+// 仍然工作（滚到页底激活项点亮，重采集不是一次性失效）。相位全由真实状态定义。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const EXPECTED_CHECKS = 56;
+const EXPECTED_CHECKS = 62;
 
 // 组成员与序号：与 src/data/series.ts 及七篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
@@ -712,6 +719,167 @@ check(
 		`current=${bottom?.current} count=${bottom?.count}`,
 	);
 	await spyCtx.close();
+}
+
+// —— 4e. 换页生命周期（T4/#100）：站内链接切页后侧栏目录换新、高亮重置 ——
+// 全部经**站内链接**点击触发 swup（不是 page.goto，那不经过 swup，测不出换页）。
+// 相位由真实状态定义：等 .post-body 出现（新 <main> 已换入）、等目录 li 数稳定
+// （采集已完成），无 waitForTimeout。59 = 当前成员（61 条目录，文集成员）。
+{
+	const swapCtx = await browser.newContext({
+		viewport: { width: 1280, height: 720 },
+	});
+	const swapPage = harness.attach(await swapCtx.newPage());
+	const sp3 = swapPage;
+
+	const waitForTocSettled = (min = 1) =>
+		sp3.waitForFunction(
+			(n) => {
+				const ol = document.querySelector("#sidebar .article-toc");
+				return ol && ol.querySelectorAll("li").length >= n;
+			},
+			min,
+			{ timeout: 10000 },
+		);
+	const waitForTocGone = () =>
+		sp3.waitForFunction(
+			() => document.querySelector("#sidebar .article-toc") === null,
+			undefined,
+			{ timeout: 10000 },
+		);
+	const tocState = () =>
+		sp3.evaluate(() => {
+			const lis = [
+				...document.querySelectorAll("#sidebar .article-toc li"),
+			];
+			return {
+				count: lis.length,
+				hrefs: lis.map((li) =>
+					li.querySelector("a")?.getAttribute("href"),
+				),
+				currentCount: lis.filter((li) =>
+					li.classList.contains("current"),
+				).length,
+				currentAriaCount: lis.filter(
+					(li) =>
+						li.querySelector("a")?.getAttribute("aria-current") !==
+						null,
+				).length,
+				widgetGone:
+					document.querySelector("#sidebar [data-article-toc]") ===
+					null,
+			};
+		});
+	const clickInSiteLink = async (selector) => {
+		await sp3.evaluate((sel) => {
+			const el = document.querySelector(sel);
+			if (!el) throw new Error(`站内链接不存在: ${sel}`);
+			el.click();
+		}, selector);
+	};
+
+	// ① 长文（20261002204249，全站标题最多）→ 20260925150221（条目远少）：站内
+	// 链接（正文卡片）切页，条目换成新文章的。swup 有 preload + fade 动画，
+	// 等 li 数变成与上一篇不同且非空再读（真实终态，不数墙钟）。
+	await sp3.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
+	await waitForTocSettled(30);
+	const long = await tocState();
+	await clickInSiteLink(`a[href="/posts/20260925150221/"]`);
+	await sp3.waitForFunction(
+		(c) => {
+			const ol = document.querySelector("#sidebar .article-toc");
+			const n = ol ? ol.querySelectorAll("li").length : 0;
+			return n > 0 && n !== c;
+		},
+		long.count,
+		{ timeout: 10000 },
+	);
+	await waitForTocSettled(1);
+	const short = await tocState();
+	check(
+		"换页后目录换新：条目数与 href 序列都换成新文章的（20261002204249 → 20260925150221）",
+		long.count > 0 &&
+			short.count > 0 &&
+			short.count < long.count &&
+			short.hrefs.every((h) => !long.hrefs.includes(h)),
+		`before=${long.count} after=${short.count}`,
+	);
+
+	// ② 换页后高亮重置：无残留 .current / aria-current（新页顶未越线 → 零点亮，
+	// 与 T3 判据 1 同语义；若旧激活项残留这里会读到 1）。
+	check(
+		"换页后高亮重置：无上一篇残留的 .current / aria-current",
+		short.currentCount === 0 && short.currentAriaCount === 0,
+		`currentCount=${short.currentCount} currentAriaCount=${short.currentAriaCount}`,
+	);
+
+	// ③ 有标题 → 零标题文章（20260909092113）：元件被移除。
+	await clickInSiteLink(`a[href="/posts/20260909092113/"]`);
+	await waitForTocGone();
+	const zero = await tocState();
+	check(
+		"换页到零标题文章：目录元件被移除（不残留上一篇条目）",
+		zero.widgetGone && zero.count === 0,
+		`widgetGone=${zero.widgetGone} count=${zero.count}`,
+	);
+
+	// ④ 零标题 → 有标题（20260925150221）：目录重建。
+	await clickInSiteLink(`a[href="/posts/20260925150221/"]`);
+	await waitForTocSettled(1);
+	const rebuilt = await tocState();
+	check(
+		"从零标题切回有标题文章：目录正确重建（条目数与 href 与此前一致）",
+		rebuilt.count === short.count &&
+			JSON.stringify(rebuilt.hrefs) === JSON.stringify(short.hrefs),
+		`count=${rebuilt.count}（此前 ${short.count}）`,
+	);
+
+	// ⑤ 来回切 3 次：无重复堆积（监听器翻倍/重复实例的回归守卫）。两篇条目数
+	// 不同（10 vs 6），各页与自身首测比对，不假设两篇相等。
+	let awayCount = -1;
+	let stacked = true;
+	let stackNote = "";
+	for (let i = 0; i < 3; i++) {
+		await clickInSiteLink(`a[href="/posts/20260919135000/"]`);
+		await waitForTocSettled(1);
+		const r1 = await tocState();
+		if (awayCount === -1) awayCount = r1.count;
+		else if (r1.count !== awayCount) {
+			stacked = false;
+			stackNote = `第 ${i + 1} 次切走条目数=${r1.count}（首测 ${awayCount}）`;
+			break;
+		}
+		await clickInSiteLink(`a[href="/posts/20260925150221/"]`);
+		await waitForTocSettled(1);
+		const r2 = await tocState();
+		if (r2.count !== short.count) {
+			stacked = false;
+			stackNote = `第 ${i + 1} 次切回条目数=${r2.count}（首测 ${short.count}）`;
+			break;
+		}
+	}
+	check(
+		"反复来回切换多次：目录不重复堆积（3 次往返条目数恒定）",
+		stacked,
+		stackNote || `away=${awayCount} back=${short.count}`,
+	);
+
+	// ⑥ 切页后目录仍然工作：滚到中部 → 激活项点亮（重采集不是一次性失效）。
+	await sp3.evaluate(() => window.scrollTo(0, Number.MAX_SAFE_INTEGER));
+	await sp3.waitForFunction(
+		() =>
+			document.querySelector("#sidebar .article-toc li.current") !== null,
+		undefined,
+		{ timeout: 10000 },
+	);
+	const afterSwapSpy = await tocState();
+	check(
+		"换页后目录仍然工作：滚到页底激活项点亮（重采集后 scroll-spy 生效）",
+		afterSwapSpy.currentCount === 1,
+		`currentCount=${afterSwapSpy.currentCount} count=${afterSwapSpy.count}`,
+	);
+
+	await swapCtx.close();
 }
 
 // —— 5. 目录页与总览页：200 + 封面（含 og:image）——

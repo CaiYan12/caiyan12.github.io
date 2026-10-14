@@ -10,9 +10,17 @@
  *
  * 分工照 quote-band.ts 的先例：纯函数顶层导出、不读 window/document，副作用
  * 全留在 init 里；import 本模块无副作用。#98/T2 做了采集与填充；#99/T3 在此
- * 落地激活态（scroll-spy），换页重采集留给 T4——但本函数不持有任何跨页的
- * 模块级 DOM 缓存之外的东西（侧栏在 swup 容器 <main> 内，切页整块换新，
- * 每次 init 都重新 query，见 AGENTS.md theme-script 约定）。
+ * 落地激活态（scroll-spy）。#100/T4 换页生命周期：本函数由装配表 `{ swap: 8 }`
+ * 在每次 astro:after-swap 重跑。换页的正确性靠三条机制，缺一会「高亮乱跳」：
+ * 1. swup 换的是整个 <main>，侧栏连同本元件一起换新——新元素天然没有
+ *    dataset.articleTocReady 标记（该守卫是元素级防重入，不是跨页缓存），
+ *    每次 init 都对全新 DOM 重新采集，旧列表内容不可能残留；
+ * 2. window 滚动/resize 监听器只绑一次（模块级 articleTocScrollBound 守卫），
+ *    但 rAF 回调经模块级 scheduleFrame 始终指向**最近一次 init 的闭包**——
+ *    切页后旧坐标表（lis / measureTops）随旧 DOM 一起被闭包丢弃，不会拿
+ *    上一页的坐标算激活态；
+ * 3. 激活态随新采集自然重置：本 init 末尾的 update() 以新坐标表从 activeIndex
+ *    = -1 起算（新元素无 .current，paint 只在索引变化时落笔）。
  */
 
 /** 一条目录条目：slug（= 标题元素 id）、标题全文、标题层级（2–4）。 */
