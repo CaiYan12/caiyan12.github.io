@@ -2466,6 +2466,8 @@ html[data-liquid-glass="on"] #nav li ul {
   display: block;
   /* clip 保持裁切语义但不创建滚动容器——否则 #sidebar 内的 sticky 永远钉不住 */
   overflow: clip;
+  /* 弹性布局的必要条件：祖先给了受限高度时子项才肯收缩，不是新设计语言 */
+  min-height: 0;
   width: 255px;
   color: #808080;
   font-size: 12px;
@@ -5488,13 +5490,26 @@ body,
 
 /* 侧栏文集目录（WidgetSeries）：行样式沿用 .widget li，这里只补有序列表复位与
    「当前章」高亮。GLOSSARY「当前页态」要求：.current 一旦计算就必须有消费它的样式。 */
-/* 粘性跟随：滚过自然位置后钉在视口顶 10px（站点无固定顶栏），直到 #content
-   底部把它顶上去。纯 CSS sticky，零客户端脚本。前置：#sidebar overflow 用
-   clip（见 .main-grid 定义处），且链条上无其他滚动容器祖先；≤980px 时
-   #wrapper 转 overflow:hidden（sticky 失效但布局不破，属优雅降级）。 */
-#sidebar .widget.widget-series {
+/* 粘性跟随（承载者是下面这条容器，不再是小部件自身）：滚过自然位置后钉在视口顶
+   10px（站点无固定顶栏），直到 #content 底部把它顶上去。纯 CSS sticky，零客户端
+   脚本。前置：#sidebar overflow 用 clip（见 .main-grid 定义处），且链条上无其他
+   滚动容器祖先；≤980px 时 #wrapper 转 overflow:hidden（sticky 失效但布局不破，
+   属优雅降级）。
+   为什么粘性由容器独家承担（ADR 0008）：两个各自 sticky、钉在同一视口偏移上的
+   兄弟元素滚动后会互相压住（实测 87.9px），故 T2 的第二个成员进来时不再自己定位。
+   弹性高度（规格决定 8/9）：外壳封顶「视口高 − 上下各 10px 留白」，与 top: 10px
+   同一组留白口径；min-height: 0 是弹性布局的必要条件——祖先给定了受限高度时子项
+   才肯收缩，不是新设计语言。overflow 由容器自己收口（内部 .widget 是 overflow:
+   visible，不会截断自己）；T2 引入第二个成员、内容真正超过外壳时，在这一层内补
+   滚动包裹层并同样给 min-height: 0。 */
+#sidebar .widget-stack {
   position: sticky;
   top: 10px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 20px);
+  min-height: 0;
+  overflow: hidden;
 }
 
 #sidebar .series-toc {

@@ -9,6 +9,7 @@ import WidgetNewLog from "../widget/WidgetNewLog.astro";
 import WidgetHotLog from "../widget/WidgetHotLog.astro";
 import WidgetRelatedPosts from "../widget/WidgetRelatedPosts.astro";
 import WidgetSeries from "../widget/WidgetSeries.astro";
+import SidebarStickyStack from "../widget/SidebarStickyStack.astro";
 import WidgetNewComm from "../widget/WidgetNewComm.astro";
 import WidgetLink from "../widget/WidgetLink.astro";
 import WidgetTwitter from "../widget/WidgetTwitter.astro";
@@ -33,10 +34,16 @@ const widgetMap: Record<string, any> = {
 	calendar: WidgetCalendar,
 };
 const widgets = sidebarConfig.widgets
+	// series 交给下面的组合组件渲染（粘性容器是结构，不是小部件，不进 widgetMap）。
+	// 按名字在 .map() 之前过滤——filter(Boolean) 之后只剩组件、已丢了名字。
+	// 它当前是配置的最后一项，故组合容器跟在通用循环之后与出现在原位等价。
+	.filter((name) => name !== "series")
 	.map((name) => widgetMap[name])
 	.filter(Boolean);
 ---
 
 <aside id="sidebar" role="complementary" data-pagefind-ignore="all">
 	{widgets.map((Comp) => <Comp />)}
+	{/* 骨架容器：包住「文集目录」（T2 再并入文章目录），文案与结构见该组件 */}
+	<SidebarStickyStack />
 </aside>
