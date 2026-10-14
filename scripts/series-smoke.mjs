@@ -48,9 +48,12 @@
 // 零标题文章（20260909092113）后目录元件被移除；④再切回有标题文章目录重建；
 // ⑤来回切 3 次条目数恒定（无重复堆积，监听器只绑一次的回归守卫）；⑥换页后目录
 // 仍然工作（滚到页底激活项点亮，重采集不是一次性失效）。相位全由真实状态定义。
+// 净 +3 = P1（#97 验收第 4 条，2026-10-14 集成分支 code-review 修复）：容器弹性
+// 判据由单档 360 展开为 900/720/500/360 四档循环，每档一条复合判据（钉住后容器
+// 不溢出 + 内滚到底后最后一条仍在视口内），判据数 62 → 65。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const EXPECTED_CHECKS = 62;
+const EXPECTED_CHECKS = 65;
 
 // 组成员与序号：与 src/data/series.ts 及七篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
@@ -434,10 +437,10 @@ const tocProbe = await page.evaluate(() => {
 				a.getAttribute("title") === a.textContent?.replace(/\s+/g, " "),
 		),
 		singleLine: sideLinks.every((a) => a.getClientRects().length === 1),
-		focusableOrder: sideLinks.every(
-			(a, i) =>
-				a.tabIndex !== -1 && sideLinks.indexOf(sideLinks[i]) === i, // DOM 顺序即数组顺序
-		),
+		focusableOrder:
+			sideLinks.every((a) => a.tabIndex !== -1) &&
+			JSON.stringify(sideLinks.map((a) => a.getAttribute("href"))) ===
+				JSON.stringify(topLinks.map((a) => a.getAttribute("href"))), // 与顶部目录逐项相等且同序（集合咬合，非恒真自比）
 		sideLabel: document
 			.querySelector("#sidebar nav[aria-label]")
 			?.getAttribute("aria-label"),
@@ -476,8 +479,7 @@ check(
 await goto(`/posts/20260909092113/`);
 const zeroTitleProbe = await page.evaluate(() => ({
 	articleTocGone:
-		document.querySelector("#sidebar [data-article-toc]") === null &&
-		document.querySelector("#sidebar .article-toc") === null,
+		document.querySelector("#sidebar [data-article-toc]") === null,
 	seriesTocAlsoAbsent:
 		document.querySelector("#sidebar .series-toc") === null,
 }));
@@ -493,9 +495,7 @@ check(
 await goto(`/posts/20261002204249/`);
 const overlapProbe = await page.evaluate(() => {
 	const series = document.querySelector("#sidebar .widget.widget-series");
-	const article = document.querySelector(
-		"#sidebar .widget.widget-article-toc",
-	);
+	const article = document.querySelector("#sidebar [data-article-toc]");
 	if (!series || !article) return null;
 	const sr = series.getBoundingClientRect();
 	const ar = article.getBoundingClientRect();
@@ -513,60 +513,74 @@ check(
 	`gap=${overlapProbe?.gap} seriesBottom=${overlapProbe?.seriesMarginBoxBottom} articleTop=${overlapProbe?.articleTop}`,
 );
 
-// 容器弹性（票面修订为 T2 负责补测）：360px 高视口（宽度仍 1280，见 A8 不触发
-// 移动断点）下装下两个小部件——外壳不溢出视口，文章目录的内滚层收缩。
+// 容器弹性（#97 验收修订，P1 修复兑现）：四档视口高（900/720/500/360）各建
+// context，宽度仍 1280 不触发移动断点。每档两条：①先滚过自然位置让容器钉住
+// （自然位置下容器本就在文档深处，底 ≤ 视口高恒为假，量不出缺陷），钉稳后
+// 粘性容器底 ≤ 视口高；②把内滚层滚到底后最后一条 li 的 rect 底仍在视口内
+// （内滚收缩 + 末端条目可达，不止「容器装得下」）。相位由状态定义，无墙钟。
 {
-	const flexCtx = await browser.newContext({
-		viewport: { width: 1280, height: 360 },
-	});
-	const flexPage = harness.attach(await flexCtx.newPage());
-	const fp = flexPage;
-	await fp.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
-	// 相位与粘性判据同法：**先滚过自然位置让容器钉住**，再量——自然位置下容器
-	// 本来就在文档深处，stackBottom ≤ 视口高恒为假，量不出任何缺陷。
-	const naturalFlex = await fp.evaluate(
-		() =>
-			document
-				.querySelector("#sidebar [data-widget-stack]")
-				.getBoundingClientRect().top + window.scrollY,
-	);
-	await fp.evaluate((y) => window.scrollTo(0, y), naturalFlex + 400);
-	await fp.waitForFunction(
-		() => {
-			const st = document
-				.querySelector("#sidebar [data-widget-stack]")
-				?.getBoundingClientRect();
-			return st && Math.abs(st.top - 10) <= 2; // 钉稳（与粘性判据 a 同口径）
-		},
-		{ timeout: 5000 },
-	);
-	const flexProbe = await fp.evaluate(() => {
-		const stack = document.querySelector("#sidebar [data-widget-stack]");
-		const article = document.querySelector(
-			"#sidebar .widget.widget-article-toc",
+	const VIEWPORTS = [900, 720, 500, 360];
+	for (const vh of VIEWPORTS) {
+		const flexCtx = await browser.newContext({
+			viewport: { width: 1280, height: vh },
+		});
+		const flexPage = harness.attach(await flexCtx.newPage());
+		const fp = flexPage;
+		await fp.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
+		const naturalFlex = await fp.evaluate(
+			() =>
+				document
+					.querySelector("#sidebar [data-widget-stack]")
+					.getBoundingClientRect().top + window.scrollY,
 		);
-		const scroll = document.querySelector(
-			"#sidebar .widget-article-toc .article-toc-scroll",
+		await fp.evaluate((y) => window.scrollTo(0, y), naturalFlex + 400);
+		await fp.waitForFunction(
+			(v) => {
+				const st = document
+					.querySelector("#sidebar [data-widget-stack]")
+					?.getBoundingClientRect();
+				return st && Math.abs(st.top - 10) <= 2; // 钉稳（与粘性判据 a 同口径）
+			},
+			vh,
+			{ timeout: 5000 },
 		);
-		if (!stack || !article || !scroll) return null;
-		const st = stack.getBoundingClientRect();
-		const sr = article.getBoundingClientRect();
-		return {
-			stackBottom: +st.bottom.toFixed(1),
-			viewportH: window.innerHeight,
-			articleVisible: sr.top >= 0 && sr.bottom <= window.innerHeight,
-			scrollShrinks: scroll.scrollHeight > scroll.clientHeight, // 长列表确实在内滚
-		};
-	});
-	check(
-		"360px 视口：钉住后粘性容器不溢出视口，文章目录在小部件内滚动",
-		flexProbe !== null &&
-			flexProbe.stackBottom <= flexProbe.viewportH &&
-			flexProbe.articleVisible &&
-			flexProbe.scrollShrinks,
-		`stackBottom=${flexProbe?.stackBottom} viewportH=${flexProbe?.viewportH} articleVisible=${flexProbe?.articleVisible} scrollShrinks=${flexProbe?.scrollShrinks}`,
-	);
-	await flexCtx.close();
+		const flexProbe = await fp.evaluate(() => {
+			const stack = document.querySelector(
+				"#sidebar [data-widget-stack]",
+			);
+			const scroll = document.querySelector(
+				"#sidebar .article-toc-scroll",
+			);
+			if (!stack || !scroll) return null;
+			const st = stack.getBoundingClientRect();
+			// 内滚层滚到底：最后一条 li 的 rect 底 ≤ 视口高（在容器内可达末端）
+			scroll.scrollTop = scroll.scrollHeight;
+			const lis = [
+				...document.querySelectorAll("#sidebar .article-toc li"),
+			];
+			const lastLi = lis[lis.length - 1]?.getBoundingClientRect();
+			return {
+				stackBottom: +st.bottom.toFixed(1),
+				viewportH: window.innerHeight,
+				scrollShrinks: scroll.scrollHeight > scroll.clientHeight, // 长列表确实在内滚
+				lastLiBottom: lastLi ? +lastLi.bottom.toFixed(1) : null,
+				scrollAtEnd:
+					scroll.scrollTop + scroll.clientHeight >=
+					scroll.scrollHeight - 2,
+			};
+		});
+		check(
+			`${vh}px 视口：钉住后粘性容器不溢出视口（底 ≤ 视口高）且内滚到底后最后一条仍在视口内`,
+			flexProbe !== null &&
+				flexProbe.stackBottom <= flexProbe.viewportH &&
+				flexProbe.scrollShrinks &&
+				flexProbe.scrollAtEnd &&
+				flexProbe.lastLiBottom !== null &&
+				flexProbe.lastLiBottom <= flexProbe.viewportH,
+			`stackBottom=${flexProbe?.stackBottom} viewportH=${flexProbe?.viewportH} lastLiBottom=${flexProbe?.lastLiBottom} scrollShrinks=${flexProbe?.scrollShrinks}`,
+		);
+		await flexCtx.close();
+	}
 }
 
 // —— 4d. 激活态跟随阅读位置（T3/#99）：滚动正文时侧栏目录点亮对应条目 ——
@@ -604,13 +618,19 @@ check(
 				current === -1 ||
 				cs(cur).fontWeight !== cs(other).fontWeight ||
 				cs(cur).color !== cs(other).color;
-			// 激活项是否在容器可见范围内（未点亮时此项无意义，恒真放行）
-			const itemTop = cur?.offsetTop ?? 0;
-			const itemBottom = itemTop + (cur?.offsetHeight ?? 0);
+			// 激活项是否在容器可见范围内（未点亮时此项无意义，恒真放行）。
+			// 量的是几何事实本身：li 的 rect 是否落在 scroller 的 rect 内。
+			// 旧写法用 offsetTop 对 scrollTop 换算，但 li 的 offsetParent 是
+			// sticky 容器 .widget-stack（非 static 祖先，#97 重构后），offsetTop
+			// 是相对它的坐标系，与 scroller.scrollTop 不可比——数错单位必然
+			// 假红（实测 itemTop=364 vs scrollTop=0 就被误判不可见，而 li 实际
+			// 完全在 scroller 视口内）。与运行时 reveal() 的换算同口径。
+			const scrollRect = scrollEl.getBoundingClientRect();
+			const itemRect = cur?.getBoundingClientRect();
 			const itemVisible =
 				current === -1 ||
-				(itemTop >= scrollEl.scrollTop &&
-					itemBottom <= scrollEl.scrollTop + scrollEl.clientHeight);
+				(itemRect.top >= scrollRect.top &&
+					itemRect.bottom <= scrollRect.bottom);
 			return {
 				count: lis.length,
 				current,
