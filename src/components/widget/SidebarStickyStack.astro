@@ -1,5 +1,6 @@
 ---
 import WidgetSeries from "./WidgetSeries.astro";
+import WidgetArticleToc from "./WidgetArticleToc.astro";
 
 // 侧栏粘性栈：把「哪几个小部件共用同一条粘性跟随」收进这一个文件，通用侧栏
 // （SideBar.astro）不为此在循环里插特例，只多一次调用（规格决定 6）。
@@ -10,6 +11,9 @@ import WidgetSeries from "./WidgetSeries.astro";
 // 本票（#97）只有文集目录一个成员；T2 的「文章目录」加进来时只在这里多一行，
 // 容器的结构与样式（global.css 的 #sidebar .widget-stack）已经为两个成员备好，
 // 但此刻不写空占位元素。
+// T2（#98）落地：第二个成员 WidgetArticleToc 已加入。文章目录零标题时运行时
+// 整块移除自己，容器内只剩文集目录——容器恒 sticky，几何与「文集目录自身粘」
+// 完全等价（H18 落法 (a)），无须条件回交。
 //
 // data-widget-stack 是冒烟的量测锚点（scripts/series-smoke.mjs 的三条粘性判据）：
 // 用 data-* 而不是类名，与侧栏天气卡 [data-weather-widget] 同法——判据不锁类名字符串。
@@ -17,4 +21,5 @@ import WidgetSeries from "./WidgetSeries.astro";
 
 <div class="widget-stack" data-widget-stack>
 	<WidgetSeries />
+	<WidgetArticleToc />
 </div>

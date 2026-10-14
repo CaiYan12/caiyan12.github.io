@@ -1,0 +1,23 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+import { initArticleToc } from "../../utils/runtime/article-toc";
+
+// 侧栏「文章目录」小部件（#98/T2）：外框照既有 WidgetLayout，列表结构照
+// 顶部目录 PostToc.astro（<ol> + --toc-depth 缩进，样式在 global.css 的
+// #sidebar .article-toc 两段式里复位）。条目本身由运行时模块采集填充
+// （标题树只有运行时拿得到，侧栏被全部页面共用），此处渲染空壳 + init。
+// 数据属性 data-article-toc 是运行时与冒烟的锚点（用 data-* 不锁类名，
+// 与 [data-widget-stack] 同法）。零标题时运行时整块移除本元件——粘性职责
+// 本就在外层 SidebarStickyStack 容器上（ADR 0008），这里无须交还处理。
+---
+
+<WidgetLayout title="文章目录" icon="fa-list-ul" class="widget-article-toc">
+	<nav aria-label="侧栏文章目录" class="article-toc-scroll" data-article-toc>
+		<ol class="article-toc"></ol>
+	</nav>
+</WidgetLayout>
+
+<script>
+	import { initArticleToc } from "../../utils/runtime/article-toc";
+	initArticleToc();
+</script>
