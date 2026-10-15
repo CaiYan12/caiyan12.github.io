@@ -7389,6 +7389,23 @@ body,
   overflow-y: auto;
 }
 
+/* 阅读进度条（2026-10-15 站长要求）：占标题栏与内容之间那条 1px 边框线的
+   位置——叠加在 h2 的 border-bottom 上（grid 第三行不新增行高，负 margin
+   把 2px 条压到标题栏下缘），主题绿与 2px 高均为站长指定；宽度 = widget 全宽。
+   驱动与文章页顶部固定条同源（theme-script 写全部 [data-reading-progress]），
+   scaleX + left 原点照 .post-reading-progress 的既有机制。 */
+#sidebar .widget-article-toc .article-toc-progress {
+  grid-area: 2 / 1 / 3 / -1;
+  align-self: start;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--colorful-green);
+  transform: scaleX(0);
+  transform-origin: left center;
+  pointer-events: none;
+  z-index: 1;
+}
+
 #sidebar .article-toc {
   margin: 0;
   padding: 5px 0 10px 5px;

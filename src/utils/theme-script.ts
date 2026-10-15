@@ -981,10 +981,13 @@ let readingProgressBound = false;
 
 function updateReadingProgress() {
 	readingProgressFrame = 0;
-	const progressBar = document.querySelector<HTMLElement>(
+	// 全站可同时存在多根进度条（文章页顶部的固定条 + 侧栏文章目录标题栏下缘
+	// 的条，2026-10-15 站长要求「与主站顶部阅读进度条同理、共存」），同一文档
+	// 滚动进度驱动全部实例。
+	const progressBars = document.querySelectorAll<HTMLElement>(
 		"[data-reading-progress]",
 	);
-	if (!progressBar) return;
+	if (progressBars.length === 0) return;
 
 	const root = document.documentElement;
 	const maxScroll = root.scrollHeight - root.clientHeight;
@@ -992,11 +995,13 @@ function updateReadingProgress() {
 		maxScroll > 0
 			? Math.min(1, Math.max(0, window.scrollY / maxScroll))
 			: 0;
-	progressBar.style.transform = `scaleX(${progress})`;
-	progressBar.setAttribute(
-		"aria-valuenow",
-		String(Math.round(progress * 100)),
-	);
+	for (const progressBar of progressBars) {
+		progressBar.style.transform = `scaleX(${progress})`;
+		progressBar.setAttribute(
+			"aria-valuenow",
+			String(Math.round(progress * 100)),
+		);
+	}
 }
 
 function scheduleReadingProgressUpdate() {

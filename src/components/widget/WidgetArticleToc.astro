@@ -12,6 +12,21 @@ import { initArticleToc } from "../../utils/runtime/article-toc";
 ---
 
 <WidgetLayout title="文章目录" icon="fa-list-ul" class="widget-article-toc">
+	{
+		/* 阅读进度条（2026-10-15 站长要求）：与文章页顶部的固定条同驱动
+	    （theme-script 的 updateReadingProgress 写全部 [data-reading-progress]），
+	    同理共存。占标题栏与内容之间那条边框线的位置：2px 高、主题色、widget 全宽。 */
+	}
+	<div
+		class="article-toc-progress"
+		data-reading-progress
+		role="progressbar"
+		aria-label="侧栏文章目录阅读进度"
+		aria-valuemin="0"
+		aria-valuemax="100"
+		aria-valuenow="0"
+	>
+	</div>
 	<nav aria-label="侧栏文章目录" class="article-toc-scroll" data-article-toc>
 		<ol class="article-toc"></ol>
 	</nav>
