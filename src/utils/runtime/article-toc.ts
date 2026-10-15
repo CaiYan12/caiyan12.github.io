@@ -201,9 +201,11 @@ export function initArticleToc() {
 	// scroll 事件做写值配对——scroll 是结果事件，程序化写值与用户滚动都会触发，
 	// 靠值比对排除对事件合并/派发时序脆弱（T5 首版实测：4c 段程序化写容器
 	// scrollTop 每次都武装让位窗口，泄漏进后续判据间歇性吞掉 reveal，作者两轮
-	// 未定位到触发源；输入事件只来自真实用户输入，无此歧义）。副作用：点击目录
-	// 链接（pointerdown）也会进入 3s 让位窗——点击目标本就在可视区内，无需再居中，
-	// 属可接受语义。 */
+	// 未定位到触发源；输入事件只来自真实用户输入，无此歧义）。
+	// 点击条目链接**清除**让位窗（站长 2026-10-15 报告并补充：点击是导航意图
+	// 而非「浏览目录」，跳转后激活项应照常居中；首版 pointerdown 一律武装让位，
+	// 「先滚目录再点链接」与「直接点链接」两种路径的跳转后居中都被吞掉 3s，
+	// 亮行停在原处）。仅清除不武装——滚动条拖拽/空白处拖动仍正常武装。
 	let manualOverrideUntil = 0;
 
 	const userScrolling = () => {
@@ -211,8 +213,14 @@ export function initArticleToc() {
 		manualOverrideUntil = performance.now() + MANUAL_OVERRIDE_MS;
 	};
 	scroller.addEventListener("wheel", userScrolling, { passive: true });
-	// 滚动条拖拽不产生 wheel：pointerdown 覆盖（点击条目链接同样命中，见上）。
-	scroller.addEventListener("pointerdown", userScrolling);
+	// 滚动条拖拽不产生 wheel：pointerdown 覆盖；命中链接（导航）则清让位窗。
+	scroller.addEventListener("pointerdown", (e) => {
+		if ((e.target as Element | null)?.closest("a")) {
+			manualOverrideUntil = 0;
+			return;
+		}
+		userScrolling();
+	});
 	// 键盘滚动（焦点在条目链接上时 Space/PageUp/PageDown/方向键滚动容器）。
 	scroller.addEventListener(
 		"keydown",
@@ -238,7 +246,7 @@ export function initArticleToc() {
 	let revealStart = 0;
 	// 防抖状态：无动画在飞时，激活变化只更新目标并重排 100ms 定时器。
 	let revealDebounce = 0;
-	let revealPendingTarget = 0;
+	let revealPendingIndex = -1;
 	// 成文不变量（T5 审查发现）：动画在飞（revealFrame ≠ 0）⇒ revealDebounce === 0。
 	// 「动画分支」（reveal 内 if (revealFrame)）裸 cancelAnimationFrame 不清防抖也安全：
 	// revealDebounce 只在「无动画在飞」分支赋值，startReveal 两个入口（防抖回调先清零、动画分支自身）进入时防抖必为 0。
@@ -320,11 +328,45 @@ export function initArticleToc() {
 			return;
 		}
 		// 无动画在飞：连续激活变化先防抖，目标稳定 100ms 后才启动。
-		revealPendingTarget = target;
+		// 记 **pendingIndex** 而非只记 target：防抖到期回调重读实时状态——
+		// 若到期时激活项又变过（rAF 节流把后续 scrollTo 的 update 推迟到
+		// 定时器之后，实测采样 max 超起点 20px），说明连续变化仍在进行，
+		// 按最新 index 重排防抖而不是朝过期目标起跳（否则动画从朝旧目标的
+		// 进度折返，容器在「目标未稳定」时就动了，违反防抖语义）。
+		revealPendingIndex = index;
 		if (revealDebounce) clearTimeout(revealDebounce);
 		revealDebounce = window.setTimeout(() => {
 			revealDebounce = 0;
-			startReveal(revealPendingTarget);
+			if (revealPendingIndex === activeIndex) {
+				startReveal(
+					pickTocRevealScrollTop(
+						lis[revealPendingIndex].getBoundingClientRect().top -
+							scroller.getBoundingClientRect().top +
+							scroller.scrollTop,
+						lis[revealPendingIndex].offsetHeight,
+						scroller.clientHeight,
+						scroller.scrollHeight,
+					),
+				);
+			} else {
+				// 到期时目标已又变：重排防抖（读数与 reveal 相同的让位守卫语义，
+				// 让位窗内不启动——本回调只在无动画在飞路径挂出，让位窗内
+				// reveal 早退不会到这，但重排仍守卫一次）。
+				if (performance.now() < manualOverrideUntil) return;
+				revealDebounce = window.setTimeout(() => {
+					revealDebounce = 0;
+					startReveal(
+						pickTocRevealScrollTop(
+							lis[activeIndex].getBoundingClientRect().top -
+								scroller.getBoundingClientRect().top +
+								scroller.scrollTop,
+							lis[activeIndex].offsetHeight,
+							scroller.clientHeight,
+							scroller.scrollHeight,
+						),
+					);
+				}, REVEAL_DEBOUNCE);
+			}
 		}, REVEAL_DEBOUNCE);
 	};
 

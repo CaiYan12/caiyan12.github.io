@@ -59,10 +59,12 @@
 // 旧目标，不排队不积压）；④连续激活变化防抖生效（目标稳定前容器不动）；⑤列表
 // 首尾钳制（首章钳 0、末章钳最大滚动位，不拖出空白）；⑥手动让位（用户滚动目录后
 // 3s 内激活变化只改高亮不滚容器）；⑦静默 3s 后恢复自动居中；⑧prefers-reduced-
-// motion 下瞬时直达（无中间帧）。判据数 65 → 73。
+// motion 下瞬时直达（无中间帧）；⑨先滚动目录（wheel 武装让位窗）后点击条目链接
+// ——导航点击清除让位窗，跳转后激活项照常居中（2026-10-15 站长报告「先滚动后
+// 点击也要回正」）。判据数 65 → 74。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const EXPECTED_CHECKS = 73;
+const EXPECTED_CHECKS = 74;
 
 // 组成员与序号：与 src/data/series.ts 及七篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
@@ -1122,10 +1124,15 @@ const installTocSettleWait = (pg) =>
 		),
 	);
 
-	// 防抖：从第 50 条居中位出发，连续两次激活变化（先深第 55 条、约 2 帧后回
-	// 第 45 条，间隔 < 100ms）——目标稳定前容器必须一动不动。两段方向相反是
-	// 判据的牙齿：漏掉防抖的实现会立刻朝第 55 条的居中位走（起点之上），采样
-	// 会在起点之上读到值；防抖生效则随后只向第 45 条的居中位（起点之下）走。
+	// 防抖：从第 50 条居中位出发，连续两次激活变化（先深第 55 条、间隔 <100ms
+	// 后回第 45 条）——目标稳定前容器必须一动不动。两段方向相反是判据的牙齿：
+	// 漏掉防抖的实现会立刻朝第 55 条的居中位走（起点之上），采样会在起点之上
+	// 读到值；防抖生效则随后只向第 45 条的居中位（起点之下）走。
+	// **前提自证**：两次激活变化落在 100ms 防抖窗内是被测前提——rAF 双帧间隔
+	// 遇机器抖动可能被拉过 100ms，运行时届时对第一个目标起跳是**合法行为**
+	// （防抖窗已过，2026-10-15 实测假红 max=start+16）。改显式时钟间隔：两次
+	// scrollTo 相隔 <100ms 才继续；超窗则等容器稳定后重做（至多 5 轮），采样
+	// 窗口只覆盖「目标尚未稳定」的时段。
 	const debounceStart = (await tocSpyProbe()).scrollTop;
 	const debounceSamples = await sp2.evaluate(
 		async ([yA, yB]) => {
@@ -1137,10 +1144,11 @@ const installTocSettleWait = (pg) =>
 				raf = requestAnimationFrame(tick);
 			};
 			raf = requestAnimationFrame(tick);
+			// 同步连发两跳（间隔≈0ms，物理上不可能越过 100ms 防抖窗）——
+			// 前提「两次激活变化落在窗内」由构造保证，不赌 rAF 节流节奏。
+			// （前版用 rAF 双帧分隔 + 时钟重试，实测机器抖动下前提仍会被
+			// 违反——运行时对第一个目标起跳是合法行为，判据假红。）
 			window.scrollTo(0, yA);
-			await new Promise((r) =>
-				requestAnimationFrame(() => requestAnimationFrame(r)),
-			);
 			window.scrollTo(0, yB);
 			// 等落定：连续 8 帧不动且确有位移（防抖静默期不算落定）——页内 helper。
 			await window.__tocWaitScrollSettled(sc);
@@ -1260,6 +1268,35 @@ const installTocSettleWait = (pg) =>
 		joinDetail(
 			`current=${resumed?.current} centerOffset=${resumed?.centerOffset?.toFixed(1)}`,
 			heal45,
+		),
+	);
+
+	// 先滚动目录（wheel 武装让位窗）→ 点击远端条目链接：导航点击**清除**让位窗
+	// （2026-10-15 站长报告「先滚动后点击也要回正」），跳转后激活项照常居中。
+	const clickIdx = 30;
+	const clickSlug = await sp2.evaluate((i) => {
+		const sc = document.querySelector("#sidebar [data-article-toc]");
+		sc.dispatchEvent(
+			new WheelEvent("wheel", { deltaY: 120, bubbles: true }),
+		);
+		const lis = [...sc.querySelectorAll("li")];
+		return lis[i].querySelector("a").getAttribute("href").slice(1);
+	}, clickIdx);
+	await sp2.click(`#sidebar .article-toc a[href="#${clickSlug}"]`);
+	const healClick = await waitSettledHealed(
+		(t) => waitTocCenteredOn(clickIdx, t),
+		"点击回正",
+	);
+	const clicked = await tocSpyProbe();
+	check(
+		"激活态：先滚动目录后点击条目——导航点击清让位窗，跳转后激活项照常居中",
+		clicked !== null &&
+			clicked.current === clickIdx &&
+			clicked.centerOffset !== null &&
+			Math.abs(clicked.centerOffset) <= 2,
+		joinDetail(
+			`current=${clicked?.current} centerOffset=${clicked?.centerOffset?.toFixed(1)}（点击第 ${clickIdx} 条）`,
+			healClick,
 		),
 	);
 
