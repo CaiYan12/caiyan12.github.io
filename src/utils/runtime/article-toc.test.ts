@@ -1,11 +1,13 @@
-// 侧栏文章目录激活态纯函数 pickActiveIndex 单测（#99）。
-// 三条判定规则各一组正例 + 每条规则一条反例输入（红证据）：
+// 侧栏文章目录激活态纯函数单测（#99/T3 + #102/T5）。
+// pickActiveIndex：三条判定规则各一组正例 + 每条规则一条反例输入（红证据）：
 // 「首标题前不激活」与「页底兜底」两条的正例在真实内容上可能恰好重合，
 // 故各自单独证红——反例输入构造成「只违反该条规则」的最小形状。
+// pickTocRevealScrollTop（#102）：居中 + 钳制四种输入各一条。
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
 	pickActiveIndex,
+	pickTocRevealScrollTop,
 	buildArticleTocItem,
 	collectArticleTocEntries,
 } from "./article-toc";
@@ -120,6 +122,36 @@ test("空标题数组返回 -1（不激活）", () => {
 test("单条标题的两种状态：越线 0、页底也是 0", () => {
 	assert.equal(pickActiveIndex([1000], 1000, VIEW, DOC), 0);
 	assert.equal(pickActiveIndex([1000], DOC - VIEW, VIEW, DOC), 0);
+});
+
+// ---- pickTocRevealScrollTop：居中 + 钳制（#102/T5 票面四种输入）----
+
+test("reveal 目标（居中）：条目中线对齐容器中点，不触钳制", () => {
+	// itemTop=500、条目高 30、容器高 200、内容高 2000：
+	// 目标 = 500 + 15 − 100 = 415，落在 [0, 1800] 内 → 原值。
+	// 滚到 415 后条目中线位于容器内 500−415+15 = 100 = 200/2，居中成立。
+	assert.equal(pickTocRevealScrollTop(500, 30, 200, 2000), 415);
+});
+
+test("reveal 目标（顶钳制）：首章不足半屏，钳 0 不拖出顶部空白", () => {
+	// 10 + 15 − 100 = −75 < 0 → 钳 0（旧行为「贴边」同为 0，此输入居中/贴边同值，
+	// 区分二者靠居中正例与底钳制反例，不靠这一条）。
+	assert.equal(pickTocRevealScrollTop(10, 30, 200, 2000), 0);
+});
+
+test("reveal 目标（底钳制）：末章不足半屏，钳到最大滚动位不拖出底部空白", () => {
+	// 1950 + 15 − 100 = 1865 > 1800 = 2000 − 200 → 钳 1800。
+	// 贴边算法会给 1950+30−200 = 1780（条目底贴容器底），与居中钳制值不同——
+	// 本条是「居中钳制 ≠ 贴边」的区分性反例。
+	assert.equal(pickTocRevealScrollTop(1950, 30, 200, 2000), 1800);
+	assert.notEqual(pickTocRevealScrollTop(1950, 30, 200, 2000), 1780);
+});
+
+test("reveal 目标（容器不比列表矮）：无可滚空间恒 0", () => {
+	// scrollHeight 400 < clientHeight 500：max = max(0, −100) = 0，任何目标都钳 0。
+	assert.equal(pickTocRevealScrollTop(0, 30, 500, 400), 0);
+	// 恰好等高（400 = 400）同样 max = 0。
+	assert.equal(pickTocRevealScrollTop(100, 30, 400, 400), 0);
 });
 
 // ---- buildArticleTocItem：渲染结构契约（此前无消费者、审查裁定补测而非删导出）----

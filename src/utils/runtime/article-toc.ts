@@ -10,8 +10,9 @@
  *
  * 分工照 quote-band.ts 的先例：纯函数顶层导出、不读 window/document，副作用
  * 全留在 init 里；import 本模块无副作用。#98/T2 做了采集与填充；#99/T3 在此
- * 落地激活态（scroll-spy）。#100/T4 换页生命周期：本函数由装配表 `{ swap: 8 }`
- * 在每次 astro:after-swap 重跑。换页的正确性靠三条机制，缺一会「高亮乱跳」：
+ * 落地激活态（scroll-spy）；#102/T5 把 reveal 从「越界拖回边缘」升级为
+ * 「居中钳制 + rAF 自绘平滑 + 手动让位」。#100/T4 换页生命周期：本函数由装配表
+ * `{ swap: 8 }` 在每次 astro:after-swap 重跑。换页的正确性靠三条机制，缺一会「高亮乱跳」：
  * 1. swup 换的是整个 <main>，侧栏连同本元件一起换新——新元素天然没有
  *    dataset.articleTocReady 标记（该守卫是元素级防重入，不是跨页缓存），
  *    每次 init 都对全新 DOM 重新采集，旧列表内容不可能残留；
@@ -82,6 +83,25 @@ export function pickActiveIndex(
 }
 
 /**
+ * 目录自动滚动的目标 scrollTop（#102/T5 居中钳制）：激活项**中线对齐容器中点**
+ * （亮行指向「正在读的那节」而非「正在越线的那行字」，与主流阅读器一致；票面
+ * 已知后果：与视口顶判定线 10px 视觉脱开是有意接受）。列表首尾不足半屏时钳制
+ * 到 [0, scrollHeight − clientHeight]——第一章不拖出顶部空白、末章不拖出底部
+ * 空白；容器不比列表矮（scrollHeight ≤ clientHeight，无可滚空间）时恒 0。
+ * 纯函数：坐标全部由参数传入，裸 node 单测可直接驱动。
+ */
+export function pickTocRevealScrollTop(
+	itemTop: number,
+	itemHeight: number,
+	clientHeight: number,
+	scrollHeight: number,
+): number {
+	const max = Math.max(0, scrollHeight - clientHeight);
+	const target = itemTop + itemHeight / 2 - clientHeight / 2;
+	return Math.min(max, Math.max(0, target));
+}
+
+/**
  * 条目渲染的共享工厂：纯函数，接收 Document 以便单测桩化（不隐式读全局）。
  * 结构照 PostToc.astro 的 `<li style="--toc-depth: N"><a href="#slug">text</a></li>`，
  * 外加侧栏版必须的 `title` 全文（#98：无条件加，不按截断与否判断）。
@@ -105,7 +125,8 @@ export function buildArticleTocItem(
  * 粘性职责本就由外层 .widget-stack 容器独家承担，移除后容器自然收缩）。
  * 自足幂等（dataset 守卫防重入），import 无副作用。#99/T3 落地激活态：
  * window scroll（rAF 节流）/ resize 时以 pickActiveIndex 算激活索引，变化时
- * 画 .current 并把激活项滚进容器可见范围；-1 时清空全部高亮。
+ * 画 .current；#102/T5 起 reveal 把激活项滚到容器垂直中部（钳制），rAF 自绘
+ * 平滑到达，用户滚目录后 3s 内手动让位。-1 时清空全部高亮。
  */
 export function initArticleToc() {
 	const widget = document.querySelector<HTMLElement>(
@@ -171,26 +192,154 @@ export function initArticleToc() {
 		}
 	};
 
-	/** 激活项变化时让它滚进容器可见范围：直接设 scrollTop（不用 scrollIntoView，
-	 *  那会冒泡滚动页面本身——粘性侧栏 + 几何判据站点上属难查抖动源）。
-	 *  条目坐标用 getBoundingClientRect 差值换算进滚动容器坐标系（纯视口坐标
-	 *  差 + scrollTop，不依赖 offsetParent 链的定位模型）。 */
+	// —— #102/T5：居中钳制 + rAF 自绘平滑 + 手动让位 ——
+	// 滚动容器就是 widget 本体（<nav data-article-toc>，overflow-y: auto）。
+	const scroller = widget;
+
+	// 手动让位状态：用户滚动目录后 3s 内，激活变化只改高亮不滚容器。
+	let manualOverrideUntil = 0;
+	// 程序自身设 scrollTop 的排除：记录最近一次程序写入值（NaN = 尚未写过）。
+	// 两处消费，均不清零——①容器 scroll 事件读到相同值（±0.5）即本模块所写
+	// （每帧至多一个 scroll 事件，写值 ↔ 事件一一配对）；②动画每帧写值前核对
+	// 现值，不同说明用户在帧间滚了目录（页底动画未完全落定时外部设 scrollTop
+	// 的实测场景：布尔标志方案会把合并事件误判成程序写入，让位窗口根本没生效，
+	// T5 冒烟红证据）。用户滚动 = 与记录值不同，取消动画并进入 3s 让位窗口。
+	let lastOwnWrite = NaN;
+
+	// 在飞动画状态（同一时刻至多一个动画：新激活取消旧的、从当前进度追新）。
+	let revealFrame = 0;
+	let revealFrom = 0;
+	let revealTo = 0;
+	let revealStart = 0;
+	// 防抖状态：无动画在飞时，激活变化只更新目标并重排 100ms 定时器。
+	let revealDebounce = 0;
+	let revealPendingTarget = 0;
+
+	const setScrollTop = (v: number) => {
+		// 浏览器会把 scrollTop 对齐到整数（实测写入 941.5 读回 942，差值恰为
+		// 0.5——正好落在「程序写入 ↔ 事件」配对容差的边界上被误判成用户滚动，
+		// 让位窗口把后续 reveal 整段吞掉，T5 冒烟红证据）。写入侧先取整：
+		// 程序写入与读回值严格相等（diff 0），±0.5 容差只留给真用户滚动
+		// （整数像素 ≥1）。动画观感不变（亚像素取整不可见）。
+		const snapped = Math.round(v);
+		lastOwnWrite = snapped;
+		scroller.scrollTop = snapped;
+	};
+
+	const cancelReveal = () => {
+		if (revealFrame) {
+			cancelAnimationFrame(revealFrame);
+			revealFrame = 0;
+		}
+		if (revealDebounce) {
+			clearTimeout(revealDebounce);
+			revealDebounce = 0;
+		}
+	};
+
+	const stepReveal = () => {
+		revealFrame = requestAnimationFrame((now) => {
+			revealFrame = 0;
+			// 写值前核对现值：与上次程序写入不同，说明用户在帧间滚了目录——
+			// 立即让位（取消动画、进入 3s 窗口），不与用户抢容器。
+			if (
+				Number.isFinite(lastOwnWrite) &&
+				Math.abs(scroller.scrollTop - lastOwnWrite) >= 0.5
+			) {
+				((window as any).__tocOvr ??= []).push({
+					kind: "frame",
+					top: scroller.scrollTop,
+					last: lastOwnWrite,
+					t: performance.now(),
+				});
+				manualOverrideUntil = performance.now() + MANUAL_OVERRIDE_MS;
+				return;
+			}
+			const t = Math.min(1, (now - revealStart) / REVEAL_DURATION);
+			setScrollTop(
+				revealFrom + (revealTo - revealFrom) * easeOutCubic(t),
+			);
+			if (t < 1) stepReveal();
+		});
+	};
+
+	const startReveal = (target: number) => {
+		revealFrom = scroller.scrollTop;
+		revealTo = target;
+		// 目标就在原地：不起动画（200ms 空转只会让判据读到无意义中间帧）。
+		if (Math.abs(revealTo - revealFrom) < 1) return;
+		// 从当前位置接管：基线同步到现值，否则首帧核对会拿旧写入值误判
+		// 「用户动过」而自取消（取消追新路径的起点是上一段动画的中间值）。
+		lastOwnWrite = revealFrom;
+		revealStart = performance.now();
+		stepReveal();
+	};
+
+	/** 激活项变化时把目录滚到「激活项居中（钳制）」：目标由纯函数
+	 *  pickTocRevealScrollTop 计算；到达是 rAF 自绘平滑（不用 scrollIntoView——
+	 *  那会冒泡滚动页面本身，#99 起的约束不回退），新激活取消旧动画从当前
+	 *  进度追新，连续变化先防抖。条目坐标换算沿用 getBoundingClientRect 差值
+	 *  （纯视口坐标差 + scrollTop，不依赖 offsetParent 链的定位模型）。 */
 	const reveal = (index: number) => {
 		if (index < 0) return;
-		const scroller = list.closest<HTMLElement>("[data-article-toc]");
+		// 手动让位窗口内：只改高亮不滚容器（paint 已在 update 里做过）。
+		if (performance.now() < manualOverrideUntil) return;
 		const li = lis[index] as HTMLElement;
-		if (!scroller || !li) return;
+		if (!li) return;
 		const itemTop =
 			li.getBoundingClientRect().top -
 			scroller.getBoundingClientRect().top +
 			scroller.scrollTop;
-		const itemBottom = itemTop + li.offsetHeight;
-		if (itemTop < scroller.scrollTop) {
-			scroller.scrollTop = itemTop;
-		} else if (itemBottom > scroller.scrollTop + scroller.clientHeight) {
-			scroller.scrollTop = itemBottom - scroller.clientHeight;
+		const target = pickTocRevealScrollTop(
+			itemTop,
+			li.offsetHeight,
+			scroller.clientHeight,
+			scroller.scrollHeight,
+		);
+		if (prefersReducedMotion()) {
+			// 站内既有回退惯例（theme-script.ts）：减少动效偏好下全部瞬时。
+			cancelReveal();
+			setScrollTop(target);
+			return;
 		}
+		if (revealFrame) {
+			// 动画进行中：取消旧动画，从当前进度直接追新目标（不排队不积压）。
+			cancelAnimationFrame(revealFrame);
+			revealFrame = 0;
+			startReveal(target);
+			return;
+		}
+		// 无动画在飞：连续激活变化先防抖，目标稳定 100ms 后才启动。
+		revealPendingTarget = target;
+		if (revealDebounce) clearTimeout(revealDebounce);
+		revealDebounce = window.setTimeout(() => {
+			revealDebounce = 0;
+			startReveal(revealPendingTarget);
+		}, REVEAL_DEBOUNCE);
 	};
+
+	// 手动让位（#102）：监听目录容器自身的 scroll——用户滚目录会触发；本模块
+	// 程序化设 scrollTop（动画分帧/瞬时设值）也会触发，按 lastOwnWrite 值比对
+	// 排除。真用户滚动：取消在飞动画与防抖，进入 3s 让位窗口——期间 update
+	// 只画高亮不滚容器，静默 3s 后下一次激活变化恢复自动居中。
+	scroller.addEventListener("scroll", () => {
+		if (
+			Number.isFinite(lastOwnWrite) &&
+			Math.abs(scroller.scrollTop - lastOwnWrite) < 0.5
+		) {
+			// 本模块写入触发的事件：消费但不清零——记录值还要供动画下一帧的
+			// 写值前核对用（见 lastOwnWrite 注释）。
+			return;
+		}
+		((window as any).__tocOvr ??= []).push({
+			kind: "evt",
+			top: scroller.scrollTop,
+			last: lastOwnWrite,
+			t: performance.now(),
+		});
+		cancelReveal();
+		manualOverrideUntil = performance.now() + MANUAL_OVERRIDE_MS;
+	});
 
 	const update = () => {
 		const index = pickActiveIndex(
@@ -235,3 +384,16 @@ let scheduleFrame: (() => void) | null = null;
 function scheduleArticleTocUpdate() {
 	scheduleFrame?.();
 }
+
+// —— #102/T5 目录到达动画参数 ——
+/** rAF 自绘平滑的总时长（票面裁决：约 200ms ease-out）。 */
+const REVEAL_DURATION = 200;
+/** 连续激活变化的防抖：目标稳定 100ms 后才启动动画（连续滚动中不逐帧启停）。 */
+const REVEAL_DEBOUNCE = 100;
+/** 手动让位窗口：用户滚动目录后 3s 内激活变化只改高亮不滚容器。 */
+const MANUAL_OVERRIDE_MS = 3000;
+/** ease-out cubic：前快后慢，观感对齐站内既有 ease-out 过渡。 */
+const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
+/** 用户偏好减少动效（照 theme-script.ts 的既有回退惯例：JS 驱动的动效必须同样短路） */
+const prefersReducedMotion = () =>
+	window.matchMedia("(prefers-reduced-motion: reduce)").matches;
