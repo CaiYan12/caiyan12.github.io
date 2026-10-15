@@ -178,6 +178,8 @@ let copyLinkBound = false;
 
 let protectedEmailBound = false;
 
+let anchorSmoothScrollBound = false;
+
 let skillsDonutTooltipBound = false;
 
 let newCommentShuffleBound = false;
@@ -1090,6 +1092,66 @@ function initProtectedEmail() {
 	});
 }
 
+/**
+ * 同页锚点点击平滑滚动（站长 2026-10-15 需求：文章顶部目录与侧栏目录点击跳转
+ * 均为浏览器默认瞬移，补一段短促的滚动过渡）。
+ *
+ * 机制复用双击回顶（initDblClickScroll）的 `window.scrollTo({ behavior: "smooth" })`，
+ * 不自绘动画。事件委托绑一次（document 级，Swup 换页不重跑、新渲染的目录链接
+ * 天然生效），只接管「同页纯 hash 链接」：
+ * - 跨页链接不碰（那是 swup 的领地，swup 侧 smoothScrolling 已为 false）；
+ * - `href="#"`（占位链接）不碰；
+ * - 目标 id 在当前文档不存在时不碰（照旧让浏览器走「无操作」的默认路径，
+ *   不替它伪造 hash）；
+ * - 修饰键/非左键（新标签页、下载意图等浏览器手势）不碰。
+ * 接管后 hash 更新用 pushState 而非置 location.hash——后者会在平滑滚动进行中
+ * 触发原生锚点跳转打断动画。浏览器原生 hash 高亮不动，滚到后由目录激活态
+ * （pickActiveIndex）自然点亮对应条目。
+ *
+ * 监听必须挂**捕获阶段**（capture: true）：swup 的站内链接 click 委托在 document
+ * 气泡阶段注册且先于本模块装配，会对链接 preventDefault 后自行处理（同页 hash
+ * 也是瞬移）——气泡阶段挂的话我们只会读到 defaultPrevented 早退，动画永远轮不到
+ * 自己（生产产物实测）。捕获阶段先于一切气泡监听拿到事件，我们 preventDefault
+ * 后 swup 对 defaultPrevented 事件自行跳过，两者不打架。
+ */
+function initAnchorSmoothScroll() {
+	if (anchorSmoothScrollBound) return;
+	anchorSmoothScrollBound = true;
+	document.addEventListener(
+		"click",
+		(e) => {
+			if (e.defaultPrevented || e.button !== 0) return;
+			if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+			const target = e.target as Element | null;
+			const link = target?.closest?.("a");
+			if (!link) return;
+			const url = new URL(link.href, location.href);
+			if (
+				url.pathname !== location.pathname ||
+				url.search !== location.search
+			)
+				return;
+			if (!url.hash || url.hash === "#") return;
+			const el = document.getElementById(
+				decodeURIComponent(url.hash.slice(1)),
+			);
+			if (!el) return;
+			e.preventDefault();
+			// 状态必须推 **null** 而非 history.state：复制会把 swup 的条目状态
+			// （state.url = 无 hash 的页面地址）带进锚点条目，后退 popstate 时
+			// swup 的 skipPopStateHandling 看到无 "#" 的 state.url 就把它当普通
+			// 页面导航抢走处理，后退回到上一个锚点失效（生产产物实测）。null
+			// 与浏览器原生锚点条目同形，popstate 交还原生 hash 滚动。
+			history.pushState(null, "", url.hash);
+			window.scrollTo({
+				top: el.getBoundingClientRect().top + window.scrollY,
+				behavior: prefersReducedMotion() ? "auto" : "smooth",
+			});
+		},
+		true,
+	);
+}
+
 /** 移动端全屏菜单 */
 function initMMenu() {
 	const openBtn = document.getElementById("open-nav");
@@ -1311,6 +1373,7 @@ const runtimeTable: RuntimeEntry[] = [
 	{ init: initCopyLink },
 	{ init: initToastTrigger },
 	{ init: initProtectedEmail },
+	{ init: initAnchorSmoothScroll },
 	{ init: initNewCommentShuffle },
 	{ init: initPaginationJump },
 	{ init: initSkillsDonutTooltip },
