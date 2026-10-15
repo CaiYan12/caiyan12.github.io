@@ -7408,6 +7408,10 @@ body,
   text-overflow: ellipsis;
   white-space: nowrap;
   color: #333;
+  /* 激活项颜色过渡（#102/T5）：照侧栏 actions 槽先例（.weather-widget__refresh
+     的 color 180ms ease-out，同族标题栏动作过渡）；只过渡颜色，字重 700 无
+     中间值，跳变保留（票面裁决：不引入新设计手法）。 */
+  transition: color 180ms ease-out;
 }
 
 #sidebar .article-toc li a:hover {
