@@ -197,14 +197,39 @@ export function initArticleToc() {
 	const scroller = widget;
 
 	// 手动让位状态：用户滚动目录后 3s 内，激活变化只改高亮不滚容器。
+	// 「用户滚动」以**输入事件源**识别（wheel / pointerdown / keydown），不监听
+	// scroll 事件做写值配对——scroll 是结果事件，程序化写值与用户滚动都会触发，
+	// 靠值比对排除对事件合并/派发时序脆弱（T5 首版实测：4c 段程序化写容器
+	// scrollTop 每次都武装让位窗口，泄漏进后续判据间歇性吞掉 reveal，作者两轮
+	// 未定位到触发源；输入事件只来自真实用户输入，无此歧义）。副作用：点击目录
+	// 链接（pointerdown）也会进入 3s 让位窗——点击目标本就在可视区内，无需再居中，
+	// 属可接受语义。 */
 	let manualOverrideUntil = 0;
-	// 程序自身设 scrollTop 的排除：记录最近一次程序写入值（NaN = 尚未写过）。
-	// 两处消费，均不清零——①容器 scroll 事件读到相同值（±0.5）即本模块所写
-	// （每帧至多一个 scroll 事件，写值 ↔ 事件一一配对）；②动画每帧写值前核对
-	// 现值，不同说明用户在帧间滚了目录（页底动画未完全落定时外部设 scrollTop
-	// 的实测场景：布尔标志方案会把合并事件误判成程序写入，让位窗口根本没生效，
-	// T5 冒烟红证据）。用户滚动 = 与记录值不同，取消动画并进入 3s 让位窗口。
-	let lastOwnWrite = NaN;
+
+	const userScrolling = () => {
+		cancelReveal();
+		manualOverrideUntil = performance.now() + MANUAL_OVERRIDE_MS;
+	};
+	scroller.addEventListener("wheel", userScrolling, { passive: true });
+	// 滚动条拖拽不产生 wheel：pointerdown 覆盖（点击条目链接同样命中，见上）。
+	scroller.addEventListener("pointerdown", userScrolling);
+	// 键盘滚动（焦点在条目链接上时 Space/PageUp/PageDown/方向键滚动容器）。
+	scroller.addEventListener(
+		"keydown",
+		(e) => {
+			if (
+				e.key === " " ||
+				e.key === "PageUp" ||
+				e.key === "PageDown" ||
+				e.key === "ArrowUp" ||
+				e.key === "ArrowDown" ||
+				e.key === "Home" ||
+				e.key === "End"
+			)
+				userScrolling();
+		},
+		{ passive: true },
+	);
 
 	// 在飞动画状态（同一时刻至多一个动画：新激活取消旧的、从当前进度追新）。
 	let revealFrame = 0;
@@ -214,16 +239,13 @@ export function initArticleToc() {
 	// 防抖状态：无动画在飞时，激活变化只更新目标并重排 100ms 定时器。
 	let revealDebounce = 0;
 	let revealPendingTarget = 0;
+	// 成文不变量（T5 审查发现）：动画在飞（revealFrame ≠ 0）⇒ revealDebounce === 0。
+	// 「动画分支」（reveal 内 if (revealFrame)）裸 cancelAnimationFrame 不清防抖也安全：
+	// revealDebounce 只在「无动画在飞」分支赋值，startReveal 两个入口（防抖回调先清零、动画分支自身）进入时防抖必为 0。
+	// 中途改道由 cancelReveal 统一清两者（wheel/pointerdown/keydown 的 userScrolling、新激活的动画分支），不会单边残留。
 
 	const setScrollTop = (v: number) => {
-		// 浏览器会把 scrollTop 对齐到整数（实测写入 941.5 读回 942，差值恰为
-		// 0.5——正好落在「程序写入 ↔ 事件」配对容差的边界上被误判成用户滚动，
-		// 让位窗口把后续 reveal 整段吞掉，T5 冒烟红证据）。写入侧先取整：
-		// 程序写入与读回值严格相等（diff 0），±0.5 容差只留给真用户滚动
-		// （整数像素 ≥1）。动画观感不变（亚像素取整不可见）。
-		const snapped = Math.round(v);
-		lastOwnWrite = snapped;
-		scroller.scrollTop = snapped;
+		scroller.scrollTop = v;
 	};
 
 	const cancelReveal = () => {
@@ -240,21 +262,6 @@ export function initArticleToc() {
 	const stepReveal = () => {
 		revealFrame = requestAnimationFrame((now) => {
 			revealFrame = 0;
-			// 写值前核对现值：与上次程序写入不同，说明用户在帧间滚了目录——
-			// 立即让位（取消动画、进入 3s 窗口），不与用户抢容器。
-			if (
-				Number.isFinite(lastOwnWrite) &&
-				Math.abs(scroller.scrollTop - lastOwnWrite) >= 0.5
-			) {
-				((window as any).__tocOvr ??= []).push({
-					kind: "frame",
-					top: scroller.scrollTop,
-					last: lastOwnWrite,
-					t: performance.now(),
-				});
-				manualOverrideUntil = performance.now() + MANUAL_OVERRIDE_MS;
-				return;
-			}
 			const t = Math.min(1, (now - revealStart) / REVEAL_DURATION);
 			setScrollTop(
 				revealFrom + (revealTo - revealFrom) * easeOutCubic(t),
@@ -268,9 +275,6 @@ export function initArticleToc() {
 		revealTo = target;
 		// 目标就在原地：不起动画（200ms 空转只会让判据读到无意义中间帧）。
 		if (Math.abs(revealTo - revealFrom) < 1) return;
-		// 从当前位置接管：基线同步到现值，否则首帧核对会拿旧写入值误判
-		// 「用户动过」而自取消（取消追新路径的起点是上一段动画的中间值）。
-		lastOwnWrite = revealFrom;
 		revealStart = performance.now();
 		stepReveal();
 	};
@@ -281,7 +285,13 @@ export function initArticleToc() {
 	 *  进度追新，连续变化先防抖。条目坐标换算沿用 getBoundingClientRect 差值
 	 *  （纯视口坐标差 + scrollTop，不依赖 offsetParent 链的定位模型）。 */
 	const reveal = (index: number) => {
-		if (index < 0) return;
+		if (index < 0) {
+			// 「没有正在阅读的章节」：清掉在飞动画与已排队的防抖——否则页顶时
+			// 上一目标（如页底兜底的末章）的动画照飞，容器停在无语义的位置
+			// （实测：reveal(73) 排队后 reveal(-1) 早退，动画照飞到 max）。
+			cancelReveal();
+			return;
+		}
 		// 手动让位窗口内：只改高亮不滚容器（paint 已在 update 里做过）。
 		if (performance.now() < manualOverrideUntil) return;
 		const li = lis[index] as HTMLElement;
@@ -317,29 +327,6 @@ export function initArticleToc() {
 			startReveal(revealPendingTarget);
 		}, REVEAL_DEBOUNCE);
 	};
-
-	// 手动让位（#102）：监听目录容器自身的 scroll——用户滚目录会触发；本模块
-	// 程序化设 scrollTop（动画分帧/瞬时设值）也会触发，按 lastOwnWrite 值比对
-	// 排除。真用户滚动：取消在飞动画与防抖，进入 3s 让位窗口——期间 update
-	// 只画高亮不滚容器，静默 3s 后下一次激活变化恢复自动居中。
-	scroller.addEventListener("scroll", () => {
-		if (
-			Number.isFinite(lastOwnWrite) &&
-			Math.abs(scroller.scrollTop - lastOwnWrite) < 0.5
-		) {
-			// 本模块写入触发的事件：消费但不清零——记录值还要供动画下一帧的
-			// 写值前核对用（见 lastOwnWrite 注释）。
-			return;
-		}
-		((window as any).__tocOvr ??= []).push({
-			kind: "evt",
-			top: scroller.scrollTop,
-			last: lastOwnWrite,
-			t: performance.now(),
-		});
-		cancelReveal();
-		manualOverrideUntil = performance.now() + MANUAL_OVERRIDE_MS;
-	});
 
 	const update = () => {
 		const index = pickActiveIndex(

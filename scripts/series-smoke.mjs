@@ -621,6 +621,49 @@ const sweepAndSettle = async (pg) => {
 	});
 };
 
+// —— 4d 页内 helper（收敛三处内联居中偏移 + 两处内联落定循环；T5 审查 F3）——
+// 装进 window 的做法照本文件自装采样器先例（installTocScrollSampler 等）。
+// 居中偏移：li 中线 − 容器中线（视口坐标）。验证侧（waitTocCenteredOn /
+// reduced-motion 段）直接断言 |off| ≤ 2；liOfIndex 的居中目标 scrollTop =
+// 同一偏移 + scrollTop 换回内容坐标再钳制——容器 .article-toc-scroll 无边框、
+// 条目 a 自截断无横向滚动条（rect 高 == clientHeight），与原 clientHeight 写法
+// 逐像素相等；与运行时 pickTocRevealScrollTop 同口径。
+const installTocCenterOffset = (pg) =>
+	pg.evaluate(() => {
+		window.__tocCenterOffset = (li, sc) =>
+			(li.getBoundingClientRect().top +
+				li.getBoundingClientRect().bottom) /
+				2 -
+			(sc.getBoundingClientRect().top +
+				sc.getBoundingClientRect().bottom) /
+				2;
+	});
+// 落定等待：连续 8 帧不动（±0.5）且确有位移（max−min > 10，防抖静默期不算
+// 落定）；600 帧兜底防挂死。判据语义与原两处内联循环逐字一致。
+const installTocSettleWait = (pg) =>
+	pg.evaluate(() => {
+		window.__tocWaitScrollSettled = (sc) =>
+			new Promise((resolve) => {
+				let frames = 0;
+				let stable = 0;
+				let last = NaN;
+				let min = Infinity;
+				let max = -Infinity;
+				const tick = () => {
+					const v = sc.scrollTop;
+					if (Math.abs(v - last) < 0.5) stable++;
+					else stable = 0;
+					last = v;
+					min = Math.min(min, v);
+					max = Math.max(max, v);
+					if ((stable >= 8 && max - min > 10) || frames++ > 600)
+						return resolve();
+					requestAnimationFrame(tick);
+				};
+				requestAnimationFrame(tick);
+			});
+	});
+
 // —— 4d. 激活态跟随阅读位置（T3/#99）+ 居中/动画/让位（T5/#102）——
 // 全部真滚动测量：等的是「高亮真的被画出来」（计算样式差异）「亮行居中到位」
 // 「滚动落定在边界」这类真实状态，不 waitForTimeout（唯一例外：让位恢复前的
@@ -634,6 +677,8 @@ const sweepAndSettle = async (pg) => {
 	const sp2 = spyPage;
 	await sp2.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
 	await sweepAndSettle(sp2);
+	await installTocCenterOffset(sp2);
+	await installTocSettleWait(sp2);
 
 	const tocSpyProbe = () =>
 		sp2.evaluate(() => {
@@ -724,14 +769,7 @@ const sweepAndSettle = async (pg) => {
 				const li = lis[i];
 				if (!li || !sc || !li.classList.contains("current"))
 					return false;
-				const off =
-					(li.getBoundingClientRect().top +
-						li.getBoundingClientRect().bottom) /
-						2 -
-					(sc.getBoundingClientRect().top +
-						sc.getBoundingClientRect().bottom) /
-						2;
-				return Math.abs(off) <= 2;
+				return Math.abs(window.__tocCenterOffset(li, sc)) <= 2;
 			},
 			idx,
 			{ timeout },
@@ -756,13 +794,26 @@ const sweepAndSettle = async (pg) => {
 	// 自愈式落定等待：先普通等待；超时后跨过 3s 让位窗口（误触发的让位若没有
 	// 后续激活变化可重触发，容器会停驻到任何有限超时——实测一次），再做一次
 	// 「滚过去 +150 再滚回来」的激活往返强制 reveal 重新出发，最后再等一次。
-	// 仍失败返回 false，由 check 落 FAIL——超时不再崩脚本，保留整批判据证据。
-	const waitSettledHealed = async (waitFn) => {
+	// 返回首败注记（T5 审查 F4）：首败时抓「哪条判据 + 当时 current/scrollTop」
+	// 读数，自愈成功由调用方把「首败…自愈…」附进 PASS detail，自愈后仍败附进
+	// FAIL 文案——不让真实间歇缺陷被静默洗绿；干净首过返回 ""，detail 原样。
+	const waitSettledHealed = async (waitFn, label) => {
+		let firstFail = "";
 		try {
 			await waitFn(2500);
-			return true;
+			return "";
 		} catch {
-			// 进入自愈路径
+			// 进入自愈路径：先抓首败当时的读数。探针自身失败不得吞掉自愈
+			// 路径（超时不再崩脚本的性质保留）。
+			let p = {};
+			try {
+				p = (await tocSpyProbe()) ?? {};
+			} catch {
+				p = {};
+			}
+			firstFail =
+				`首败 ${label}（current=${p.current ?? "?"} scrollTop=${p.scrollTop ?? "?"} ` +
+				`centerOffset=${p.centerOffset?.toFixed(1) ?? "?"}）`;
 		}
 		await sp2.waitForTimeout(3300);
 		await sp2.evaluate(async () => {
@@ -774,11 +825,13 @@ const sweepAndSettle = async (pg) => {
 		});
 		try {
 			await waitFn(2500);
-			return true;
+			return `${firstFail}，自愈（跨让位窗口+激活往返）成功`;
 		} catch {
-			return false;
+			return `${firstFail}；自愈后仍超时`;
 		}
 	};
+	// detail 拼接：有首败注记才追加，干净路径 detail 一字不变。
+	const joinDetail = (detail, note) => (note ? `${detail}；${note}` : detail);
 	// 逐帧采样器：rAF 记录容器 scrollTop，供动画判据读中间帧。
 	const installTocScrollSampler = () =>
 		sp2.evaluate(() => {
@@ -840,7 +893,10 @@ const sweepAndSettle = async (pg) => {
 	);
 	// 顶钳制采样前等容器落定在 0 位：第 3 条的居中目标为负 → 钳 0。预载扫尾
 	// 会把容器留在某个动画残位上，落定等待之前读 scrollTop 必然假红（实测）。
-	await waitSettledHealed((t) => waitTocClamped("top", t));
+	const healTop = await waitSettledHealed(
+		(t) => waitTocClamped("top", t),
+		"顶钳位落定",
+	);
 	const mid = await tocSpyProbe();
 	check(
 		"激活态：越过第 3 个标题后激活第 3 条（rAF 后读取）",
@@ -909,6 +965,8 @@ const sweepAndSettle = async (pg) => {
 		}, y);
 	// 某激活索引的 li 的居中目标 scrollTop（与运行时同式钳制到 [0, max]）——
 	// 取消追新判据的「旧目标」必须用钳制后的真值，否则断言阈值失真。
+	// raw = 居中偏移（页内 helper）+ scrollTop 换回内容坐标（容器无边框，
+	// 与原 clientHeight 写法逐像素相等，见 installTocCenterOffset 注）。
 	const liOfIndex = (i) =>
 		sp2.evaluate((idx) => {
 			const lis = [
@@ -917,13 +975,7 @@ const sweepAndSettle = async (pg) => {
 			const li = lis[idx];
 			const sc = document.querySelector("#sidebar [data-article-toc]");
 			if (!li || !sc) return null;
-			const raw =
-				(li.getBoundingClientRect().top +
-					li.getBoundingClientRect().bottom) /
-					2 -
-				sc.getBoundingClientRect().top +
-				sc.scrollTop -
-				sc.clientHeight / 2;
+			const raw = window.__tocCenterOffset(li, sc) + sc.scrollTop;
 			return {
 				index: idx,
 				target: Math.min(
@@ -939,16 +991,21 @@ const sweepAndSettle = async (pg) => {
 	const y30 = await yOfHeading(30);
 	const exp30 = await activeAtY(y30);
 	await scrollToY(y30);
-	await waitSettledHealed((t) => waitTocCenteredOn(exp30, t));
+	const heal30 = await waitSettledHealed(
+		(t) => waitTocCenteredOn(exp30, t),
+		"第30条居中",
+	);
 	const centered = await tocSpyProbe();
-	const ovrDbg = await sp2.evaluate(() => window.__tocOvr ?? []);
 	check(
 		"激活态：激活项位于容器垂直中部（中线对齐中点 ±2px，#102 居中钳制）",
 		centered !== null &&
 			centered.current === exp30 &&
 			centered.centerOffset !== null &&
 			Math.abs(centered.centerOffset) <= 2,
-		`current=${centered?.current} centerOffset=${centered?.centerOffset?.toFixed(1)} ovr=${JSON.stringify(ovrDbg)}`,
+		joinDetail(
+			`current=${centered?.current} centerOffset=${centered?.centerOffset?.toFixed(1)}`,
+			heal30,
+		),
 	);
 
 	// 颜色过渡：激活项切换后计算色多帧过渡（≥3 个互异值）；字重 700 无中间值。
@@ -956,7 +1013,10 @@ const sweepAndSettle = async (pg) => {
 	const y40 = await yOfHeading(40);
 	const exp40 = await activeAtY(y40);
 	await scrollToY(y40);
-	await waitSettledHealed((t) => waitTocCenteredOn(exp40, t));
+	const heal40 = await waitSettledHealed(
+		(t) => waitTocCenteredOn(exp40, t),
+		"第40条居中",
+	);
 	// 等颜色过渡**自身**落定（计算色连续 6 帧不变且已采 ≥12 帧）再停采样：
 	// 停止窗口与滚动快慢解耦——若挂到滚动落定上，瞬时到达（变异/reduced-motion）
 	// 会在过渡起帧前就停采样，读不出过渡帧（红证据实测 colors=2 假象）。
@@ -976,7 +1036,10 @@ const sweepAndSettle = async (pg) => {
 	check(
 		"激活态：激活项颜色有 CSS 过渡（计算色多帧过渡）且字重仍瞬时（无中间值）",
 		new Set(colorSamples).size >= 3 && new Set(weightSamples).size === 1,
-		`colors=${new Set(colorSamples).size} weights=${[...new Set(weightSamples)].join("/")}`,
+		joinDetail(
+			`colors=${new Set(colorSamples).size} weights=${[...new Set(weightSamples)].join("/")}`,
+			heal40,
+		),
 	);
 
 	// 快速连续滑动：先滚向第 55 条，等动画真的动起来（scrollTop 离开起点）后
@@ -1010,26 +1073,8 @@ const sweepAndSettle = async (pg) => {
 				requestAnimationFrame(t);
 			});
 			window.scrollTo(0, yB);
-			// 等落定：连续 8 帧不动且确有位移（防抖静默期不算落定）。
-			frames = 0;
-			let stable = 0;
-			let last = NaN;
-			let min = Infinity;
-			let max = -Infinity;
-			await new Promise((resolve) => {
-				const t = () => {
-					const v = sc.scrollTop;
-					if (Math.abs(v - last) < 0.5) stable++;
-					else stable = 0;
-					last = v;
-					min = Math.min(min, v);
-					max = Math.max(max, v);
-					if ((stable >= 8 && max - min > 10) || frames++ > 600)
-						return resolve();
-					requestAnimationFrame(t);
-				};
-				requestAnimationFrame(t);
-			});
+			// 等落定：连续 8 帧不动且确有位移（防抖静默期不算落定）——页内 helper。
+			await window.__tocWaitScrollSettled(sc);
 			cancelAnimationFrame(raf);
 			return samples;
 		},
@@ -1054,7 +1099,10 @@ const sweepAndSettle = async (pg) => {
 	const exp50 = await activeAtY(y50);
 	await installTocScrollSampler();
 	await scrollToY(y50);
-	await waitSettledHealed((t) => waitTocCenteredOn(exp50, t));
+	const heal50 = await waitSettledHealed(
+		(t) => waitTocCenteredOn(exp50, t),
+		"第50条居中",
+	);
 	await stopTocSampler();
 	const glideSamples = await readTocSamples();
 	const glideFin = glideSamples[glideSamples.length - 1];
@@ -1068,7 +1116,10 @@ const sweepAndSettle = async (pg) => {
 	check(
 		"激活态：目录自动滚动多帧过渡（中间帧 scrollTop 介于起止之间，约 200ms）",
 		glideFin > beforeGlide.scrollTop + 50 && glideMiddles.length >= 2,
-		`start=${beforeGlide.scrollTop} fin=${glideFin} 中间帧=${glideMiddles.length}`,
+		joinDetail(
+			`start=${beforeGlide.scrollTop} fin=${glideFin} 中间帧=${glideMiddles.length}`,
+			heal50,
+		),
 	);
 
 	// 防抖：从第 50 条居中位出发，连续两次激活变化（先深第 55 条、约 2 帧后回
@@ -1091,25 +1142,8 @@ const sweepAndSettle = async (pg) => {
 				requestAnimationFrame(() => requestAnimationFrame(r)),
 			);
 			window.scrollTo(0, yB);
-			let frames = 0;
-			let stable = 0;
-			let last = NaN;
-			let min = Infinity;
-			let max = -Infinity;
-			await new Promise((resolve) => {
-				const t = () => {
-					const v = sc.scrollTop;
-					if (Math.abs(v - last) < 0.5) stable++;
-					else stable = 0;
-					last = v;
-					min = Math.min(min, v);
-					max = Math.max(max, v);
-					if ((stable >= 8 && max - min > 10) || frames++ > 600)
-						return resolve();
-					requestAnimationFrame(t);
-				};
-				requestAnimationFrame(t);
-			});
+			// 等落定：连续 8 帧不动且确有位移（防抖静默期不算落定）——页内 helper。
+			await window.__tocWaitScrollSettled(sc);
 			cancelAnimationFrame(raf);
 			return samples;
 		},
@@ -1152,7 +1186,10 @@ const sweepAndSettle = async (pg) => {
 		{ timeout: 5000 },
 	);
 	// 末钳制采样：等滚动落定在最大位（末章居中目标超出最大滚动位 → 钳制）。
-	await waitSettledHealed((t) => waitTocClamped("bottom", t));
+	const healBottom = await waitSettledHealed(
+		(t) => waitTocClamped("bottom", t),
+		"末钳位落定",
+	);
 	const bottom = await tocSpyProbe();
 	check(
 		"激活态：滚到页底，最后一条被点亮（页底兜底）",
@@ -1164,28 +1201,43 @@ const sweepAndSettle = async (pg) => {
 	check(
 		"激活态：列表首尾钳制——首章钳 0 不拖出顶部空白、末章钳最大滚动位不拖出底部空白",
 		topClampOk && bottomClampOk,
-		`top=${topClampOk} bottom=${bottomClampOk} scrollTop=${bottom?.scrollTop} max=${bottom?.maxScroll}`,
+		joinDetail(
+			joinDetail(
+				`top=${topClampOk} bottom=${bottomClampOk} scrollTop=${bottom?.scrollTop} max=${bottom?.maxScroll}`,
+				healTop,
+			),
+			healBottom,
+		),
 	);
 
-	// 手动让位：直接设容器 scrollTop 模拟用户滚目录（运行时只排除它自己写值
-	// 触发的 scroll 事件，外部设值必被当作用户滚动），3s 内滚动正文——激活
-	// 变化只改高亮不滚容器。
+	// 手动让位：模拟真实用户滚目录——派发 wheel 事件（运行时以输入事件源识别
+	// 用户，见 #102 裁决与 article-toc.ts 的 userScrolling）再落滚动位，3s 内
+	// 滚动正文——激活变化只改高亮不滚容器。
 	const overrideScrollTop = await sp2.evaluate(() => {
 		const sc = document.querySelector("#sidebar [data-article-toc]");
+		sc.dispatchEvent(
+			new WheelEvent("wheel", { deltaY: 120, bubbles: true }),
+		);
 		sc.scrollTop = Math.max(0, sc.scrollTop - 80);
 		return sc.scrollTop;
 	});
 	const y20 = await yOfHeading(20);
 	const exp20 = await activeAtY(y20);
 	await scrollToY(y20);
-	await waitSettledHealed((t) => waitCurrentAt(exp20, t));
+	const heal20 = await waitSettledHealed(
+		(t) => waitCurrentAt(exp20, t),
+		"让位期current",
+	);
 	const duringOverride = await tocSpyProbe();
 	check(
 		"激活态：手动让位——用户滚动目录后 3s 内激活变化只改高亮不滚容器",
 		duringOverride !== null &&
 			duringOverride.current === exp20 &&
 			Math.abs(duringOverride.scrollTop - overrideScrollTop) <= 2,
-		`current=${duringOverride?.current} scrollTop=${duringOverride?.scrollTop} 用户滚到=${overrideScrollTop}`,
+		joinDetail(
+			`current=${duringOverride?.current} scrollTop=${duringOverride?.scrollTop} 用户滚到=${overrideScrollTop}`,
+			heal20,
+		),
 	);
 
 	// 静默 3s 后恢复自动居中。3.3s 是本段唯一墙钟等待：3s 让位窗口本身是规格
@@ -1194,7 +1246,10 @@ const sweepAndSettle = async (pg) => {
 	const y45 = await yOfHeading(45);
 	const exp45 = await activeAtY(y45);
 	await scrollToY(y45);
-	await waitSettledHealed((t) => waitTocCenteredOn(exp45, t));
+	const heal45 = await waitSettledHealed(
+		(t) => waitTocCenteredOn(exp45, t),
+		"恢复居中",
+	);
 	const resumed = await tocSpyProbe();
 	check(
 		"激活态：手动让位静默 3s 后恢复自动居中",
@@ -1202,7 +1257,10 @@ const sweepAndSettle = async (pg) => {
 			resumed.current === exp45 &&
 			resumed.centerOffset !== null &&
 			Math.abs(resumed.centerOffset) <= 2,
-		`current=${resumed?.current} centerOffset=${resumed?.centerOffset?.toFixed(1)}`,
+		joinDetail(
+			`current=${resumed?.current} centerOffset=${resumed?.centerOffset?.toFixed(1)}`,
+			heal45,
+		),
 	);
 
 	await spyCtx.close();
@@ -1218,6 +1276,7 @@ const sweepAndSettle = async (pg) => {
 	await rmPage.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
 	// 同 4d：先钉稳布局再测，图片加载移位会把「瞬时直达」读成中间帧假象。
 	await sweepAndSettle(rmPage);
+	await installTocCenterOffset(rmPage);
 	const rm = await rmPage.evaluate(async (idx) => {
 		const heads = [
 			...document.querySelectorAll(".post-body :is(h2,h3,h4)[id]"),
@@ -1231,14 +1290,7 @@ const sweepAndSettle = async (pg) => {
 			samples.push(sc.scrollTop);
 		}
 		const cur = document.querySelector("#sidebar .article-toc li.current");
-		const off = cur
-			? (cur.getBoundingClientRect().top +
-					cur.getBoundingClientRect().bottom) /
-					2 -
-				(sc.getBoundingClientRect().top +
-					sc.getBoundingClientRect().bottom) /
-					2
-			: null;
+		const off = cur ? window.__tocCenterOffset(cur, sc) : null;
 		return { samples, hasCurrent: !!cur, off };
 	}, 30);
 	const rmStart = rm.samples[0];
