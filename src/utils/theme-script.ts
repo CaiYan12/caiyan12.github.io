@@ -1108,11 +1108,16 @@ function initProtectedEmail() {
  * 触发原生锚点跳转打断动画。浏览器原生 hash 高亮不动，滚到后由目录激活态
  * （pickActiveIndex）自然点亮对应条目。
  *
- * 监听必须挂**捕获阶段**（capture: true）：swup 的站内链接 click 委托在 document
- * 气泡阶段注册且先于本模块装配，会对链接 preventDefault 后自行处理（同页 hash
- * 也是瞬移）——气泡阶段挂的话我们只会读到 defaultPrevented 早退，动画永远轮不到
- * 自己（生产产物实测）。捕获阶段先于一切气泡监听拿到事件，我们 preventDefault
- * 后 swup 对 defaultPrevented 事件自行跳过，两者不打架。
+ * 监听必须挂**捕获阶段**（capture: true），且接管时必须 **stopPropagation**：
+ * swup 对同页 hash 链接的处理**不检查 defaultPrevented**——它的链接点击委托在
+ * document 气泡阶段注册且先于本模块装配，无论我们是否 preventDefault 都会执行：
+ * 更新地址栏 hash 后走 `scroll:anchor` → `window.scrollTo(0, 目标)` 瞬时直达
+ * （本站 swup 集成 `smoothScrolling: false` ⇒ ScrollPlugin.animateScroll 全关，
+ * swup 4.9.2 dist 实证）。只 preventDefault 的话我们启动的 smooth 动画会被
+ * swup 的同步瞬移当帧覆盖，用户看不到任何动画（生产产物实测：点击后首帧
+ * scrollY 已在目标位）。所以必须在捕获阶段拿到事件后 stopPropagation，
+ * 让 swup 的委托根本收不到这类点击——swup 对它做的事恰好就是我们要替换的
+ * 瞬移跳转，拦截即替换，无副作用。跨页链接照旧放行给 swup。
  */
 function initAnchorSmoothScroll() {
 	if (anchorSmoothScrollBound) return;
@@ -1137,6 +1142,9 @@ function initAnchorSmoothScroll() {
 			);
 			if (!el) return;
 			e.preventDefault();
+			// swup 的气泡阶段委托不再收到本事件（见头注释）：它对同页 hash 的
+			// 处理正是要被替换的瞬移滚动。
+			e.stopPropagation();
 			// 状态必须推 **null** 而非 history.state：复制会把 swup 的条目状态
 			// （state.url = 无 hash 的页面地址）带进锚点条目，后退 popstate 时
 			// swup 的 skipPopStateHandling 看到无 "#" 的 state.url 就把它当普通
