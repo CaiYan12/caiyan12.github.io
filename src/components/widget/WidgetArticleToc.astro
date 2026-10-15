@@ -13,6 +13,21 @@ import { initArticleToc } from "../../utils/runtime/article-toc";
 
 <WidgetLayout title="文章目录" icon="fa-list-ul" class="widget-article-toc">
 	{
+		/* 标题栏 actions 槽：与文集目录的「查看目录」（.series-toc-link）同族——
+	    右上角共用相同特性的按钮链接，点击滚到文章开头的顶部目录（#toc，
+	    PostToc details）。同页锚点由 initAnchorSmoothScroll 平滑接管，
+	    与其它 widget 标题栏动作视觉/行为一致，消除无动作按钮的突兀感。 */
+	}
+	<a
+		slot="actions"
+		class="series-toc-link"
+		href="#toc"
+		title="查看文章顶部的目录"
+	>
+		<i class="fa fa-list-ul" aria-hidden="true"></i>
+		<span>查看目录</span>
+	</a>
+	{
 		/* 阅读进度条（2026-10-15 站长要求）：与文章页顶部的固定条同驱动
 	    （theme-script 的 updateReadingProgress 写全部 [data-reading-progress]），
 	    同理共存。占标题栏与内容之间那条边框线的位置：2px 高、主题色、widget 全宽。 */
