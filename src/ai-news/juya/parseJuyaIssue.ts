@@ -52,7 +52,7 @@ export interface JuyaIssue {
 /** 从 code 元素文本提取编号：'#3' → '3'；无效返回 null */
 function extractIndex(el: Element | null): string | null {
 	if (!el) return null;
-	const m = /#?\s*(\d+)/.exec(el.textContent ?? "");
+	const m = (el.textContent ?? "").match(/#?\s*(\d+)/);
 	return m ? m[1] : null;
 }
 

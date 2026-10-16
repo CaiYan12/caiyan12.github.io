@@ -11,8 +11,7 @@ export function extractCover(html: string): string | null {
 	if (!html) return null;
 	const imgRe = /<img[^>]+src=["']([^"']+)["'][^>]*>/gi;
 	let first: string | null = null;
-	let m: RegExpExecArray | null;
-	while ((m = imgRe.exec(html)) !== null) {
+	for (const m of html.matchAll(imgRe)) {
 		const src = m[1];
 		if (!first) first = src;
 		if (/cover_/i.test(src)) return src;
