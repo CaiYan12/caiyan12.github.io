@@ -4,7 +4,7 @@ export type ThemeScheme = "light" | "dark";
 
 /** 计算主题背景的相对亮度；无法解析的旧颜色值按亮色处理。 */
 export function themeBackgroundLuminance(hex: string): number {
-	const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+	const match = hex.trim().match(/^#?([0-9a-f]{6})$/i);
 	if (!match) return 1;
 	const value = Number.parseInt(match[1], 16);
 	const [r, g, b] = [

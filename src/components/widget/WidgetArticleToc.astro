@@ -1,0 +1,57 @@
+---
+import WidgetLayout from "./WidgetLayout.astro";
+import { initArticleToc } from "../../utils/runtime/article-toc";
+
+// 侧栏「文章目录」小部件（#98/T2）：外框照既有 WidgetLayout，列表结构照
+// 顶部目录 PostToc.astro（<ol> + --toc-depth 缩进，样式在 global.css 的
+// #sidebar .article-toc 两段式里复位）。条目本身由运行时模块采集填充
+// （标题树只有运行时拿得到，侧栏被全部页面共用），此处渲染空壳 + init。
+// 数据属性 data-article-toc 是运行时与冒烟的锚点（用 data-* 不锁类名，
+// 与 [data-widget-stack] 同法）。零标题时运行时整块移除本元件——粘性职责
+// 本就在外层 SidebarStickyStack 容器上（ADR 0008），这里无须交还处理。
+---
+
+<WidgetLayout title="文章目录" icon="fa-list-ul" class="widget-article-toc">
+	{
+		/* 标题栏 actions 槽：与文集目录的「查看目录」（.series-toc-link）同族——
+	    右上角共用相同特性的按钮链接，点击滚到文章开头的顶部目录（#toc，
+	    PostToc details）。同页锚点由 initAnchorSmoothScroll 平滑接管，
+	    与其它 widget 标题栏动作视觉/行为一致，消除无动作按钮的突兀感。 */
+	}
+	<a
+		slot="actions"
+		class="series-toc-link"
+		href="#toc"
+		title="查看文章顶部的目录"
+	>
+		<i class="fa fa-list-ul" aria-hidden="true"></i>
+		<span>查看目录</span>
+	</a>
+	{
+		/* 阅读进度条（2026-10-15 站长要求）：与文章页顶部的固定条同驱动
+	    （theme-script 的 updateReadingProgress 写全部 [data-reading-progress]），
+	    同理共存。占标题栏与内容之间那条边框线的位置：2px 高、主题色、widget 全宽。 */
+	}
+	<div
+		class="article-toc-progress"
+		data-reading-progress
+		role="progressbar"
+		aria-label="侧栏文章目录阅读进度"
+		aria-valuemin="0"
+		aria-valuemax="100"
+		aria-valuenow="0"
+	>
+	</div>
+	<nav aria-label="侧栏文章目录" class="article-toc-scroll" data-article-toc>
+		<ol class="article-toc"></ol>
+	</nav>
+</WidgetLayout>
+
+{
+	/* 初始化唯一入口是 theme-script.ts 的装配表（{ init: initArticleToc, swap: 8 }，
+    #100/T4）：初始装载按表序执行、swup after-swap 按 swap 号重跑。这里**不**再放
+    <script> 调 init——Astro 会把组件脚本打包内联进 swup 容器 <main>，而
+    @swup/scripts-plugin（reloadScripts 默认 true）在每次换页后重跑正文脚本，
+    那条路径绕过装配表与守卫归属，且与装配表行形成双入口（#100 红证据实测：
+    注释掉 swap:8 后换页判据仍绿，即这条影子路径在顶）。 */
+}

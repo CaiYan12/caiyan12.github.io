@@ -2466,6 +2466,8 @@ html[data-liquid-glass="on"] #nav li ul {
   display: block;
   /* clip 保持裁切语义但不创建滚动容器——否则 #sidebar 内的 sticky 永远钉不住 */
   overflow: clip;
+  /* 弹性布局的必要条件：祖先给了受限高度时子项才肯收缩，不是新设计语言 */
+  min-height: 0;
   width: 255px;
   color: #808080;
   font-size: 12px;
@@ -5488,13 +5490,26 @@ body,
 
 /* 侧栏文集目录（WidgetSeries）：行样式沿用 .widget li，这里只补有序列表复位与
    「当前章」高亮。GLOSSARY「当前页态」要求：.current 一旦计算就必须有消费它的样式。 */
-/* 粘性跟随：滚过自然位置后钉在视口顶 10px（站点无固定顶栏），直到 #content
-   底部把它顶上去。纯 CSS sticky，零客户端脚本。前置：#sidebar overflow 用
-   clip（见 .main-grid 定义处），且链条上无其他滚动容器祖先；≤980px 时
-   #wrapper 转 overflow:hidden（sticky 失效但布局不破，属优雅降级）。 */
-#sidebar .widget.widget-series {
+/* 粘性跟随（承载者是下面这条容器，不再是小部件自身）：滚过自然位置后钉在视口顶
+   10px（站点无固定顶栏），直到 #content 底部把它顶上去。纯 CSS sticky，零客户端
+   脚本。前置：#sidebar overflow 用 clip（见 .main-grid 定义处），且链条上无其他
+   滚动容器祖先；≤980px 时 #wrapper 转 overflow:hidden（sticky 失效但布局不破，
+   属优雅降级）。
+   为什么粘性由容器独家承担（ADR 0008）：两个各自 sticky、钉在同一视口偏移上的
+   兄弟元素滚动后会互相压住（实测 87.9px），故 T2 的第二个成员进来时不再自己定位。
+   弹性高度（规格决定 8/9）：外壳封顶「视口高 − 上下各 10px 留白」，与 top: 10px
+   同一组留白口径；min-height: 0 是弹性布局的必要条件——祖先给定了受限高度时子项
+   才肯收缩，不是新设计语言。overflow 由容器自己收口（内部 .widget 是 overflow:
+   visible，不会截断自己）；T2 引入第二个成员、内容真正超过外壳时，在这一层内补
+   滚动包裹层并同样给 min-height: 0。 */
+#sidebar .widget-stack {
   position: sticky;
   top: 10px;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 20px);
+  min-height: 0;
+  overflow: hidden;
 }
 
 #sidebar .series-toc {
@@ -7329,4 +7344,106 @@ body,
 
 .post-series a:hover {
   color: var(--primary);
+}
+
+/* ---------- 侧栏「文章目录」小部件（#98/T2） ----------
+   外框沿用 .widget 家族；列表用 <ol>，故照 .series-toc 抄有序列表复位（H9：
+   #sidebar 没有 ol 通配规则，不复位就是十进制序号裸奔）。
+   缩进口径与顶部目录 .post-toc li 同源：每级 18px、基准 depth 2（同一算式）。
+   单行截断照 #hotlog li a 范式（display:block + min-width:0 缺一不可——
+   缺 min-width:0 时 flex/grid 子项的 min-content 底会顶掉 ellipsis）。
+   内滚层：容器（.widget-stack）是 flex column + max-height 的弹性外壳。链条
+   上两层都要 min-height: 0（规格决定 9，A9 第 3/4 层）：本元件自身是 flex
+   子项，flex-shrink 要肯收缩必须 min-height 不锁在 min-content——实测缺它时
+   360px 视口下容器被 220 + 194px 的两个小部件撑到 414px 溢出；45vh 上限与
+   overflow-y 落在内层 nav 上（放在粘性容器上会破坏它的弹性高度语义）。
+   写根层级两段式（#sidebar .article-toc），特异性 (1,1,0) 压得过层内
+   .widget li 的虚线底。 */
+#sidebar .widget-article-toc {
+  display: grid;
+  grid-template-columns: 47px minmax(0, 1fr);
+  grid-template-rows: 30px minmax(0, 1fr);
+  min-height: 0;
+  overflow: visible;
+}
+
+/* 标题栏与图标同行（.widget > .icon 的 float 在 grid 容器内失效，不显式定位
+   就是「图标一行、标题被挤到下一行」）；内容占第二行，跨两列。 */
+#sidebar .widget-article-toc > .icon {
+  grid-area: 1 / 1;
+  float: none;
+}
+
+#sidebar .widget-article-toc > h2 {
+  grid-area: 1 / 2;
+  /* 既有标题栏的 10px 文字缩进（.widget > .icon + h2）是给「h2 绕排浮动图标」
+     的结构用的；此处 h2 已被 grid 定位到图标列右侧，再吃那条就是双倍缩进
+     （实测文字比最新微语/文集目录右 10px）。归零对齐同族。 */
+  text-indent: 0;
+}
+
+#sidebar .widget-article-toc .article-toc-scroll {
+  grid-area: 2 / 1 / 3 / -1;
+  max-height: 45vh;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* 阅读进度条（2026-10-15 站长要求）：占标题栏与内容之间那条 1px 边框线的
+   位置——叠加在 h2 的 border-bottom 上（grid 第三行不新增行高，负 margin
+   把 2px 条压到标题栏下缘），主题绿与 2px 高均为站长指定；宽度 = widget 全宽。
+   驱动与文章页顶部固定条同源（theme-script 写全部 [data-reading-progress]），
+   scaleX + left 原点照 .post-reading-progress 的既有机制。 */
+#sidebar .widget-article-toc .article-toc-progress {
+  grid-area: 2 / 1 / 3 / -1;
+  align-self: start;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--colorful-green);
+  transform: scaleX(0);
+  transform-origin: left center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+#sidebar .article-toc {
+  margin: 0;
+  padding: 5px 0 10px 5px;
+  list-style: none;
+}
+
+#sidebar .article-toc li {
+  margin: 0;
+  padding-left: calc((var(--toc-depth) - 2) * 18px);
+  line-height: 1.9;
+}
+
+#sidebar .article-toc li a {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #333;
+  /* 激活项颜色过渡（#102/T5）：照侧栏 actions 槽先例（.weather-widget__refresh
+     的 color 180ms ease-out，同族标题栏动作过渡）；只过渡颜色，字重 700 无
+     中间值，跳变保留（票面裁决：不引入新设计手法）。 */
+  transition: color 180ms ease-out;
+}
+
+#sidebar .article-toc li a:hover {
+  color: var(--primary);
+}
+
+/* 激活态（#99/T3）：照抄 .series-toc li.current 两条（字重 700 + 无障碍绿），
+   词汇表「当前页态」约定——运行时算出 .current 就必须有人消费它；纯函数返回
+   -1 时运行时清掉所有条目。带 #sidebar 前缀两段式，(1,2,1) 压得过上面那条
+   #sidebar a:hover（(1,1,1)），hover 时高亮不被下划线绿顶掉。不新增光标规则
+   （手型由既有 #sidebar a 提供，smoke:ui 有手型负扫）。 */
+#sidebar .article-toc li.current {
+  font-weight: 700;
+}
+
+#sidebar .article-toc li.current a {
+  color: var(--colorful-green-accessible);
 }
