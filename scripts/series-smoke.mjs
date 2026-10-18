@@ -67,7 +67,8 @@
 // 点击也要回正」）。判据数 65 → 74。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const EXPECTED_CHECKS = 77;
+// + 5 条：非文章页在无 JS 时不输出目录空壳，站内往返首页不残留且能重建目录。
+const EXPECTED_CHECKS = 82;
 
 // 组成员与序号：与 src/data/series.ts 及八篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
@@ -124,6 +125,27 @@ const { check } = harness;
 const browser = await harness.browser.launch(harness.launch);
 const ctx = await browser.newContext();
 const page = harness.attach(await ctx.newPage());
+
+// 构建期边界：禁用 JS，防止客户端清理把错误的服务端输出掩盖掉。
+const noJsCtx = await browser.newContext({ javaScriptEnabled: false });
+const noJsPage = await noJsCtx.newPage();
+for (const path of ["/", "/archive/", "/series/"]) {
+	const response = await noJsPage.goto(base + path, {
+		waitUntil: "domcontentloaded",
+	});
+	check(
+		`非文章页 ${path}：无 JS 时也不输出文章目录标题、导航或查看入口`,
+		response?.status() === 200 &&
+			(await noJsPage.locator("#sidebar").count()) === 1 &&
+			(await noJsPage.locator("#sidebar [data-article-toc]").count()) ===
+				0 &&
+			(await noJsPage
+				.getByRole("heading", { name: "文章目录", exact: true })
+				.count()) === 0 &&
+			(await noJsPage.locator('#sidebar a[href="#toc"]').count()) === 0,
+	);
+}
+await noJsCtx.close();
 
 async function goto(path) {
 	const resp = await page.goto(base + path, { waitUntil: "load" });
@@ -508,7 +530,8 @@ check(
 await goto(`/posts/20260909092113/`);
 const zeroTitleProbe = await page.evaluate(() => ({
 	articleTocGone:
-		document.querySelector("#sidebar [data-article-toc]") === null,
+		document.querySelector("#sidebar [data-article-toc]") === null &&
+		document.querySelector("#sidebar .widget-article-toc") === null,
 	seriesTocAlsoAbsent:
 		document.querySelector("#sidebar .series-toc") === null,
 }));
@@ -1411,7 +1434,9 @@ const installTocSettleWait = (pg) =>
 				).length,
 				widgetGone:
 					document.querySelector("#sidebar [data-article-toc]") ===
-					null,
+						null &&
+					document.querySelector("#sidebar .widget-article-toc") ===
+						null,
 			};
 		});
 	const clickInSiteLink = async (selector) => {
@@ -1523,6 +1548,26 @@ const installTocSettleWait = (pg) =>
 		`currentCount=${afterSwapSpy.currentCount} count=${afterSwapSpy.count}`,
 	);
 
+	await clickInSiteLink('a[href="/"]');
+	await sp3.waitForFunction(
+		() =>
+			location.pathname === "/" && !document.querySelector(".post-body"),
+	);
+	check(
+		"文章经站内链接返回首页：不残留目录标题与查看入口",
+		(await sp3.locator("#sidebar [data-article-toc]").count()) === 0 &&
+			(await sp3
+				.getByRole("heading", { name: "文章目录", exact: true })
+				.count()) === 0 &&
+			(await sp3.locator('#sidebar a[href="#toc"]').count()) === 0,
+	);
+	await clickInSiteLink('a[href="/posts/20261016083904/"]');
+	await waitForTocSettled();
+	check(
+		"首页经站内链接进入文章：目录重新初始化且只有一份",
+		(await sp3.locator("#sidebar [data-article-toc]").count()) === 1 &&
+			(await sp3.locator("#sidebar .article-toc li").count()) > 0,
+	);
 	await swapCtx.close();
 }
 

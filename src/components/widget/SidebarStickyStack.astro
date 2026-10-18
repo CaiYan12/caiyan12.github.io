@@ -17,9 +17,14 @@ import WidgetArticleToc from "./WidgetArticleToc.astro";
 //
 // data-widget-stack 是冒烟的量测锚点（scripts/series-smoke.mjs 的三条粘性判据）：
 // 用 data-* 而不是类名，与侧栏天气卡 [data-weather-widget] 同法——判据不锁类名字符串。
+const isPost = Astro.url.pathname.startsWith("/posts/");
 ---
 
-<div class="widget-stack" data-widget-stack>
-	<WidgetSeries />
-	<WidgetArticleToc />
-</div>
+{
+	isPost && (
+		<div class="widget-stack" data-widget-stack>
+			<WidgetSeries />
+			<WidgetArticleToc />
+		</div>
+	)
+}

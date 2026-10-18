@@ -143,7 +143,7 @@ export function initArticleToc() {
 	if (entries.length === 0) {
 		// 零标题降级：与顶部目录的「有标题才渲染」门槛一致（#98 User Story 19），
 		// 不留孤立边框；粘性在外层容器上，无须交还处理。
-		widget.remove();
+		widget.closest(".widget")?.remove();
 		return;
 	}
 
