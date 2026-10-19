@@ -116,6 +116,10 @@ export function buildArticleTocItem(
 	a.setAttribute("href", `#${entry.slug}`);
 	a.setAttribute("title", entry.text);
 	a.textContent = entry.text;
+	const icon = doc.createElement("i");
+	icon.className = "fa fa-angle-right";
+	icon.setAttribute("aria-hidden", "true");
+	a.prepend(icon);
 	li.appendChild(a);
 	return li;
 }

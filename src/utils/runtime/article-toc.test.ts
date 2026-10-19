@@ -45,6 +45,10 @@ function makeEl(tag: string, attrs: Record<string, string> = {}): FakeEl {
 		id: attrs.id,
 		textContent: "",
 		attrs: {},
+		children: [],
+	};
+	el.prepend = (child: FakeEl) => {
+		(el.children as FakeEl[]).unshift(child);
 	};
 	el.setAttribute = (name: string, value: string) => {
 		(el.attrs as Record<string, string>)[name] = value;
@@ -178,6 +182,10 @@ test("buildArticleTocItem：li 带层级变量、a 的 href/title/text 与条目
 	assert.equal(a.attrs.href, "#sec-2");
 	assert.equal(a.attrs.title, "部署与回滚");
 	assert.equal(a.textContent, "部署与回滚");
+	const icon = (a as unknown as { children: FakeEl[] }).children[0];
+	assert.equal(icon.tagName, "I");
+	assert.equal(icon.className, "fa fa-angle-right");
+	assert.equal((icon.attrs as Record<string, string>)["aria-hidden"], "true");
 });
 
 test("buildArticleTocItem：depth 取值 2–4 原样写入，不夹取", () => {
