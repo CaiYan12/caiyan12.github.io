@@ -53,6 +53,10 @@ function makeEl(tag: string, attrs: Record<string, string> = {}): FakeEl {
 	el.setAttribute = (name: string, value: string) => {
 		(el.attrs as Record<string, string>)[name] = value;
 	};
+	el.cloneNode = () => ({
+		textContent: el.textContent,
+		querySelectorAll: () => [],
+	});
 	return el;
 }
 
@@ -217,6 +221,32 @@ test("buildArticleTocItem：text 逐字透传（空白归一是 collect 侧职�
 });
 
 // ---- collectArticleTocEntries：采集契约 ----
+
+test("collectArticleTocEntries：排除锚点，保留标题自身的 # 和行内文字，不改原标题", () => {
+	const heading = makeEl("h2", { id: "hash" });
+	heading.textContent = "C# 与 # 标题#";
+	const clone = {
+		textContent: "C# 与 # 标题#",
+		querySelectorAll: (selector: string) => {
+			assert.equal(selector, "a.anchor");
+			return [
+				{
+					remove: () => {
+						clone.textContent = "C# 与 # 标题";
+					},
+				},
+			];
+		},
+	};
+	heading.cloneNode = (deep: boolean) => {
+		assert.equal(deep, true);
+		return clone;
+	};
+	assert.deepEqual(collectArticleTocEntries(makeRoot([heading])), [
+		{ slug: "hash", text: "C# 与 # 标题", depth: 2 },
+	]);
+	assert.equal(heading.textContent, "C# 与 # 标题#");
+});
 
 /** 根元素桩：querySelectorAll("h2[id], h3[id], h4[id]") 返回注入的标题序列 */
 function makeRoot(headings: FakeEl[]): Element {

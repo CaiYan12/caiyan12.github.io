@@ -42,7 +42,11 @@ export function collectArticleTocEntries(root: Element): ArticleTocEntry[] {
 	for (const el of headings) {
 		const slug = el.id;
 		if (!slug) continue;
-		const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
+		// 只在副本中排除正文锚点，保留标题自身的 #、行内代码等文字。
+		const title = el.cloneNode(true) as Element;
+		for (const anchor of title.querySelectorAll("a.anchor"))
+			anchor.remove();
+		const text = (title.textContent ?? "").replace(/\s+/g, " ").trim();
 		if (!text) continue;
 		entries.push({
 			slug,
