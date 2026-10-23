@@ -7,6 +7,7 @@ import { ReaderView, ReaderToolbar } from "./components/ReaderView";
 import { SettingsDrawer } from "./components/SettingsDrawer";
 import { Footer } from "./components/Footer";
 import { BackToTop } from "./components/BackToTop";
+import { ZoomWidget } from "./components/ZoomWidget";
 import { Toast } from "./components/Toast";
 
 /** 网页外壳：文档流滚动。顶栏（详情页连同阅读工具条）sticky 吸顶，
@@ -44,6 +45,7 @@ export default function App(): JSX.Element {
 					<ReaderView article={article} />
 					<Footer />
 					<BackToTop />
+					<ZoomWidget />
 					<SettingsDrawer />
 					<Toast />
 				</div>
@@ -73,6 +75,7 @@ export default function App(): JSX.Element {
 					)}
 				</div>
 				<Footer />
+				<ZoomWidget />
 				<SettingsDrawer />
 				<Toast />
 			</div>
@@ -88,6 +91,7 @@ export default function App(): JSX.Element {
 			<HomeView />
 			<Footer />
 			<BackToTop />
+			<ZoomWidget />
 			<SettingsDrawer />
 			<Toast />
 		</div>

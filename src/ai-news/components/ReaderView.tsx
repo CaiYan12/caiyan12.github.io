@@ -116,37 +116,40 @@ export function ReaderView({ article }: Props): JSX.Element {
 
 	return (
 		<div className="flex-1">
-			{juya ? (
-				<juya.template.IssueView
-					article={article}
-					issue={juya.issue}
-					variantId={juya.variant.id}
-					onOpenLink={(href) => openExternal(href)}
-				/>
-			) : (
-				<div className="reader-body mx-auto max-w-3xl px-6 py-8">
-					{categories.length > 0 && categories[0] !== "未分类" && (
-						<div className="mb-4 flex flex-wrap gap-1">
-							{categories.map((c) => (
-								<span
-									key={c}
-									className="rounded bg-chip px-2 py-0.5 text-xs text-chip-text"
-								>
-									{c}
-								</span>
-							))}
-						</div>
-					)}
-					<h1 className="mb-6 font-heading text-3xl font-bold leading-tight text-accent">
-						{article.title}
-					</h1>
-					<div
-						className="article-content leading-relaxed"
-						onClick={onContentClick}
-						dangerouslySetInnerHTML={{ __html: cleanHtml }}
+			<div data-zoom-content="true" style={{ zoom: settings.uiZoom }}>
+				{juya ? (
+					<juya.template.IssueView
+						article={article}
+						issue={juya.issue}
+						variantId={juya.variant.id}
+						onOpenLink={(href) => openExternal(href)}
 					/>
-				</div>
-			)}
+				) : (
+					<div className="reader-body mx-auto max-w-3xl px-6 py-8">
+						{categories.length > 0 &&
+							categories[0] !== "未分类" && (
+								<div className="mb-4 flex flex-wrap gap-1">
+									{categories.map((c) => (
+										<span
+											key={c}
+											className="rounded bg-chip px-2 py-0.5 text-xs text-chip-text"
+										>
+											{c}
+										</span>
+									))}
+								</div>
+							)}
+						<h1 className="mb-6 font-heading text-3xl font-bold leading-tight text-accent">
+							{article.title}
+						</h1>
+						<div
+							className="article-content leading-relaxed"
+							onClick={onContentClick}
+							dangerouslySetInnerHTML={{ __html: cleanHtml }}
+						/>
+					</div>
+				)}
+			</div>
 		</div>
 	);
 }

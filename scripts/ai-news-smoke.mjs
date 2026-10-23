@@ -64,6 +64,71 @@ try {
 		issueHash.slice(0, 70),
 	);
 
+	// ---- 内容缩放胶囊：只缩放正文，阅读工具条等外壳保持固定尺寸 ----
+	const zoomGroup = page.getByRole("group", { name: "内容缩放" });
+	const zoomLabel = (await zoomGroup.textContent())?.trim() ?? "";
+	check(
+		"详情页出现缩放控件且默认 100%",
+		zoomLabel.includes("100%"),
+		zoomLabel || "未找到缩放控件",
+	);
+
+	await page.getByRole("button", { name: "放大", exact: true }).click();
+	const detailZoomApplied = await page
+		.waitForFunction(() => {
+			const el = document.querySelector("[data-zoom-content]");
+			return el != null && getComputedStyle(el).zoom === "1.05";
+		})
+		.then(() => true)
+		.catch(() => false);
+	const detailZoom = await page.evaluate(() => {
+		const content = document.querySelector("[data-zoom-content]");
+		const nav = document.querySelector(".view-nav");
+		return {
+			content: content ? getComputedStyle(content).zoom : null,
+			nav: nav ? getComputedStyle(nav).zoom : null,
+		};
+	});
+	check(
+		"放大只作用于正文（阅读工具条不缩放）",
+		detailZoomApplied &&
+			Math.abs(Number(detailZoom.content) - 1.05) < 1e-6 &&
+			detailZoom.nav === "1",
+		`content=${detailZoom.content} nav=${detailZoom.nav}`,
+	);
+
+	const zoomPersisted = await page
+		.waitForFunction(() => {
+			const raw = localStorage.getItem("ai-daily:v1");
+			if (!raw) return false;
+			try {
+				return JSON.parse(raw).settings?.uiZoom === 1.05;
+			} catch {
+				return false;
+			}
+		})
+		.then(() => true)
+		.catch(() => false);
+	check(
+		"缩放比例写入本地设置",
+		zoomPersisted,
+		zoomPersisted
+			? "settings.uiZoom = 1.05"
+			: "未等到 settings.uiZoom = 1.05",
+	);
+
+	await page
+		.getByRole("button", { name: "重置为 100%", exact: true })
+		.click();
+	await page
+		.waitForFunction(() => {
+			const el = document.querySelector("[data-zoom-content]");
+			return el != null && getComputedStyle(el).zoom === "1";
+		})
+		.catch(() => {});
+	const resetLabel = (await zoomGroup.textContent())?.trim() ?? "";
+	check("重置回 100%", resetLabel.includes("100%"), resetLabel);
+
 	await page.getByRole("button", { name: "返回", exact: true }).click();
 	await page.waitForTimeout(500);
 	check("详情页返回列表", new URL(page.url()).hash === "#/");
@@ -71,6 +136,40 @@ try {
 		"页脚提供返回主站",
 		(await page.locator('footer a[href="/"][data-no-swup]').count()) === 1,
 	);
+
+	// ---- 首页：同一胶囊作用于列表内容，顶栏仍是固定尺寸 ----
+	await page.getByRole("button", { name: "放大", exact: true }).click();
+	const homeZoomApplied = await page
+		.waitForFunction(() => {
+			const el = document.querySelector("[data-zoom-content]");
+			return el != null && getComputedStyle(el).zoom === "1.05";
+		})
+		.then(() => true)
+		.catch(() => false);
+	const homeZoom = await page.evaluate(() => {
+		const content = document.querySelector("[data-zoom-content]");
+		const header = document.querySelector("header");
+		return {
+			content: content ? getComputedStyle(content).zoom : null,
+			header: header ? getComputedStyle(header).zoom : null,
+		};
+	});
+	check(
+		"首页列表同样只缩放内容区",
+		homeZoomApplied &&
+			Math.abs(Number(homeZoom.content) - 1.05) < 1e-6 &&
+			homeZoom.header === "1",
+		`content=${homeZoom.content} header=${homeZoom.header}`,
+	);
+	await page
+		.getByRole("button", { name: "重置为 100%", exact: true })
+		.click();
+	await page
+		.waitForFunction(() => {
+			const el = document.querySelector("[data-zoom-content]");
+			return el != null && getComputedStyle(el).zoom === "1";
+		})
+		.catch(() => {});
 
 	const offline = offlineSink.attach(
 		await browser.newPage({ viewport: { width: 1280, height: 900 } }),

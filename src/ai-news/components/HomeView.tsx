@@ -60,17 +60,22 @@ export function HomeView(): JSX.Element {
 
 	return (
 		<main className="flex-1">
-			{JuyaFeed && juyaVariant ? (
-				<JuyaFeed
-					articles={visible}
-					variantId={juyaVariant.id}
-					layout={settings.layout}
-				/>
-			) : (
-				<div className="p-4">
-					<ArticleList articles={visible} layout={settings.layout} />
-				</div>
-			)}
+			<div data-zoom-content="true" style={{ zoom: settings.uiZoom }}>
+				{JuyaFeed && juyaVariant ? (
+					<JuyaFeed
+						articles={visible}
+						variantId={juyaVariant.id}
+						layout={settings.layout}
+					/>
+				) : (
+					<div className="p-4">
+						<ArticleList
+							articles={visible}
+							layout={settings.layout}
+						/>
+					</div>
+				)}
+			</div>
 		</main>
 	);
 }

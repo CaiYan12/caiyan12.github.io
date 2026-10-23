@@ -53,6 +53,8 @@ interface AppState {
 	toggleRead(guid: string): void;
 	markAllRead(): void;
 	updateSettings(patch: Partial<Settings>): void;
+	/** 内容区缩放（0.5–2，步进 0.05），持久化到 settings.uiZoom */
+	setZoom(z: number): void;
 	setThemeMode(mode: Settings["themeMode"]): void;
 	setThemeForScheme(scheme: ThemeScheme, id: string): void;
 	setJuyaStyle(scheme: ThemeScheme, id: JuyaStyleId): void;
@@ -426,6 +428,12 @@ export const useAppStore = create<AppState>((set, get) => ({
 		if (patch.refreshIntervalMin !== undefined) {
 			get().startAutoRefresh();
 		}
+	},
+
+	setZoom(z) {
+		const next = Math.min(2, Math.max(0.5, Math.round(z * 100) / 100));
+		if (next === get().settings.uiZoom) return;
+		get().updateSettings({ uiZoom: next });
 	},
 
 	setThemeMode(mode) {

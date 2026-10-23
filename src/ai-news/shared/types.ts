@@ -60,6 +60,8 @@ export interface Settings {
 	/** 定时刷新间隔（分钟）；0 表示关闭 */
 	refreshIntervalMin: number;
 	historyRetentionDays: number;
+	/** 内容区缩放系数（1 = 100%），持久化 */
+	uiZoom: number;
 	/** 橘鸦定制阅读风格（亮色侧）。'off' = 关闭，回退通用阅读页。 */
 	juyaLightStyleId: JuyaStyleId;
 	/** 橘鸦定制阅读风格（暗色侧）。'off' = 关闭，回退通用阅读页。 */
@@ -105,6 +107,7 @@ export const DEFAULT_SETTINGS: Settings = {
 	},
 	refreshIntervalMin: 30,
 	historyRetentionDays: 30,
+	uiZoom: 1,
 	juyaLightStyleId: "card",
 	juyaDarkStyleId: "card",
 };
