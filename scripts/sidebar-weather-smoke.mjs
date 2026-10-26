@@ -67,6 +67,16 @@ async function newPage({
 									actions.length - 1,
 								)
 							];
+						if (action === "hold") {
+							// 扣住回调不触发：让胶囊停在「正在获取位置」态，由测试侧
+							// 显式放行，制造确定的状态迁移（不靠 sleep 等相位）
+							window.__weatherGeolocationHold = {
+								success,
+								error,
+								coords,
+							};
+							return;
+						}
 						queueMicrotask(() => {
 							if (action === "success") {
 								success({ coords });
@@ -1340,6 +1350,181 @@ try {
 					.join(" "),
 			gate.report.length === 7 &&
 				gate.report.every((r) => r.rest >= 4.0 && r.hover >= 3.5),
+		);
+	}
+	// 高度预留（2026-10-26 站长裁定）：侧栏天气胶囊在「定位中 / 失败 / 无 JS」态
+	// 只有一行状态文字，实测主体只有 32.9–59.1px，与成功态的 113.2px 差 54–80px，
+	// 把下方元件整体上移。这组判据锁三件事：五态等高、成功态内容恰好填满、
+	// 下方元件在状态迁移前后一位不动。
+	{
+		const EXPECTED_BODY_HEIGHT = 113.2; // 成功态实测主体高（2026-10-26 复测）
+		const TOLERANCE = 0.5;
+
+		const bodyHeight = async (page) => {
+			const box = await page
+				.locator("#sidebar [data-weather-widget]")
+				.boundingBox();
+			return box ? +box.height.toFixed(2) : null;
+		};
+
+		// 下方元件（吐槽水军）的文档坐标顶边：比对它在状态迁移前后有没有动
+		const nextWidgetTop = async (page) =>
+			await page.evaluate(() => {
+				const body = document.querySelector(
+					"#sidebar [data-weather-widget]",
+				);
+				const widget = body?.closest(".widget");
+				const next = widget?.nextElementSibling;
+				if (!next) return null;
+				return +(
+					next.getBoundingClientRect().top + window.scrollY
+				).toFixed(2);
+			});
+
+		const heights = [];
+
+		// 成功态的几何读数：内容高度、预留区高度、上下留白
+		const readFill = async (page) =>
+			await page.evaluate(() => {
+				const body = document.querySelector(
+					"#sidebar [data-weather-widget]",
+				);
+				const cs = getComputedStyle(body);
+				const visible = [...body.children].filter(
+					(el) => getComputedStyle(el).display !== "none",
+				);
+				const gap = Number.parseFloat(cs.rowGap) || 0;
+				const contentH =
+					visible.reduce(
+						(sum, el) => sum + el.getBoundingClientRect().height,
+						0,
+					) +
+					gap * Math.max(0, visible.length - 1);
+				const padTop = Number.parseFloat(cs.paddingTop) || 0;
+				const padBottom = Number.parseFloat(cs.paddingBottom) || 0;
+				const bodyBox = body.getBoundingClientRect();
+				const innerH = bodyBox.height - padTop - padBottom;
+				const first = visible[0];
+				const topGap = first
+					? first.getBoundingClientRect().top - bodyBox.top - padTop
+					: 0;
+				return {
+					bodyH: +bodyBox.height.toFixed(2),
+					contentH: +contentH.toFixed(2),
+					innerH: +innerH.toFixed(2),
+					deadSpace: +(innerH - contentH).toFixed(2),
+					topGap: +topGap.toFixed(2),
+					bottomGap: +(innerH - contentH - topGap).toFixed(2),
+				};
+			});
+
+		// 成功态（满数据：体感/风速/湿度三格齐全，与上游真实响应同形）——既是等高基准，
+		// 也是「预留高度 = 自然高度」那条判据的取样点。
+		// 注意取样点必须是满数据变体：三个字段缺失时参数行整行隐藏，读数行只有 54.27px，
+		// 那种变体本来就装不满预留高度（内容会在预留区里居中，见下面那条判据）。
+		{
+			const page = await newPage();
+			await routeWttr(page, (r) =>
+				fulfillJson(r, wttrFixture({ withDetails: true })),
+			);
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "success");
+			const fill = await readFill(page);
+			heights.push(["成功态", fill.bodyH]);
+			check(
+				`成功态主体高度 = ${EXPECTED_BODY_HEIGHT}px（预留高度与实际版式一致）`,
+				Math.abs(fill.bodyH - EXPECTED_BODY_HEIGHT) <= TOLERANCE,
+				`实测 ${fill.bodyH}px`,
+			);
+			check(
+				"满数据成功态的内容恰好填满预留高度（预留值与自然高度同源）",
+				Math.abs(fill.deadSpace) <= TOLERANCE,
+				`内容 ${fill.contentH}px / 预留 ${fill.innerH}px / 差 ${fill.deadSpace}px`,
+			);
+		}
+
+		// 成功态（缺参数行：上游三个字段缺失时整行隐藏）：内容必须装得进预留高度，
+		// 且在预留区里垂直居中，不留不对称的空白
+		{
+			const page = await newPage();
+			await routeWttr(page, (r) => fulfillJson(r, wttrFixture()));
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "success");
+			const fill = await readFill(page);
+			check(
+				"缺参数行时内容不超出预留高度，且在预留区里垂直居中",
+				fill.deadSpace >= -TOLERANCE &&
+					Math.abs(fill.topGap - fill.bottomGap) <= 1,
+				`上留白 ${fill.topGap}px / 下留白 ${fill.bottomGap}px / 差 ${fill.deadSpace}px`,
+			);
+		}
+
+		// 定位中 → 成功：这是站长的原话诉求（下方元件不许动），同页迁移比跨页量更硬
+		{
+			const page = await newPage({ geolocationActions: ["hold"] });
+			await routeWttr(page, (r) => fulfillJson(r, wttrFixture()));
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "locating");
+			const topBefore = await nextWidgetTop(page);
+			const heightBefore = await bodyHeight(page);
+			await page.evaluate((c) => {
+				window.__weatherGeolocationHold.success({ coords: c });
+			}, coordinates);
+			await waitForState(page, "success");
+			const topAfter = await nextWidgetTop(page);
+			heights.push(["定位中", heightBefore]);
+			check(
+				"状态迁移（定位中 → 成功）后下方元件顶边一位不动",
+				topBefore !== null &&
+					topAfter !== null &&
+					Math.abs(topAfter - topBefore) <= TOLERANCE,
+				`迁移前 ${topBefore}px → 迁移后 ${topAfter}px`,
+			);
+		}
+
+		// 定位失败（带重试按钮）
+		{
+			const page = await newPage({ geolocationActions: ["denied"] });
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "location-error");
+			heights.push(["定位失败", await bodyHeight(page)]);
+		}
+
+		// 天气失败且无旧数据（带重试按钮）
+		{
+			const page = await newPage();
+			await routeWttr(page, (r) => fulfillJson(r, {}, 500));
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "weather-error");
+			heights.push(["天气失败", await bodyHeight(page)]);
+		}
+
+		// 无 JS：静态说明态同样要占住预留高度
+		{
+			const context = await browser.newContext({
+				viewport: { width: 1440, height: 900 },
+				javaScriptEnabled: false,
+			});
+			contexts.push(context);
+			const page = harness.attach(await context.newPage());
+			await page.goto(base + "/", { waitUntil: "load" });
+			heights.push(["无 JS", await bodyHeight(page)]);
+		}
+
+		const heightsText = heights
+			.map(([label, height]) => `${label}=${height}px`)
+			.join(" ");
+		const allEqual =
+			heights.length === 5 &&
+			heights.every(
+				([, height]) =>
+					height !== null &&
+					Math.abs(height - heights[0][1]) <= TOLERANCE,
+			);
+		check(
+			`五种状态主体高度一致（定位中/失败/无 JS 不再塌陷）：${heightsText}`,
+			allEqual,
+			heightsText,
 		);
 	}
 } finally {

@@ -6448,6 +6448,16 @@ body,
   display: grid;
   gap: 5px;
   padding: 8px 10px 9px;
+  /* 高度预留：成功态实测主体 113.2px（2026-10-26 复测；1440→769 七档视口、
+     webfont 加载前后完全一致）。定位中 / 失败 / 无 JS 态只有一行状态文字，
+     实测塌到 32.9–59.1px，把下方元件整体上移 54–80px；用 min-height 撑到与
+     成功态同高即可消除位移。min-height 以 border-box 为准（该元素计算值已是
+     border-box），不裁切内容；成功态内容恰好填满（113.2 = 8+9 padding + 5 gap
+     + 75.27 读数 + 15.94 页脚），故成功态外观一位不变。 */
+  min-height: 113.2px;
+  /* 行方向居中：成功态内容已填满，本项对成功态与旧数据态零影响；无数据态把
+     状态文字与重试按钮作为一组居中在预留出来的高度里。 */
+  align-content: center;
   position: relative;
   /* 局部层叠上下文：没有它，负 z-index 的壁纸层会掉到 .widget 白底之下，永远看不见 */
   isolation: isolate;
@@ -6544,6 +6554,24 @@ body,
 
 .weather-widget-body [hidden] {
   display: none !important;
+}
+
+/* 无数据态（定位中 / 定位失败 / 天气失败且无旧数据 / 无 JS）：状态文字与重试按钮
+   一起居中在预留出来的高度里，与成功态的版式互不干扰。
+   圈定条件用 :not([data-weather-kind]) —— 该属性只在拿到天气数据时才存在
+   （成功态与旧数据态都有，旧数据态仍照常画壁纸），故这两态完全不受本组规则影响。 */
+.weather-widget-body:not([data-weather-kind]) .weather-widget__foot {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+
+.weather-widget-body:not([data-weather-kind]) .weather-widget__status {
+  /* 居中之后仍要能截断：极长的失败文案（如定位被拒那句）不得撑破卡片 */
+  max-width: 100%;
+}
+
+.weather-widget-body:not([data-weather-kind]) .weather-widget__retry {
+  justify-self: center;
 }
 
 .weather-widget__status,
