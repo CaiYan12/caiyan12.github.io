@@ -2106,13 +2106,27 @@ const hoverProbe = async (path, sel, { trigger } = {}) => {
 			const cs = getComputedStyle(node);
 			const r = node.getBoundingClientRect();
 			const p = node.parentElement;
+			// 横/纵坐标取「内容坐标系」：视口坐标加上每个祖先容器的 scrollLeft/scrollTop。
+			// 为什么必须加：Playwright 的 hover() 做 actionability 时会 scrollIntoViewIfNeeded()，
+			// 目标若在 overflow:hidden 且内容超宽的容器里（overflow:hidden 仍可被程序化滚动），
+			// 容器 scrollLeft 会被改动，容器内所有元素的视口坐标整体平移——那是测试自己
+			// 造成的读数，不是 hover 引起的布局位移。实测（2026-10-26）：文章卡标题那行
+			// inline 内容超宽 23px，h2.scrollLeft 由 0 变 23，判据把 23px 读成位移。
+			// 加回滚动量后对滚动免疫，但保留「绝对布局位置」语义——整块位移照样读得到，
+			// 且其余判据的读数一位不变（它们没有可滚祖先，scrollLeft 恒为 0）。
+			let scrollX = 0;
+			let scrollY = 0;
+			for (let a = node.parentElement; a; a = a.parentElement) {
+				scrollX += a.scrollLeft || 0;
+				scrollY += a.scrollTop || 0;
+			}
 			return {
 				deco: cs.textDecorationLine,
 				color: cs.color,
 				w: Math.round(r.width * 100) / 100,
 				h: Math.round(r.height * 100) / 100,
-				top: Math.round(r.top * 100) / 100,
-				left: Math.round(r.left * 100) / 100,
+				top: Math.round((r.top + scrollY) * 100) / 100,
+				left: Math.round((r.left + scrollX) * 100) / 100,
 				line: getComputedStyle(node, "::after").transform,
 				lineBg: getComputedStyle(node, "::after").backgroundColor,
 				pw: p
