@@ -4956,7 +4956,10 @@ html.with-fancybox .backtop {
 
 @media screen and (max-width: 980px) {
   #wrapper {
-    overflow: hidden;
+    /* clip 而不是 hidden：hidden 会创建滚动容器，使 #sidebar 的 sticky 在 769–980px 失效；
+       clip 只裁切、不建滚动容器，横向裁切语义不变，与 #sidebar 的做法同源（见 .main-grid 那处）。
+       ≤768px 侧栏本就 display:none，故受影响区间只有 769–980px。 */
+    overflow: clip;
     margin: 0;
   }
 
