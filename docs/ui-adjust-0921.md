@@ -3,7 +3,7 @@
 - 日期：2026-09-21
 - 技能链：`design-flow` → lanes `/redesign-skill`（审计）→ `grill-with-docs`（grilling + domain-modeling）→ `to-spec`（综合成 spec）
 - 审计基线：线上 `https://caiyan12.github.io`，HEAD `2de963e`（源码与产物同版；因并发会话正推进仓库，未在共享工作区跑 build）
-- 状态：**T0–T3 四轮问答（Q1-Q50）已裁完；已综合成 spec `docs/plans/2026-09-21-ui-adjust-t0-t3.md`。四个前置未满足，尚不开工，未改任何源码**
+- 状态：**T0–T3 四轮问答（Q1-Q50）已裁完并全部交付**（2026-09-24 收口，票册 `docs/plans/2026-09-21-ui-adjust-tickets.md` 的 23 票 = issue #18–#40 全关；上线读数见本文件「收尾」节）。下方各清单的勾选状态已于 2026-10-27 按代码实测回填——**凡标注「作废（非已实施）」的是被后续裁决推翻的条目，其余均可在代码中找到对应实现**
 - 本文结构：方法与证据 → T0 决策菜单与三轮裁决 → ADR/术语转正 → T1 取证与执行清单 → T2 死规则与文档失真 → T3 对比度让步与候选色 → 交付节奏
 - 正式 spec（耐久意图与验收缝隙）：`docs/plans/2026-09-21-ui-adjust-t0-t3.md`；两者冲突时以本文的实测值为准
 - 问答载体：Qoder 内置对话框，两问四题 + 一问四题；本文即决策登记，落地时逐项勾选
@@ -137,8 +137,8 @@
 - [x] `@layer components` 那批副本 → **已在 T1 判定完毕**，见下文「死规则逐条判定」表：`:315`/`:318`/`:432` 全死、`:438-451` 部分幸存、`:324/:327` 无效果但保留、`.prose{14px/1.9}` 活着。
 - [x] `html{font-size:13px}`（`global.css:31`，在 `@layer base` 内）实测根字号 **16px** → 该 13px 意图全站从未生效；所有 `rem` 推算随之偏。**机制已更正**：不是「无层胜过有层」，而是 Tailwind v3 把 `@layer` 内容搬到前部后，被 `:1767 html{font-size:100%}` 靠同特异性的**源顺序**压过（详见 T1「机制更正」节）。属 T2。
 - [x] AGENTS.md 关于 `.prose code{font-size:13px}`「整条被关在 `@media (max-width:680px)` 内（桌面永不生效）」的断言为**假**（实际在 `@layer components` `:58-1666` 内，`@media (max-width:768px)` 从 `:1669` 才开始；而压住它的是特异性 `(0,1,2)` vs `(0,1,1)`，与源顺序无关）。属 T2 文档修正项。
-- [ ] `.header-ticker` + `@keyframes ticker-scroll`（`global.css:143-170`、1693）为死代码：src/scripts/public 与线上 HTML 均零命中，活的是 `#header .text` + `initHeaderTicker()`。
-- [ ] WCAG 与海洋绿的三处让步裁决（`#00c000` 作前景 2.46:1、药丸六色 1.92–4.32:1、z-index 无标度）——T3，需你亲自定，不属本轮。
+- [x] `.header-ticker` + `@keyframes ticker-scroll` 为死代码 → 已删除：全仓（`src` / `scripts` / `public`）现零命中，活的是 `#header .text` + `initHeaderTicker()`。
+- [x] WCAG 与海洋绿的三处让步 → 已由 T3 逐项裁决：药丸六色换为 `--tag-c1..c6`（白字均 ≥4.5、两两最小 ΔE 44.45）；z-index 补标度表并修三处（skip-link 1000000 / 播放器 900000 / toast 100100）；**`#00c000` 作前景 2.46:1 仍未处理**，`docs/adr/0005-navbar-liquid-glass.md` 末尾仍记「尚未处理」——此项独立悬空，见 `docs/plans/2026-10-27-doc-todo-inventory.md` 的 A-1 条。
 
 ---
 
@@ -191,14 +191,14 @@
 
 ### T0 执行清单（裁决已定，含第三轮待决的下游点）
 
-- [ ] 1 拆 `.post-header h1` 组合规则 + `[...slug].astro:99` 补 `title` → 验证：`output/h1-check.mjs` 五档 `lost` 归零或多行
-- [ ] 2 spoiler keydown（Enter/Space）+ `aria-expanded` + `.spoiler:active` 红 → 验证：键盘可开关；**改了 remark 输出须先删 `node_modules/.astro/`**
-- [ ] 3 `/search/`、`/ai-news/` 加 `slot="fallback"` 静态说明 → 验证：`javaScriptEnabled:false` 上下文里说明文字存在，开 JS 后被替换
-- [ ] 4 `/domain/` 五项最小修正 + `headPhoto` 包 `<a>` → 验证：`lang=zh-CN`、viewport 无 zoom 锁、品牌绿、返回链接可达
-- [ ] 5 `Footer.astro:25` 备案 href → 验证：源码断言（今日仍不渲染，除非填 `icp`）
-- [ ] 6 导航 current 两处计算 + `#mmenu` 上色 → 验证：390px 下计算色/边框，`/albums/` 上父项态
-- [ ] 7 `Search.svelte` 焦点环与禁用态 → 验证：Tab 到搜索框有环；搜索中按钮不可点
-- [ ] 8 两条 smoke 断言入库 → 验证：`pnpm test:fancybox` 同类跑法全绿
+- [x] 1 拆 `.post-header h1` 组合规则 + `[...slug].astro` 补 `title` → 验证：`output/h1-check.mjs` 五档 `lost` 归零或多行　〔已落地：`global.css` 的 `.post-header h1` 独立成组（与 `.post-list` 卡 h2 分叉，ADR 0003）；`[...slug].astro` 的 `<h1 title={title}>` 在；`smoke:ui` 有「文章页标题在 N px 下未被裁切且换行」五档断言〕
+- [x] ~~2 spoiler keydown（Enter/Space）+ `aria-expanded` + `.spoiler:active` 红~~ **作废（不是已实施）**：2026-09-21 预览裁决改为纯 CSS 悬停、无 role、不进 Tab 序、无点击态；实测 `theme-script.ts` 里 spoiler 零命中、`markdown-extended.css` 无 `:active` 红底，`smoke:ui` 判据改为「点击后无任何 class/aria 变化」
+- [x] 3 `/search/`、`/ai-news/` 加 `slot="fallback"` 静态说明 → 验证：`javaScriptEnabled:false` 上下文里说明文字存在，开 JS 后被替换　〔已落地：两页各一处 `slot="fallback"`〕
+- [x] 4 `/domain/` 五项最小修正 + `headPhoto` 包 `<a>` → 验证：`lang=zh-CN`、viewport 无 zoom 锁、品牌绿、返回链接可达　〔已落地：`lang="zh-CN"`、viewport 无 zoom 锁、全文无 `#00be00`、`.headPhoto` 是 `<a href="/">`、FiraCode 已从 `*` 收窄到终端窗格〕
+- [x] 5 `Footer.astro:25` 备案 href → 验证：源码断言（今日仍不渲染，除非填 `icp`）　〔已落地：`href="https://beian.miit.gov.cn"`〕
+- [x] 6 导航 current 两处计算 + `#mmenu` 上色 → 验证：390px 下计算色/边框，`/albums/` 上父项态　〔已落地：`Navbar.astro` 四个下拉组各一处 `some()`；`#mmenu > ul > li.current > a` 与 `#mmenu .submenu li.current > a` 两条规则在；`smoke:ui` 390px 读数「绿字 + 2px 品牌绿下边框」〕
+- [x] 7 `Search.svelte` 焦点环与禁用态 → 验证：Tab 到搜索框有环；搜索中按钮不可点　〔已落地：`outline-none` 零命中，按钮与输入框都带 `disabled` / `aria-disabled`〕
+- [x] 8 两条 smoke 断言入库 → 验证：与既有 Playwright 套件同法跑通　〔已落地：标题不截断与 `#mmenu` current 两条都在 `scripts/ui-smoke.mjs`，`pnpm smoke:ui` 已注册〕
 
 ### 第三轮裁决（2026-09-21）
 
@@ -209,19 +209,19 @@
 | Q16 | **A 全改完停下给你预览，预览通过后按一项一 commit 拆**            | push 等你点头                                                                                                      |
 | Q17 | **A 只做 T0**                                                     | T1 度量一致性与 T2 死代码/文档修正各另开一轮                                                                       |
 
-## 最终执行序（裁决已全定，待你确认后开工）
+## 最终执行序（裁决已全定；2026-09-21 确认开工，已全部执行完毕）
 
 按「互不牵连、失败可单独回退」排序，每项后附验收判据。
 
-- [ ] 1 `Footer.astro:25` 备案 href → `https://beian.miit.gov.cn/` ｜验收：源码断言（`icp` 仍为空，今日不渲染）
-- [ ] 2 `Search.svelte:99` 去 `outline-none`；按钮加 `disabled={searching}` + `aria-disabled` + 忙碌态 ｜验收：390/1440 下 Tab 到搜索框有全局环；搜索中连点只起一次查询
-- [ ] 3 `search.astro:23`、`ai-news/index.astro:23` 加 `slot="fallback"` 静态说明 ｜验收：`javaScriptEnabled:false` 的 context 里说明文字存在；开 JS 后被岛屿内容替换（不残留）
-- [ ] 4 `.post-header h1` 从 `global.css:2493-2508` 组合规则摘出 + `[...slug].astro:99` 补 `title={title}` ｜验收：`output/h1-check.mjs 20260831000000` 五档（1440/1100/860/680/390）`lost` 全为 0；列表卡 h2 仍单行省略
-- [ ] 5 导航 current：`Navbar.astro:145` 父项 `some(isCurrent)`、`MMenu.astro:98-104` 子项 `current`/`aria-current`、`global.css` `:4566` 后加 `#mmenu li.current` 上色 ｜验收：`/albums/` 上「附加功能」父项呈 current；390px 下 `#mmenu` 当前项计算色为品牌绿且绿边压得住 `1px #dfdfdf`
-- [ ] 6 spoiler：`theme-script.ts:656` 同一委托里加 keydown（Enter/Space）+ 同步 `aria-expanded`；`markdown-extended.css` 加 `.post-context .spoiler:active{background:#ff262e;color:#fff}` ｜验收：纯键盘可开关；**本项不改 `remark-extended.mjs`，因此无需删 content-layer 缓存**（若后续采纳换标签方案则必须删）
-- [ ] 7 `/domain/` 最小修正 + `headPhoto` 包 `<a>` ｜验收：`lang="zh-CN"`、viewport 无 `user-scalable=no`/`maximum-scale`、无 `*{font-family:FiraCode}`、无 `#00be00`、favicon 两处保持原值、`headPhoto` 可点回 `/` 且键盘可达
-- [ ] 8 两条 smoke 断言入库（标题不截断、`#mmenu` current 上色），`package.json` 加一条脚本 ｜验收：与 `test:fancybox` 同法跑通
-- [ ] 9 收尾：`rm -rf node_modules/.astro` → 完整 `pnpm build` → `pnpm check` → `pnpm exec prettier --check ./src`
+- [x] 1 `Footer.astro:25` 备案 href → `https://beian.miit.gov.cn/` ｜验收：源码断言（`icp` 仍为空，今日不渲染）　〔已落地〕
+- [x] 2 `Search.svelte:99` 去 `outline-none`；按钮加 `disabled={searching}` + `aria-disabled` + 忙碌态 ｜验收：390/1440 下 Tab 到搜索框有全局环；搜索中连点只起一次查询　〔已落地，含 `searching` 重入守卫〕
+- [x] 3 `search.astro:23`、`ai-news/index.astro:23` 加 `slot="fallback"` 静态说明 ｜验收：`javaScriptEnabled:false` 的 context 里说明文字存在；开 JS 后被岛屿内容替换（不残留）　〔已落地〕
+- [x] 4 `.post-header h1` 从组合规则摘出 + `[...slug].astro` 补 `title={title}` ｜验收：`output/h1-check.mjs` 五档 `lost` 全为 0；列表卡 h2 仍单行省略　〔已落地，ADR 0003 记录「同类名下故意分叉」〕
+- [x] 5 导航 current：`Navbar` 父项 `some(isCurrent)`、`MMenu` 子项 `current`/`aria-current`、`global.css` 加 `#mmenu` 当前项上色 ｜验收：`/albums/` 上「附加功能」父项呈 current；390px 下当前项为品牌绿且绿边压得住 `1px #dfdfdf`　〔已落地，`smoke:ui` 390px 判据守着〕
+- [x] ~~6 spoiler：keydown + `aria-expanded` + `:active` 红底~~ ｜验收：纯键盘可开关　**作废（不是已实施）**：2026-09-21 预览裁决改为纯 CSS 悬停、无 role、不进 Tab 序，键盘展开是有意取舍；`docs/plans/2026-09-21-ui-adjust-tickets.md` 票 02 记有「保留 `tabindex="0"` 加一行 `.spoiler:focus` 即可补」的备查写法
+- [x] 7 `/domain/` 最小修正 + `headPhoto` 包 `<a>` ｜验收：`lang="zh-CN"`、viewport 无 zoom 锁、无 `*{font-family:FiraCode}`、无 `#00be00`、favicon 两处保持原值、`headPhoto` 可点回 `/` 且键盘可达　〔已落地，FiraCode 收窄到终端窗格；favicon 未动〕
+- [x] 8 两条 smoke 断言入库（标题不截断、`#mmenu` current 上色），`package.json` 加一条脚本 ｜验收：与既有 Playwright 套件同法跑通　〔已落地：`smoke:ui` 脚本已注册，两条断言在 `scripts/ui-smoke.mjs`〕
+- [x] 9 收尾：`rm -rf node_modules/.astro` → 完整 `pnpm build` → `pnpm check` → `pnpm exec prettier --check ./src`　〔已收口：见本文件「收尾」节——`pnpm check` 0 error、`prettier --check` 干净、`smoke:ui` **112/112**（节内表格原文），另有 `test:fancybox` 27/27、`smoke:nice-books` 72/72、`smoke:ai-news` 9/9〕
 
 ## 已转正的 ADR 与术语（2026-09-21 落盘）
 
@@ -300,16 +300,16 @@
 
 裁决：删 `:315`、`:318`、`:432` 三段全死的 + `:438-451` 的 `em` 分支；其余保留（Q36-A）。
 
-## T1 执行清单（裁决已全定，共 6 项）
+## T1 执行清单（裁决已全定，共 8 项；T1-6 作废）
 
-- [ ] T1-1 灰阶收敛：全站次要文字统一到 `#666`（含侧栏三处 `#999aaa`——换一批按钮 `:3360`、最新评论时间 `:3461`、留言板时间 `:3654`，以及 `#888` 四处、`#767676`）；同步把 `:1763` 那条自称 AA「≈4.65:1」的注释改成实测事实 ｜验收：三处计算色 = `#666`，对比度 5.74:1
-- [ ] T1-2 删死规则：`:315`/`:318`/`:432` 三段 + `:438-451` 的 `em` 分支 ｜验收：删除前后样式指纹比对，除卡片标题本就 18px 外无差异
-- [ ] T1-3 站点标题降级：`Navbar.astro:27/:43` 的 `<h1>` → 非标题元素，重指 `:128/:135/:138/:1690/:1962/:1970`；侧栏部件 `h3`、文章页 `h1→h3` 跳级拉平 ｜验收：每页仅 1 个 h1；`#header` 在 681/770/860/980/1100px 复查（AGENTS.md 硬要求）；标题视觉逐像素不变
-- [ ] T1-4 命中区：药丸仅 `<680px` 放宽、幻灯片点用 `::before` 扩热区（视觉保持 10×10）｜验收：390px 下药丸 ≥24、点命中区 ≥24 而外观不变；内联链接不动（WCAG 2.5.8 Inline 豁免）
-- [ ] T1-5 日历标签 10/9 → 11/10，四处同步（`--gh-wd :809`、`:843` 字面量、`:1006`、`:1009-1012`）｜验收：11px 下「12月」不被 `overflow:hidden` 裁切、周几不外溢；53/7 与 subgrid 未动
-- [ ] T1-6 原版按钮家族搬回（`:315/316/317` 三态），仅作用正文真 `<button>`；`.spoiler` 保持自研 ｜验收：先数清正文真 button 清单，逐个截图
-- [ ] T1-7 等宽数字保险：给日期/计数类加 `font-variant-numeric: tabular-nums`（实测当前为空操作）｜验收：无回归即可
-- [ ] T1-8 三族圆角：`.photo-grid img` 10px → 5px ｜验收：图角不再超出卡片圆角
+- [x] T1-1 灰阶收敛：全站次要文字统一到 `#666` ｜验收：三处计算色 = `#666`，对比度 5.74:1　〔已落地：`--colorful-text-secondary: #666` 为唯一来源，`#newcomment .time`、`.guestbook-meta time`、换一批按钮均引用该 token；`#999aaa` 仅剩两处渐变装饰（非文字）〕
+- [x] T1-2 删死规则：`:315`/`:318`/`:432` 三段 + `:438-451` 的 `em` 分支 ｜验收：删除前后样式指纹比对，除卡片标题本就 18px 外无差异　〔已落地：`.pagenavi` 现为 `float: none` 的 flex 规则，旧浮动死副本已不存在；残留的 `.post-list .post-header` 是窄屏覆盖规则（`margin/padding-left/border-left` 归零），不是被覆盖的那条〕
+- [x] T1-3 站点标题降级：`Navbar` 的 `<h1>` → 非标题元素；侧栏部件 `h3`→`h2`；文章页层级不跳级 ｜验收：每页仅 1 个 h1；`#header` 在 681/770/860/980/1100px 复查；标题视觉逐像素不变　〔已落地：`Navbar.astro` 零 `<h1>`、`WidgetLayout.astro` 出 `<h2>`、首页补 `sr-only` h1；`smoke:ui` 实测文章页大纲 `1 2… 3…` 无跳级。**四页内容级 `h1→h3` 跳级经站长 2026-09-23 裁决「不拉平」保留**〕
+- [x] T1-4 命中区：药丸仅 `<680px` 放宽、幻灯片点用 `::before` 扩热区（视觉保持 10×10）｜验收：390px 下药丸 ≥24、点命中区 ≥24 而外观不变；内联链接不动（WCAG 2.5.8 Inline 豁免）　〔已落地：`.blogtags a` 窄屏 `padding-top/bottom: 5px`（命中高 20→24，三角与圆点同步）；`.carousel-indicators li::before` 扩热区，实测量得 **15×24**——横向不做到 24 是因为原点距仅 15px，拉开会互相吞热区；站长 2026-09-21 裁决「维持 15×24，不拉开点距」〕
+- [x] T1-5 日历标签 10/9 → 11/10，四处同步 ｜验收：11px 下「12月」不被裁切、周几不外溢；53/7 与 subgrid 未动　〔已落地：`.gh-calendar-months` 与 `.gh-calendar-wd` 桌面 11px、≤680px 10px；`--gh-wd` 与 53 列模板未动〕
+- [x] ~~T1-6 原版按钮家族搬回（三态），仅作用正文真 `<button>`；`.spoiler` 保持自研~~ **作废（不是已实施）**：站长 2026-09-21 裁决走票面降级条款「只记录、不新增规则」，也不引入 `.post-context p > button, .post-context li > button` 的窄化写法，本项不产 commit；见 `docs/plans/2026-09-21-ui-adjust-tickets.md` 票 12 的作废行
+- [x] T1-7 等宽数字保险：给日期/计数类加 `font-variant-numeric: tabular-nums`（实测当前为空操作）｜验收：无回归即可　〔已落地 4 处：`.archive-entry-date` / `.archive-year-count` / `#newcomment .time` / `.guestbook-meta time`，另 `.gh-calendar-stats` 在它自己文件里〕
+- [x] T1-8 三族圆角：`.photo-grid img` 10px → 5px ｜验收：图角不再超出卡片圆角　〔已落地：现为 `border-radius: 5px`，与 `.photo-grid a` 同值，注释写明「不得大于其卡片」〕
 
 ### T1 明确不做（防止下轮重报）
 
@@ -330,12 +330,12 @@
 | Q35 | 17px 内联链接：**不修**，依据 WCAG 2.5.8 的 Inline 豁免（这些目标嵌在 12px 文字流里，加内距会撑坏原版 meta 行）                            |
 | Q36 | 死代码：**只删全死的 `:315`/`:318`/`:432` 三段 + `.pagenavi` 的 `em` 分支**；`:324/:327`、`:438-451` 幸存部分、`.prose{14px/1.9}` 全部保留 |
 
-## T0 / T1 两轮 grilling 状态：frontier 已空，等待开工确认
+## T0 / T1 两轮 grilling 状态：已收口（2026-10-27 回填）
 
-- T0：8 项，裁决见「第一轮/第二轮/第三轮裁决」与「最终执行序」。
-- T1：6 项，裁决见「T1 第一轮裁决」「T1 剩余裁决补录」与「T1 执行清单」。
-- T2（死代码剩余项、`html{font-size:13px}` 是否启用、AGENTS.md 三处失真更正、`.header-ticker` 死块、768 双写法、`100dvh`）与 T3（海洋绿 vs WCAG 的三处让步、z-index 标度）**尚未开始问答**。
-- 目前**未改任何源码**；已落盘的是三份决策文档（`docs/ui-adjust-0921.md`、`docs/adr/0002、0003、0004`）、`GLOSSARY.md` 四条术语，以及 gitignore 内的四个量测脚本。
+- T0：8 项，裁决见「第一轮/第二轮/第三轮裁决」与「最终执行序」；执行结果见下方同名清单的勾选与证据行。
+- T1：8 项（T1-1…T1-8），裁决见「T1 第一轮裁决」「T1 剩余裁决补录」与「T1 执行清单」；其中 T1-6 经站长裁决**作废**，其余七项均已落地。
+- T2（死代码剩余项、`html{font-size:13px}` 是否启用、AGENTS.md 三处失真更正、`.header-ticker` 死块、768 双写法、`100dvh`）与 T3（海洋绿 vs WCAG 的三处让步、z-index 标度）**均已随本轮交付**：T2 的死规则与文档失真已修（本文件「死规则逐条判定」与 T2 段），T3 已裁（药丸六色换 `--tag-c1..c6`、z-index 补标度并修三处）；仅 `#00c000` 作前景 2.46:1 一项仍悬空。
+- 源码已大量改动并上线（HEAD 见 git log）；三份决策文档与 `GLOSSARY.md` 四条术语之外，`docs/adr/0005`–`0008` 也已随各自功能落盘。
 
 ---
 

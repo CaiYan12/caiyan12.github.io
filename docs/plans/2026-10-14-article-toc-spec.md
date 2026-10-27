@@ -1,8 +1,8 @@
 # Spec：侧栏文章目录（可粘性跟随、激活态随阅读位置）
 
 - 日期：2026-10-14（Asia/Shanghai）
-- 父规格 issue：待建（`ready-for-agent`）。子票由 `to-tickets` 出
-- 状态：**方案已定，尚未实现**。本轮只落文档与父票；全文来自 2026-10-14 的 grilling 逐题裁决
+- 父规格 issue：[#96](https://github.com/CaiYan12/caiyan12.github.io/issues/96)（已关闭）。子票 #97–#103 由 `to-tickets` 出，亦全部关闭
+- 状态：**已实现并上线**（2026-10-15 交付，PR [#104](https://github.com/CaiYan12/caiyan12.github.io/pull/104) 以 merge commit `d9db0d0` 入 main）。定稿当时只落文档与父票，全文来自 2026-10-14 的 grilling 逐题裁决；实现记录见 `docs/adr/0008-sidebar-article-toc-sticky-stack.md`
 - 术语：根 `GLOSSARY.md` 的「文章目录」「文集目录」（本次新增两条互为对照的词条）
 - 配套决策记录：`docs/adr/0008-sidebar-article-toc-sticky-stack.md`
 - 来源：站长逐题裁决；本机 `astro dev`（`http://localhost:4321`）上的真机实测；探针脚本均为一次性、已删除，不入库
@@ -180,7 +180,7 @@ grilling 六问全取推荐（2026-10-14），对上文激活态规则三处对�
 - 不做点击后的激活态锁定。
 - 不引入任何新的第三方依赖。
 - 不新增测试入口（不新开 smoke 脚本、不新开 npm script）。
-- 不做「阅读进度百分比」一类的衍生展示。
+- ~~不做「阅读进度百分比」一类的衍生展示~~ **已被复盘推翻（2026-10-15 站长追加要求）**：标题栏下缘现有阅读进度条（`WidgetArticleToc.astro` 的 `[data-reading-progress]`，与文章页顶部固定条同源驱动），实证见该文件注释。本节其余各条不变。
 - 不改变站内既有的滚动行为声明（不新增 `scroll-behavior`）。
 
 ## Further Notes

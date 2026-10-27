@@ -1,7 +1,7 @@
 # Spec：脚本层架构加深（构建结果逐字节不变）
 
 - 来源：`improve-codebase-architecture` 评审（报告 `architecture-review-20260925-074855.html`，系统临时目录，不入库）+ 五轮 grilling 的已确认参数
-- 镜像 issue：**待建**（parent），子票 8 张
+- 镜像 issue：**[#49](https://github.com/CaiYan12/caiyan12.github.io/issues/49)**（parent，已关闭），子票 #50–#58 全部关闭。交付汇总见 `docs/plans/2026-09-25-scripts-round-handoff.md`
 - 上位文档：`AGENTS.md`（构建链与依赖约束、文档写作约定 Q45-B）、`GLOSSARY.md` 词汇表、`docs/adr/0001–0004`
 - 动工前边界：`HEAD` == `origin/main` == `4416cd1`（本轮不设 tag，一票一 commit 单点退回）
 - **硬约束（站长原话）**：「同时保证不改变构建结果」——本 spec 的每一票都必须以产物字节为验收对象之一，不接受「应该没变」

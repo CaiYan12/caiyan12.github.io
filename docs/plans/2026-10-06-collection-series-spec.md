@@ -2,7 +2,7 @@
 
 - 日期：2026-10-06（Asia/Shanghai）；同日三次追加（文集封面、元件复用约束、**归属判据按 frontmatter**），均已并入本文件
 - 父规格 issue：[#76](https://github.com/CaiYan12/caiyan12.github.io/issues/76)（`ready-for-agent`，已开）。子票由 `to-tickets` 出
-- 状态：**方案已定，尚未实现**。本轮只落文档与父票；全文来自 2026-10-06 的 grilling 逐题裁决
+- 状态：**已实现并上线**（2026-10-07 交付，PR [#87](https://github.com/CaiYan12/caiyan12.github.io/pull/87) 以 merge commit `d1f10ea` 入 main；十票 #77–#86 全部结办，父票 #76 已关闭）。定稿当时只落文档与父票，全文来自 2026-10-06 的 grilling 逐题裁决；实现记录见 `docs/plans/2026-10-06-collection-series-tickets.md` 与 `docs/adr/0007-series-closed-reading-sequence.md`
 - 术语：根 `GLOSSARY.md` 的「文集」「文集成员」「非成员文章」「文集目录」「文集封面」
 - 配套决策记录：`docs/adr/0007-series-closed-reading-sequence.md`
 - 来源：站长逐题裁决；本机参考项目实测（`../firefly`、`../mizuki`、`../overthecocoons`、`../limh.me`、`../webqianduan`）；B 站专栏文集语义与开放平台接口调研；`#49` 里已文档化的「缝隙 A / 缝隙 B」测试台约定
