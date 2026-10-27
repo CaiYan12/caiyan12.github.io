@@ -389,6 +389,11 @@
 		"height": 742,
 		"variants": [480, 720, 1080]
 	},
+	"public:images/posts/20261027151827/webapp-vibe-coding-ch8-cover.jpg": {
+		"width": 1320,
+		"height": 742,
+		"variants": [480, 720, 1080]
+	},
 	"public:images/posts/fee-depreciation-cover.jpg": {
 		"width": 1125,
 		"height": 750,

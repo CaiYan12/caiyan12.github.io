@@ -28,6 +28,9 @@
 // + 3 条 = 第七章（20261022192826，L6 Astro）并入本书（2026-10-22）：组内相邻判据
 // 随成员数再增 1 条（7 → 8）；末章由第六章移到第七章，原挂在第六章的「末章收尾」
 // 判据拆成「第六章改判非末章文案 1 条 + 第七章顶部行 1 条 + 第七章收尾 1 条」，故净 +2。
+// + 3 条 = 第八章（20261027151827，L7 内容系统）并入本书（2026-10-27）：组内相邻判据
+// 随成员数再增 1 条（8 → 9）；末章由第七章移到第八章，原挂在第七章的「末章收尾」
+// 判据拆成「第七章改判非末章文案 1 条 + 第八章顶部行 1 条 + 第八章收尾 1 条」，故净 +2。
 // #97（侧栏粘性栈预重构）：**判据数不变，仍是 42**，只把三条粘性判据的量测对象从
 // 「小部件自身」（#sidebar .widget.widget-series）换成「承担粘性的共享容器」
 // （#sidebar [data-widget-stack]）——粘性已由容器独家承担，量旧元素会恒为「未钉住」。
@@ -71,9 +74,9 @@
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
 // + 5 条：非文章页在无 JS 时不输出目录空壳，站内往返首页不残留且能重建目录。
-const EXPECTED_CHECKS = 85;
+const EXPECTED_CHECKS = 88;
 
-// 组成员与序号：与 src/data/series.ts 及九篇文章的 frontmatter 同批核对。
+// 组成员与序号：与 src/data/series.ts 及十篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
 const MEMBERS = {
 	"webapp-vibe-coding": [
@@ -85,6 +88,7 @@ const MEMBERS = {
 		"20261011101832",
 		"20261016083904",
 		"20261022192826",
+		"20261027151827",
 	],
 	"matt-pocock": ["20260919135000", "20261006110122"],
 };
@@ -93,7 +97,7 @@ const ALL_MEMBERS = Object.values(MEMBERS).flat();
 // 非成员样本必须是**公开**文章：20260728000000 虽是置顶帖，但 private:true 会被
 // getSortedPosts 的 isPublicPost 剔出时间线，拿它验证「非成员页不出现文集 UI」
 // 天然为真，咬不住「公开非成员被误加文集 UI」。20260927082016 实测 private:false、
-// draft:false、series:none，且紧邻本书八章（第〇–第七章）在时间线上的位置——它改造前的「下一篇（右）」
+// draft:false、series:none，且紧邻本书九章（第〇–第八章）在时间线上的位置——它改造前的「下一篇（右）」
 // 正指向第〇章，故还能顺带咬住「非成员导航跳过整块」。
 const NON_MEMBER = "20260927082016";
 // 实测该非成员序列里它更早的一篇（它是最新的非成员，故 next 恒为 null）。
@@ -242,14 +246,14 @@ await goto(`/posts/20261002071103/`);
 const ch0Notes = await seriesNotes();
 check("第〇章：两行都在", ch0Notes.length === 2, `count=${ch0Notes.length}`);
 check(
-	"第〇章：顶部行 = 第 0 / 8 章 + 目录链接",
-	ch0Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 0 / 8 章 · 目录` &&
+	"第〇章：顶部行 = 第 0 / 9 章 + 目录链接",
+	ch0Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 0 / 9 章 · 目录` &&
 		ch0Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
 	`${ch0Notes[0]?.text} | ${ch0Notes[0]?.links?.join(",")}`,
 );
 check(
-	"第〇章：末尾行 = 第 0 / 8 章（非末章，不收尾）",
-	ch0Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 0 / 8 章` &&
+	"第〇章：末尾行 = 第 0 / 9 章（非末章，不收尾）",
+	ch0Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 0 / 9 章` &&
 		ch0Notes[1]?.links.length === 0,
 	`${ch0Notes[1]?.text} | ${ch0Notes[1]?.links?.join(",")}`,
 );
@@ -257,14 +261,14 @@ check(
 await goto(`/posts/20261002204249/`);
 const ch3Notes = await seriesNotes();
 check(
-	"第三章：顶部行 = 第 3 / 8 章 + 目录链接",
-	ch3Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 3 / 8 章 · 目录` &&
+	"第三章：顶部行 = 第 3 / 9 章 + 目录链接",
+	ch3Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 3 / 9 章 · 目录` &&
 		ch3Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
 	`${ch3Notes[0]?.text}`,
 );
 check(
-	"第三章（非末章）：末尾行 = 第 3 / 8 章（收尾已移交给第七章）",
-	ch3Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 3 / 8 章` &&
+	"第三章（非末章）：末尾行 = 第 3 / 9 章（收尾已移交给第八章）",
+	ch3Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 3 / 9 章` &&
 		ch3Notes[1]?.links.length === 0,
 	`${ch3Notes[1]?.text} | ${ch3Notes[1]?.links?.join(",")}`,
 );
@@ -272,14 +276,14 @@ check(
 await goto(`/posts/20261010081019/`);
 const ch4Notes = await seriesNotes();
 check(
-	"第四章：顶部行 = 第 4 / 8 章 + 目录链接",
-	ch4Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 4 / 8 章 · 目录` &&
+	"第四章：顶部行 = 第 4 / 9 章 + 目录链接",
+	ch4Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 4 / 9 章 · 目录` &&
 		ch4Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
 	`${ch4Notes[0]?.text}`,
 );
 check(
-	"第四章（非末章）：末尾行 = 第 4 / 8 章（收尾已移交给第七章）",
-	ch4Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 4 / 8 章` &&
+	"第四章（非末章）：末尾行 = 第 4 / 9 章（收尾已移交给第八章）",
+	ch4Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 4 / 9 章` &&
 		ch4Notes[1]?.links.length === 0,
 	`${ch4Notes[1]?.text} | ${ch4Notes[1]?.links?.join(",")}`,
 );
@@ -287,14 +291,14 @@ check(
 await goto(`/posts/20261011101832/`);
 const ch5Notes = await seriesNotes();
 check(
-	"第五章：顶部行 = 第 5 / 8 章 + 目录链接",
-	ch5Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 5 / 8 章 · 目录` &&
+	"第五章：顶部行 = 第 5 / 9 章 + 目录链接",
+	ch5Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 5 / 9 章 · 目录` &&
 		ch5Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
 	`${ch5Notes[0]?.text}`,
 );
 check(
-	"第五章（非末章）：末尾行 = 第 5 / 8 章（收尾已移交给第七章）",
-	ch5Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 5 / 8 章` &&
+	"第五章（非末章）：末尾行 = 第 5 / 9 章（收尾已移交给第八章）",
+	ch5Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 5 / 9 章` &&
 		ch5Notes[1]?.links.length === 0,
 	`${ch5Notes[1]?.text} | ${ch5Notes[1]?.links?.join(",")}`,
 );
@@ -302,30 +306,45 @@ check(
 await goto(`/posts/20261016083904/`);
 const ch6Notes = await seriesNotes();
 check(
-	"第六章：顶部行 = 第 6 / 8 章 + 目录链接",
-	ch6Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 6 / 8 章 · 目录` &&
+	"第六章：顶部行 = 第 6 / 9 章 + 目录链接",
+	ch6Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 6 / 9 章 · 目录` &&
 		ch6Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
 	`${ch6Notes[0]?.text}`,
 );
 check(
-	"第六章（非末章）：末尾行 = 第 6 / 8 章（收尾已移交给第七章）",
-	ch6Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 6 / 8 章` &&
+	"第六章（非末章）：末尾行 = 第 6 / 9 章（收尾已移交给第八章）",
+	ch6Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 6 / 9 章` &&
 		ch6Notes[1]?.links.length === 0,
 	`${ch6Notes[1]?.text} | ${ch6Notes[1]?.links?.join(",")}`,
 );
 await goto(`/posts/20261022192826/`);
 const ch7Notes = await seriesNotes();
 check(
-	"第七章：顶部行 = 第 7 / 8 章 + 目录链接",
-	ch7Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 7 / 8 章 · 目录` &&
+	"第七章：顶部行 = 第 7 / 9 章 + 目录链接",
+	ch7Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 7 / 9 章 · 目录` &&
 		ch7Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
 	`${ch7Notes[0]?.text}`,
 );
 check(
-	"第七章（末章）：末尾行改收尾 → 《…》已读完 · 看其它文集 → /series/",
-	ch7Notes[1]?.text === `《看懂 AI 写的网站》已读完 · 看其它文集` &&
-		ch7Notes[1]?.links[0] === `/series/`,
+	"第七章（非末章）：末尾行 = 第 7 / 9 章（收尾已移交给第八章）",
+	ch7Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 7 / 9 章` &&
+		ch7Notes[1]?.links.length === 0,
 	`${ch7Notes[1]?.text} | ${ch7Notes[1]?.links?.join(",")}`,
+);
+
+await goto(`/posts/20261027151827/`);
+const ch8Notes = await seriesNotes();
+check(
+	"第八章：顶部行 = 第 8 / 9 章 + 目录链接",
+	ch8Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 8 / 9 章 · 目录` &&
+		ch8Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
+	`${ch8Notes[0]?.text}`,
+);
+check(
+	"第八章（末章）：末尾行改收尾 → 《…》已读完 · 看其它文集 → /series/",
+	ch8Notes[1]?.text === `《看懂 AI 写的网站》已读完 · 看其它文集` &&
+		ch8Notes[1]?.links[0] === `/series/`,
+	`${ch8Notes[1]?.text} | ${ch8Notes[1]?.links?.join(",")}`,
 );
 
 await goto(`/posts/20261006110122/`);
@@ -355,8 +374,8 @@ check(
 await goto(`/posts/20261002204249/`);
 const ch3Sidebar = await sidebarSeries();
 check(
-	"第三章：侧栏有章节目录，8 条成员链接",
-	ch3Sidebar !== null && ch3Sidebar.items === 8,
+	"第三章：侧栏有章节目录，9 条成员链接",
+	ch3Sidebar !== null && ch3Sidebar.items === 9,
 	`items=${ch3Sidebar?.items ?? "无"}`,
 );
 check(
@@ -366,7 +385,7 @@ check(
 	`current=${ch3Sidebar?.currentHref} aria=${ch3Sidebar?.currentAria}`,
 );
 check(
-	"第三章：侧栏目录的链接按 seriesOrder 升序 = 八章顺序",
+	"第三章：侧栏目录的链接按 seriesOrder 升序 = 九章顺序",
 	JSON.stringify(ch3Sidebar?.links) ===
 		JSON.stringify(
 			MEMBERS["webapp-vibe-coding"].map((id) => `/posts/${id}/`),
@@ -1459,9 +1478,31 @@ const installTocSettleWait = (pg) =>
 			};
 		});
 	const clickInSiteLink = async (selector) => {
+		// swup 的模块脚本异步初始化、晚于 load；实例未就绪时点击会退化成整页刷新，
+		// 「换页生命周期」的语义就静默失效了（2026-10-27 实测：等 window.swup 存在
+		// 前后同一链接的点击结果不同）。故每次点击前先等实例就绪。
+		await sp3
+			.waitForFunction(() => window.swup !== undefined, undefined, {
+				timeout: 10000,
+			})
+			.catch(() => {});
 		await sp3.evaluate((sel) => {
-			const el = document.querySelector(sel);
-			if (!el) throw new Error(`站内链接不存在: ${sel}`);
+			let el = document.querySelector(sel);
+			if (!el) {
+				// 锚点兜底：目标链接原来自构建期随机挑选的「文章推荐」小部件，
+				// 换一次构建就可能不在页面上（2026-10-27 第八章上线后实测：
+				// 20260925150221 被挤出推荐位，整段 4e 中断）。本段判据测的是
+				// swup 换页后的侧栏目录生命周期，锚点来自哪里与受测行为无关；
+				// 注入同源 <a> 后点击仍走 swup 的 document 级委托，路径不变。
+				const href = sel.slice(
+					sel.indexOf('"') + 1,
+					sel.lastIndexOf('"'),
+				);
+				el = document.createElement("a");
+				el.href = href;
+				el.textContent = href;
+				document.body.append(el);
+			}
 			el.click();
 		}, selector);
 	};
