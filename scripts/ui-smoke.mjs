@@ -5,6 +5,7 @@
 // 断言一律落在真实渲染后的计算值、几何、键盘结果与可访问性属性上，不断言 CSS 源文本
 import sharp from "sharp";
 import { makeHarness } from "./lib/smoke-harness.mjs";
+import { SHELL_PAGES } from "./lib/smoke-pages.mjs";
 
 // 台子（check / checkClean / console+pageerror 采集 / 汇总）来自 scripts/lib/smoke-harness.mjs，
 // 本文件只写判据。UI_SMOKE_BASE_URL 传的是**站点根**（脚本自己拼 /posts/... 路径），与 FANCY_BASE_URL 同形。
@@ -1073,21 +1074,10 @@ check(
 checkClean("票 08");
 
 // ---------------- 每页恰好一个可见顶级标题、部件标题不跳级（票 09） ----------------
-const OUTLINE_PAGES = [
-	"/",
-	"/posts/20260919135000/",
-	"/about/",
-	"/albums/",
-	"/archive/",
-	"/guestbook/",
-	"/tag/",
-	"/friends/",
-	"/skills/",
-	"/diary/",
-	"/search/",
-	"/projects/",
-	"/timeline/",
-];
+// 页面清单统一取自 scripts/lib/smoke-pages.mjs 的 SHELL_PAGES（13 页带 Layout 壳的真页面）。
+// 注意别换成 AUDIT_PAGES：那组含 /images/ 与 /this-page-should-404/ 两条无壳边界页，
+// 「恰好一个可见 h1」在它们上面必然假红。
+const OUTLINE_PAGES = SHELL_PAGES;
 await page.setViewportSize({ width: 1440, height: 900 });
 const outlines = [];
 for (const path of OUTLINE_PAGES) {

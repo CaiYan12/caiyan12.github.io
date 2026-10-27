@@ -2,6 +2,7 @@
 // SIDEBAR_WEATHER_BASE_URL is the site root, for example http://localhost:4322.
 import { readFile } from "node:fs/promises";
 import { makeHarness } from "./lib/smoke-harness.mjs";
+import { WEATHER_PAGES } from "./lib/smoke-pages.mjs";
 
 const harness = makeHarness({
 	envVar: "SIDEBAR_WEATHER_BASE_URL",
@@ -14,11 +15,8 @@ const contexts = [];
 const coordinates = { latitude: 39.9, longitude: 116.4 };
 // 生产端把坐标粗化到一位小数后拼成 wttr.in 的 j1 地址；页面级与服务级判据共用这一条常量。
 const WTTR_WEATHER_URL = "https://wttr.in/39.9,116.4?format=j1&lang=zh";
-const pages = [
-	{ path: "/", name: "首页" },
-	{ path: "/posts/20260831000000/", name: "文章页" },
-	{ path: "/archive/", name: "其他侧栏页" },
-];
+// 三类页面的清单统一取自 scripts/lib/smoke-pages.mjs（原先写死在这里的三条已迁走）
+const pages = WEATHER_PAGES;
 
 function wttrFixture({
 	city = "Beijing",

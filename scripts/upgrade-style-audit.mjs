@@ -8,6 +8,7 @@ import { createHash } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { AUDIT_PAGES } from "./lib/smoke-pages.mjs";
 
 const PROPS = [
 	"font-family",
@@ -110,37 +111,12 @@ const SEED = `(() => {
 	};
 })();`;
 
-const PAGES = [
-	"/",
-	"/posts/20260919135000/",
-	"/posts/20260831000000/",
-	"/posts/20220514182600/",
-	"/about/",
-	"/guestbook/",
-	"/albums/",
-	"/albums/%E6%97%A5%E5%B8%B8%E9%9A%8F%E6%89%8B%E6%8B%8D/",
-	"/images/",
-	"/archive/",
-	"/tag/",
-	"/category/",
-	"/hot/",
-	"/friends/",
-	"/skills/",
-	"/timeline/",
-	"/projects/",
-	"/diary/",
-	"/search/",
-	"/books/",
-	"/books/archive/",
-	"/books/01/",
-	// /ai-news/ 不参与指纹比对：它的内容是运行时从按日更新的远端 feed
-	// （daily.juya.uk/rss.xml）拉取，同一份 dist 同一天连采两遍会完全一致（2026-09-22 实测
-	// 24 页零差异，含此页 277 元素同 sha），但跨天采集必然合法地不同——顶栏翻页按钮与日期
-	// 徽章会随 feed 成败或条目数增删。采集脚本的 Math.random 种子只能压住客户端随机
-	// （/books/ 的当日选书就属这类），压不住网络，所以这里按页排除而非按子树排除。
-	// 本票册 T3 三票均不触碰该独立壳（它不引 Layout 与 global.css），排除它不损失覆盖面。
-	"/this-page-should-404/",
-];
+// 页面清单统一取自 scripts/lib/smoke-pages.mjs 的 AUDIT_PAGES（23 页）。
+// 它 = SHELL_PAGES（13 页带壳真页面）+ AUDIT_EXTRA_PAGES（10 页扩展），
+// 后者含 /images/ 与 /this-page-should-404/ 两条无壳边界页——它们只属于本脚本，
+// 「恰好一个可见 h1」类判据在上面不成立，故不在 SHELL_PAGES 里。
+// 原 /ai-news/ 的排除理由保留在 smoke-pages.mjs 的注释中。
+const PAGES = AUDIT_PAGES;
 
 function arg(name, fallback) {
 	const i = process.argv.indexOf(`--${name}`);

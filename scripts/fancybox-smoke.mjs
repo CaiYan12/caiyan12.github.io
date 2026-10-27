@@ -6,6 +6,10 @@
 // FANCY_BASE_URL 传的是**站点根**（脚本自己拼 /posts/... 与 /albums/...），
 // 与 NICE_BOOKS_BASE_URL / AI_NEWS_BASE_URL 那种「完整页面地址」形态不同。
 import { makeHarness } from "./lib/smoke-harness.mjs";
+import {
+	FANCYBOX_POST_PAGES,
+	FANCYBOX_ALBUM_PAGE,
+} from "./lib/smoke-pages.mjs";
 
 // 外部服务（Giscus 评论接口、字体 CDN）在本机网络下可能 4xx/重置：单列统计，不计 FAIL；
 // 本地资源的失败仍然严格判失败。策略写在调用点，台子内不放行任何东西。
@@ -21,8 +25,8 @@ const harness = makeHarness({
 });
 const base = harness.base;
 const { check } = harness;
-const articlePath = "/posts/20260909092113/";
-const albumPath = "/albums/" + encodeURIComponent("轻松一刻") + "/";
+const articlePath = FANCYBOX_POST_PAGES.article;
+const albumPath = FANCYBOX_ALBUM_PAGE;
 
 /** 灯箱打开期间的工具栏快照：右上角按钮顺序与文案 */
 const toolbarState = () => {
@@ -278,7 +282,7 @@ check(
 
 // ---------------- 含对比表格的文章：表格内头像不得进灯箱 ----------------
 const tablePost = await ctx.newPage();
-await tablePost.goto(base + "/posts/20260903134906/", { waitUntil: "load" });
+await tablePost.goto(base + FANCYBOX_POST_PAGES.table, { waitUntil: "load" });
 await tablePost.waitForTimeout(800);
 const tableStats = await tablePost.evaluate((sel) => {
 	const icons = [...document.querySelectorAll(sel)];
