@@ -1,20 +1,34 @@
-import { chromium } from "playwright";
+// Nice Books 统一 3D 几何运行时检查（缝隙 A 台子上的 QA，非门禁）
+// 运行：pnpm qa:nice-books-geometry
+// 默认打 127.0.0.1:4321（dev）；NICE_BOOKS_BASE_URL 传的是**完整页面地址**
+// （http://host:port/books/），不是站点根——与 NICE_BOOKS_BASE_URL 在 smoke 里的形态一致。
+//
+// 2026-10-27 迁到 scripts/lib/smoke-harness.mjs（A-5）。迁移动机不是统一风格，而是
+// 修掉一个静默失效：本文件原有的 check 签名是 check(ok, message)，与全站其余脚本的
+// check(name, ok, detail) **参数顺序相反**；从任意一套 smoke 复制一行判据过来，
+// ok 会收到一个非空字符串（真值），于是永远 PASS。
+import { makeHarness } from "./lib/smoke-harness.mjs";
 
-const baseUrl =
-	process.env.NICE_BOOKS_BASE_URL ?? "http://127.0.0.1:4321/books/";
+const harness = makeHarness({
+	envVar: "NICE_BOOKS_BASE_URL",
+	// 与 smoke 有意不同：本脚本默认打 dev 4321，smoke 默认打 preview 4322。
+	// 按台子的 defaultBase 显式声明，两条命令的默认端口都要保留。
+	defaultBase: "http://127.0.0.1:4321/books/",
+	launch: { headless: true },
+});
+const baseUrl = harness.base;
+// 台子的 check 不返回布尔，所以返回值一律显式补上——调用点有 `return check(...)` 的写法。
+const check = (name, ok, detail = "") => {
+	harness.check(name, ok, detail);
+	return Boolean(ok);
+};
+const browser = await harness.browser.launch(harness.launch);
 const urls = {
 	home: new URL("./", baseUrl).href,
 	archive: new URL("archive/", baseUrl).href,
 	detail: new URL("01/", baseUrl).href,
 };
 const viewports = [320, 390, 768, 1024, 1280];
-const failures = [];
-let checks = 0;
-
-function check(ok, message) {
-	checks += 1;
-	if (!ok) failures.push(message);
-}
 
 async function inspectBooks(page, label) {
 	const books = await page.locator(".nb-book3d").evaluateAll((nodes) =>
@@ -74,16 +88,21 @@ async function inspectBooks(page, label) {
 			};
 		}),
 	);
-	check(books.length > 0, `${label}: 没有 Book3D 实例`);
+	check(
+		`${label}: 有 Book3D 实例`,
+		books.length > 0,
+		`实例数=${books.length}`,
+	);
 	for (const book of books) {
 		const prefix = `${label} book ${book.index}`;
-		check(Boolean(book.front && book.back), `${prefix}: 缺少前封或后封`);
+		check(`${prefix}: 前封与后封都在`, Boolean(book.front && book.back));
 		check(
+			`${prefix}: 前后封尺寸一致`,
 			book.front?.width === book.back?.width &&
 				book.front?.height === book.back?.height,
-			`${prefix}: 前后封尺寸不一致`,
 		);
 		check(
+			`${prefix}: 页块三面面积有效`,
 			Boolean(
 				book.top &&
 				book.fore &&
@@ -93,9 +112,12 @@ async function inspectBooks(page, label) {
 				book.fore.width > 0 &&
 				book.fore.height > 0,
 			),
-			`${prefix}: 页块面面积无效`,
+			book.top
+				? `top=${book.top.width}×${book.top.height} fore=${book.fore?.width}×${book.fore?.height}`
+				: "页块面缺失",
 		);
 		check(
+			`${prefix}: 页块相对硬壳内缩`,
 			Boolean(
 				book.front &&
 				book.top &&
@@ -103,22 +125,28 @@ async function inspectBooks(page, label) {
 				book.top.width < book.front.width &&
 				book.fore.height < book.front.height,
 			),
-			`${prefix}: 页块没有相对硬壳内缩`,
+			book.front
+				? `front=${book.front.width}×${book.front.height} top.width=${book.top?.width} fore.height=${book.fore?.height}`
+				: "前封缺失",
 		);
 		const expectedPageDepth = book.depth * 2;
 		check(
+			`${prefix}: 书口厚度由 depth 推导`,
 			Math.abs((book.fore?.width ?? 0) - expectedPageDepth) <= 1,
-			`${prefix}: 书口厚度没有由 depth 推导`,
+			`fore.width=${book.fore?.width} 期望=${expectedPageDepth}`,
 		);
 		check(
+			`${prefix}: 书脊厚度由 depth 推导`,
 			Math.abs((book.spine?.width ?? 0) - expectedPageDepth) <= 1,
-			`${prefix}: 书脊厚度没有由 depth 推导`,
+			`spine.width=${book.spine?.width} 期望=${expectedPageDepth}`,
 		);
 		check(
+			`${prefix}: 无书脊断口补丁`,
 			book.spinePatch === "none" || book.spinePatch === "normal",
-			`${prefix}: 检测到书脊断口补丁`,
+			`spinePatch=${book.spinePatch}`,
 		);
 		check(
+			`${prefix}: 腰封前封/折边/回折齐备且文字不溢出`,
 			!book.obi ||
 				Boolean(
 					book.obi.front &&
@@ -126,21 +154,26 @@ async function inspectBooks(page, label) {
 					book.obi.backReturn &&
 					!book.obi.frontOverflows,
 				),
-			`${prefix}: 腰封缺少前封/前封折边/背封回折或文字溢出`,
+			book.obi
+				? `frontFold=${book.obi.frontFold?.width} backReturn=${book.obi.backReturn?.width}`
+				: "无腰封",
 		);
 		check(
+			`${prefix}: 腰封前封折边未越过硬壳`,
 			!book.obi ||
 				Math.abs(
 					(book.obi.frontFold?.width ?? 0) -
 						(book.boardThickness + 3),
 				) <= 1,
-			`${prefix}: 腰封前封折边越过硬壳并遮挡书口`,
+			`frontFold=${book.obi?.frontFold?.width} 期望=${book.boardThickness + 3}`,
 		);
 		check(
+			`${prefix}: 腰封背封回折为窄边 6px`,
 			!book.obi || book.obi.backReturn?.width === 6,
-			`${prefix}: 腰封背封回折不是预期窄边`,
+			`backReturn=${book.obi?.backReturn?.width}`,
 		);
 		check(
+			`${prefix}: 腰封投影未遮住白色书口`,
 			!book.obi ||
 				Boolean(
 					book.obi.frontFold &&
@@ -150,7 +183,6 @@ async function inspectBooks(page, label) {
 					book.fore.x < book.obi.backReturn.x &&
 					book.fore.right > book.obi.frontFold.right,
 				),
-			`${prefix}: 腰封投影遮住白色书口，前封折边与背封回折之间没有可见页块`,
 		);
 	}
 }
@@ -173,16 +205,18 @@ async function inspectDepthMutation(page) {
 			return { before, after };
 		});
 	check(
+		"depth 变化同步页块与书脊",
 		Boolean(
 			result &&
 			result.after.fore - result.before.fore === 16 &&
 			result.after.spine - result.before.spine === 16,
 		),
-		"depth 变化没有同步页块与书脊",
+		result
+			? `fore Δ=${result.after.fore - result.before.fore} spine Δ=${result.after.spine - result.before.spine}`
+			: "找不到 .nb-book3d / 页块 / 书脊",
 	);
 }
 
-const browser = await chromium.launch({ headless: true });
 try {
 	for (const width of viewports) {
 		for (const [pageName, url] of Object.entries(urls)) {
@@ -196,8 +230,9 @@ try {
 				scroll: document.documentElement.scrollWidth,
 			}));
 			check(
+				`${pageName}@${width}: 无页面横向溢出`,
 				overflow.scroll <= overflow.client + 1,
-				`${pageName}@${width}: 页面横向溢出 ${JSON.stringify(overflow)}`,
+				`client=${overflow.client} scroll=${overflow.scroll}`,
 			);
 			if (pageName === "home" && width === 1280) {
 				await inspectDepthMutation(page);
@@ -227,5 +262,5 @@ try {
 	await browser.close();
 }
 
-console.log(JSON.stringify({ checks, failures }, null, 2));
-if (failures.length) process.exitCode = 1;
+// 汇总与退出码交给台子（与原实现口径一致：只按判据成败决定）。
+harness.finish();

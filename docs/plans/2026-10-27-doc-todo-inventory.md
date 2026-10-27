@@ -5,7 +5,7 @@
 - 范围：`README.md`、`docs/**`（`docs/plans/`、`docs/adr/`、`docs/agents/`）、`AGENTS.md`、`.learnings/**`、`.zcode/plans/**`
 - 方法：全仓扫描 → 逐条回代码核实 → 分四类归档。可复算命令见 §6
 - **性质：盘点台账，不是票册。** 开工时按条目另开票。
-- **勾选列（2026-10-27 立，站长要求）**：每条编号左侧一列勾选框（空框 = 未做，打勾 = 已结案）。用字符而不用 `- [ ]`：`scripts/ledger-audit.mjs` 的 R3 判据禁止票册出现未勾的 `- [ ]`（该脚本按文件显式调用、未接进 `pnpm build` / CI，但这条口径仍照守），勾选框字符不命中那条正则，两套标记互不干扰。已结案 6 条：B-1、B-2、B-3、A-6、A-1、A-2。表格行共 18 个勾选框 = 12 空 + 6 打勾（复算见 §6）。
+- **勾选列（2026-10-27 立，站长要求）**：每条编号左侧一列勾选框（空框 = 未做，打勾 = 已结案）。用字符而不用 `- [ ]`：`scripts/ledger-audit.mjs` 的 R3 判据禁止票册出现未勾的 `- [ ]`（该脚本按文件显式调用、未接进 `pnpm build` / CI，但这条口径仍照守），勾选框字符不命中那条正则，两套标记互不干扰。已结案 6 条：B-1、B-2、B-3、A-6、A-1、A-2；另有 **1 条半结（◐ A-5）**，不计入打勾名额。表格行共 18 个勾选框 = **12 空 + 6 打勾 + 1 半勾**（复算见 §6）。
 - 交叉指针：`docs/ui-adjust-0921.md` 的 T3 尾条写作「见 2026-10-27 规划盘点」，指的就是本文件
 
 ## 1. 结论
@@ -46,10 +46,10 @@
 | ---- | ---- | ----------------------------------------------------------------------------------------------------------- | ---------------- |
 | ☑    | A-1  | 落实 Q47 的「非颜色辅助」（下划线或字重）（**已结：实为大部分已落地，站长判定现状已足够、不实施**）         | 已结案           |
 | ☑    | A-2  | `AGENTS.md` 补三条规程（改落 `docs/agents/`，不塞本体）（**已结：写进 commands.md，本体只加 93 字节指针**） | 已结案           |
-| ☐    | A-5  | 两套 nice-books QA 脚本的 `check()` 签名统一到 harness                                                      | 2 脚本 + 调用点  |
+| ◐    | A-5  | 两套 nice-books QA 脚本的 `check()` 签名统一到 harness（**半结：geometry 已迁并实跑验证，design 待立项**）  | 1 脚本已改       |
 | ☐    | A-7  | `output/` 127 个文件的去留                                                                                  | 本地清理，无代码 |
 
-A-7 需要站长点头（本地文件删除）；A-5 我可以直接做并自测。
+A-7 需要站长点头（本地文件删除）；A-5 的 geometry 侧已完成，design 侧待站长决定要不要单独立项。
 
 ### 第三批 · A 类结构性（3 条，动共享模块，建议同轮）
 
@@ -112,12 +112,16 @@ A-3 有一个**跨轮硬约束**：`#41` 判据的页面清单取自 sitemap，�
 - **剩余**：按已迁 3 块（`src/utils/runtime/quote-band.ts`、`liquid-glass.ts`、`article-toc.ts`）的 tracer 形状抽 `src/utils/runtime/nav-state.ts`。`theme-script.ts` 现仍 1399 行、内含 20 个 `init*` 函数，是本轮之后最大的单块技术债。
 - **验收**：三处判定收敛到一处；`pnpm check` 零错误；导航高亮在桌面下拉与移动端全屏菜单上逐项目视一致。
 
-#### A-5 两套 nice-books QA 脚本迁 `smoke-harness`
+#### A-5 两套 nice-books QA 脚本迁 `smoke-harness`（◐ 半结：geometry 已迁，design 待立项）
 
-- **现状**：两个脚本各带一份私有 `check()`，而且**参数序相反**——同名人写错一处就是静默错判。
-- **证据**：`scripts/nice-books-design-qa.mjs:约45` `function check(name, ok, detail = "", extra = {})`；`scripts/nice-books-geometry-qa.mjs:约14` `function check(ok, message)`。`grep -ln smoke-harness scripts/*.mjs` 命中 8 个脚本，**这两个都不在**。
-- **剩余**：统一到 `check(name, ok, detail)`，改调用点；顺手把两个脚本的启动样板换成 `makeHarness`。
-- **验收**：两脚本跑出的判据数与失败数与改前一致（改前先记基线）。
+- **现状（改前）**：两个脚本各带一份私有 `check()`，而且**参数序相反**——同名人写错一处就是静默错判。
+- **证据（改前）**：`scripts/nice-books-design-qa.mjs:约45` `function check(name, ok, detail = "", extra = {})`；`scripts/nice-books-geometry-qa.mjs:约14` `function check(ok, message)`。`grep -ln smoke-harness scripts/*.mjs` 命中 8 个脚本，**这两个都不在**。
+- **裁决（2026-10-27，站长）**：选甲——只迁 `geometry-qa`（真会咬人的那个：参数序相反会让判据永远 PASS），`design-qa` 单独立项。理由记在下一条。
+- **落地（2026-10-27，geometry 侧已完成）**：删本地 `check` 与 `checks`/`failures` 计数器，改用 `makeHarness({envVar:"NICE_BOOKS_BASE_URL", defaultBase:"http://127.0.0.1:4321/books/", launch:{headless:true}})`；15 处调用点从 `check(条件, 消息)` 改为 `check(名称, 条件, 详情)`；浏览器改 `await harness.browser.launch(harness.launch)`；汇总交 `harness.finish()`。**默认端口 4321（dev）按原文保留，未统一到 4322**。`scripts/lib/smoke-harness.mjs` 零改动。
+- **验证（2026-10-27，实跑）**：改前 HEAD 快照 `{"checks":1507,"failures":[]}`；改后 `合计 1507 项，失败 0 项`、exit 0——**判据数一条没增没删**。变异验证（把「无书脊断口补丁」条件强制为 `false`）：**134 项 FAIL、exit 1**，等于 134 个书体实例各红一条，证明判据没有退化成永远 PASS。`pnpm test:lib` 16 pass / 0 fail（台子未被动到）。
+- **已知行为变化**：输出从 JSON（`{checks, failures}`）变成台子的人读汇总 `合计 N 项，失败 M 项`；判据文本从「失败描述」改为「正面判据名 + detail」。全仓无脚本或 CI 解析那个 JSON，`,package.json` 只是直调。
+- **design-qa 为什么单独立项（不做的理由，不是待办）**：它 1,316 行，签名已是正确的 `check(name, ok, detail, extra)`（顺序本来就对），但它把 `extra` **展开进结果行**且**返回布尔**——台子两点都做不到，要先给台子加宽并配测试。它连 `package.json` 条目都没有（只能 `node scripts/...` 直跑），不是门禁，迁它的收益低于动共享台子的风险。证据见 `docs/plans/2026-09-25-scripts-round-handoff.md:约50-54`。
+- **验收（geometry 侧已满足）**：改前改后判据数与失败数一致（1507/0 vs 1507/0），变异验证证明判据仍会咬。
 
 #### A-6 `≤980px` 侧栏粘性失效（☑ 已结案）
 
