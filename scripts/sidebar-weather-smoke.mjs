@@ -1593,14 +1593,23 @@ try {
 				if (!body || !spinner) return { missing: true };
 				const cs = getComputedStyle(spinner);
 				const box = spinner.getBoundingClientRect();
+				const ring = spinner.querySelector("circle");
 				const anims = spinner.getAnimations();
 				return {
 					missing: false,
 					state: body.getAttribute("data-weather-state"),
 					hasKind: body.hasAttribute("data-weather-kind"),
 					display: cs.display,
-					fontSize: cs.fontSize,
 					color: cs.color,
+					// 布局尺寸用计算样式的 width/height，不可用 getBoundingClientRect：
+					// 转圈在转，rect 量到的是旋转后的外接框（相位依赖，同一元素两次读数不同）。
+					cssWidth: cs.width,
+					cssHeight: cs.height,
+					stroke: ring ? getComputedStyle(ring).stroke : null,
+					strokeWidth: ring
+						? getComputedStyle(ring).strokeWidth
+						: null,
+					w: +box.width.toFixed(2),
 					h: +box.height.toFixed(2),
 					ariaHidden: spinner.getAttribute("aria-hidden"),
 					running: anims.filter((a) => a.playState === "running")
@@ -1635,18 +1644,19 @@ try {
 			await waitForState(page, "locating");
 			const info = await spinnerInfo(page);
 			check(
-				"定位中：卡内转圈可见、48px 浅灰、aria-hidden，且确实在转",
+				"定位中：卡内转圈可见、48×48、线宽 3px、浅灰、aria-hidden，且确实在转",
 				!info.missing &&
 					info.display !== "none" &&
-					// 视觉尺寸钉在字号上：FA 字体的 ascent/descent 会把行盒撑到约 61px，
-					// 但字面（环的直径）就是 font-size 那个 48px。
-					info.fontSize === "48px" &&
-					// 盒子不得超预算：48+9 外距+5 网格 gap+15.94 页脚 ≤ 内容盒 96.2
-					info.h <= 66 &&
+					// 自绘 SVG 后布局尺寸定死 48×48（由 svg 的 width/height 属性决定），
+					// 不再像字形版那样随 FA 字体是否加载在 48px 与约 61px 之间浮动
+					info.cssWidth === "48px" &&
+					info.cssHeight === "48px" &&
+					info.strokeWidth === "3px" &&
 					info.color === "rgb(153, 153, 153)" &&
+					info.stroke === "rgb(153, 153, 153)" &&
 					info.ariaHidden === "true" &&
 					info.running >= 1 &&
-					info.names.some((n) => n.includes("fa-spin")),
+					info.names.some((n) => n.includes("colorful-spin")),
 				JSON.stringify(info),
 			);
 		}

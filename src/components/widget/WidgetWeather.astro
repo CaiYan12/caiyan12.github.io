@@ -29,12 +29,30 @@ import WidgetLayout from "./WidgetLayout.astro";
 		data-weather-widget
 		data-weather-state="idle"
 	>
-		<!-- 加载指示：只在「正在获取位置 / 正在读取天气」两态显示，
+		<!-- 加载指示：只在「正在获取位置 / 正在读取天气」等加载相显示，
 		     由 CSS 按 body 根的 data-weather-state 切换，JS 不参与。
-		     形态取站内「换一批」按钮同款的 fa-circle-o-notch + fa-spin。 -->
-		<i
-			class="fa fa-circle-o-notch fa-spin weather-widget__spinner"
-			aria-hidden="true"></i>
+		     自绘 SVG 圆环（2026-10-26 站长裁决）：比 FA4 的 fa-circle-o-notch
+		     线更细、开口更大 —— 那枚字形是给 14px 小图标用的比例，放大到 48px
+		     后显得笨重。环心半径 22.5、线宽 3、开口 120°（落在 12 点到 3 点
+		     之间，即右上象限）；圆周 2πr = 141.37，dash 94.25 / gap 47.12。 -->
+		<svg
+			class="weather-widget__spinner"
+			viewBox="0 0 48 48"
+			width="48"
+			height="48"
+			aria-hidden="true"
+			focusable="false"
+		>
+			<circle
+				cx="24"
+				cy="24"
+				r="22.5"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="3"
+				stroke-linecap="round"
+				stroke-dasharray="94.25 47.12"></circle>
+		</svg>
 		<div class="weather-widget__reading" data-weather-reading hidden>
 			<div class="weather-widget__current">
 				<div class="weather-widget__visual">
