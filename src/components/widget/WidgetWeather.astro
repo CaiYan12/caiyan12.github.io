@@ -29,6 +29,12 @@ import WidgetLayout from "./WidgetLayout.astro";
 		data-weather-widget
 		data-weather-state="idle"
 	>
+		<!-- 加载指示：只在「正在获取位置 / 正在读取天气」两态显示，
+		     由 CSS 按 body 根的 data-weather-state 切换，JS 不参与。
+		     形态取站内「换一批」按钮同款的 fa-circle-o-notch + fa-spin。 -->
+		<i
+			class="fa fa-circle-o-notch fa-spin weather-widget__spinner"
+			aria-hidden="true"></i>
 		<div class="weather-widget__reading" data-weather-reading hidden>
 			<div class="weather-widget__current">
 				<div class="weather-widget__visual">

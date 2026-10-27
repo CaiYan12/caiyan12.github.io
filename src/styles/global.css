@@ -6574,6 +6574,56 @@ body,
   justify-self: center;
 }
 
+/* 加载期转圈（2026-10-26 站长裁定）：形态取站内「换一批」按钮同款的
+   fa-circle-o-notch + fa-spin，不新写关键帧、不引新字体。
+   选择器一律用 .fa 复合类提特异性 —— vendored font-awesome.css 排在 global.css
+   之后（产物实测 .fa{}@169652 > .weather-widget-body{}@126666），而
+   .fa{display:inline-block; font-size:inherit} 与普通类同为 (0,1,0)，
+   写普通类会被它压掉：转圈缩成继承字号、且 display:none 失效。 */
+.weather-widget__spinner.fa {
+  display: none;
+  font-size: 48px;
+  /* 浅灰：站内已有该字面量（.level-beginner 背景 / caret 边框），非 token ——
+     站长 2026-10-26 裁决取此值，不为一个只有一处用处的颜色去动 :root。 */
+  color: #999;
+  justify-self: center;
+  /* 与状态文字的间距 14px = 5px 网格 gap + 9px 外距（草图比例）。
+     高度预算：48 + 14 + 15.94 = 77.94 ≤ 内容盒 96.2，主体仍为 113.2px；
+     转圈不得做到 66px 以上，否则卡片被撑高、下方元件重新开始跳。 */
+  margin-bottom: 9px;
+}
+
+/* 只在「正在加载、且卡内还没有数据」时显示：
+   - locating：等浏览器定位
+   - weather-loading 且无 data-weather-kind：首次天气请求在飞
+   状态机里那个 loading（「正在读取天气」）是同步被 weather-loading 覆盖的
+   （定位回调里 set loading → renderAll → fetchWeather 同步 set weather-loading
+   → 再 renderAll，两次渲染同在一个任务内），浏览器来不及画它，故不必单列。
+   成功 / 旧数据 / 错误 / 无 JS 态一律不显示。 */
+.weather-widget-body:not([data-weather-kind])[data-weather-state="locating"] .weather-widget__spinner.fa,
+.weather-widget-body:not([data-weather-kind])[data-weather-state="loading"] .weather-widget__spinner.fa,
+.weather-widget-body:not([data-weather-kind])[data-weather-state="weather-loading"] .weather-widget__spinner.fa {
+  display: block;
+}
+
+/* 旋转周期：FA 默认 2s 偏慢，1s 更像「在加载」 */
+.weather-widget__spinner.fa-spin {
+  animation-duration: 1s;
+}
+
+/* 「正在更新天气」且卡内已有数据（即用户手动点刷新）：卡内读数照旧，
+   标题栏刷新图标自转。刷新按钮在 actions 槽（h2 内）、是 body 的兄弟，
+   故用 :has() 取状态 —— 站内已有 .widget:has(.weather-widget-body):hover 的同族写法。
+   加上 data-weather-kind 是为了与上面的「首次加载」区分开（那时刷新按钮本身是隐藏的）。
+   复用站内既有的 @keyframes colorful-spin。 */
+.widget:has(.weather-widget-body[data-weather-state="weather-loading"][data-weather-kind]) .weather-widget__refresh svg {
+  animation: colorful-spin 1s linear infinite;
+  /* 绕字形自身中心转：fill-box + center（view-box 的 50% 50% 是 1024 画布中心，
+     字形未必在画布正中，会轻微摆动） */
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
 .weather-widget__status,
 .weather-widget__city,
 .weather-widget__description,
@@ -6834,6 +6884,13 @@ body,
 
   /* 减少动态时不淡入，壁纸直接出现 */
   .weather-widget-body[data-weather-kind]::before {
+    animation: none;
+  }
+
+  /* 转圈停转、保留静态圆环；刷新图标同样停转。语义由状态文字承担
+     （role=status + aria-live=polite），不丢信息。 */
+  .weather-widget__spinner.fa-spin,
+  .widget:has(.weather-widget-body[data-weather-state="weather-loading"][data-weather-kind]) .weather-widget__refresh svg {
     animation: none;
   }
 }

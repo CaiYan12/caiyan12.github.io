@@ -1352,10 +1352,49 @@ try {
 				gate.report.every((r) => r.rest >= 4.0 && r.hover >= 3.5),
 		);
 	}
+	// 可挂起 wttr 响应：让卡片停在某个状态上，供「加载中」这类中间态取样。
+	// 首次加载时「正在更新天气」（weather-loading 且尚无数据）与手动刷新是同一个状态名，
+	// 靠「有没有数据」区分；挂起响应即可停在那个状态。
+	const gatedWttr = async (page) => {
+		const gate = { hold: false, pending: null };
+		const requests = [];
+		await page.route("https://wttr.in/**", async (route) => {
+			requests.push(route.request().url());
+			if (gate.hold) {
+				await new Promise((resolve) => {
+					gate.pending = resolve;
+				});
+			}
+			await route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify(wttrFixture()),
+			});
+		});
+		return {
+			requests,
+			hold: () => {
+				gate.hold = true;
+			},
+			release: () => {
+				gate.hold = false;
+				if (gate.pending) {
+					const resolve = gate.pending;
+					gate.pending = null;
+					resolve();
+				}
+			},
+		};
+	};
+
 	// 高度预留（2026-10-26 站长裁定）：侧栏天气胶囊在「定位中 / 失败 / 无 JS」态
 	// 只有一行状态文字，实测主体只有 32.9–59.1px，与成功态的 113.2px 差 54–80px，
-	// 把下方元件整体上移。这组判据锁三件事：五态等高、成功态内容恰好填满、
+	// 把下方元件整体上移。这组判据锁三件事：各态等高、成功态内容恰好填满、
 	// 下方元件在状态迁移前后一位不动。
+	// 六态清单：成功 / 定位中 / 读取天气中 / 定位失败 / 天气失败 / 无 JS。
+	// 「读取天气中」= 首次天气请求在飞（weather-loading 且尚无数据）——
+	// 状态机里那个 loading（「正在读取天气」）是同步被 weather-loading 覆盖的，
+	// 两次 renderAll 同在一个任务内，浏览器来不及画它，故取不到。
 	{
 		const EXPECTED_BODY_HEIGHT = 113.2; // 成功态实测主体高（2026-10-26 复测）
 		const TOLERANCE = 0.5;
@@ -1482,6 +1521,18 @@ try {
 			);
 		}
 
+		// 读取天气中：首次天气请求在飞（weather-loading 且尚无数据）——
+		// 这一态会摆着加载转圈，高度仍须与其他态一致（转圈不得把卡片撑高）
+		{
+			const page = await newPage();
+			const gate = await gatedWttr(page);
+			gate.hold();
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "weather-loading");
+			heights.push(["读取天气中", await bodyHeight(page)]);
+			gate.release();
+		}
+
 		// 定位失败（带重试按钮）
 		{
 			const page = await newPage({ geolocationActions: ["denied"] });
@@ -1515,17 +1566,206 @@ try {
 			.map(([label, height]) => `${label}=${height}px`)
 			.join(" ");
 		const allEqual =
-			heights.length === 5 &&
+			heights.length === 6 &&
 			heights.every(
 				([, height]) =>
 					height !== null &&
 					Math.abs(height - heights[0][1]) <= TOLERANCE,
 			);
 		check(
-			`五种状态主体高度一致（定位中/失败/无 JS 不再塌陷）：${heightsText}`,
+			`六种状态主体高度一致（定位中/读取天气中/失败/无 JS 不再塌陷）：${heightsText}`,
 			allEqual,
 			heightsText,
 		);
+	}
+
+	// ---------------- 加载期转圈（2026-10-26 站长裁定） ----------------
+	// 卡内大转圈只在「正在加载、且尚无数据」时出现：locating（等定位）与
+	// weather-loading（首次天气请求在飞）。成功 / 旧数据 / 错误 / 无 JS 态一律不出现。
+	// 手动刷新（已有数据）时卡内读数照旧，改由标题栏刷新图标自转。
+	{
+		const spinnerInfo = (page) =>
+			page.evaluate(() => {
+				const body = document.querySelector(
+					"#sidebar [data-weather-widget]",
+				);
+				const spinner = body?.querySelector(".weather-widget__spinner");
+				if (!body || !spinner) return { missing: true };
+				const cs = getComputedStyle(spinner);
+				const box = spinner.getBoundingClientRect();
+				const anims = spinner.getAnimations();
+				return {
+					missing: false,
+					state: body.getAttribute("data-weather-state"),
+					hasKind: body.hasAttribute("data-weather-kind"),
+					display: cs.display,
+					fontSize: cs.fontSize,
+					color: cs.color,
+					h: +box.height.toFixed(2),
+					ariaHidden: spinner.getAttribute("aria-hidden"),
+					running: anims.filter((a) => a.playState === "running")
+						.length,
+					names: anims.map((a) => a.animationName ?? ""),
+				};
+			});
+
+		const refreshIconInfo = (page) =>
+			page.evaluate(() => {
+				const svg = document.querySelector(
+					"[data-weather-refresh] svg",
+				);
+				if (!svg) return { missing: true };
+				const anims = svg.getAnimations();
+				const reading = document.querySelector(
+					"#sidebar [data-weather-reading]",
+				);
+				return {
+					missing: false,
+					running: anims.filter((a) => a.playState === "running")
+						.length,
+					names: anims.map((a) => a.animationName ?? ""),
+					readingVisible: !!reading && !reading.hidden,
+				};
+			});
+
+		// ① 定位中：转圈可见、48px、浅灰、aria-hidden，且确实在转
+		{
+			const page = await newPage({ geolocationActions: ["hold"] });
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "locating");
+			const info = await spinnerInfo(page);
+			check(
+				"定位中：卡内转圈可见、48px 浅灰、aria-hidden，且确实在转",
+				!info.missing &&
+					info.display !== "none" &&
+					// 视觉尺寸钉在字号上：FA 字体的 ascent/descent 会把行盒撑到约 61px，
+					// 但字面（环的直径）就是 font-size 那个 48px。
+					info.fontSize === "48px" &&
+					// 盒子不得超预算：48+9 外距+5 网格 gap+15.94 页脚 ≤ 内容盒 96.2
+					info.h <= 66 &&
+					info.color === "rgb(153, 153, 153)" &&
+					info.ariaHidden === "true" &&
+					info.running >= 1 &&
+					info.names.some((n) => n.includes("fa-spin")),
+				JSON.stringify(info),
+			);
+		}
+
+		// ② 首次读取天气时（weather-loading 且尚无数据）：转圈可见
+		{
+			const page = await newPage();
+			const gate = await gatedWttr(page);
+			gate.hold();
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "weather-loading");
+			const info = await spinnerInfo(page);
+			check(
+				"首次读取天气时：卡内转圈可见（该态此前只有一行状态文字）",
+				!info.missing && info.display !== "none" && info.running >= 1,
+				JSON.stringify(info),
+			);
+			gate.release();
+		}
+
+		// ③ 有数据 / 错误 / 无 JS 态：一律不出现转圈
+		{
+			const page = await newPage();
+			await routeWttr(page, (r) => fulfillJson(r, wttrFixture()));
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "success");
+			const info = await spinnerInfo(page);
+			check(
+				"成功态不出现转圈",
+				!info.missing && info.display === "none",
+				JSON.stringify(info),
+			);
+		}
+		{
+			const page = await newPage({ geolocationActions: ["denied"] });
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "location-error");
+			const info = await spinnerInfo(page);
+			check(
+				"定位失败态不出现转圈（只留原因文案 + 重试按钮）",
+				!info.missing && info.display === "none",
+				JSON.stringify(info),
+			);
+		}
+		{
+			const page = await newPage();
+			await routeWttr(page, (r) => fulfillJson(r, {}, 500));
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "weather-error");
+			const info = await spinnerInfo(page);
+			check(
+				"天气失败态不出现转圈",
+				!info.missing && info.display === "none",
+				JSON.stringify(info),
+			);
+		}
+		{
+			// 无 JS 态用 Playwright 侧的可见性判定（页面脚本被禁用，page.evaluate 不适用）
+			const context = await browser.newContext({
+				viewport: { width: 1440, height: 900 },
+				javaScriptEnabled: false,
+			});
+			contexts.push(context);
+			const page = harness.attach(await context.newPage());
+			await page.goto(base + "/", { waitUntil: "load" });
+			const visible = await page
+				.locator("#sidebar .weather-widget__spinner")
+				.isVisible();
+			check("无 JS 态不出现转圈（静态说明不是加载中）", !visible);
+		}
+
+		// ④ 手动刷新（已有数据）：标题栏刷新图标自转，卡内读数照旧
+		{
+			const page = await newPage();
+			const gate = await gatedWttr(page);
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "success");
+			gate.hold();
+			await page.locator("[data-weather-refresh]").click();
+			await waitForState(page, "weather-loading");
+			const info = await refreshIconInfo(page);
+			check(
+				"手动刷新时：标题栏刷新图标自转，且卡内读数照旧",
+				!info.missing && info.running >= 1 && info.readingVisible,
+				JSON.stringify(info),
+			);
+			gate.release();
+		}
+
+		// ⑤ reduced-motion：两处动画都停（语义由状态文字承担，不丢信息）
+		{
+			const page = await newPage({ geolocationActions: ["hold"] });
+			await page.emulateMedia({ reducedMotion: "reduce" });
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "locating");
+			const info = await spinnerInfo(page);
+			check(
+				"reduced-motion：转圈保留但不转",
+				!info.missing && info.display !== "none" && info.running === 0,
+				JSON.stringify(info),
+			);
+		}
+		{
+			const page = await newPage();
+			await page.emulateMedia({ reducedMotion: "reduce" });
+			const gate = await gatedWttr(page);
+			await page.goto(base + "/", { waitUntil: "load" });
+			await waitForState(page, "success");
+			gate.hold();
+			await page.locator("[data-weather-refresh]").click();
+			await waitForState(page, "weather-loading");
+			const info = await refreshIconInfo(page);
+			check(
+				"reduced-motion：刷新图标不自转",
+				!info.missing && info.running === 0,
+				JSON.stringify(info),
+			);
+			gate.release();
+		}
 	}
 } finally {
 	await Promise.all(contexts.map((context) => context.close()));
