@@ -266,7 +266,7 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 | 动客户端脚本、Swup 生命周期、看板娘、Nice Books、评论/表情/统计 | `docs/agents/components.md` |
 | 改构建链、依赖、部署，或**动 remark/rehype 插件**（不删 content layer 缓存会构建出旧 HTML 且无报错） | `docs/agents/build-and-deploy.md` |
 | 写文章、把外部 Markdown 导进来、生成头图 | `docs/agents/post-authoring.md` |
-| 跑烟测 / 单测 / 构建期取数 / 票册自检（每条命令的 env 形态与坑） | `docs/agents/commands.md` |
+| 跑烟测 / 单测 / 构建期取数 / 票册自检（每条命令的 env 形态与坑） | `docs/agents/commands.md`（含冒烟台子 `makeHarness` / base URL 结尾斜杠 / `norm` 聚合三条承重契约） |
 | 领域术语与 ADR | `GLOSSARY.md`、`docs/adr/` |
 | issue 规范、标签 | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md` |
 

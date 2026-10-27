@@ -41,4 +41,24 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 
 注意：Windows 上 pnpm build 失败时尾部可能看不到完整错误（esbuild 崩溃断言），务必看完整输出而非 tail。
 
+## 冒烟台子与指纹比对的三条承重契约（2026-10-27 立）
+
+> 这三条此前只写在代码头注释里（`scripts/lib/smoke-harness.mjs` 与 `scripts/upgrade-style-audit.mjs`），命令清单里查不到。踩过一次就当已解决，下次换个会话还会再踩一遍——所以搬到这里。
+
+- **`makeHarness` 契约（触发：新写或迁移任何一套 `smoke:*` / `qa:*`）**
+    - **签名是 `check(name, ok, detail, extra)`，参数顺序不可换。** 历史坑：`nice-books-geometry-qa.mjs` 的旧签名是 `check(ok, message)`，与其余脚本**顺序相反**；一行判据从一套复制到另一套会静默错位——`ok` 收到一个非空字符串（真值），于是**永远 PASS**。迁移或新增时必须按 `(name, ok)` 写；把那两套统一过来的活记在盘点台账的 A-5 条。
+    - **`isNoise` 必须写在调用点，不许塞进台子。** 台子不预设放行清单——放行名单是缺陷的藏身处，每条都得可被读到。
+    - **`createSink()` 的 `checkClean` 游标按汇各存一份**，不共用整数。共用时 A 汇先收 5 条、再查 B 汇，B 的前 5 条会被当成「上一段已报过」而漏掉；多页面场景（离线快照另开一页）必须各建一个汇。
+    - **`finish()` 的退出码只按判据成败决定**，`checkClean` 报的错是否算失败由各 smoke 自己的判据担，台子不重复计。
+- **base URL 的结尾斜杠（触发：给任何 `*_BASE_URL` 传值，或写 `base + "/path"`）**
+    - **两种形态不能混**：`FANCY_BASE_URL` / `UI_SMOKE_BASE_URL` / `SERIES_BASE_URL` / `PELICAN_BASE_URL` 传**站点根**（脚本自己拼路径）；`NICE_BOOKS_BASE_URL` / `AI_NEWS_BASE_URL` 传**完整页面地址**。传错的表现是「选择器等不到」的假失败，不是报错。
+    - **站点根不能带结尾斜杠。** `https://x/` 加上脚本里的 `base + "/posts/..."` 会拼出 `//posts/...`，浏览器按**协议相对 URL** 解析它（host 变成 `posts`），于是一整段 `Failed to construct 'URL': Invalid URL` 与 replaceState 拒绝全是脚手架自己造的——2026-09-25 就这样把一次线上复跑读成 20 项红。
+    - **判形态看 `new URL(base).pathname`，不看结尾有没有斜杠**：站点根写成带斜杠时结尾也有斜杠，光看结尾区分不出「站点根」与「目录地址」。`makeHarness` 启动时会把这个形态打在 `[smoke]` 那行里，先读那行再怀疑判据。
+- **norm 聚合与顺序无关比对（触发：给任何页面拍样式指纹、或判「只有预期项变化」）**
+    - **采集期归一化**：`norm(s)` 把 `url(#xxx)` 里的随机 id 换成 `(#ref)`——mermaid 等库给元素与引用随机命名，不归一化则同码连采两遍也会不同。
+    - **比对期归一化**：宿主地址（`localhost:<port>` 与线上域名）替换成 `/`；`html.swup-enabled`、`body.transition-swup-*` 以及 `is-changing|to-page-load|removing|leaving` 这些 swup 切页瞬间的类名一并抹掉——采集时机不同就会出现「local-only」假阳性。明月浩空播放器（`myhk` / `musicbottom` / `musicheader`）是远端三方件、随远端响应变化，整行剔除。
+    - **归一化后必须重算 sha**，否则「仅端口不同」会被判成整页差异。
+    - **顺序无关比对**用 `bag()`：去掉每行的位置段、只比「元素标识 + 样式」这个多重集合，并额外忽略 `background-color`（药丸六色按 `nth-child` 轮换，换位置就换颜色，属位置派生而非规则变化）。判出 `reorder-only` 不等于零差异，但等价于「每条样式都相同、只有名次换了」。
+    - **`load()` 之后 `p.sha` 已被重算过**，所以想看原始摘要只能读 `index.json` 里 capture 时写的那份。
+
 OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，本机网络抖动会让 `astro build` 以 `Error: No fonts are loaded. At least one font is required to calculate the layout.` 失败（日志里伴随 `host: 'fonts.googleapis.com'` 的连接错误对象）。这不是代码问题：先用 `curl -o /dev/null -w "%{http_code}" https://fonts.googleapis.com/css2?family=Noto+Sans+SC` 确认连通性，再重跑 `pnpm build` 即可（2026-09-20 实测一次抖动、随后两次全绿）。
