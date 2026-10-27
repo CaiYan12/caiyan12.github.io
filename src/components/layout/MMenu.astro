@@ -1,10 +1,10 @@
 ---
 import { navBarConfig } from "../../config";
+import { isNavCurrent } from "../../utils/runtime/nav-state";
 
 const pathname = Astro.url.pathname;
-const isCurrent = (url: string) =>
-	pathname === url ||
-	(url !== "/" && pathname.startsWith(url.replace(/\/$/, "")));
+// 与 Navbar 共用同一份判定（A-4），细节见 src/utils/runtime/nav-state.ts
+const isCurrent = (url: string) => isNavCurrent(pathname, url);
 ---
 
 <!-- 移动端全屏菜单（对应 #mmenu） -->

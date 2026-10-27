@@ -2,13 +2,16 @@
 import { navBarConfig, siteConfig } from "../../config";
 import { diary } from "../../data/diary";
 import dayjs from "dayjs";
+import { isNavCurrent } from "../../utils/runtime/nav-state";
 
 const pathname = Astro.url.pathname;
 const tickerItems = diary.slice(0, 4);
 
-const isCurrent = (url: string) =>
-	pathname === url ||
-	(url !== "/" && pathname.startsWith(url.replace(/\/$/, "")));
+// 判定口径单源化到 src/utils/runtime/nav-state.ts（A-4）。
+// 原私有实现用 startsWith 做前缀匹配、不守路径段边界（/tag/ 会命中 /tagging/），
+// 与换页后由 syncNavHighlight 重算的运行时口径不一致；统一到运行时那一套。
+// 2026-10-27 实测：29 个真实页面 × 19 个导航 href 上判定零变化。
+const isCurrent = (url: string) => isNavCurrent(pathname, url);
 ---
 
 <!-- 移动端顶栏（对应原主题 #header1） -->

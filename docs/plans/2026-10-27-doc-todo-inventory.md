@@ -14,7 +14,7 @@
 
 | 类别         | 含义                                 | 条数 | 已结案 | 编号      |
 | ------------ | ------------------------------------ | ---- | ------ | --------- |
-| A 真悬空     | 既没做、也没被否掉                   | 8    | 6      | A-1 … A-8 |
+| A 真悬空     | 既没做、也没被否掉                   | 8    | 7      | A-1 … A-8 |
 | B 待拍板     | 已有实现或已成文，只差一句话         | 3    | 3      | B-1 … B-3 |
 | C 远期观望   | 评估完成、触发条件明确、未触发不排期 | 4    | 0      | C-1 … C-4 |
 | D 本地非项目 | 不在仓库里，也不影响站点             | 2    | 0      | D-1 … D-2 |
@@ -56,7 +56,7 @@ A-7 需要站长点头（本地文件删除）；A-5 的 geometry 侧已完成�
 | 勾选 | 编号 | 事项                                                                                                                                                          | 为什么放一起                                     |
 | ---- | ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | ☑    | A-3  | 冒烟页面清单单源化（`ui-smoke` / `upgrade-style-audit` / `fancybox-smoke` 三份硬编码）（**已结：实为四份，收敛到 `scripts/lib/smoke-pages.mjs` 的分组导出**） | 新建公共件，三套实跑                             |
-| ☐    | A-4  | `navState` 抽共享模块（Navbar / MMenu / theme-script 三处逻辑）                                                                                               | 都要按 tracer 形状抽 `src/utils/runtime/`        |
+| ☑    | A-4  | `navState` 抽共享模块（Navbar / MMenu / theme-script 三处逻辑）（**已结：统一到运行时口径，实测零视觉变化**）                                                 | 已抽 `src/utils/runtime/nav-state.ts`            |
 | ☐    | A-8  | console 全页零报错门禁                                                                                                                                        | 依赖前两条的台子；且上一轮明确「先立项再动代码」 |
 
 A-3 已结案，它那条**跨轮硬约束仍有效**：`#41` 判据的页面清单取自 sitemap，改 sitemap 收录策略必须在同一笔 commit 里换清单来源（spec #42 登记）。本轮单源化**没有**把那条改回爬链接——`#41` 的清单来源与本次抽出的 `SHELL_PAGES` 是两回事，别混为一谈。
@@ -107,12 +107,23 @@ A-3 已结案，它那条**跨轮硬约束仍有效**：`#41` 判据的页面清
 - **验收（2026-10-27 实跑）**：`ui-smoke` **144 项失败 0**（exit 0，「每张主站页面恰好一个可见 h1」13 页全部 `=1`）；`fancybox-smoke` **27 项失败 0**（exit 0）；`sidebar-weather-smoke` **82/82 通过**；`upgrade-style-audit capture` **23/23 页采集完成**（`index.json` 的 `pages` 恰 23 条）。数据面另有 7 项等价校验全通过（用 `git show HEAD:` 抠出原清单比对）。
 - **本条未做的事**：`ui-smoke.mjs:约2404` 与 `series-smoke.mjs:约1546` 仍写死 `/posts/20260909092113/`，但那是**单点用例的锚点**（前者测灯箱命中测试、后者测换章到零标题文章），不是页面清单，不属本条范围。
 
-#### A-4 `navState` 抽共享模块
+#### A-4 `navState` 抽共享模块（☑ 已结案：统一到运行时口径，实测零视觉变化）
 
-- **现状**：导航「当前页态」判定有三份实现——`src/components/layout/Navbar.astro` 的四个 `some()`、`src/components/menu/MMenu.astro`、以及 `src/utils/theme-script.ts` 里的运行时逻辑。
-- **证据**：`grep -rn "navState" src/` → **0 命中**（2026-10-27 实测），即这个共享件根本没建。
-- **剩余**：按已迁 3 块（`src/utils/runtime/quote-band.ts`、`liquid-glass.ts`、`article-toc.ts`）的 tracer 形状抽 `src/utils/runtime/nav-state.ts`。`theme-script.ts` 现仍 1399 行、内含 20 个 `init*` 函数，是本轮之后最大的单块技术债。
-- **验收**：三处判定收敛到一处；`pnpm check` 零错误；导航高亮在桌面下拉与移动端全屏菜单上逐项目视一致。
+- **现状（改前）**：导航「当前页态」判定有两套**口径不同**的实现——`Navbar.astro:9` 与 `MMenu.astro:5` 各有一个**逐字相同**的私有 `isCurrent`（`startsWith` 做前缀匹配，**不守路径段边界**）；`theme-script.ts:942` 的 `syncNavHighlight` 里另有 `isMatch`（归一成尾斜杠 base，**守路径段边界**，原注释写明「/link/ 不应命中 /link-survey/」）。
+- **证据（改前）**：`grep -rn "navState" src/` → **0 命中**，共享件根本没建。台账初版写「三处 / MMenu 在 `src/components/menu/`」，实测路径是 `src/components/layout/MMenu.astro`，且两个 Astro 文件里的实现完全一致，真正的分歧只在**编译期 vs 运行时**。
+- **为什么会有这个分歧**：导航与移动菜单都在 Swup 容器之外、切页不重建，所以换页后必须由运行时重算一遍（`syncNavHighlight` 存在的原因）。副作用是**同一次访问里首屏与换页后可能显示不同高亮**。
+- **分歧实测（改前，608 组合）**：`src/config.ts` 的 19 个真实 href × 32 个站点真实路径，判定不同只有 2 处，且都在**站点并不存在的路径**上（`/books-extra/` vs `/books/`、`/tagging/` vs `/tag/`）。真实存在的 `/archive/page/2/`、`/tag/技术/`、`/books/01/` 两套口径判定一致 → 统一**不改变任何现网页面的高亮**。
+- **裁决（2026-10-27，站长）**：统一到**运行时口径**（更严格，且它本来就是换页后生效的那一套）。
+- **落地（2026-10-27）**：新建 `src/utils/runtime/nav-state.ts` 导出纯函数 `isNavCurrent(pathname, href)`；`Navbar.astro` / `MMenu.astro` 的私有实现改为一行调用；`theme-script.ts` 的 `isMatch` 改为调用同一函数。
+- **验收（2026-10-27 实跑）**：
+    - 等价性：`isNavCurrent` 与改前运行时 `isMatch` 在 **851 个组合上逐项相同，0 差异**；6 条边界断言全过（`/tag/` 不命中 `/tagging/`、`/books/` 不命中 `/books-extra/`、首页只认 `/`、无尾斜杠 href 仍命中自身与子路径）。
+    - 真实页面零变化：29 个真实路径 × 19 个 href 上，编译期结果会变的 **0 处**。
+    - 浏览器实测 **60 项全通过**：18 个真实页面在「禁用 JS」与「执行 JS」两个上下文下 **current 逐页完全一致**（其余见下方跳过项）；Swup 换页到 `/archive/` 后高亮正确且 marker 未丢（证明真由客户端接管）；移动端 `#mmenu` 四页高亮正确。
+    - `pnpm check`：**0 errors / 0 warnings**（183 文件，6 hints 为既有）。
+    - `astro build` 成功，230 页；**CSS 产物名仍是 `MainGridLayout.Cpn8eJCB.css`（未变）**。
+    - `prettier --check ./src ./docs` 通过。
+- **实测中确认的边界**（供后续复用）：`/archive/page/2/`、`/tag/技术/`、`/overthecocoons/` 在本地 preview 下返回 **404**（无产物）；`/ai-news/`、`/books/`、`/pelican-bike/` 是 `noSwup: true` 的**独立壳，压根没有 `#nav`**。这三类不能拿来做导航判据。
+- **本条未做的事**：`theme-script.ts` 仍 1399 行、20 个 `init*` 函数（属 C-4 的长期债），本次只把 nav 判定搬出，没有拆其它块。
 
 #### A-5 两套 nice-books QA 脚本迁 `smoke-harness`（☑ 已结案：只迁 geometry，design-qa 明确不做）
 

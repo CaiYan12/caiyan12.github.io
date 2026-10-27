@@ -13,6 +13,7 @@ import { shuffleArray } from "./shuffle";
 import { initQuoteBand } from "./runtime/quote-band";
 import { initLiquidGlass } from "./runtime/liquid-glass";
 import { initArticleToc } from "./runtime/article-toc";
+import { isNavCurrent } from "./runtime/nav-state";
 
 declare global {
 	interface Window {
@@ -941,12 +942,9 @@ function initVisibilityTitle() {
 /** 导航高亮：根据当前路径标记 current */
 function syncNavHighlight() {
 	const path = window.location.pathname;
-	// 前缀匹配必须落在路径段边界上：/link/ 不应命中 /link-survey/
-	const isMatch = (href: string) => {
-		if (href === "/") return path === "/";
-		const base = href.endsWith("/") ? href : `${href}/`;
-		return path === href || path === base || path.startsWith(base);
-	};
+	// 判定口径已单源化到 ./runtime/nav-state（A-4）：前缀匹配必须落在路径段边界上，
+	// /link/ 不应命中 /link-survey/。编译期的 Navbar / MMenu 现在用同一个函数。
+	const isMatch = (href: string) => isNavCurrent(path, href);
 	// 逐锚点 toggle（导航与移动菜单都在 Swup 容器外，切页后需在此重算），
 	// class 与 aria-current 同步维护，读屏用户也能感知当前页
 	document.querySelectorAll("#nav a, #mmenu a").forEach((a) => {
