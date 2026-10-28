@@ -34,7 +34,7 @@ export function makeHarness({
 }) {
 	const base = process.env[envVar] ?? defaultBase;
 	// 形态回显：AGENTS.md 记过三次踩坑——FANCY_BASE_URL 要站点根，
-	// NICE_BOOKS_BASE_URL / AI_NEWS_BASE_URL 要完整页面地址，传错表现为「选择器等不到」的假失败。
+	// NICE_BOOKS_BASE_URL 要完整页面地址，传错表现为「选择器等不到」的假失败。
 	// 判形看 pathname，不看结尾斜杠：站点根写成 `https://x/` 时结尾也有斜杠，
 	// 而它传给「自己拼 /posts/...」的脚本就会造出 `//posts/...`——
 	// 浏览器按**协议相对 URL** 解析它（host 变成 `posts`），于是一整段的

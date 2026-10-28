@@ -532,15 +532,7 @@ check(
 	`文案=${JSON.stringify(flatText(njSearch.text).slice(0, 50))} 链接=${njSearch.hrefs.join(",")}`,
 );
 
-await njPage.goto(base + "/ai-news/", { waitUntil: "load" });
-const njNews = await njPage.evaluate(
-	() => document.querySelector("main")?.innerText ?? "",
-);
-check(
-	"无 JS：日报页给出载入中说明与离线快照提示",
-	njNews.includes(FLOOR_PHRASE) && /快照/.test(njNews),
-	JSON.stringify(flatText(njNews).slice(0, 50)),
-);
+// 日报无 JS 与 JS 接管覆盖由独立项目 tests/journey.mjs 承担。
 await noJs.close();
 
 // 开 JS：两处说明必须被岛屿内容替换且不残留
@@ -560,22 +552,6 @@ check(
 	JSON.stringify(flatText(jsSearch.text).slice(0, 50)),
 );
 
-await page.goto(base + "/ai-news/", { waitUntil: "load" });
-// 地板线本身就是服务端渲染的子节点，"有子节点"不等于"已接管"；
-// 必须等 React 自己画出的头部出现（与 ai-news-smoke 同款锚点）。
-await page.waitForFunction(
-	() => !!document.querySelector("main astro-island header"),
-	null,
-	{ timeout: 20000 },
-);
-const jsNews = await page.evaluate(
-	() => document.querySelector("main")?.innerText ?? "",
-);
-check(
-	"开 JS：日报岛屿已接管，地板线说明不残留",
-	!jsNews.includes(FLOOR_PHRASE),
-	JSON.stringify(flatText(jsNews).slice(0, 50)),
-);
 checkClean("票 03");
 
 // ---------------- 当前页态：附加功能组（票 04） ----------------

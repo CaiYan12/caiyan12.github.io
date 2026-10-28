@@ -38,8 +38,8 @@
 | 改「我的技能」                       | `src/data/skills.ts`                                                                       | dev 热更新                                                                         |
 | 改「时间线」                         | `src/data/timeline.ts`                                                                     | dev 热更新                                                                         |
 | 改「每日好书」书单                   | `src/nice-books/data/books.ts`                                                             | dev 热更新                                                                         |
-| 换 AI 日报的 RSS 源                  | `src/ai-news/config/sources.ts` 的 `DEFAULT_SOURCE`                                        | dev 热更新                                                                         |
-| 换 AI 日报的离线快照                 | 把当期 RSS 的 XML 原样覆盖到 `public/ai-news/snapshot/juya.xml`                            | 强刷浏览器                                                                         |
+| 换 AI 日报的 RSS 源                  | 独立仓库 `CaiYan12/ai-news` 的 `src/config/sources.ts` 的 `DEFAULT_SOURCE`                                        | dev 热更新                                                                         |
+| 换 AI 日报的离线快照                 | 在独立仓库把当期 RSS 的 XML 原样覆盖到 `public/snapshot/juya.xml`                            | 强刷浏览器                                                                         |
 
 ### 🤝 友链与项目
 
@@ -93,7 +93,7 @@
 | 版权声明整句                                    | `src/components/misc/License.astro`                                                  |
 | `/domain/` 终端壳的名片、自述、友链、署名       | `src/domain.html`（整份都是硬编码）                                                  |
 | `/books/` 三页的标题与导航                      | `src/nice-books/components/SiteHead.astro` / `SiteHeader.astro` / `SiteFooter.astro` |
-| `/ai-news/` 的界面文案                          | `src/ai-news/components/*.tsx`                                                       |
+| `/ai-news/` 的界面文案                          | 独立仓库 `CaiYan12/ai-news` 的 `src/components/*.tsx`                                                       |
 
 ### 🔌 需要跑命令的刷新
 
@@ -319,9 +319,7 @@ export const diary: DiaryItem[] = [
 
 ### AI 日报 `/ai-news/`
 
-- 换订阅源：`src/ai-news/config/sources.ts` 的 `DEFAULT_SOURCE`（`name` + `url`）。⚠️ `id` 必须保持 `juya-daily`，它是橘鸦定制阅读风格的唯一身份判据，改了会静默回退成通用阅读页。目标 RSS 必须返回 CORS 头，否则浏览器读不到。
-- 离线快照：`public/ai-news/snapshot/juya.xml`。断网或上游抽风时页面回退到它。刷新方法就是把当期 RSS 的 XML 原样覆盖上去。
-- 界面文案在 `src/ai-news/components/*.tsx`。
+AI 日报由独立仓库 [CaiYan12/ai-news](https://github.com/CaiYan12/ai-news) 构建发布；订阅源、快照和界面文案均在该仓库维护。主站只保留桌面与移动入口，公开地址不变。无 JS 提示和应用接管检查由独立仓库 `tests/journey.mjs` 负责。
 
 ### 留言板 `/guestbook/`
 
@@ -404,13 +402,13 @@ Astro 6.4.8 + TypeScript + Svelte 5（搜索组件）+ React 19（AI 日报独�
 | `pnpm smoke:ui`               | 主站 UI 实机烟测，需先 `build + preview`                      |
 | `pnpm test:fancybox`          | 灯箱冒烟，需先 `build + preview`                              |
 | `pnpm smoke:nice-books`       | Nice Books 三页冒烟                                           |
-| `pnpm smoke:ai-news`          | AI 日报冒烟                                                   |
+| `pnpm smoke:ai-news`          | 主站日报入口检查；线上完整双向旅程见 `docs/agents/commands.md` |
 | `pnpm smoke:pelican`          | 鹈鹕骑车冒烟，需先 `build + preview --port 4322`              |
 | `pnpm qa:nice-books-geometry` | Nice Books 3D 几何检查                                        |
 | `pnpm qa:weather-mainland`    | wttr.in 大陆直连实测（须在大陆网络，`NET`/`WINDOW` 两栏必填） |
 | `pnpm audit:ledger <票册.md>` | 票册自检（刻意不接进 build 与 CI）                            |
 
-> 三类冒烟脚本的基址参数形态不同，传错会表现为「选择器等不到」的假失败：`FANCY_BASE_URL` / `UI_SMOKE_BASE_URL` / `PELICAN_BASE_URL` 传**站点根**；`NICE_BOOKS_BASE_URL` / `AI_NEWS_BASE_URL` 传**完整页面地址**。
+> 冒烟脚本的基址参数形态不同，传错会表现为「选择器等不到」的假失败：`FANCY_BASE_URL` / `UI_SMOKE_BASE_URL` / `PELICAN_BASE_URL` 传**站点根**；`NICE_BOOKS_BASE_URL` 传**完整页面地址**。
 
 ### 构建链
 
@@ -463,7 +461,6 @@ src/
   data/                  ← 微言/友链/技能/时间线/项目/留言 mock 等手改数据
   pages/                 ← 路由
   nice-books/            ← /books/ 独立壳（数据/lib/组件/样式）
-  ai-news/               ← /ai-news/ React 阅读器
   layouts/ components/ plugins/ utils/ constants/
 public/
   images/albums/         ← 相册（文件夹驱动）
@@ -471,7 +468,6 @@ public/
   images/slide/  bg/  random/  diary/
   weather/               ← 天气服务、图标、壁纸、城市目录
   pio/                   ← 看板娘（vendored，自维护）
-  ai-news/snapshot/      ← AI 日报离线快照
   vendor/                ← 3D 标签云等 vendored 库
 scripts/                 ← 构建脚本、单测、冒烟；scripts/lib/ 是共用写入器与校验器
 vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
@@ -510,7 +506,7 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
 ### 远期规划（观望项，均已完成评估、明确触发条件，未触发不排期）
 
-- **9. /ai-news/ React 岛屿瘦身**（2026-09-04 评估完成）：技术可行但 ROI 为负。dist 实测该页客户端 JS 为 react-dom chunk（178KB）+ AiNewsApp chunk（57KB）≈ 235KB 未压缩（gzip 估 70–80KB），且经 Astro 岛屿架构隔离**仅此一页加载**，其他页面零成本；Svelte 重写估省 40–50KB gzip，对低频单访客的日报阅读页无感知收益。重写成本被低估：`src/ai-news/` 共 43 文件 / 约 135KB 源码（2 个 zustand store、5 套橘鸦视觉模板 × 亮暗双变体、RSS 解析 / 离线快照兜底 / 搜索 / hash 路由 / localStorage 持久化）。迁移难点集中在 `useAppStore.ts` 的 `transitionRoute`：列表↔详情交叉淡入淡出依赖 `document.startViewTransition` + React `flushSync` 在回调内同步提交 DOM，Svelte 无直接等价 API，行为保真是最大风险点；回归面为 5 套模板 × 亮暗 × 列表/详情 = 20 种视觉组合。有利因素：hooks 仅 useState/useEffect/useMemo/useRef，zustand store 为纯 TS 逻辑可平移 runes，lucide-react 有 lucide-svelte 对应。附带收益：移除 6 个依赖。（TODO 8 的 @astrojs/react 未知项已在 2026-09-20 升级时实测消除——@astrojs/react 5.0.7 与 astro 6.4.8 兼容，ai-news 页 9/9 smoke 通过）**触发条件：① Astro 升级受阻于 @astrojs/react 兼容性（重写从可选变被迫，届时正确时机）；② 该页出现真实访问量增长使 payload 成为可测量瓶颈**。实施时建议先降级橘鸦模板（保留 1–2 套风格）压缩回归面。验收（实施时适用）：功能与视觉对齐（列表、筛选、20 种模板组合、View Transitions 过渡），构建产物无 React runtime 残留。
+- **9. /ai-news/ React 岛屿瘦身**（2026-10-28 处置：独立项目方案替代，性能目标转移至独立项目；未宣称客户端瘦身完成，见 `docs/adr/0009-ai-news-separate-deployment.md`）（2026-09-04 评估完成）：技术可行但 ROI 为负。dist 实测该页客户端 JS 为 react-dom chunk（178KB）+ AiNewsApp chunk（57KB）≈ 235KB 未压缩（gzip 估 70–80KB），且经 Astro 岛屿架构隔离**仅此一页加载**，其他页面零成本；Svelte 重写估省 40–50KB gzip，对低频单访客的日报阅读页无感知收益。重写成本被低估：`src/ai-news/` 共 43 文件 / 约 135KB 源码（2 个 zustand store、5 套橘鸦视觉模板 × 亮暗双变体、RSS 解析 / 离线快照兜底 / 搜索 / hash 路由 / localStorage 持久化）。迁移难点集中在 `useAppStore.ts` 的 `transitionRoute`：列表↔详情交叉淡入淡出依赖 `document.startViewTransition` + React `flushSync` 在回调内同步提交 DOM，Svelte 无直接等价 API，行为保真是最大风险点；回归面为 5 套模板 × 亮暗 × 列表/详情 = 20 种视觉组合。有利因素：hooks 仅 useState/useEffect/useMemo/useRef，zustand store 为纯 TS 逻辑可平移 runes，lucide-react 有 lucide-svelte 对应。附带收益：移除 6 个依赖。（TODO 8 的 @astrojs/react 未知项已在 2026-09-20 升级时实测消除——@astrojs/react 5.0.7 与 astro 6.4.8 兼容，ai-news 页 9/9 smoke 通过）**触发条件：① Astro 升级受阻于 @astrojs/react 兼容性（重写从可选变被迫，届时正确时机）；② 该页出现真实访问量增长使 payload 成为可测量瓶颈**。实施时建议先降级橘鸦模板（保留 1–2 套风格）压缩回归面。验收（实施时适用）：功能与视觉对齐（列表、筛选、20 种模板组合、View Transitions 过渡），构建产物无 React runtime 残留。
 
 - **11. 读者墙**（limh.me 移植评估得分 10，条件观望）：原版 `function/page-guest.php` 为评论区活跃者头像墙（Gravatar + 评论次数 top200）。技术上可行——Giscus 走 GitHub Discussions，`sync-site-stats.mjs` 可扩展按 author 聚合，`author.avatar_url` 替代 Gravatar；但当前站评论量极小，移植即空页。**触发条件：留言板/文章评论参与者明显增长（>20 人）**。
 

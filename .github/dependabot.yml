@@ -22,7 +22,6 @@ updates:
       # 要么会破构建链的去重/对齐前提，要么会改写 ./src 的格式化基线，
       # 要么需要真实浏览器产物的专项实测（AGENTS.md「构建链与依赖约束」）。
       - dependency-name: "astro" # 精确钉；升级要连集成与 markdown.processor 一起动
-      - dependency-name: "@astrojs/react" # 精确钉，与 astro 版本配对
       - dependency-name: "@astrojs/svelte" # 精确钉，与 astro 版本配对
       - dependency-name: "@astrojs/markdown-remark" # astro 6.4.8 硬钉 7.2.0，升 ours 只在 .pnpm 里多出一份副本
       - dependency-name: "astro-expressive-code" # 0.x 的 minor 即 breaking；^0.44 未经产物比对

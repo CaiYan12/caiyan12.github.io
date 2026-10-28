@@ -1,6 +1,5 @@
 import { unified } from "@astrojs/markdown-remark";
 import sitemap from "@astrojs/sitemap";
-import react from "@astrojs/react";
 import svelte, { vitePreprocess } from "@astrojs/svelte";
 import { pluginCollapsibleSections } from "@expressive-code/plugin-collapsible-sections";
 import { pluginLineNumbers } from "@expressive-code/plugin-line-numbers";
@@ -87,11 +86,11 @@ export default defineConfig({
 				showCopyToClipboardButton: true,
 			},
 		}),
-		react(),
 		svelte({
 			preprocess: vitePreprocess(),
 		}),
 		sitemap({
+			customPages: [new URL("/ai-news/", siteConfig.siteURL).href],
 			filter: (page) => !page.endsWith("/page/1/") && !page.includes("/books/data.json"),
 		}),
 	],
