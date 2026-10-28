@@ -13,6 +13,8 @@
 		"smoke:nice-books": "node scripts/nice-books-smoke.mjs",
 		"test:fancybox": "node scripts/fancybox-smoke.mjs",
 		"smoke:ui": "node scripts/ui-smoke.mjs",
+		"smoke:console": "node scripts/console-smoke.mjs",
+		"test:console": "node --test scripts/console-smoke.test.mjs",
 		"smoke:pelican": "node scripts/pelican-bike-smoke.mjs",
 		"smoke:series": "node scripts/series-smoke.mjs",
 		"qa:weather-mainland": "node scripts/wttr-mainland-check.mjs",

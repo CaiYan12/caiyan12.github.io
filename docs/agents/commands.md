@@ -41,6 +41,20 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 
 注意：Windows 上 pnpm build 失败时尾部可能看不到完整错误（esbuild 崩溃断言），务必看完整输出而非 tail。
 
+## A-8 全页非预期错误门禁
+
+`pnpm smoke:console` 手工检查 `scripts/lib/smoke-pages.mjs` 的 `AUDIT_PAGES` 声明集合。先构建并启动 preview；`CONSOLE_BASE_URL` 默认 `http://localhost:4322`，必须是**不带尾斜杠的站点根**。`CONSOLE_REPORT_PATH` 默认 `output/console-smoke.json`，保存逐页原始事件、分类理由、完成数与观察窗口。实现与本地验收记录见 `docs/plans/2026-10-28-a8-console-gate.md`、[issue #108](https://github.com/CaiYan12/caiyan12.github.io/issues/108)。
+
+`pnpm test:console` 运行脱网的真实 headless Chromium fixture 测试；不依赖 preview，不访问真实第三方服务。两条命令均**不接 CI 或完整 build 链**，不能用这套测试替代既有交互烟测。
+
+“全页”指声明集合中的逐页直接导航，不是 sitemap 全量或所有交互。每页导航前挂监听；DOMContentLoaded 最多等 30 秒，之后至少观察 10 秒，并要求本站请求归零、连续 500ms 静默，观察最多 20 秒。本站挂起或导航超时明确失败；外站长连接不阻塞完整性。固定观察窗口用于采集错误，不用于推断动画或几何状态。
+
+最终结果分三态：`PASS` / 退出 0；`FAIL` / 退出 1；`REVIEW`（待裁定）/ 退出 2。只有 PASS 的 `ok` 为 true；采集过程中为 `RUNNING`、`ok:false`，不能拿完成页数当作通过页数。
+
+任意来源的 pageerror、主动 console.error、来源未知错误，以及本站非预期 HTTP / 请求失败均阻断。浏览器资源错误只有与已采到的资源失败关联后才分流：未经确认的第三方网络问题进入 REVIEW，不再因来自外域就整体 PASS；已确认的 Iconify 冒号形式 SVG 图片地址返回 404 判为 FAIL（本站错拼路径，见本项调查记录）。Giscus 404 必须同时验证 GET、精确 origin/path 与 `Discussion not found` 正文，才标为预期。只有当前被访问的 `/this-page-should-404/` 自身 document/fetch 的 404 被精确放行，其状态另有断言，页内其他坏资源仍失败。FAIL 优先于 REVIEW；所有记录保留。
+
+站长另行接受两条精确环境例外：① loopback 本地来源、主 frame 的精确 `https://myhkw.cn/player/err.mp3` media 请求发生 `net::ERR_ABORTED`，且当次精确授权提示文字具备 CSS 可见状态和非零文字盒、`#myhkaudio` 的音源为 `https://myhkw.cn/api/tts`、`readyState ≥ 2`、`error:null`，才标为预期；生产与条件缺失不继承。CSS 可见不等于首屏可见，不额外要求视口相交。媒体状态只在候选匹配时读取，另设最多 2 秒上限，超时保留 REVIEW 并记录原因。② 精确 `https://static.doubleclick.net/instream/ad_status.js` script 请求发生 `net::ERR_CONNECTION_CLOSED`，且实际请求 frame 是 `https://www.youtube.com/embed/…` 子帧，才标为预期。两者都不拦截请求、不删除日志、不放行主动报错；视频例外不表示每轮主动点播验证。调查与裁定见本项实施计划。
+
 ## 冒烟台子与指纹比对的三条承重契约（2026-10-27 立）
 
 > 这三条此前只写在代码头注释里（`scripts/lib/smoke-harness.mjs` 与 `scripts/upgrade-style-audit.mjs`），命令清单里查不到。踩过一次就当已解决，下次换个会话还会再踩一遍——所以搬到这里。
