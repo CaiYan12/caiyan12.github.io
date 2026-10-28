@@ -141,11 +141,15 @@
 站长已确认按“限定文件提交 → 推送 → CI / Pages / 线上图标验证 → 回填台账 → 关闭 #108”流程执行。本次允许该流程中的 commit / push / 部署与 issue 收口；两份既有 GitHub 数据漂移仍不纳入提交。
 
 - [x] 阶段一：保存生成数据，完整 `pnpm build`、`pnpm check`（0 errors / 0 warnings / 6 hints）、CI 范围 Prettier 与 22 项门禁测试通过；恢复全部范围外生成数据，仅暂存本轮 7 个目标文件。Markdown AST 与全部 fenced code（含缩进块）审计确认 A-8 以外结构、代码内容未改。
-- [ ] 阶段二：提交并推送 main，核对远端 SHA；等待匹配 SHA 的 Lint、Build and Check、Deploy to GitHub Pages。
-- [ ] 阶段三：线上技能页确认新 URL，真实浏览器验证 34 个图标；记录响应头与部署时间 / 构建产物证据。
-- [ ] 阶段四：线上通过后更新台账与结案记录，单独提交文档并验证最终远端 CI；关闭 #108 并读回关闭状态。
+- [x] 阶段二：功能提交 `17501808f24379492cd509fc4e51f9717f3f632f` 已推送 main 并核对远端一致；Lint `40639692604`、Build and Check `40639692601`、Deploy to GitHub Pages `40639692596` 全部成功。
+- [x] 阶段三：已下载该 run 的 `github-pages` artifact，核对 `./skills/index.html` 的 34 个修正 URL 与本地预期一致；线上技能页同样匹配，真实 Chromium 34/34 请求全部 200、成功解码、fallback 全隐藏，无 429。
+- [x] 阶段四：线上发布验收通过后，已回填台账与本结案文档；文档单独提交后的最终 CI 与 issue 关闭由 #108 验收评论和实际状态记录，不在文档写入时预记外部操作完成。
 
 验收：提交范围准确、既有数据漂移保留；最终远端 SHA、CI 和实际线上功能均有证据，issue 与台账状态一致。
+
+功能发布已经完成，台账 A-8 据此勾选。结案文档写入时，文档提交自身的最终 CI 与 #108 关闭尚待执行；最终结果以 [#108](https://github.com/CaiYan12/caiyan12.github.io/issues/108) 末条验收评论和实际状态为准，避免文档为了回写自身 SHA 反复触发发布。此前各阶段“未提交 / 待审阅”的文字为对应时点的历史记录。
+
+线上响应 HTTP 200，`Last-Modified: Wed, 28 Oct 2026 05:46:18 GMT`，Age 0。该时间略早于 workflow 结束，故没有据此声称时间门通过；改用同 SHA 的发布 artifact 与线上实际 34 图功能共同确认。原始证据在 gitignored 的 `output/a8-release-20261028/`：`runs-feature.json`、`artifact-verification.json`、`production-headers.json`、`production-browser.json` 与截图；这些是本轮临时验收产物，不是未来运行的必要输入。
 
 ### 上一版实施记录
 
