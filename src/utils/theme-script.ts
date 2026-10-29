@@ -1,17 +1,18 @@
 /**
  * 主站运行时装配（对应原主题 js/global-pjax.js 的静态化版本）。
  *
- * 功能块自结构加深 T6/T7 起逐块迁往 `src/utils/runtime/`（已迁：语录条 quote-band、
- * 液态玻璃 liquid-glass、文章目录 article-toc、导航判定 nav-state、减少动效
- * reduced-motion、KaTeX 样式 katex、Mermaid 图表 mermaid、随机背景 random-background、
- * 移动菜单 mobile-menu、头部轮播 header-ticker、分页跳转 pagination-jump、灯箱
- * fancybox、导航高亮 nav-highlight、阅读进度 reading-progress、锚点平滑滚动
- * anchor-smooth-scroll、复制链接 copy-link、返回顶部 back-to-top、双击回顶
- * dblclick-scroll、稿纸 paper-handwriting、技能环 skills-donut-tooltip、评论换一批
- * newcomment-shuffle、点击词 click-effect、Canvas 粒子 canvas-boom、动态标题
- * visibility-title、LQIP 渐显 lqip-fade、邮箱保护 protected-email、站内提示触发
- * toast-trigger），本文件只保留**装配表**、**生命周期声明**与 3 个 page-load 辅助——全部功能块的家谱与
- * 两条生命周期（初始装载 / swup after-swap 重跑）都由文件尾的 runtimeTable
+ * 功能块自结构加深 T6/T7 起逐块迁往 `src/utils/runtime/`。已迁模块共 **27** 个
+ * （每行一项，模块名与文件名一致，便于与目录机械核对）：
+ *
+ *   quote-band  liquid-glass  article-toc  nav-state  reduced-motion
+ *   katex  mermaid  random-background  mobile-menu  header-ticker
+ *   pagination-jump  fancybox  nav-highlight  reading-progress
+ *   anchor-smooth-scroll  copy-link  back-to-top  dblclick-scroll
+ *   paper-handwriting  skills-donut-tooltip  newcomment-shuffle  click-effect
+ *   canvas-boom  visibility-title  lqip-fade  protected-email  toast-trigger
+ *
+ * 本文件只保留**装配表**、**生命周期声明**与 3 个 page-load 辅助——全部功能块的
+ * 家谱与两条生命周期（初始装载 / swup after-swap 重跑）都由文件尾的 runtimeTable
  * 驱动，新增功能先加表行，勿在别处自行初始化；换页前后的钩子动作另由同处的
  * runtimeHooks 声明。
  */
