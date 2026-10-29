@@ -5,8 +5,10 @@
  * 液态玻璃 liquid-glass、文章目录 article-toc、导航判定 nav-state、减少动效
  * reduced-motion、KaTeX 样式 katex、Mermaid 图表 mermaid、随机背景 random-background、
  * 移动菜单 mobile-menu、头部轮播 header-ticker、分页跳转 pagination-jump、灯箱
- * fancybox），本文件保留**尚未迁移的块**与**装配表**——全部功能块的
- * 家谱与两条生命周期（初始装载 / swup after-swap 重跑）都由文件尾的 runtimeTable
+ * fancybox、导航高亮 nav-highlight、阅读进度 reading-progress、锚点平滑滚动
+ * anchor-smooth-scroll、复制链接 copy-link、返回顶部 back-to-top、双击回顶
+ * dblclick-scroll），本文件保留**尚未迁移的块**与**装配表**——全部功能块的家谱与
+ * 两条生命周期（初始装载 / swup after-swap 重跑）都由文件尾的 runtimeTable
  * 驱动，新增功能先加表行，勿在别处自行初始化；换页前后的钩子动作另由同处的
  * runtimeHooks 声明。
  */
@@ -17,7 +19,15 @@ import { destroyFancybox, initFancybox } from "./runtime/fancybox";
 import { initQuoteBand } from "./runtime/quote-band";
 import { initLiquidGlass } from "./runtime/liquid-glass";
 import { initArticleToc } from "./runtime/article-toc";
-import { isNavCurrent } from "./runtime/nav-state";
+import { syncNavHighlight } from "./runtime/nav-highlight";
+import {
+	initReadingProgress,
+	scheduleReadingProgressUpdate,
+} from "./runtime/reading-progress";
+import { initAnchorSmoothScroll } from "./runtime/anchor-smooth-scroll";
+import { initCopyLink } from "./runtime/copy-link";
+import { initBackToTop } from "./runtime/back-to-top";
+import { initDblClickScroll } from "./runtime/dblclick-scroll";
 import { prefersReducedMotion } from "./runtime/reduced-motion";
 import { loadKatexCss } from "./runtime/katex";
 import { renderMermaid } from "./runtime/mermaid";
@@ -34,11 +44,7 @@ declare global {
 	}
 }
 
-let copyLinkBound = false;
-
 let protectedEmailBound = false;
-
-let anchorSmoothScrollBound = false;
 
 let skillsDonutTooltipBound = false;
 
@@ -305,51 +311,6 @@ function initSkillsDonutTooltip() {
 	});
 }
 
-/** 写入剪贴板；受限环境下回退到隐藏 textarea */
-async function copyText(text: string) {
-	try {
-		if (navigator.clipboard?.writeText) {
-			await navigator.clipboard.writeText(text);
-			return;
-		}
-	} catch {
-		// 权限受限时继续尝试兼容性回退方案
-	}
-
-	const textarea = document.createElement("textarea");
-	textarea.value = text;
-	textarea.setAttribute("readonly", "");
-	textarea.style.position = "fixed";
-	textarea.style.opacity = "0";
-	textarea.style.pointerEvents = "none";
-	document.body.appendChild(textarea);
-	textarea.select();
-	const copied = document.execCommand("copy");
-	textarea.remove();
-	if (!copied) throw new Error("copy failed");
-}
-
-/** 本文链接复制（事件委托，Swup 切页后依然生效） */
-function initCopyLink() {
-	if (copyLinkBound) return;
-	copyLinkBound = true;
-	document.addEventListener("click", async (event) => {
-		const target = event.target;
-		if (!(target instanceof Element)) return;
-		const link = target.closest<HTMLAnchorElement>("[data-copy-link]");
-		if (!link) return;
-
-		event.preventDefault();
-		const text = link.dataset.copyLink || link.href;
-		try {
-			await copyText(text);
-			showSiteToast(link.dataset.copyMessage || "已复制");
-		} catch {
-			showSiteToast("复制失败，请手动复制");
-		}
-	});
-}
-
 /** 通用提示触发器：凡带 data-site-toast 的元素被点击即弹站内提示
  *  （事件委托，Swup 切页后依然生效）。用于「不可执行但需要解释」的灰态控件，
  *  如 /projects/ 里无公开仓库的「查看源码」 */
@@ -594,122 +555,6 @@ function initVisibilityTitle() {
 	});
 }
 
-/** 导航高亮：根据当前路径标记 current */
-function syncNavHighlight() {
-	const path = window.location.pathname;
-	// 判定口径已单源化到 ./runtime/nav-state（A-4）：前缀匹配必须落在路径段边界上，
-	// /link/ 不应命中 /link-survey/。编译期的 Navbar / MMenu 现在用同一个函数。
-	const isMatch = (href: string) => isNavCurrent(path, href);
-	// 逐锚点 toggle（导航与移动菜单都在 Swup 容器外，切页后需在此重算），
-	// class 与 aria-current 同步维护，读屏用户也能感知当前页
-	document.querySelectorAll("#nav a, #mmenu a").forEach((a) => {
-		const href = a.getAttribute("href") || "/";
-		// 下拉父项按钮（void href）不匹配任何路径，交由下方子链接统一计算
-		if (href === "javascript:void(0)") return;
-		const parent = a.closest("li");
-		if (!parent) return;
-		const match = isMatch(href);
-		parent.classList.toggle("current", match);
-		if (match) a.setAttribute("aria-current", "page");
-		else a.removeAttribute("aria-current");
-	});
-	// 下拉父项 current：任一子链接匹配即高亮（Swup 切页不替换导航，需在此重算）
-	document.querySelectorAll("#nav li.dropdown, #mmenu li").forEach((li) => {
-		if (!li.querySelector(':scope > a[href="javascript:void(0)"]')) return;
-		const match = [...li.querySelectorAll(":scope > ul a")].some((a) =>
-			isMatch(a.getAttribute("href") || "/"),
-		);
-		li.classList.toggle("current", match);
-	});
-	document.querySelectorAll("#mmenu a").forEach((a) => {
-		const href = a.getAttribute("href") || "/";
-		if (href === "javascript:void(0)") return;
-		const parent = a.closest("li");
-		if (!parent) return;
-		parent.classList.toggle("current", isMatch(href));
-	});
-}
-
-/** 返回顶部 */
-let readingProgressFrame = 0;
-let readingProgressBound = false;
-
-function updateReadingProgress() {
-	readingProgressFrame = 0;
-	// 全站可同时存在多根进度条（文章页顶部的固定条 + 侧栏文章目录标题栏下缘
-	// 的条，2026-10-15 站长要求「与主站顶部阅读进度条同理、共存」），同一文档
-	// 滚动进度驱动全部实例。
-	const progressBars = document.querySelectorAll<HTMLElement>(
-		"[data-reading-progress]",
-	);
-	if (progressBars.length === 0) return;
-
-	const root = document.documentElement;
-	const maxScroll = root.scrollHeight - root.clientHeight;
-	const progress =
-		maxScroll > 0
-			? Math.min(1, Math.max(0, window.scrollY / maxScroll))
-			: 0;
-	for (const progressBar of progressBars) {
-		progressBar.style.transform = `scaleX(${progress})`;
-		progressBar.setAttribute(
-			"aria-valuenow",
-			String(Math.round(progress * 100)),
-		);
-	}
-}
-
-function scheduleReadingProgressUpdate() {
-	if (readingProgressFrame) return;
-	readingProgressFrame = requestAnimationFrame(updateReadingProgress);
-}
-
-/** 文章阅读进度条：全站只绑定一组监听，Swup 换页后复用新节点 */
-function initReadingProgress() {
-	if (!readingProgressBound) {
-		readingProgressBound = true;
-		window.addEventListener("scroll", scheduleReadingProgressUpdate, {
-			passive: true,
-		});
-		window.addEventListener("resize", scheduleReadingProgressUpdate, {
-			passive: true,
-		});
-	}
-	scheduleReadingProgressUpdate();
-}
-
-function initBackToTop() {
-	const backtop = document.getElementById("backtop");
-	// backtop 在 Swup 容器外且只初始化一次；dataset 守卫防止未来重入时监听器翻倍
-	if (!backtop || backtop.dataset.bound === "true") return;
-	backtop.dataset.bound = "true";
-	const toggle = () => {
-		const visible = window.scrollY > 200;
-		// 同值短路：scroll 高频触发，避免无谓的样式写入
-		if (visible === (backtop.style.display === "block")) return;
-		backtop.style.display = visible ? "block" : "none";
-	};
-	window.addEventListener("scroll", toggle, { passive: true });
-	backtop.addEventListener("click", () => {
-		window.scrollTo({
-			top: 0,
-			behavior: prefersReducedMotion() ? "auto" : "smooth",
-		});
-	});
-	toggle();
-}
-
-/** 双击页面任意位置回到顶部（原主题交互） */
-function initDblClickScroll() {
-	document.addEventListener("dblclick", (e) => {
-		if ((e.target as HTMLElement).closest("a, button, input")) return;
-		window.scrollTo({
-			top: 0,
-			behavior: prefersReducedMotion() ? "auto" : "smooth",
-		});
-	});
-}
-
 /**
  * 邮箱保护链接（rehype-email-protection 配套）：点击时按 data-email-method 解码
  * data-encoded-email 并唤起邮件客户端。事件委托，Swup 切页后依然生效；
@@ -743,74 +588,6 @@ function initProtectedEmail() {
 		}
 		window.location.href = `mailto:${email}`;
 	});
-}
-
-/**
- * 同页锚点点击平滑滚动（站长 2026-10-15 需求：文章顶部目录与侧栏目录点击跳转
- * 均为浏览器默认瞬移，补一段短促的滚动过渡）。
- *
- * 机制复用双击回顶（initDblClickScroll）的 `window.scrollTo({ behavior: "smooth" })`，
- * 不自绘动画。事件委托绑一次（document 级，Swup 换页不重跑、新渲染的目录链接
- * 天然生效），只接管「同页纯 hash 链接」：
- * - 跨页链接不碰（那是 swup 的领地，swup 侧 smoothScrolling 已为 false）；
- * - `href="#"`（占位链接）不碰；
- * - 目标 id 在当前文档不存在时不碰（照旧让浏览器走「无操作」的默认路径，
- *   不替它伪造 hash）；
- * - 修饰键/非左键（新标签页、下载意图等浏览器手势）不碰。
- * 接管后 hash 更新用 pushState 而非置 location.hash——后者会在平滑滚动进行中
- * 触发原生锚点跳转打断动画。浏览器原生 hash 高亮不动，滚到后由目录激活态
- * （pickActiveIndex）自然点亮对应条目。
- *
- * 监听必须挂**捕获阶段**（capture: true），且接管时必须 **stopPropagation**：
- * swup 对同页 hash 链接的处理**不检查 defaultPrevented**——它的链接点击委托在
- * document 气泡阶段注册且先于本模块装配，无论我们是否 preventDefault 都会执行：
- * 更新地址栏 hash 后走 `scroll:anchor` → `window.scrollTo(0, 目标)` 瞬时直达
- * （本站 swup 集成 `smoothScrolling: false` ⇒ ScrollPlugin.animateScroll 全关，
- * swup 4.9.2 dist 实证）。只 preventDefault 的话我们启动的 smooth 动画会被
- * swup 的同步瞬移当帧覆盖，用户看不到任何动画（生产产物实测：点击后首帧
- * scrollY 已在目标位）。所以必须在捕获阶段拿到事件后 stopPropagation，
- * 让 swup 的委托根本收不到这类点击——swup 对它做的事恰好就是我们要替换的
- * 瞬移跳转，拦截即替换，无副作用。跨页链接照旧放行给 swup。
- */
-function initAnchorSmoothScroll() {
-	if (anchorSmoothScrollBound) return;
-	anchorSmoothScrollBound = true;
-	document.addEventListener(
-		"click",
-		(e) => {
-			if (e.defaultPrevented || e.button !== 0) return;
-			if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-			const target = e.target as Element | null;
-			const link = target?.closest?.("a");
-			if (!link) return;
-			const url = new URL(link.href, location.href);
-			if (
-				url.pathname !== location.pathname ||
-				url.search !== location.search
-			)
-				return;
-			if (!url.hash || url.hash === "#") return;
-			const el = document.getElementById(
-				decodeURIComponent(url.hash.slice(1)),
-			);
-			if (!el) return;
-			e.preventDefault();
-			// swup 的气泡阶段委托不再收到本事件（见头注释）：它对同页 hash 的
-			// 处理正是要被替换的瞬移滚动。
-			e.stopPropagation();
-			// 状态必须推 **null** 而非 history.state：复制会把 swup 的条目状态
-			// （state.url = 无 hash 的页面地址）带进锚点条目，后退 popstate 时
-			// swup 的 skipPopStateHandling 看到无 "#" 的 state.url 就把它当普通
-			// 页面导航抢走处理，后退回到上一个锚点失效（生产产物实测）。null
-			// 与浏览器原生锚点条目同形，popstate 交还原生 hash 滚动。
-			history.pushState(null, "", url.hash);
-			window.scrollTo({
-				top: el.getBoundingClientRect().top + window.scrollY,
-				behavior: prefersReducedMotion() ? "auto" : "smooth",
-			});
-		},
-		true,
-	);
 }
 
 /**
