@@ -2,7 +2,8 @@
  * 主站运行时装配（对应原主题 js/global-pjax.js 的静态化版本）。
  *
  * 功能块自结构加深 T6/T7 起逐块迁往 `src/utils/runtime/`（已迁：语录条 quote-band、
- * 液态玻璃 liquid-glass），本文件保留**尚未迁移的块**与**装配表**——全部功能块的
+ * 液态玻璃 liquid-glass、KaTeX 样式 katex、Mermaid 图表 mermaid），本文件保留
+ * **尚未迁移的块**与**装配表**——全部功能块的
  * 家谱与两条生命周期（初始装载 / swup after-swap 重跑）都由文件尾的 runtimeTable
  * 驱动，新增功能先加表行，勿在别处自行初始化；换页前后的钩子动作另由同处的
  * runtimeHooks 声明。
@@ -15,6 +16,8 @@ import { initQuoteBand } from "./runtime/quote-band";
 import { initLiquidGlass } from "./runtime/liquid-glass";
 import { initArticleToc } from "./runtime/article-toc";
 import { isNavCurrent } from "./runtime/nav-state";
+import { loadKatexCss } from "./runtime/katex";
+import { renderMermaid } from "./runtime/mermaid";
 
 declare global {
 	interface Window {
@@ -571,145 +574,6 @@ function initToastTrigger() {
 		const message = trigger.dataset.siteToast?.trim();
 		if (message) showSiteToast(message);
 	});
-}
-
-/** 页面存在 KaTeX 公式时按需加载其样式 */
-function loadKatexCss() {
-	if (document.querySelector(".katex")) {
-		import("katex/dist/katex.css").catch((error) => {
-			// 样式加载失败不阻塞页面；公式仍以原始文本可读
-			console.warn("[katex] css load failed:", error);
-		});
-	}
-}
-
-/** 渲染 mermaid 图表（懒加载，仅在页面存在 pre.mermaid 时执行） */
-async function renderMermaid() {
-	const nodes = [...document.querySelectorAll<HTMLElement>("pre.mermaid")];
-	const pending = nodes.filter((n) => n.dataset.mermaidRendered !== "true");
-	if (pending.length === 0) return;
-	try {
-		const { default: mermaid } = await import("mermaid");
-		const rootStyles = getComputedStyle(document.documentElement);
-		const cssVar = (name: string, fallback: string) =>
-			rootStyles.getPropertyValue(name).trim() || fallback;
-		const primary = cssVar("--primary", "#00c000");
-		const primaryDark = cssVar("--primary-dark", "#0a0");
-		const border = cssVar("--border", "#eaeaea");
-		const pageBackground = cssVar("--page-bg", "#f4f5f7");
-		const text = cssVar("--text", "#000");
-		const textGray = cssVar("--text-gray", "#505050");
-		const bodyFont = getComputedStyle(document.body).fontFamily;
-		const nodeBackground = "#edfaf2";
-
-		mermaid.initialize({
-			startOnLoad: false,
-			theme: "base",
-			look: "classic",
-			fontFamily: bodyFont,
-			fontSize: 14,
-			themeVariables: {
-				background: pageBackground,
-				mainBkg: "#fff",
-				primaryColor: nodeBackground,
-				primaryTextColor: textGray,
-				primaryBorderColor: primary,
-				secondaryColor: "#fff",
-				tertiaryColor: pageBackground,
-				lineColor: primaryDark,
-				textColor: text,
-				nodeBkg: nodeBackground,
-				nodeBorder: primary,
-				nodeTextColor: textGray,
-				clusterBkg: "#fff",
-				clusterBorder: border,
-			},
-			themeCSS: `
-				.node rect, .node circle, .node ellipse, .node polygon, .node path {
-					fill: ${nodeBackground} !important;
-					stroke: ${primary} !important;
-				}
-				.node .label text, .nodeLabel, .label text {
-					fill: ${textGray} !important;
-					color: ${textGray} !important;
-				}
-				.edgeLabel, .edgeLabel rect {
-					fill: #fff !important;
-					background-color: #fff !important;
-				}
-				.mindmap-node.section-root rect,
-				.mindmap-node.section-root path,
-				.mindmap-node.section-root circle,
-				.mindmap-node.section-root polygon {
-					fill: ${primary} !important;
-					stroke: ${primaryDark} !important;
-				}
-				.mindmap-node.section-root text,
-				.mindmap-node.section-root span {
-					fill: #fff !important;
-					color: #fff !important;
-				}
-				.mindmap-node:not(.section-root) rect,
-				.mindmap-node:not(.section-root) path,
-				.mindmap-node:not(.section-root) circle,
-				.mindmap-node:not(.section-root) polygon {
-					fill: ${nodeBackground} !important;
-					stroke: ${primary} !important;
-				}
-				.mindmap-node:not(.section-root) text,
-				.mindmap-node:not(.section-root) span {
-					fill: ${textGray} !important;
-					color: ${textGray} !important;
-				}
-				[class*="section-edge-"] {
-					stroke: ${primaryDark} !important;
-				}
-				[class*="edge-depth-"] {
-					stroke-width: 2px !important;
-				}
-				/* 换行终态强制（2026-10-02）：addHtmlSpan 对 label 先设 nowrap，再靠
-				   「测量宽度 === wrappingWidth」的浮点精确相等来切换 break-spaces——
-				   真实浏览器（Edge/Chrome 实测）的 table-cell 测量回不到恰好 200，
-				   等式永远失守，长中文标签被 foreignObject 单行裁切（无头 Chromium
-				   反而能过，是它掩盖了线上缺陷）。这里直接把 div 拔到换行终态：
-				   display:table 收缩适配 + mermaid 自己写的内联 max-width 兜宽度，
-				   测量即换行形态，节点盒按真实多行尺寸生成，不再依赖那个等式。 */
-				foreignObject div {
-					display: table !important;
-					white-space: break-spaces !important;
-				}
-			`,
-			securityLevel: "strict",
-		});
-		// 字体就绪后才允许测量：mermaid 的 label 默认 white-space:nowrap，只有测量宽度
-		// 恰好等于 wrappingWidth（200px）才切换成 break-spaces 换行（addHtmlSpan 源码行为）。
-		// webfont 是按 unicode-range 分片的可变字体，图表文本进 DOM 才触发对应子集加载；
-		// 若在子集就绪前测量，字体换上后文字比按旧度量定好的节点盒宽，foreignObject
-		// 把溢出裁掉——线上长中文标签实测被单行截断。fonts.load 按本次 label 文本精确
-		// 触发所需子集，fonts.ready 兜底等在途加载；失败不阻塞渲染（走外层 catch 的降级）。
-		const sampleText = pending.map((n) => n.textContent ?? "").join("");
-		const families = bodyFont
-			.split(",")
-			.map((f) => f.trim().replace(/^["']+|["']+$/g, ""))
-			.filter(Boolean);
-		// 3s 竞速上限：字体正常亚秒就绪；病态网络下宁可退回旧的测量行为
-		// （可能轻微裁切）也不能让图表长时间不渲染——与下方 catch 的降级哲学一致
-		await Promise.race([
-			Promise.allSettled([
-				document.fonts.load(
-					`16px ${families.map((f) => `"${f}"`).join(", ")}`,
-					sampleText,
-				),
-				document.fonts.ready,
-			]),
-			new Promise((r) => setTimeout(r, 3000)),
-		]);
-		await mermaid.run({ nodes: pending });
-		pending.forEach((n) => (n.dataset.mermaidRendered = "true"));
-	} catch (error) {
-		// 渲染失败不阻塞页面，原始代码块仍可阅读；warn 供线上排错
-		console.warn("[mermaid] render failed:", error);
-	}
 }
 
 /** 点击特效：社会主义核心价值观词组顺序循环（参考 zcjun.com，已去除其末尾的站点名），彩虹色上浮渐隐 */
