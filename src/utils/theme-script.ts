@@ -2,7 +2,10 @@
  * 主站运行时装配（对应原主题 js/global-pjax.js 的静态化版本）。
  *
  * 功能块自结构加深 T6/T7 起逐块迁往 `src/utils/runtime/`（已迁：语录条 quote-band、
- * 液态玻璃 liquid-glass），本文件保留**尚未迁移的块**与**装配表**——全部功能块的
+ * 液态玻璃 liquid-glass、文章目录 article-toc、导航判定 nav-state、减少动效
+ * reduced-motion、随机背景 random-background、移动菜单 mobile-menu、头部轮播
+ * header-ticker、分页跳转 pagination-jump），本文件保留**尚未迁移的块**与
+ * **装配表**——全部功能块的
  * 家谱与两条生命周期（初始装载 / swup after-swap 重跑）都由文件尾的 runtimeTable
  * 驱动，新增功能先加表行，勿在别处自行初始化；换页前后的钩子动作另由同处的
  * runtimeHooks 声明。
@@ -16,12 +19,13 @@ import { initLiquidGlass } from "./runtime/liquid-glass";
 import { initArticleToc } from "./runtime/article-toc";
 import { isNavCurrent } from "./runtime/nav-state";
 import { prefersReducedMotion } from "./runtime/reduced-motion";
+import { initRandomBackground } from "./runtime/random-background";
+import { initMMenu } from "./runtime/mobile-menu";
+import { initHeaderTicker } from "./runtime/header-ticker";
+import { initPaginationJump } from "./runtime/pagination-jump";
 
 declare global {
 	interface Window {
-		swup?: {
-			navigate: (url: string) => void;
-		};
 		Fancybox?: {
 			bind: (selector: string, opts?: unknown) => void;
 			unbind: (selector: string) => void;
@@ -186,7 +190,6 @@ let anchorSmoothScrollBound = false;
 let skillsDonutTooltipBound = false;
 
 let newCommentShuffleBound = false;
-let paginationJumpBound = false;
 let toastTriggerBound = false;
 const NEW_COMMENT_DISPLAY_LIMIT = 5;
 const NEW_COMMENT_LOADING_MIN_MS = 220;
@@ -311,66 +314,6 @@ function initNewCommentShuffle() {
 				}, remainingLoadingMs);
 			}
 		}, 0);
-	});
-}
-
-/** 分页跳转（事件委托，Swup 切页后依然生效） */
-function initPaginationJump() {
-	if (paginationJumpBound) return;
-	paginationJumpBound = true;
-
-	document.addEventListener("submit", (event) => {
-		const target = event.target;
-		if (!(target instanceof HTMLFormElement)) return;
-		const form = target.closest<HTMLFormElement>("[data-pagination-jump]");
-		if (!form) return;
-
-		event.preventDefault();
-		const input = form.querySelector<HTMLInputElement>(
-			"[data-pagination-input]",
-		);
-		if (!input) return;
-
-		const value = input.value.trim();
-		const min = Number(input.min);
-		const max = Number(input.max);
-		const page = Number(value);
-		const valid =
-			/^\d+$/.test(value) &&
-			Number.isInteger(page) &&
-			Number.isInteger(min) &&
-			Number.isInteger(max) &&
-			page >= min &&
-			page <= max;
-		const error = form.querySelector<HTMLElement>(
-			"[data-pagination-error]",
-		);
-
-		if (!valid) {
-			input.setAttribute("aria-invalid", "true");
-			if (error) {
-				error.textContent = `请输入 ${min} 到 ${max} 之间的整数页码。`;
-				error.hidden = false;
-			}
-			input.focus();
-			return;
-		}
-
-		input.setAttribute("aria-invalid", "false");
-		if (error) {
-			error.textContent = "";
-			error.hidden = true;
-		}
-
-		const template = form.dataset.urlTemplate ?? "";
-		const firstPageUrl = form.dataset.firstPageUrl ?? "/";
-		const url =
-			page === 1 ? firstPageUrl : template.replace("{n}", String(page));
-		if (window.swup?.navigate) {
-			window.swup.navigate(url);
-		} else {
-			window.location.href = url;
-		}
 	});
 }
 
@@ -1156,51 +1099,6 @@ function initAnchorSmoothScroll() {
 	);
 }
 
-/** 移动端全屏菜单 */
-function initMMenu() {
-	const openBtn = document.getElementById("open-nav");
-	const menu = document.getElementById("mmenu");
-	const close = document.getElementById("mmenu-close");
-	const closeButton = document.getElementById("close-nav");
-	const backdrop = document.getElementById("mmenu-backdrop");
-	if (!openBtn || !menu || !close) return;
-	// 菜单节点在 Swup 容器外且只初始化一次；dataset 守卫防止重入时监听器叠加
-	if (openBtn.dataset.mmenuBound === "true") return;
-	openBtn.dataset.mmenuBound = "true";
-	const syncExpanded = (expanded: boolean) =>
-		openBtn.setAttribute("aria-expanded", String(expanded));
-	const openMenu = () => {
-		menu.classList.add("open");
-		close.classList.add("open");
-		backdrop?.classList.add("open");
-		document.body.style.overflow = "hidden";
-		syncExpanded(true);
-		// 焦点移入菜单，键盘/读屏用户打开后可直接在菜单内 Tab
-		menu.querySelector<HTMLElement>("input, a, button")?.focus();
-	};
-	const closeMenu = () => {
-		menu.classList.remove("open");
-		close.classList.remove("open");
-		backdrop?.classList.remove("open");
-		document.body.style.overflow = "";
-		syncExpanded(false);
-	};
-	openBtn.addEventListener("click", openMenu);
-	close.addEventListener("click", closeMenu);
-	closeButton?.addEventListener("click", closeMenu);
-	backdrop?.addEventListener("click", closeMenu);
-	menu.addEventListener("click", (e) => {
-		if ((e.target as HTMLElement).closest("a")) closeMenu();
-	});
-	// Escape 关闭并把焦点归还触发按钮
-	document.addEventListener("keydown", (e) => {
-		if (e.key !== "Escape") return;
-		if (!menu.classList.contains("open")) return;
-		closeMenu();
-		openBtn.focus();
-	});
-}
-
 /**
  * /about/ 稿纸手写感：信纸正文逐字符静态微随机。
  * transform-only（rotate ±1.5° / translate ±1px）、无动画、无布局位移；
@@ -1268,42 +1166,6 @@ function syncPaperRulePhase(panel: HTMLElement, body: HTMLElement) {
 	);
 }
 
-/** 头部微言轮播：机制复刻原版 AutoScroll（limh.me global-pjax.js）——滚完把首条 li
- * 移到末尾实现无限轮转，hover 暂停、移出恢复；节奏（4s/条 = 停留 3.2s + 滑动 0.8s）
- * 对齐迁移前 CSS 关键帧版的手感，比原版 300ms 更缓。头部在 Swup 容器之外，
- * 随 pagefindReady 初始化一次即可 */
-function initHeaderTicker() {
-	const ticker = document.querySelector("#header .text");
-	const list = ticker?.querySelector("ul");
-	if (!ticker || !list || list.children.length < 2) return;
-	if (list.dataset.tickerReady === "true") return;
-	list.dataset.tickerReady = "true";
-	if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-	list.addEventListener("transitionend", (event) => {
-		if (event.target !== list || event.propertyName !== "margin-top")
-			return;
-		list.style.transition = "none";
-		list.style.marginTop = "0px";
-		list.appendChild(list.firstElementChild as HTMLElement);
-	});
-
-	let timer = 0;
-	const start = () => {
-		if (timer) return;
-		timer = window.setInterval(() => {
-			list.style.transition = "margin-top 0.8s ease";
-			list.style.marginTop = "-24px"; // 与 global.css 的 #header .text li 行高一致
-		}, 4000);
-	};
-	ticker.addEventListener("mouseenter", () => {
-		window.clearInterval(timer);
-		timer = 0;
-	});
-	ticker.addEventListener("mouseleave", start);
-	start();
-}
-
 /** astro:page-load 滚动复位：新页面回到顶部 */
 function resetScrollToTop() {
 	window.scrollTo({ top: 0 });
@@ -1336,25 +1198,6 @@ function initSwupHooks() {
 	document.addEventListener("astro:page-load", () => {
 		for (const hook of runtimeHooks.pageLoad) hook();
 	});
-}
-
-/** 每次完整打开页面随机选择背景；Swup 切页时保留当前背景 */
-function initRandomBackground() {
-	const background = document.querySelector<HTMLImageElement>(
-		".bg-image[data-backgrounds]",
-	);
-	if (!background || background.dataset.selected === "true") return;
-
-	try {
-		const images = JSON.parse(background.dataset.backgrounds || "[]");
-		if (!Array.isArray(images) || images.length === 0) return;
-		const index = Math.floor(Math.random() * images.length);
-		background.src = images[index];
-		background.dataset.selected = "true";
-	} catch (error) {
-		// 背景配置解析失败时保留纯色页面背景；warn 供排错
-		console.warn("[background] config parse failed:", error);
-	}
 }
 
 /**
