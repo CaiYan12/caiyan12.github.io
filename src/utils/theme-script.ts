@@ -7,7 +7,8 @@
  * 移动菜单 mobile-menu、头部轮播 header-ticker、分页跳转 pagination-jump、灯箱
  * fancybox、导航高亮 nav-highlight、阅读进度 reading-progress、锚点平滑滚动
  * anchor-smooth-scroll、复制链接 copy-link、返回顶部 back-to-top、双击回顶
- * dblclick-scroll），本文件保留**尚未迁移的块**与**装配表**——全部功能块的家谱与
+ * dblclick-scroll、稿纸 paper-handwriting、技能环 skills-donut-tooltip），本文件保留
+ * **尚未迁移的块**与**装配表**——全部功能块的家谱与
  * 两条生命周期（初始装载 / swup after-swap 重跑）都由文件尾的 runtimeTable
  * 驱动，新增功能先加表行，勿在别处自行初始化；换页前后的钩子动作另由同处的
  * runtimeHooks 声明。
@@ -35,6 +36,8 @@ import { initRandomBackground } from "./runtime/random-background";
 import { initMMenu } from "./runtime/mobile-menu";
 import { initHeaderTicker } from "./runtime/header-ticker";
 import { initPaginationJump } from "./runtime/pagination-jump";
+import { initSkillsDonutTooltip } from "./runtime/skills-donut-tooltip";
+import { initPaperHandwriting } from "./runtime/paper-handwriting";
 
 declare global {
 	interface Window {
@@ -45,8 +48,6 @@ declare global {
 }
 
 let protectedEmailBound = false;
-
-let skillsDonutTooltipBound = false;
 
 let newCommentShuffleBound = false;
 let toastTriggerBound = false;
@@ -173,141 +174,6 @@ function initNewCommentShuffle() {
 				}, remainingLoadingMs);
 			}
 		}, 0);
-	});
-}
-
-/** 技能概览环形图悬浮详情（事件委托，Swup 切页后依然生效） */
-function initSkillsDonutTooltip() {
-	if (skillsDonutTooltipBound) return;
-	skillsDonutTooltipBound = true;
-
-	const showFrames = new WeakMap<HTMLElement, number>();
-	const getSegment = (target: EventTarget | null) => {
-		if (!(target instanceof Element)) return null;
-		return target.closest<SVGPathElement>(".skills-donut-segment-base");
-	};
-	const getTooltip = (segment: Element) =>
-		segment
-			.closest<HTMLElement>("[data-skills-overview]")
-			?.querySelector<HTMLElement>("[data-skills-donut-tooltip]") ?? null;
-	const isSameDonut = (segment: Element, target: EventTarget | null) => {
-		const relatedSegment = getSegment(target);
-		return (
-			relatedSegment?.closest("[data-skills-overview]") ===
-			segment.closest("[data-skills-overview]")
-		);
-	};
-	const resetTooltipPosition = (tooltip: HTMLElement) => {
-		tooltip.style.removeProperty("left");
-		tooltip.style.removeProperty("top");
-		tooltip.style.removeProperty("right");
-		tooltip.style.removeProperty("bottom");
-	};
-	const positionTooltip = (
-		tooltip: HTMLElement,
-		clientX: number,
-		clientY: number,
-	) => {
-		const gap = 14;
-		const viewportPadding = 12;
-		const rect = tooltip.getBoundingClientRect();
-		const maxLeft = Math.max(
-			viewportPadding,
-			window.innerWidth - rect.width - viewportPadding,
-		);
-		const maxTop = Math.max(
-			viewportPadding,
-			window.innerHeight - rect.height - viewportPadding,
-		);
-		let left = clientX + gap;
-		let top = clientY + gap;
-		if (left > maxLeft) left = clientX - rect.width - gap;
-		if (top > maxTop) top = clientY - rect.height - gap;
-		left = Math.min(maxLeft, Math.max(viewportPadding, left));
-		top = Math.min(maxTop, Math.max(viewportPadding, top));
-		tooltip.style.left = `${left}px`;
-		tooltip.style.top = `${top}px`;
-		tooltip.style.right = "auto";
-		tooltip.style.bottom = "auto";
-	};
-	const hideTooltip = (tooltip: HTMLElement | null) => {
-		if (!tooltip) return;
-		const frame = showFrames.get(tooltip);
-		if (frame !== undefined) cancelAnimationFrame(frame);
-		showFrames.delete(tooltip);
-		tooltip.classList.remove("is-visible");
-		tooltip.hidden = true;
-		tooltip.setAttribute("aria-hidden", "true");
-		resetTooltipPosition(tooltip);
-	};
-	const showTooltip = (
-		segment: SVGPathElement,
-		clientX?: number,
-		clientY?: number,
-	) => {
-		const tooltip = getTooltip(segment);
-		if (!tooltip) return;
-		const label = tooltip.querySelector<HTMLElement>(
-			"[data-skills-tooltip-label]",
-		);
-		const value = tooltip.querySelector<HTMLElement>(
-			"[data-skills-tooltip-value]",
-		);
-		const percentage = tooltip.querySelector<HTMLElement>(
-			"[data-skills-tooltip-percentage]",
-		);
-		const color = segment.dataset.skillColor || "#00c000";
-		if (label) label.textContent = segment.dataset.skillLabel || "技能等级";
-		if (value) value.textContent = segment.dataset.skillValue || "0";
-		if (percentage)
-			percentage.textContent = segment.dataset.skillPercentage || "0";
-		tooltip.style.setProperty("--skills-tooltip-color", color);
-		tooltip.hidden = false;
-		tooltip.setAttribute("aria-hidden", "false");
-		if (typeof clientX === "number" && typeof clientY === "number") {
-			positionTooltip(tooltip, clientX, clientY);
-		} else {
-			resetTooltipPosition(tooltip);
-		}
-		tooltip.classList.remove("is-visible");
-		const frame = requestAnimationFrame(() => {
-			if (!tooltip.hidden) tooltip.classList.add("is-visible");
-			showFrames.delete(tooltip);
-		});
-		showFrames.set(tooltip, frame);
-	};
-
-	document.addEventListener("pointerover", (event) => {
-		if (event.pointerType !== "mouse") return;
-		const segment = getSegment(event.target);
-		if (segment) showTooltip(segment, event.clientX, event.clientY);
-	});
-	document.addEventListener("pointermove", (event) => {
-		if (event.pointerType !== "mouse") return;
-		const segment = getSegment(event.target);
-		const tooltip = segment && getTooltip(segment);
-		if (segment && tooltip && !tooltip.hidden)
-			positionTooltip(tooltip, event.clientX, event.clientY);
-	});
-	document.addEventListener("pointerout", (event) => {
-		const segment = getSegment(event.target);
-		if (!segment || isSameDonut(segment, event.relatedTarget)) return;
-		hideTooltip(getTooltip(segment));
-	});
-	document.addEventListener("focusin", (event) => {
-		const segment = getSegment(event.target);
-		if (segment) showTooltip(segment);
-	});
-	document.addEventListener("focusout", (event) => {
-		const segment = getSegment(event.target);
-		if (!segment || isSameDonut(segment, event.relatedTarget)) return;
-		hideTooltip(getTooltip(segment));
-	});
-	document.addEventListener("keydown", (event) => {
-		if (event.key !== "Escape") return;
-		document
-			.querySelectorAll<HTMLElement>("[data-skills-donut-tooltip]")
-			.forEach(hideTooltip);
 	});
 }
 
@@ -588,73 +454,6 @@ function initProtectedEmail() {
 		}
 		window.location.href = `mailto:${email}`;
 	});
-}
-
-/**
- * /about/ 稿纸手写感：信纸正文逐字符静态微随机。
- * transform-only（rotate ±1.5° / translate ±1px）、无动画、无布局位移；
- * 连续西文/数字片段保持整段不切分，避免单词内换行；
- * dataset 守卫防重复处理，Swup 切页后新 DOM 重新施加。
- */
-function initPaperHandwriting() {
-	const paperBody = document.querySelector<HTMLElement>(".letter-paper-body");
-	const panel = paperBody?.closest<HTMLElement>(".letter-paper");
-	if (!paperBody || !panel || paperBody.dataset.handwriting === "true")
-		return;
-	paperBody.dataset.handwriting = "true";
-	syncPaperRulePhase(panel, paperBody);
-	if (!panel.dataset.rulePhaseBound) {
-		panel.dataset.rulePhaseBound = "true";
-		// 字体 swap、换行、缩放都会挪动正文首行，网格相位必须跟随
-		new ResizeObserver(() => syncPaperRulePhase(panel, paperBody)).observe(
-			panel,
-		);
-	}
-	const walker = document.createTreeWalker(paperBody, NodeFilter.SHOW_TEXT);
-	const textNodes: Text[] = [];
-	for (let node = walker.nextNode(); node; node = walker.nextNode()) {
-		const text = node as Text;
-		if (text.data.trim()) textNodes.push(text);
-	}
-	for (const textNode of textNodes) {
-		const fragment = document.createDocumentFragment();
-		// 西文/数字整段成组（防单词内换行），CJK 与全角标点逐字成 span
-		const segments =
-			textNode.data.match(/[\x20-\x7e]+|[^\x00-\x7f]/g) ?? [];
-		for (const segment of segments) {
-			if (/^[\x20-\x7e]+$/.test(segment)) {
-				fragment.appendChild(document.createTextNode(segment));
-				continue;
-			}
-			const span = document.createElement("span");
-			span.className = "paper-hand-char";
-			const rotate = (Math.random() * 3 - 1.5).toFixed(2);
-			const dx = (Math.random() * 2 - 1).toFixed(2);
-			const dy = (Math.random() * 2 - 1).toFixed(2);
-			span.style.transform = `translate(${dx}px, ${dy}px) rotate(${rotate}deg)`;
-			span.textContent = segment;
-			fragment.appendChild(span);
-		}
-		textNode.replaceWith(fragment);
-	}
-}
-
-/** 整张稿纸的横线网格画在面板层，其相位需按正文首行基线反推：面板网格线落在
- *  padding box 顶 + shift - 1 + k*cycle 处，令其等于正文首行基线 y 即得下式。
- *  头部高度因此不必确定化（巨型标题是流式 clamp 字号，便签换行数随宽度变化） */
-function syncPaperRulePhase(panel: HTMLElement, body: HTMLElement) {
-	const style = getComputedStyle(panel);
-	const cycle = parseFloat(style.getPropertyValue("--lp-cycle"));
-	const baseline = parseFloat(style.getPropertyValue("--lp-baseline"));
-	if (!cycle || !baseline) return;
-	const originTop =
-		panel.getBoundingClientRect().top +
-		(parseFloat(style.borderTopWidth) || 0);
-	const offset = body.getBoundingClientRect().top - originTop + baseline;
-	panel.style.setProperty(
-		"--lp-shift",
-		`${((offset % cycle) + cycle) % cycle}px`,
-	);
 }
 
 /** astro:page-load 滚动复位：新页面回到顶部 */
