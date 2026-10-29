@@ -10,7 +10,7 @@
  * dblclick-scroll、稿纸 paper-handwriting、技能环 skills-donut-tooltip、评论换一批
  * newcomment-shuffle、点击词 click-effect、Canvas 粒子 canvas-boom、动态标题
  * visibility-title、LQIP 渐显 lqip-fade、邮箱保护 protected-email、站内提示触发
- * toast-trigger），本文件保留**尚未迁移的块**与**装配表**——全部功能块的家谱与
+ * toast-trigger），本文件只保留**装配表**、**生命周期声明**与 3 个 page-load 辅助——全部功能块的家谱与
  * 两条生命周期（初始装载 / swup after-swap 重跑）都由文件尾的 runtimeTable
  * 驱动，新增功能先加表行，勿在别处自行初始化；换页前后的钩子动作另由同处的
  * runtimeHooks 声明。
