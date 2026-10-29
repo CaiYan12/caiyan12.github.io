@@ -16,7 +16,6 @@
  * runtimeHooks 声明。
  */
 
-import { showSiteToast } from "./site-toast";
 import { destroyFancybox, initFancybox } from "./runtime/fancybox";
 import { initQuoteBand } from "./runtime/quote-band";
 import { initLiquidGlass } from "./runtime/liquid-glass";
@@ -30,7 +29,6 @@ import { initAnchorSmoothScroll } from "./runtime/anchor-smooth-scroll";
 import { initCopyLink } from "./runtime/copy-link";
 import { initBackToTop } from "./runtime/back-to-top";
 import { initDblClickScroll } from "./runtime/dblclick-scroll";
-import { prefersReducedMotion } from "./runtime/reduced-motion";
 import { loadKatexCss } from "./runtime/katex";
 import { renderMermaid } from "./runtime/mermaid";
 import { initRandomBackground } from "./runtime/random-background";
