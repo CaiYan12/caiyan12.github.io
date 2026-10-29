@@ -2,9 +2,10 @@
 // 在 theme-script.ts 的 renderMermaid 里，只能靠浏览器逐页比对，改坏了没人拦得住）。
 //
 // 期望值不是实现里那份模板的副本，而是**迁移前**（2026-10-29 基线快照
-// git show HEAD:src/utils/theme-script.ts）themeCSS 字面量按真实主题变量展开的结果；
+// git show f620d54:src/utils/theme-script.ts）themeCSS 字面量按真实主题变量展开的结果；
 // 迁移时已用脚本确认 before 快照展开后与 buildMermaidThemeCss 输出逐字节相同（1740 字符）。
 // 因此这条断言钉住的是「迁移前后视觉契约不变」，改动即视觉变更，需单独裁决。
+// 基线 SHA 写死成 f620d54 而不写 HEAD：迁移完成后 HEAD 已不含 themeCSS，照 HEAD 查会查空。
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildMermaidThemeCss } from "./mermaid";
@@ -72,6 +73,9 @@ const EXPECTED_THEME_CSS = `
 				}
 			`;
 
+// 期望值取自**迁移前基线快照**：`git show f620d54:src/utils/theme-script.ts` 里
+// themeCSS 模板按真实主题变量展开后的结果——不是本实现（buildMermaidThemeCss）
+// 输出的副本。两者若哪天不再逐字节相同，说明迁移改了视觉契约，需单独裁决。
 test("buildMermaidThemeCss：与迁移前 themeCSS 逐字节一致（含换行终态注释与缩进）", () => {
 	assert.equal(buildMermaidThemeCss(COLORS), EXPECTED_THEME_CSS);
 });
