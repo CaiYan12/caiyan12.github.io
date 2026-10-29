@@ -7,6 +7,8 @@
  * astro:* 事件。语料的读取推迟到 IntersectionObserver 回调里：head 里的 defer
  * 经典脚本与 Astro 注入的模块脚本谁先跑不由我们控制，而回调必然晚于两者 —— 不赌顺序。
  */
+import { prefersReducedMotion } from "./reduced-motion";
+
 declare global {
 	interface Window {
 		/** 语录条语料，由 public/quotes/quote-catalog.js 以 head 里的 defer 经典脚本挂上 */
@@ -212,8 +214,6 @@ export function initQuoteBand() {
 	const pickOther = (pool: string[][]) => pickOtherFrom(pool, current);
 
 	let swapping = false;
-	const prefersReducedMotion = () =>
-		window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 	/** 跑一遍内容级联（英文逐字 → 中文擦入 → 署名 → 按钮）。
 	 *  逐字符节点必须在这里现切：每次收尾后文本会拍平回纯节点，换句才不会被逐字规则遮住。 */
