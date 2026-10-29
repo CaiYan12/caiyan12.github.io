@@ -231,9 +231,15 @@ C-2 / C-3 的数字门槛都是 README 原文，不是我的估算（两项均�
 #### C-4 结案记录（2026-10-29）
 
 - **结案依据**：规格 [Issue #115](https://github.com/CaiYan12/caiyan12.github.io/issues/115)，实施票 `#116`–`#125`（共 10 张）。走的是规格原文「每块一文件、自足幂等、import 无副作用」的形状，未新增初始化协议。
-- **最终形态（2026-10-29 实测）**：`src/utils/theme-script.ts` **153 行**，只剩装配表 **26 行**、`runtimeHooks` 的两条生命周期声明与 3 个 page-load 辅助（`resetScrollToTop` / `dispatchPageLoaded` / `initSwupHooks`）；`src/utils/runtime/` 下 **27 个模块 + 14 个测试**，装配表每行指向一个模块导出。`pnpm test:utils` **117 用例全通过**。
-- **验证证据**：`D:/c4-worktrees/evidence/`（迁移前基线 A/B 脚本 `ab-check.mjs`、`diff-runs.mjs` 与 `baseline*.json` 读数，页面快照 `home/archive/post/about/skills/mermaid.html`）。行为等价以该目录的 A/B 结果为准，不以行数下降为准。
-- **遗留独立缺陷（本轮未修、未验证于浏览器）**：`/about/` 稿纸的 `ResizeObserver` 在连续切页后可能累积（每页新建实例未与 `astro:before-swap` 挂钩）。发现于迁移过程，属 `runtime/paper-handwriting.ts` 自身的生命周期问题，不属本轮「只搬家不改造」的范围，单独裁决。
+- **最终形态（2026-10-29 实测）**：`src/utils/theme-script.ts` **153 行**，只剩装配表 **26 行**、`runtimeHooks` 的两条生命周期声明与 3 个 page-load 辅助（`resetScrollToTop` / `dispatchPageLoaded` / `initSwupHooks`）；`src/utils/runtime/` 下 **27 个模块 + 18 个测试**，装配表每行指向一个模块导出。`pnpm test:utils` **148 用例全通过**（基线 60，本轮净增 88）。
+- **集成门禁（2026-10-29 在本分支实测）**：
+    - `pnpm build` → exit 0（页面生成 + 横幅注入 + pagefind）。注：本机安全删除守卫会拦 `dist/.prerender` 清理，需 `CODEBUDDY_SAFE_DELETE_ENABLED=0` 跑一次；属环境限制，不是代码问题。
+    - 浏览器套件（对 preview 产物）：`smoke:ui` **142/142**、`test:fancybox` **27/27**、`smoke:series` **88/88**、`smoke:nice-books` **72/72**、侧栏天气 **82/82**、`smoke:pelican` exit 0、`smoke:console` **23/23 页 PASS**。
+    - `pnpm check` → 0 errors / 0 warnings / 6 hints（均为既有）；`npx prettier --check ./src ./docs` 通过。
+    - 同一套件对**迁移前基线**（`f620d54` 另建产物、另起端口）跑同一遍作对照，结论一致；首轮并发执行时的 `page.goto` 超时是环境与并发噪声，单独复跑即全绿。
+- **行为等价 A/B**：同一套 15 项 Playwright 检查（`ab-check.mjs`）在基线与本分支各跑一遍，15/15 全通过且关键读数一致（`D:/c4-worktrees/evidence/ab-result.md`）。评论换一批因生产构建不渲染该按钮（生产快照 1 条 < 阈值 5），其证据限 dev 与受控数据，不计入本 A/B。
+- **验证证据目录**：`D:/c4-worktrees/evidence/`（A/B 脚本与读数、观察器实测脚本与读数、七套件与基线对照日志、页面快照）。
+- **遗留独立缺陷（已实测，未修）**：`/about/` 稿纸的 `ResizeObserver` 每次切页新建一个。2026-10-29 浏览器实测（`observer-check.mjs`）：`/about/` ⇄ `/skills/` 往返 5 轮，实例 **5 → 10**（每往返 +1）、累计 5 个存活面板、页面 DOM 内 0 个 `.letter-paper` 残留。属 `runtime/paper-handwriting.ts` 自身生命周期问题，不在「只搬家不改造」的范围内，单独裁决。
 - **未做的事**：未改任何功能行为，未新增/删除装配行，未重排 swap 序；`src/utils/site-modal.ts` 与 `src/nice-books/scripts/shared.ts` 里各有一份同名局部 `prefersReducedMotion`，均为基线既有、不在本轮范围。
 
 #### 已转 GitHub 管理（不计入本台账的已实现数量）
