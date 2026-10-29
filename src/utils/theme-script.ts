@@ -70,7 +70,7 @@ function dispatchPageLoaded() {
 /** @swup/astro 生命周期 hooks（页面切换后重初始化）；before-swap / page-load 清单由 runtimeHooks 声明，after-swap 重跑清单由装配表驱动 */
 function initSwupHooks() {
 	// swap 序 → 重跑清单：与既有硬编码顺序逐项一致（nav → 阅读进度 → fancybox →
-	// lqip → katex → mermaid → 稿纸）。swap 序与装配表序不同——旧实现两处顺序本就
+	// lqip → katex → mermaid → 稿纸 → 文章目录）。swap 序与装配表序不同——旧实现两处顺序本就
 	// 不一致（fancybox 在表序 19、重跑序 3），勿「顺手统一」。
 	const swapRerun = runtimeTable
 		.filter((entry) => entry.swap !== undefined)
