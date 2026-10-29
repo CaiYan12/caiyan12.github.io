@@ -24,6 +24,8 @@
  *    = -1 起算（新元素无 .current，paint 只在索引变化时落笔）。
  */
 
+import { prefersReducedMotion } from "./reduced-motion";
+
 /** 一条目录条目：slug（= 标题元素 id）、标题全文、标题层级（2–4）。 */
 export interface ArticleTocEntry {
 	slug: string;
@@ -431,6 +433,3 @@ const REVEAL_DEBOUNCE = 100;
 const MANUAL_OVERRIDE_MS = 3000;
 /** ease-out cubic：前快后慢，观感对齐站内既有 ease-out 过渡。 */
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
-/** 用户偏好减少动效（照 theme-script.ts 的既有回退惯例：JS 驱动的动效必须同样短路） */
-const prefersReducedMotion = () =>
-	window.matchMedia("(prefers-reduced-motion: reduce)").matches;
