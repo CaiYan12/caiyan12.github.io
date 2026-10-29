@@ -6,7 +6,7 @@
 
 ## 客户端脚本与 Swup 生命周期
 
-- `src/utils/theme-script.ts` 是唯一的客户端逻辑中枢：导航高亮、返回顶部、双击回顶、移动端菜单、Fancybox/KaTeX 初始化
+- `src/utils/theme-script.ts` 已收薄为装配表、生命周期声明与 page-load 辅助三件：功能块按关注面分文件置于 `src/utils/runtime/`
 - **Swup 重初始化协议（2026-09-06 审查后统一，新增客户端代码必须遵守）**：`main` Swup 容器内的组件统一监听自定义事件 `colorful:page:loaded`（切换后重跑）并配 `dataset` 守卫防重复初始化（如 Slideshow 的 `data-initialized`）；`main` 容器外的布局级组件（导航/移动菜单/返回顶部/背景）只随 `pagefindReady()` 初始化一次，靠 `*Bound` 旗帜或 dataset 守卫防重入，勿自行监听 `astro:*` 原生事件——容器外布局级确需 before-swap 清理（如 Fancybox destroy）才允许直接听 `astro:*`。历史上四轨并存（_Bound 委托/dataset 守卫/自定义事件/内联 astro:_），新代码不得新增第四种形态；theme-script 按"唯一协议 + 多 init 函数"保持单文件，按关注面拆分为远期独立一期（2026-09-06 审查决策）
 - **Swup 切换页面时组件脚本不会重跑**，所以需要重绑定的东西（Fancybox、导航高亮）都注册在 `initSwupHooks()` 的 `content:replace`/`page:view` 里；新增交互若依赖新页面 DOM，必须加到这两个 hook 中
 - **`updateHead` 按环境分叉（`astro.config.mjs`，2026-09-20）**：dev 传 `{ persistAssets: true }`、生产保持 `true`。Vite 在 dev 下把懒加载的第三方 CSS（fancybox、katex）以运行时注入的 `<style>` 挂进 head，swup 的 head 同步按"新页面没有此节点"把它删掉，而模块已在 Vite 图里、不会再注入一次，于是客户端切页后灯箱与公式失去样式（灯箱容器从视口尺寸塌成文档高度，首页→文章→点图必现）。**勿改成 `updateHead: false`**（会连带停掉 title/meta 同步），**也不要把 `persistAssets` 带进生产**——生产各页 CSS 是独立 `<link>`，必须照常增删以免跨页样式泄漏。dev 判定用 `process.argv` 含 `dev`（Astro 6 的 `defineConfig` 只接受对象，无 `({ command })` 函数形态）。
