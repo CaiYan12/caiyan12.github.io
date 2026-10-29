@@ -4,7 +4,8 @@
  * 功能块自结构加深 T6/T7 起逐块迁往 `src/utils/runtime/`（已迁：语录条 quote-band、
  * 液态玻璃 liquid-glass），本文件保留**尚未迁移的块**与**装配表**——全部功能块的
  * 家谱与两条生命周期（初始装载 / swup after-swap 重跑）都由文件尾的 runtimeTable
- * 驱动，新增功能先加表行，勿在别处自行初始化。
+ * 驱动，新增功能先加表行，勿在别处自行初始化；换页前后的钩子动作另由同处的
+ * runtimeHooks 声明。
  */
 
 import "@fancyapps/ui/dist/fancybox/fancybox.css";
@@ -1306,7 +1307,21 @@ function initHeaderTicker() {
 	start();
 }
 
-/** @swup/astro 生命周期 hooks（页面切换后重初始化）；after-swap 重跑清单由装配表驱动 */
+/** astro:page-load 滚动复位：新页面回到顶部 */
+function resetScrollToTop() {
+	window.scrollTo({ top: 0 });
+}
+
+/** astro:page-load 事件派发：供其他组件（搜索、幻灯片）监听 */
+function dispatchPageLoaded() {
+	document.dispatchEvent(
+		new CustomEvent("colorful:page:loaded", {
+			detail: { url: window.location.pathname },
+		}),
+	);
+}
+
+/** @swup/astro 生命周期 hooks（页面切换后重初始化）；before-swap / page-load 清单由 runtimeHooks 声明，after-swap 重跑清单由装配表驱动 */
 function initSwupHooks() {
 	// swap 序 → 重跑清单：与既有硬编码顺序逐项一致（nav → 阅读进度 → fancybox →
 	// lqip → katex → mermaid → 稿纸）。swap 序与装配表序不同——旧实现两处顺序本就
@@ -1316,20 +1331,13 @@ function initSwupHooks() {
 		.sort((a, b) => a.swap! - b.swap!)
 		.map((entry) => entry.init);
 	document.addEventListener("astro:before-swap", () => {
-		destroyFancybox();
+		for (const hook of runtimeHooks.beforeSwap) hook();
 	});
 	document.addEventListener("astro:after-swap", () => {
 		for (const init of swapRerun) init();
 	});
 	document.addEventListener("astro:page-load", () => {
-		window.scrollTo({ top: 0 });
-		scheduleReadingProgressUpdate();
-		// 触发自定义事件，供其他组件（搜索、幻灯片）监听
-		document.dispatchEvent(
-			new CustomEvent("colorful:page:loaded", {
-				detail: { url: window.location.pathname },
-			}),
-		);
+		for (const hook of runtimeHooks.pageLoad) hook();
 	});
 }
 
@@ -1391,6 +1399,27 @@ const runtimeTable: RuntimeEntry[] = [
 	{ init: initArticleToc, swap: 8 },
 	{ init: initSwupHooks },
 ];
+
+/**
+ * 换页生命周期声明：紧邻上方 runtimeTable 并列存放，专列 initSwupHooks 里此前硬编码的
+ * before-swap 清理与 page-load 动作。数组序即执行序，`initSwupHooks` 只按声明消费，
+ * 钩子体内不再直接写这些动作；新增项请同时核对「声明 → 钩子 → 浏览器复验」。
+ * 这不是第四种初始化轨道：三条轨仍是初始装载（runtimeTable 表序）、换页重跑
+ * （runtimeTable 的 swap 序）、换页前后钩子（本声明）。
+ */
+const runtimeHooks: {
+	beforeSwap: Array<() => void>;
+	pageLoad: Array<() => void>;
+} = {
+	// 灯箱清理：实现在本文件 initFancybox 下方（T6 才迁移，此处只做引用）
+	beforeSwap: [destroyFancybox],
+	// 1. 滚动位置复位 → 2. 阅读进度重算 → 3. 派发页面就绪事件
+	pageLoad: [
+		resetScrollToTop,
+		scheduleReadingProgressUpdate,
+		dispatchPageLoaded,
+	],
+};
 
 export function pagefindReady() {
 	for (const { init } of runtimeTable) init();
