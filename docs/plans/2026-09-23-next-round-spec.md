@@ -63,6 +63,8 @@
 
 ## Implementation Decisions（实现决策）
 
+本节①②③⑥保留来源编号。Issue #42及其收口记录均确认本轮为四项裁决，已由#43–#48实施并关闭；现有证据未发现因跳号而遗漏的需求。原handoff文件现不可查，本次不推断④⑤的历史内容。
+
 ### ① 微言轮播：判定「不做」+ 反向锁定
 
 - **零 CSS 视觉改动。** 不新增 `#header .text a:hover`，不改 `#header .text a{color:#fff}`（`src/styles/global.css`），不引入下划线、字重、`::after` 线条或换色。
