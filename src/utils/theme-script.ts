@@ -15,6 +15,7 @@ import { initQuoteBand } from "./runtime/quote-band";
 import { initLiquidGlass } from "./runtime/liquid-glass";
 import { initArticleToc } from "./runtime/article-toc";
 import { isNavCurrent } from "./runtime/nav-state";
+import { prefersReducedMotion } from "./runtime/reduced-motion";
 
 declare global {
 	interface Window {
@@ -189,10 +190,6 @@ let paginationJumpBound = false;
 let toastTriggerBound = false;
 const NEW_COMMENT_DISPLAY_LIMIT = 5;
 const NEW_COMMENT_LOADING_MIN_MS = 220;
-
-/** 用户偏好减少动效（与 CSS 侧 prefers-reduced-motion 降级约定对齐，JS 驱动的动效必须同样短路） */
-const prefersReducedMotion = () =>
-	window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 function setNewCommentShuffleLoading(
 	button: HTMLButtonElement,
