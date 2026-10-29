@@ -7,14 +7,19 @@
  * 2. 横线网格相位反推（--lp-shift），由面板网格线对齐正文首行基线。
  *
  * 两处都靠 dataset 守卫防重复处理（`handwriting` / `rulePhaseBound`），Swup 切页后
- * 新 DOM 重新施加。**观察器生命周期（已实测，本轮未修复）**：`rulePhaseBound` 建在面板
+ * 新 DOM 重新施加。
+ *
+ * **观察器生命周期（已实测确认存在累积，本轮未修复）**：`rulePhaseBound` 建在面板
  * 元素上，切页重建 DOM 后面板是新的，于是每次回到 /about/ 都会再 `new` 一个
- * ResizeObserver；回调闭包捕获了 panel 与 paperBody，闭包随观察器存活而持有旧面板，
- * 旧观察器也不会自行断开。2026-10-29 浏览器实测（脚本与读数见
- * `D:/c4-worktrees/evidence/observer-check.mjs` 与 `observer-result.json`）：
- * /about/ ⇄ /skills/ 往返 5 轮，ResizeObserver 实例 5 → 10（每往返 +1），累计 10 个
- * 实例、5 个存活面板，页面 DOM 内 0 个 .letter-paper 残留。修法（断开旧观察或改单例
- * observe）需单独裁决，本轮不动。
+ * ResizeObserver 并 observe 新面板。保活链条是「回调闭包捕获 + 观察器未断开」：
+ * 回调闭包捕获了 panel 与 paperBody，浏览器侧仍持有未断开的观察器 → 观察器 →
+ * 回调 → 闭包 → 旧面板，因此旧面板在切页后仍可达（DOM 里已不堆积，但对象未消失）。
+ * 该观察器从未 `unobserve()`/`disconnect()`，故累积只增不减。
+ *
+ * 具体实验读数（累计创建数、观察目标清单、强制 GC 后的回收观察）见
+ * `D:/c4-worktrees/evidence/observer-result.md` 与 `observer-result.json`；
+ * 本注释不复制数字，避免读数漂移。修法（断开旧观察或改单例 observe）需单独裁决，
+ * 本轮不动。
  */
 /** 逐字切分的产物：`isChar` 为真表示要包 span 施加手写微随机 */
 export type PaperSegment = { text: string; isChar: boolean };

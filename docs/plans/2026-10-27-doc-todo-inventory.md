@@ -217,10 +217,10 @@ C-1 已由独立项目方案替代，性能目标转移且不代表瘦身完成�
 
 C-1～C-3 来自 `README.md` 的「远期规划」节；C-1 已由独立项目方案替代，性能目标转移且不代表瘦身完成；C-2 已转 [Issue #112](https://github.com/CaiYan12/caiyan12.github.io/issues/112) 延期管理（未触发、未实现），C-3 已转 [Issue #113](https://github.com/CaiYan12/caiyan12.github.io/issues/113)（分页）与 [Issue #114](https://github.com/CaiYan12/caiyan12.github.io/issues/114)（旧表情码）延期管理（未触发、未实现）。C-4 来自 `docs/plans/2026-10-06-deepening-round2-spec.md` 的「篇② 运行时装配」与 Out of Scope，未写进 README 的远期节；2026-10-29 已按该规格的要求走完独立一轮，结案记录见本节。更正旧文「四条全部写在 README、触发条件明确」的概括。
 
-| 勾选 | 编号 | 事项                                           | 触发条件                                                                                                    | 结论摘要                                                                                                                                                                                                                          |
-| ---- | ---- | ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ☑    | C-1  | 独立项目方案替代；性能目标转移（并非瘦身完成） | 原评估触发条件：① Astro 升级受阻于 `@astrojs/react` 兼容性；② 该页出现真实访问量增长使 payload 成为可测瓶颈 | 历史评估（2026-09-04）曾判断 ROI 为负（当时读数：该页客户端 JS ≈235KB 未压缩、重写面 43 文件 / 约 135KB、回归面 20 种视觉组合，不作当前资源或性能数据）；最终按独立项目方案替代、性能目标转移收口，未证明客户端瘦身或性能提升。   |
-| ☑    | C-4  | `theme-script.ts` 剩余块迁移                   | 无时间触发，属技术债                                                                                        | 已结案（2026-10-29，规格 `#115`、实施票 `#116`–`#125`）：功能块按关注面全部迁入 `src/utils/runtime/`；`src/utils/theme-script.ts` 余 153 行，只留装配表 26 行、两条生命周期声明与 3 个 page-load 辅助。明细见本节「C-4 结案记录」 |
+| 勾选 | 编号 | 事项                                           | 触发条件                                                                                                                                                                                                                 | 结论摘要                                                                                                                                                                                                                          |
+| ---- | ---- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ☑    | C-1  | 独立项目方案替代；性能目标转移（并非瘦身完成） | 原评估触发条件：① Astro 升级受阻于 `@astrojs/react` 兼容性；② 该页出现真实访问量增长使 payload 成为可测瓶颈                                                                                                              | 历史评估（2026-09-04）曾判断 ROI 为负（当时读数：该页客户端 JS ≈235KB 未压缩、重写面 43 文件 / 约 135KB、回归面 20 种视觉组合，不作当前资源或性能数据）；最终按独立项目方案替代、性能目标转移收口，未证明客户端瘦身或性能提升。   |
+| ☑    | C-4  | `theme-script.ts` 剩余块迁移                   | 原登记未设明确触发条件（历史字段，非未完成项）：C-4 源自 `docs/plans/2026-10-06-deepening-round2-spec.md` 的「篇② 运行时装配」与 Out of Scope，原登记为无时间触发的技术债；2026-10-29 已按规格 `#115` 批准范围实施并结案 | 已结案（2026-10-29，规格 `#115`、实施票 `#116`–`#125`）：功能块按关注面全部迁入 `src/utils/runtime/`；`src/utils/theme-script.ts` 余 153 行，只留装配表 26 行、两条生命周期声明与 3 个 page-load 辅助。明细见本节「C-4 结案记录」 |
 
 C-2 / C-3 的数字门槛都是 README 原文，不是我的估算（两项均已转出，见下）。
 
@@ -231,15 +231,36 @@ C-2 / C-3 的数字门槛都是 README 原文，不是我的估算（两项均�
 #### C-4 结案记录（2026-10-29）
 
 - **结案依据**：规格 [Issue #115](https://github.com/CaiYan12/caiyan12.github.io/issues/115)，实施票 `#116`–`#125`（共 10 张）。走的是规格原文「每块一文件、自足幂等、import 无副作用」的形状，未新增初始化协议。
-- **最终形态（2026-10-29 实测）**：`src/utils/theme-script.ts` **153 行**，只剩装配表 **26 行**、`runtimeHooks` 的两条生命周期声明与 3 个 page-load 辅助（`resetScrollToTop` / `dispatchPageLoaded` / `initSwupHooks`）；`src/utils/runtime/` 下 **27 个模块 + 18 个测试**，装配表每行指向一个模块导出。`pnpm test:utils` **148 用例全通过**（基线 60，本轮净增 88）。
+- **最终形态（2026-10-29 实测）**：`src/utils/theme-script.ts` **153 行**（基线 1397），只剩装配表 **26 行**、`runtimeHooks` 的两条生命周期声明与 3 个 page-load 辅助（`resetScrollToTop` / `dispatchPageLoaded` / `initSwupHooks`）；`src/utils/runtime/` 目录实况 **27 个模块 + 18 个测试**（含基线既有的 6 个文件），装配表每行指向一个模块导出。`pnpm test:utils` **148 用例全通过**（基线 60，本轮净增 88）。
+    - **目录实况与本轮 diff 的区别（勿混用）**：`src/utils/runtime/` 目录实况 45 个 `.ts`（27 模块 + 18 测试），其中 **6 个是基线既有**（`article-toc`/`quote-band` 各含模块与测试，加 `liquid-glass.ts`、`nav-state.ts`）；**本轮 diff 触及 41 个**（**新增 25 个模块 + 新增 16 个测试**），另有 2 个基线既有模块（`article-toc.ts`、`quote-band.ts`）被本轮修改。整轮 diff 合计 **47 个文件**（41 个 runtime + `theme-script.ts` + `WidgetArticleToc.astro` + 4 份文档）。
+- **函数比对（迁移等价性的核心口径）**：基线 `theme-script.ts` 有 33 个函数，其中 2 个（`pagefindReady`、`initSwupHooks`）未迁出，**实际迁出 31 个**。按迁移后与基线的差异分三类：
+    - **逐字节相同 17 个**（仅差 `export` 关键字）：`copyText`、`destroyFancybox`、`initAnchorSmoothScroll`、`initCopyLink`、`initDblClickScroll`、`initFancybox`、`initLqipFade`、`initMMenu`、`initNewCommentShuffle`、`initRandomBackground`、`initReadingProgress`、`loadKatexCss`、`locateToArticle`、`onFancyboxDestroy`、`openImageOnDownloadClick`、`scheduleReadingProgressUpdate`、`setNewCommentShuffleLoading`。
+    - **仅注释行不同 3 个**（去注释后逐字节相同）：`initBackToTop`、`syncNavHighlight`、`updateReadingProgress`。
+    - **实质差异 11 个**（内联逻辑抽成纯函数核的等价改写，**逐项等价性依据见下表**）：`initCanvasBoomEffect`、`initClickEffect`、`initHeaderTicker`、`initPaginationJump`、`initPaperHandwriting`、`initProtectedEmail`、`initSkillsDonutTooltip`、`initToastTrigger`、`initVisibilityTitle`、`renderMermaid`、`syncPaperRulePhase`。
+- **11 处实质差异的等价性依据**：
+
+| 函数                     | 改写内容                                                 | 等价性依据                                                                                                  |
+| ------------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `initCanvasBoomEffect`   | 字面量 `2` → 常量 `CIRCLE_RADIUS`、`10` → `CIRCLE_COUNT` | 常量值与原字面量相同；`pagehide` 仍只 `booms.length = 0`，未改停帧语义                                      |
+| `initClickEffect`        | 取词与色相抽成 `clickWordAt` / `clickEffectColor`        | 两函数为原表达式的等价提取：词表取模与 `hsl(slot*30,100%,45%)` 公式不变，调用点改为读其返回值               |
+| `initHeaderTicker`       | 内联 `window.matchMedia(...)` → `prefersReducedMotion()` | 共享助手为逐字相同的单源实现，语义仍是每次调用即时查询                                                      |
+| `initPaginationJump`     | 校验逻辑抽成纯函数核                                     | 输入校验口径（`/^\d+$/`、整数、上下界）逐条保留，调用点改为读其返回值                                       |
+| `initPaperHandwriting`   | 切分抽成 `splitPaperSegments`                            | 切分正则与 ASCII 段判定规则逐字保留；`splitPaperSegments` 有独立单测钉住                                    |
+| `initProtectedEmail`     | 解码抽成 `decodeProtectedEmail`                          | base64/rot13 两条分支与 rot13 字母表偏移（65/97、+13）逐条保留；非法载荷仍只 `console.warn` 且不产出 mailto |
+| `initSkillsDonutTooltip` | 几何计算抽成 `resolveTooltipPosition`                    | gap 14 / viewportPadding 12、越界翻侧与 clamp 公式不变；纯函数有独立单测钉住                                |
+| `initToastTrigger`       | 取值抽成 `readToastMessage`                              | 取值与 `trim` 规则不变；空白静默行为保留                                                                    |
+| `initVisibilityTitle`    | 两条标题常量与捕获判定抽成模块级                         | 两条文案逐字保留；「标题为替代语时不捕获」的判定改为调用 `shouldCaptureOriginalTitle`，语义等价且有单测钉住 |
+| `renderMermaid`          | themeCSS 抽成 `buildMermaidThemeCss`                     | 基线 themeCSS 模板按真实主题变量展开后与新函数输出**逐字节相同**（1740 字符，已独立复算）；单测钉住该字面量 |
+| `syncPaperRulePhase`     | 相位计算抽成 `computePaperShift`                         | `(bodyTop - (panelTop + borderTop) + baseline) mod cycle` 公式与取模归一化不变；纯函数有独立单测钉住        |
+
 - **集成门禁（2026-10-29 在本分支实测）**：
-    - `pnpm build` → exit 0（页面生成 + 横幅注入 + pagefind）。注：本机安全删除守卫会拦 `dist/.prerender` 清理，需 `CODEBUDDY_SAFE_DELETE_ENABLED=0` 跑一次；属环境限制，不是代码问题。
-    - 浏览器套件（对 preview 产物）：`smoke:ui` **142/142**、`test:fancybox` **27/27**、`smoke:series` **88/88**、`smoke:nice-books` **72/72**、侧栏天气 **82/82**、`smoke:pelican` exit 0、`smoke:console` **23/23 页 PASS**。
+    - `pnpm build` → exit 0（页面生成 + 横幅注入 + pagefind）。该次构建以 `CODEBUDDY_SAFE_DELETE_ENABLED=0` 运行：本机宿主的安全删除守卫在本轮触发过（拦的是 `node_modules/.vite/deps_temp_*`，count 100/118 > 阈值 50，见 `evidence/integration-dev.log`；另一次是 `dist/.prerender`）。**这是一次性的环境绕过，不是本仓库的固定构建前提**——后续构建应先看实际删除项数是否超阈值，再决定是否需要该开关。
+    - 浏览器套件（对 preview 产物）：`smoke:ui` **142/142**、`test:fancybox` **27/27**、`smoke:series` **88/88**、`smoke:nice-books` **72/72**、侧栏天气 **82/82**、`smoke:pelican` **25/25**、`smoke:console` **23/23 页 PASS**。
     - `pnpm check` → 0 errors / 0 warnings / 6 hints（均为既有）；`npx prettier --check ./src ./docs` 通过。
-    - 同一套件对**迁移前基线**（`f620d54` 另建产物、另起端口）跑同一遍作对照，结论一致；首轮并发执行时的 `page.goto` 超时是环境与并发噪声，单独复跑即全绿。
-- **行为等价 A/B**：同一套 15 项 Playwright 检查（`ab-check.mjs`）在基线与本分支各跑一遍，15/15 全通过且关键读数一致（`D:/c4-worktrees/evidence/ab-result.md`）。评论换一批因生产构建不渲染该按钮（生产快照 1 条 < 阈值 5），其证据限 dev 与受控数据，不计入本 A/B。
-- **验证证据目录**：`D:/c4-worktrees/evidence/`（A/B 脚本与读数、观察器实测脚本与读数、七套件与基线对照日志、页面快照）。
-- **遗留独立缺陷（已实测，未修）**：`/about/` 稿纸的 `ResizeObserver` 每次切页新建一个。2026-10-29 浏览器实测（`observer-check.mjs`）：`/about/` ⇄ `/skills/` 往返 5 轮，实例 **5 → 10**（每往返 +1）、累计 5 个存活面板、页面 DOM 内 0 个 `.letter-paper` 残留。属 `runtime/paper-handwriting.ts` 自身生命周期问题，不在「只搬家不改造」的范围内，单独裁决。
+    - 同一套件对**迁移前基线**（`f620d54` 另建产物、另起端口）跑同一遍作对照。**对照结果不是每轮全绿**：基线侧首轮 ui-smoke 与侧栏天气因 `page.goto` 超时失败、console 门禁因 pending-review 判为 REVIEW；第二轮 pelican 有 1 项判据 9 超时。ui-smoke / 侧栏天气 / console 三项单独复跑后全绿（142/142、82/82、23/23 PASS，见 `evidence/suites-baseline/*-rerun.log`），**pelican 未做单独复跑**。集成侧两轮 pelican 均 25/25 通过。上述超时项在基线与集成两侧都会出现，属并发与外部资源时序抖动；现有证据不支持「所有轮次 PASS 集合完全一致」这一说法，也未证明抖动有唯一成因。
+- **行为等价 A/B**：同一套 15 项 Playwright 检查（`ab-check.mjs`）在基线与本分支各跑一遍，15/15 全通过，关键读数全项比对仅 2 处差异（`backtop` 回顶后 scrollY 0/1、`dblclick-top` 2/0），均在判据 `scrollY < 5` 内；基线自身两轮比对也有 1 处同类浮动（`dblclick-top` 2/0）。**受测版本说明**：A/B 采集于 `6852f88`（14:34），而本分支最终 SHA 为 `c4e9800`；`6852f88..c4e9800` 三笔提交经 `git diff` 核实**对运行时实现的改动为 0 行**（仅测试文件、docs 与源码注释），故上述 A/B 结果适用到最终 SHA——这是**内容比对推出的证据关联**，不是「在最终 SHA 上直接跑过」。评论换一批因生产构建不渲染该按钮（生产快照 1 条 < 阈值 5），其证据限 dev 与受控数据，不计入本 A/B。
+- **验证证据目录**：`D:/c4-worktrees/evidence/`（A/B 脚本与读数、观察器实测脚本与读数、七套件与基线对照日志、页面快照、恢复摘要 `recovery-20261029.md`）。
+- **遗留独立缺陷（已实测，未修）**：`/about/` 稿纸的 `ResizeObserver` 每次切页新建一个。2026-10-29 浏览器实测（`observer-check.mjs`，生产 preview :4403 与 dev :4402 两套环境读数一致）：`/about/` ⇄ `/skills/` 鼠标点击往返 5 轮，**累计创建数 2 → 7（每轮 +1）**；观察目标共 7 项，其中 6 项为 `.letter-paper`、**仅 1 项仍 connected**（当前页那一个），另 5 项 `alive=true` 但已脱离文档；DOM 层面每轮 `.letter-paper` 面板恒为 1（不堆积）。强制 GC（8 轮 × 每轮 3 次）后，**7 个观察目标与 7 个观察器均未被报告回收**——这是「本次观察窗口内未观察到回收」的观测结果，**不构成「永久泄漏」的判定**。保活机制由 6 组对照隔离为「回调闭包捕获 + 观察器未断开」（C/D 组证明 Chromium 在目标脱离文档后不再强引用被观察目标）。属 `runtime/paper-handwriting.ts` 自身生命周期问题，不在「只搬家不改造」的范围内，单独裁决。实验读数的完整记录见 `evidence/observer-result.md`。
 - **未做的事**：未改任何功能行为，未新增/删除装配行，未重排 swap 序；`src/utils/site-modal.ts` 与 `src/nice-books/scripts/shared.ts` 里各有一份同名局部 `prefersReducedMotion`，均为基线既有、不在本轮范围。
 
 #### 已转 GitHub 管理（不计入本台账的已实现数量）
