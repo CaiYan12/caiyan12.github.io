@@ -47,6 +47,17 @@ git show 4a35268:docs/plans/2026-10-14-article-toc-spec.md > /tmp/toc-spec.md
 | 2026-10-29 | `2026-10-29-doc-ledger-handoff`             | 台账收口轮 → 下一轮的交接文档（非待办清单）；记录 #112–#114 延期、U-2 保留、稿纸观察器疑点与第三方 REVIEW 的裁定边界。                                | `3922bff` `b3ab081` `f730548`                                         | `git show 170c262:docs/plans/2026-10-29-doc-ledger-handoff.md`             |
 | 2026-10-30 | `2026-10-30-u2-remediation-record`          | U-2 治理记录：209 条 `output/` 引用 / 132 token / 130 归一化目标，存在 14、未找到 116；含 C-4 两处统计偏差的纠正。                                    | `6852f88` `d67689b` `f373a05` `6e550d0` `ed22119`                     | `git show 170c262:docs/plans/2026-10-30-u2-remediation-record.md`          |
 
+## 归档清单（第二批：过程记录与研究）
+
+第二批于 2026-10-30 同日归档，性质是「一次性过程记录」与「选型研究」，不是计划或票册。`docs/nice-books-design.md`、`docs/quotes-review.md`、`docs/ui-adjust-0921.md` **有意保留在原处**：前两份分别被生产代码 `src/nice-books/styles/books.css` 与 `public/quotes/quote-catalog.js` 引用为权威来源，后一份是 Q1–Q50 的决策登记册。
+
+| 日期       | 文档                           | 结果                                                                                                                                     | 恢复命令                                          |
+| ---------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| 2026-10-05 | `ai-news-migration-test`       | AI 日报原生迁移的 9/9 断言测试记录。日报已于 2026-10-28 迁为独立项目（ADR 0009），该记录属迁移期过程数据。                               | `git show a2810cd:docs/ai-news-migration-test.md` |
+| 2026-09-07 | `nice-books-design-test`       | Nice Books 设计升级验收记录：45 项单测、1,239 项 Book3D 几何 QA、56 项 smoke、65 项设计 QA 通过；主书动作 432.6ms。                      | `git show 170c262:docs/nice-books-design-test.md` |
+| 2026-10-05 | `weather-api-research`         | 天气 API 选型研究：Open-Meteo 免 key 支持 CORS 需经纬度、CC BY 4.0 须署名；wttr.in 按城市/IP 即可但无 SLA。最终选定 wttr.in 单源。       | `git show a2810cd:docs/weather-api-research.md`   |
+| 2026-10-30 | `2026-09-28-weather-capsule-*` | **未归档**，保留在 `docs/plans/`。`docs/history/qweather-settingup-history-sessions.md` 内有 4 处不可修改的 `Ran Get-Content` 原文引用。 | —                                                 |
+
 ## 按轮次索引
 
 | 轮次                           | 文档                                                                                             | 状态                                      |

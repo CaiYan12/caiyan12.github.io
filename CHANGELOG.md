@@ -69,7 +69,7 @@
 - “本站资源”菜单在“我的项目”后新增“AI日报”；AI日报顶栏和页脚均提供“返回主站”。
 - AI日报保持独立页面外壳，不加载博客导航、侧栏、Pio、樱花背景或 Colorful 页脚；页面进入 sitemap，不进入 Pagefind 博客搜索。
 - 新增 `pnpm smoke:ai-news` 作为本站可执行的基础 Smoke 验证命令。
-- 详细测试记录：[`docs/ai-news-migration-test.md`](docs/ai-news-migration-test.md)。
+- 详细测试记录：[`docs/ai-news-migration-test.md`](docs/ai-news-migration-test.md)〔2026-10-30 已归档；AI 日报已迁为独立项目，全文见 `docs/history/history.md`〕。
 
 ## 2026-08-31：博客文章正式测试
 
