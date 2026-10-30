@@ -84,6 +84,8 @@ pnpm exec astro build && node scripts/inject-buddha-banner.mjs && node_modules/.
 node output/dist-hash.mjs dist output/<名字>.sha    # 读末行 norm，与 7baf45a92c742f60 比
 ```
 
+> 2026-10-30 注：上行 `output/dist-hash.mjs` 是当轮按站长裁决「不进仓库」的一次性工具，其原路径当前不可访问（在本轮限定搜索范围内未找到副本），该命令当前不能直接执行。产物不变量 `7baf45a92c742f60`（1114 文件）的达成读数见本文件「产物不变量」一节。
+
 纪律（本轮每一票都照着做）：**每一票都要有红证据**，不接受「它本来就是绿的」；锁现状型判据的红证据由**变异验证**提供，且变异必须只打中该管的判据。套件总数**不用 `tail`** 读。
 
 ---

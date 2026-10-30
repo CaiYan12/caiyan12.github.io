@@ -45,7 +45,7 @@
 
 ## 三项风险的实测结论（控制器已在 scratch 里跑完，子代理直接采用，不必重测）
 
-原型与探针脚本都在 `output/`（gitignore 内），**Task 5 应当直接改写它们，不要从零写**：
+原型与探针脚本都在 `output/`（gitignore 内），**Task 5 应当直接改写它们，不要从零写**（2026-10-30 注：下表脚本与产物系当次任务的工作目录材料，其原路径当前不可访问，在本轮限定搜索范围内未找到副本；本票册各任务已全部结案）：
 
 | 文件 | 内容 |
 |---|---|
@@ -112,7 +112,7 @@
   ```bash
   git cat-file blob 54adc1fb64155f9dd7c1c90ecae7b8185ac540b8:pelican-bike/src/main.js > vendor/pelican-bike/src/main.js
   ```
-  控制器已把 14 个文件的 LF 原字节暂存在 `output/upstream-pelican-bike-54adc1f/`，**直接从那里 `cp` 即可**（它已经是 blob 原字节），不必再碰上游仓库。
+  控制器已把 14 个文件的 LF 原字节暂存在 `output/upstream-pelican-bike-54adc1f/`，**直接从那里 `cp` 即可**（它已经是 blob 原字节），不必再碰上游仓库。（2026-10-30 注：该暂存目录现已不存在，此捷径当前不可用；上游原字节仍可按上方 `git cat-file blob 54adc1fb…` 命令从 Git 对象库取得。）
 - **逐字节判据要比索引里的 blob，不能比工作区文件**（本仓库 `core.autocrlf=true` 且**没有 `.gitattributes`**，工作区会被 smudge 成 CRLF，直接比会假失败）。正确流程：先 `git add vendor/pelican-bike/`，再逐个比对
   ```bash
   git cat-file blob :vendor/pelican-bike/src/main.js | md5sum
