@@ -4,5 +4,8 @@ src/styles/font-awesome.css
 docs/history/qweather-settingup-history-sessions.md
 # Original Colorful theme stylesheet kept as a reference snapshot
 docs/reference/colorful-original.css
-# Literal source snippets in this plan must retain their exact formatting
+# Literal source snippets in this plan must retain their exact formatting.
+# The file was archived on 2026-10-30 (see docs/history/history.md); this line is
+# kept so the protection applies again automatically if it is ever restored with
+# `git show 170c262:docs/plans/2026-09-25-pelican-bike-tickets.md`.
 docs/plans/2026-09-25-pelican-bike-tickets.md

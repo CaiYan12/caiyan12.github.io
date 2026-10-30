@@ -21,4 +21,4 @@
 - **一篇只能属于一个文集**（`series: string`，不是数组）。B 站专栏文集受同一约束，其开放平台「文集下文章列表修改」接口原文为「一篇文章只能属于一个文集，因此如果传入的文章id已归属某个文集，则该id修改不会生效，其他未归属的id会生效」（`bilibili.apifox.cn/api-23903138`），文章提交接口的 `list_id` 也是标量而非数组（`open.bilibili.com/doc/4/b14b77b6-8889-8c8b-2e83-17c5a4c550fb`）。将来若要放开，`series` 需改成数组，且左右按钮的归属要重新定义。
 - **进度分母取已发布篇数**（`第 3 / 4 章`），不引入计划总数。已知代价：每发一章，此前所有成员文章页面上的分母都会变。站长在 2026-10-06 的裁决里明确选择接受这一点，审计不得把它当缺陷上报。
 - **本次不覆盖 SEO 的 `<link rel="prev">` / `<link rel="next">`**。文章页从未把 `prevUrl`/`nextUrl` 传给 `Layout.astro`，可见按钮上的 `rel` 属性保留，头部 link 仍不发射。
-- **文集封面缺省时借用首位带 `image` 的成员头图，且刻意不调用 `getCover()`**。`getCover()` 的兜底是由 slug 字符合计取模选出的无关缩略图（`/images/random/tb{n}.jpg`，该目录实测 40 张），作为列表卡片缩略图无妨，但拿它当「文集封面」是让无关图冒充封面。将来若有人想把它简化回 `getCover()`，先读这一条。封面的声明位置与版式细节见 `docs/plans/2026-10-06-collection-series-spec.md`。
+- **文集封面缺省时借用首位带 `image` 的成员头图，且刻意不调用 `getCover()`**。`getCover()` 的兜底是由 slug 字符合计取模选出的无关缩略图（`/images/random/tb{n}.jpg`，该目录实测 40 张），作为列表卡片缩略图无妨，但拿它当「文集封面」是让无关图冒充封面。将来若有人想把它简化回 `getCover()`，先读这一条。封面的声明位置与版式细节见 `docs/plans/2026-10-06-collection-series-spec.md`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕。

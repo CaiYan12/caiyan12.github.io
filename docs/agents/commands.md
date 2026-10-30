@@ -45,7 +45,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 
 ## A-8 全页非预期错误门禁
 
-`pnpm smoke:console` 手工检查 `scripts/lib/smoke-pages.mjs` 的 `AUDIT_PAGES` 声明集合。先构建并启动 preview；`CONSOLE_BASE_URL` 默认 `http://localhost:4322`，必须是**不带尾斜杠的站点根**。`CONSOLE_REPORT_PATH` 默认 `output/console-smoke.json`，保存逐页原始事件、分类理由、完成数与观察窗口。实现与本地验收记录见 `docs/plans/2026-10-28-a8-console-gate.md`、[issue #108](https://github.com/CaiYan12/caiyan12.github.io/issues/108)。
+`pnpm smoke:console` 手工检查 `scripts/lib/smoke-pages.mjs` 的 `AUDIT_PAGES` 声明集合。先构建并启动 preview；`CONSOLE_BASE_URL` 默认 `http://localhost:4322`，必须是**不带尾斜杠的站点根**。`CONSOLE_REPORT_PATH` 默认 `output/console-smoke.json`，保存逐页原始事件、分类理由、完成数与观察窗口。实现与本地验收记录见 `docs/plans/2026-10-28-a8-console-gate.md`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕、[issue #108](https://github.com/CaiYan12/caiyan12.github.io/issues/108)。
 
 `pnpm test:console` 运行脱网的真实 headless Chromium fixture 测试；不依赖 preview，不访问真实第三方服务。两条命令均**不接 CI 或完整 build 链**，不能用这套测试替代既有交互烟测。
 

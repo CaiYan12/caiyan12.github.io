@@ -3,9 +3,9 @@
 - 日期：2026-09-21
 - 技能链：`design-flow` → lanes `/redesign-skill`（审计）→ `grill-with-docs`（grilling + domain-modeling）→ `to-spec`（综合成 spec）
 - 审计基线：线上 `https://caiyan12.github.io`，HEAD `2de963e`（源码与产物同版；因并发会话正推进仓库，未在共享工作区跑 build）
-- 状态：**T0–T3 四轮问答（Q1-Q50）已裁完并全部交付**（2026-09-24 收口，票册 `docs/plans/2026-09-21-ui-adjust-tickets.md` 的 23 票 = issue #18–#40 全关；上线读数见本文件「收尾」节）。下方各清单的勾选状态已于 2026-10-27 按代码实测回填——**凡标注「作废（非已实施）」的是被后续裁决推翻的条目，其余均可在代码中找到对应实现**
+- 状态：**T0–T3 四轮问答（Q1-Q50）已裁完并全部交付**（2026-09-24 收口，票册 `docs/plans/2026-09-21-ui-adjust-tickets.md`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕 的 23 票 = issue #18–#40 全关；上线读数见本文件「收尾」节）。下方各清单的勾选状态已于 2026-10-27 按代码实测回填——**凡标注「作废（非已实施）」的是被后续裁决推翻的条目，其余均可在代码中找到对应实现**
 - 本文结构：方法与证据 → T0 决策菜单与三轮裁决 → ADR/术语转正 → T1 取证与执行清单 → T2 死规则与文档失真 → T3 对比度让步与候选色 → 交付节奏
-- 正式 spec（耐久意图与验收缝隙）：`docs/plans/2026-09-21-ui-adjust-t0-t3.md`；两者冲突时以本文的实测值为准
+- 正式 spec（耐久意图与验收缝隙）：`docs/plans/2026-09-21-ui-adjust-t0-t3.md`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕；两者冲突时以本文的实测值为准
 - 问答载体：Qoder 内置对话框，两问四题 + 一问四题；本文即决策登记，落地时逐项勾选
 
 ## 方法与证据来源
@@ -138,7 +138,7 @@
 - [x] `html{font-size:13px}`（`global.css:31`，在 `@layer base` 内）实测根字号 **16px** → 该 13px 意图全站从未生效；所有 `rem` 推算随之偏。**机制已更正**：不是「无层胜过有层」，而是 Tailwind v3 把 `@layer` 内容搬到前部后，被 `:1767 html{font-size:100%}` 靠同特异性的**源顺序**压过（详见 T1「机制更正」节）。属 T2。
 - [x] AGENTS.md 关于 `.prose code{font-size:13px}`「整条被关在 `@media (max-width:680px)` 内（桌面永不生效）」的断言为**假**（实际在 `@layer components` `:58-1666` 内，`@media (max-width:768px)` 从 `:1669` 才开始；而压住它的是特异性 `(0,1,2)` vs `(0,1,1)`，与源顺序无关）。属 T2 文档修正项。
 - [x] `.header-ticker` + `@keyframes ticker-scroll` 为死代码 → 已删除：全仓（`src` / `scripts` / `public`）现零命中，活的是 `#header .text` + `initHeaderTicker()`。
-- [x] WCAG 与海洋绿的三处让步 → 已由 T3 逐项裁决：药丸六色换为 `--tag-c1..c6`（白字均 ≥4.5、两两最小 ΔE 44.45）；z-index 补标度表并修三处（skip-link 1000000 / 播放器 900000 / toast 100100）；**`#00c000` 作前景 2.46:1 一项经站长 2026-10-27 判定为接受现状、不再补辅助**——全站焦点环与正文 / 页脚 / 目录 / meta 行的 hover 下划线已构成非颜色线索；裁决记在 `docs/plans/2026-10-27-doc-todo-inventory.md` 的 A-1 条。
+- [x] WCAG 与海洋绿的三处让步 → 已由 T3 逐项裁决：药丸六色换为 `--tag-c1..c6`（白字均 ≥4.5、两两最小 ΔE 44.45）；z-index 补标度表并修三处（skip-link 1000000 / 播放器 900000 / toast 100100）；**`#00c000` 作前景 2.46:1 一项经站长 2026-10-27 判定为接受现状、不再补辅助**——全站焦点环与正文 / 页脚 / 目录 / meta 行的 hover 下划线已构成非颜色线索；裁决记在 `docs/plans/2026-10-27-doc-todo-inventory.md`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕 的 A-1 条。
 
 ---
 
@@ -218,7 +218,7 @@
 - [x] 3 `search.astro:23`、`ai-news/index.astro:23` 加 `slot="fallback"` 静态说明 ｜验收：`javaScriptEnabled:false` 的 context 里说明文字存在；开 JS 后被岛屿内容替换（不残留）　〔已落地〕
 - [x] 4 `.post-header h1` 从组合规则摘出 + `[...slug].astro` 补 `title={title}` ｜验收：`output/h1-check.mjs` 五档 `lost` 全为 0；列表卡 h2 仍单行省略　〔已落地，ADR 0003 记录「同类名下故意分叉」〕
 - [x] 5 导航 current：`Navbar` 父项 `some(isCurrent)`、`MMenu` 子项 `current`/`aria-current`、`global.css` 加 `#mmenu` 当前项上色 ｜验收：`/albums/` 上「附加功能」父项呈 current；390px 下当前项为品牌绿且绿边压得住 `1px #dfdfdf`　〔已落地，`smoke:ui` 390px 判据守着〕
-- [x] ~~6 spoiler：keydown + `aria-expanded` + `:active` 红底~~ ｜验收：纯键盘可开关　**作废（不是已实施）**：2026-09-21 预览裁决改为纯 CSS 悬停、无 role、不进 Tab 序，键盘展开是有意取舍；`docs/plans/2026-09-21-ui-adjust-tickets.md` 票 02 记有「保留 `tabindex="0"` 加一行 `.spoiler:focus` 即可补」的备查写法
+- [x] ~~6 spoiler：keydown + `aria-expanded` + `:active` 红底~~ ｜验收：纯键盘可开关　**作废（不是已实施）**：2026-09-21 预览裁决改为纯 CSS 悬停、无 role、不进 Tab 序，键盘展开是有意取舍；`docs/plans/2026-09-21-ui-adjust-tickets.md`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕 票 02 记有「保留 `tabindex="0"` 加一行 `.spoiler:focus` 即可补」的备查写法
 - [x] 7 `/domain/` 最小修正 + `headPhoto` 包 `<a>` ｜验收：`lang="zh-CN"`、viewport 无 zoom 锁、无 `*{font-family:FiraCode}`、无 `#00be00`、favicon 两处保持原值、`headPhoto` 可点回 `/` 且键盘可达　〔已落地，FiraCode 收窄到终端窗格；favicon 未动〕
 - [x] 8 两条 smoke 断言入库（标题不截断、`#mmenu` current 上色），`package.json` 加一条脚本 ｜验收：与既有 Playwright 套件同法跑通　〔已落地：`smoke:ui` 脚本已注册，两条断言在 `scripts/ui-smoke.mjs`〕
 - [x] 9 收尾：`rm -rf node_modules/.astro` → 完整 `pnpm build` → `pnpm check` → `pnpm exec prettier --check ./src`　〔已收口：见本文件「收尾」节——`pnpm check` 0 error、`prettier --check` 干净、`smoke:ui` **112/112**（节内表格原文），另有 `test:fancybox` 27/27、`smoke:nice-books` 72/72、`smoke:ai-news` 9/9〕
@@ -307,7 +307,7 @@
 - [x] T1-3 站点标题降级：`Navbar` 的 `<h1>` → 非标题元素；侧栏部件 `h3`→`h2`；文章页层级不跳级 ｜验收：每页仅 1 个 h1；`#header` 在 681/770/860/980/1100px 复查；标题视觉逐像素不变　〔已落地：`Navbar.astro` 零 `<h1>`、`WidgetLayout.astro` 出 `<h2>`、首页补 `sr-only` h1；`smoke:ui` 实测文章页大纲 `1 2… 3…` 无跳级。**四页内容级 `h1→h3` 跳级经站长 2026-09-23 裁决「不拉平」保留**〕
 - [x] T1-4 命中区：药丸仅 `<680px` 放宽、幻灯片点用 `::before` 扩热区（视觉保持 10×10）｜验收：390px 下药丸 ≥24、点命中区 ≥24 而外观不变；内联链接不动（WCAG 2.5.8 Inline 豁免）　〔已落地：`.blogtags a` 窄屏 `padding-top/bottom: 5px`（命中高 20→24，三角与圆点同步）；`.carousel-indicators li::before` 扩热区，实测量得 **15×24**——横向不做到 24 是因为原点距仅 15px，拉开会互相吞热区；站长 2026-09-21 裁决「维持 15×24，不拉开点距」〕
 - [x] T1-5 日历标签 10/9 → 11/10，四处同步 ｜验收：11px 下「12月」不被裁切、周几不外溢；53/7 与 subgrid 未动　〔已落地：`.gh-calendar-months` 与 `.gh-calendar-wd` 桌面 11px、≤680px 10px；`--gh-wd` 与 53 列模板未动〕
-- [x] ~~T1-6 原版按钮家族搬回（三态），仅作用正文真 `<button>`；`.spoiler` 保持自研~~ **作废（不是已实施）**：站长 2026-09-21 裁决走票面降级条款「只记录、不新增规则」，也不引入 `.post-context p > button, .post-context li > button` 的窄化写法，本项不产 commit；见 `docs/plans/2026-09-21-ui-adjust-tickets.md` 票 12 的作废行
+- [x] ~~T1-6 原版按钮家族搬回（三态），仅作用正文真 `<button>`；`.spoiler` 保持自研~~ **作废（不是已实施）**：站长 2026-09-21 裁决走票面降级条款「只记录、不新增规则」，也不引入 `.post-context p > button, .post-context li > button` 的窄化写法，本项不产 commit；见 `docs/plans/2026-09-21-ui-adjust-tickets.md`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕 票 12 的作废行
 - [x] T1-7 等宽数字保险：给日期/计数类加 `font-variant-numeric: tabular-nums`（实测当前为空操作）｜验收：无回归即可　〔已落地 4 处：`.archive-entry-date` / `.archive-year-count` / `#newcomment .time` / `.guestbook-meta time`，另 `.gh-calendar-stats` 在它自己文件里〕
 - [x] T1-8 三族圆角：`.photo-grid img` 10px → 5px ｜验收：图角不再超出卡片圆角　〔已落地：现为 `border-radius: 5px`，与 `.photo-grid a` 同值，注释写明「不得大于其卡片」〕
 
@@ -454,7 +454,7 @@
 | `--tag-c5` | `#4c3116` | 11.94      | 棕色刻意压成近黑：浅一档会与 c2 琥珀撞色（ΔE 44.45→16.01） |
 | `--tag-c6` | `#0077da` | 4.52       | 刚好过 AA                                                  |
 
-两两最小 ΔE 44.45（现状 41.29）。上表数值取自 `docs/plans/2026-09-21-ui-adjust-tickets.md:约620` 的票面实测，代码现值见 `src/styles/global.css:约3855-3860`。六个比值 2026-10-27 按 WCAG 相对亮度公式独立复算，与票面数字逐位相同。
+两两最小 ΔE 44.45（现状 41.29）。上表数值取自 `docs/plans/2026-09-21-ui-adjust-tickets.md:约620`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕 的票面实测，代码现值见 `src/styles/global.css:约3855-3860`。六个比值 2026-10-27 按 WCAG 相对亮度公式独立复算，与票面数字逐位相同。
 
 ---
 
