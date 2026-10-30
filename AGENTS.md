@@ -226,6 +226,10 @@ Your agent and bash are running on:
 
 工程技能（`grill-with-docs` / `to-spec` / `to-tickets` / `triage` / `wayfinder` 等）从下面三份配置读取本仓库约定，改配置即改技能行为，无需重跑 setup。
 
+### Slash 技能发现（2026-10-30）
+
+技能可用性从**当前会话宿主自身提供的技能清单或配置**查起；文件目录（如 `~/.claude/skills/`、`~/.codex/skills/`、`~/.agents/skills/` 等）只是候选来源，不把有限示例当成完整目录表。同名技能多份并存时，遵守宿主自身的解析规则及用户指定的来源，报告实际采用的路径；来源存在歧义时不静默混用。宿主无法加载但允许读取文件时，可读取明确来源的 `SKILL.md`，并准确披露加载方式。不安装、同步或修改技能。
+
 ### Issue tracker
 
 本仓库（`CaiYan12/caiyan12.github.io`）的 issue 与 spec 记在 GitHub Issues，一律用 `gh` CLI 读写；PR 不作为需求入口。见 `docs/agents/issue-tracker.md`。
@@ -243,6 +247,7 @@ Your agent and bash are running on:
 - 无法本地复核的数字（第三方图种数量、历史构建文件数）标 `UNKNOWN` 或明确写「未复核」，不得当作改动依据。
 - **本文件（`AGENTS.md`）不写会随仓库增长的计数**（ADR 份数、标签个数、模块数……）。这类现值一改就漂，而且没有 CI 看管——`lint.yml` 只跑 `prettier --check ./src ./docs`，`AGENTS.md` 不在检查范围内。需要数字时现测，别在这里留一份快照。
 - **参考材料按分支拆在 `docs/agents/`**，本文件只留指针（见「深入文档」表）。**新增约束时先判断它属于哪条分支**：只对某一类工作成立的（改样式 / 改天气 / 动组件 / 改构建 / 写文章 / 跑命令）就写进对应那份，别塞回本文件——本文件只有 32KB 的注入预算，塞满了后面 87% 的内容会**永远进不了任何 agent 的上下文**（2026-10-27 实测：搬迁前本文件 247KB，运行时只注入前 32KB，样式/天气胶囊/大坑警告三节全在被截掉的那一半里）。
+- **写交接文档、台账或报告里的 git 状态与提交区间时**（远端状态分哪几档、历史区间怎么落死）→ `docs/agents/commands.md` 的「git 远端状态与提交区间的表述纪律」节（2026-10-30 立）。
 
 ### Domain docs
 
@@ -275,6 +280,8 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 命令名与参数以 `package.json` 的 scripts 为准（**唯一真源**）。每条命令的用途、前置条件、env 变量形态与已知坑见 `docs/agents/commands.md` —— 要跑烟测/单测/构建期取数/票册自检时先读那一份。
 
 最常用的四个：`pnpm install` / `pnpm dev` / `pnpm build` / `pnpm check`。
+
+提交时有本地 prettier 门禁（只查暂存内容，`git commit --no-verify` 可单次绕过）：启用方式、worktree 影响与边界见 `.githooks/README.md`。
 
 两条不做就会白跑的事实：
 

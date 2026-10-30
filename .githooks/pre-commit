@@ -1,0 +1,6 @@
+#!/bin/sh
+# Thin entry point: Git executes this file; it only hands off to the Node script.
+# Scope, bypass and boundaries: see .githooks/README.md.
+dir="$(dirname "$0")"
+[ -f "$dir/pre-commit.mjs" ] || dir=".githooks"
+exec node "$dir/pre-commit.mjs"

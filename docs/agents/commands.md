@@ -78,3 +78,16 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
     - **`load()` 之后 `p.sha` 已被重算过**，所以想看原始摘要只能读 `index.json` 里 capture 时写的那份。
 
 OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，本机网络抖动会让 `astro build` 以 `Error: No fonts are loaded. At least one font is required to calculate the layout.` 失败（日志里伴随 `host: 'fonts.googleapis.com'` 的连接错误对象）。这不是代码问题：先用 `curl -o /dev/null -w "%{http_code}" https://fonts.googleapis.com/css2?family=Noto+Sans+SC` 确认连通性，再重跑 `pnpm build` 即可（2026-09-20 实测一次抖动、随后两次全绿）。
+
+## git 远端状态与提交区间的表述纪律（2026-10-30 立）
+
+> 源自两次真实纠正：交接文档曾把「`HEAD` == `origin/main`」写成对 GitHub 远端当前 SHA 的确认，实际只核对了本地跟踪引用；台账 §3.3 曾把 `6852f88..HEAD` 写进历史统计，HEAD 前进后区间漂移（叙述为 6 笔提交，实测 5 笔）。
+
+- **述远端状态分三档，各附查询时点**：① 本地跟踪引用 `origin/main`（未 fetch 时的只读近似）；② fetch 更新后的本地引用；③ 对远端的直接查询（`gh api` / `gh run list` 等）。三档都只是查询时点的事实，不构成永久保证；写进文档时注明当时依据哪一档。
+- **述历史提交区间用明确起止 SHA**（如 `6852f88..d67689b`）：`HEAD` 会随新提交前进，凡需要事后复核的区间统计，起止都必须落死在 SHA 上。
+
+## 证据目录清理的记录约定（2026-10-30 立）
+
+> U-2 核验时发现 `output/` 在 2026-10-27 与 10-30 之间发生过无记录变更，`fp-t3-*` 等历史证据产物消失且成因不可追溯——本节防复发。
+
+清理（删除、清空、迁移）`output/` 等证据目录时记录四件事：操作**时间**、**范围**（文件清单——条目数不能替代清单）、**归档位置**（如有）、**结果**（完成 / 部分 / 失败）。有工作日志则记录于日志；存在相关交接时同步必要信息，不要求为每次清理新建交接文件。条目数也不能据此推断未知历史。不新增快照脚本，不追补猜测性的旧记录。
