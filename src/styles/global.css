@@ -1032,6 +1032,96 @@
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   }
 
+  /* ---------- 首页礼物气泡按钮（QQBubbleView 贝塞尔轨迹移植） ----------
+     层级：气泡舞台 0 < 按钮 1（均在 .gift-fab 的 999 上下文内）
+     < 点击文字 9999 < 爆炸 canvas（int32 上限），保证站点两种点击特效压在元件之上。
+     舞台底边与按钮顶边重合；气泡起点由 JS 按按钮矩形实时计算。 */
+  .gift-fab {
+    /* 与 .blogtags 的 --tag-cN 同值：礼物气泡复用站点药丸色板，不引入新色相 */
+    --gift-red: #ee0028;
+    --gift-amber: #a26b00;
+    --gift-green: #008944;
+    --gift-purple: #b12bff;
+    --gift-blue: #0077da;
+    position: fixed;
+    right: 24px;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    z-index: 999;
+    pointer-events: none;
+  }
+  .gift-fab-btn {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--colorful-green) 90%, #000);
+    color: #fff;
+    font-size: 24px;
+    line-height: 1;
+    cursor: var(--cursor-link);
+    box-shadow:
+      0 6px 16px color-mix(in srgb, var(--colorful-green) 38%, transparent),
+      0 2px 4px rgba(0, 0, 0, 0.16);
+    transition:
+      transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
+      box-shadow 0.18s;
+    pointer-events: auto;
+  }
+  .gift-fab-btn:hover {
+    transform: scale(1.06);
+  }
+  .gift-fab-btn:active {
+    transform: scale(0.94);
+  }
+  .gift-fab-btn:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+  }
+  .gift-fab-stage {
+    position: fixed;
+    right: 24px;
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    z-index: 0;
+    width: 240px;
+    height: 192px; /* 32px 底边距 + 160px 上浮行程，与点击文字同高 */
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .gift-bubble {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+    will-change: transform, opacity;
+    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.18));
+  }
+
+  @media (max-width: 720px) {
+    .gift-fab {
+      right: 14px;
+      bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+    }
+    .gift-fab-stage {
+      right: 14px;
+      bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+      width: 180px;
+      height: 192px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .gift-fab-btn {
+      transition: none;
+    }
+  }
+
   /* ---------- loading 动画（对应 .colorful_loading） ---------- */
   .colorful_loading_frame {
     position: fixed;

@@ -1,7 +1,7 @@
 /**
  * 主站运行时装配（对应原主题 js/global-pjax.js 的静态化版本）。
  *
- * 功能块自结构加深 T6/T7 起逐块迁往 `src/utils/runtime/`。已迁模块共 **27** 个
+ * 功能块自结构加深 T6/T7 起逐块迁往 `src/utils/runtime/`。已迁模块共 **28** 个
  * （每行一项，模块名与文件名一致，便于与目录机械核对）：
  *
  *   quote-band  liquid-glass  article-toc  nav-state  reduced-motion
@@ -9,7 +9,8 @@
  *   pagination-jump  fancybox  nav-highlight  reading-progress
  *   anchor-smooth-scroll  copy-link  back-to-top  dblclick-scroll
  *   paper-handwriting  skills-donut-tooltip  newcomment-shuffle  click-effect
- *   canvas-boom  visibility-title  lqip-fade  protected-email  toast-trigger
+ *   canvas-boom  gift-bubble  visibility-title  lqip-fade  protected-email
+ *   toast-trigger
  *
  * 本文件只保留**装配表**、**生命周期声明**与 3 个 page-load 辅助——全部功能块的
  * 家谱与两条生命周期（初始装载 / swup after-swap 重跑）都由文件尾的 runtimeTable
@@ -41,6 +42,7 @@ import { initPaperHandwriting } from "./runtime/paper-handwriting";
 import { initNewCommentShuffle } from "./runtime/newcomment-shuffle";
 import { initClickEffect } from "./runtime/click-effect";
 import { initCanvasBoomEffect } from "./runtime/canvas-boom";
+import { initGiftBubble } from "./runtime/gift-bubble";
 import { initVisibilityTitle } from "./runtime/visibility-title";
 import { initLqipFade } from "./runtime/lqip-fade";
 import { initProtectedEmail } from "./runtime/protected-email";
@@ -111,6 +113,7 @@ const runtimeTable: RuntimeEntry[] = [
 	{ init: initLqipFade, swap: 4 },
 	{ init: initClickEffect },
 	{ init: initCanvasBoomEffect },
+	{ init: initGiftBubble },
 	{ init: initVisibilityTitle },
 	{ init: initCopyLink },
 	{ init: initToastTrigger },

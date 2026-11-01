@@ -3,6 +3,7 @@ import MainGridLayout from "../layouts/MainGridLayout.astro";
 import PostCard from "../components/layout/PostCard.astro";
 import Pagination from "../components/layout/Pagination.astro";
 import Slideshow from "../components/control/Slideshow.astro";
+import GiftBubbleButton from "../components/control/GiftBubbleButton.astro";
 import { getCollection } from "astro:content";
 import { getSortedPosts, isPublicPost } from "../utils/content-utils";
 import { getPaginationUrl } from "../utils/pagination";
@@ -53,4 +54,6 @@ const pagePosts = posts.slice(0, siteConfig.postsPerPage);
 		urlTemplate={getPaginationUrl(rootUrl, "{n}")}
 		firstPageUrl={rootUrl}
 	/>
+
+	<GiftBubbleButton />
 </MainGridLayout>

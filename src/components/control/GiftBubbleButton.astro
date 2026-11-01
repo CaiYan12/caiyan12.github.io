@@ -1,0 +1,23 @@
+---
+/**
+ * 首页礼物气泡按钮（Yasic/QQBubbleView 的三阶贝塞尔上升轨迹网页移植）。
+ *
+ * 本文件只负责 DOM：按钮 + 气泡舞台。
+ * 点击委托与动画在 src/utils/runtime/gift-bubble.ts；样式在 global.css 的
+ * 「首页礼物气泡按钮」一节，与站点 token 同源。
+ *
+ * 只在 src/pages/index.astro 挂载，因此只在 `/` 出现。
+ */
+---
+
+<div class="gift-fab">
+	<div class="gift-fab-stage" aria-hidden="true"></div>
+	<button
+		class="gift-fab-btn"
+		type="button"
+		title="送一份礼物"
+		aria-label="送一份礼物"
+	>
+		<i class="fa fa-gift" aria-hidden="true"></i>
+	</button>
+</div>
