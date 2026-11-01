@@ -1,0 +1,65 @@
+---
+/**
+ * 拉绳壁纸挂件（spec #127 / 票 #128 起）。
+ *
+ * 本文件只负责结构与局部视觉：原生按钮 + 内联 SVG 的绳与 T 恤 + 状态播报区。
+ * 交互（下拉拖拽、换图、交叉淡入）在 src/utils/runtime/wallpaper-pull.ts；
+ * 样式在 global.css 的「拉绳壁纸挂件」一节，色值一律取自站内既有 token。
+ *
+ * 挂在 Layout.astro、Swup 容器之外，随 pagefindReady() 整页初始化一次。
+ * 定位口径见 GLOSSARY.md「拉绳壁纸挂件」：中心线对齐主导航右缘、
+ * 衣服底边对齐桌面头部标题顶边；被裁时由运行时主动左移。
+ */
+
+<div class="wpull" data-wallpaper-pull>
+	<button class="wpull__grab" type="button" aria-label="拉一下，换一张">
+		{/* 绳与衣服整体随拉伸位移；绳子只是视觉，不捕获指针 */}
+		<svg
+			class="wpull__art"
+			aria-hidden="true"
+			focusable="false"
+			viewBox="0 0 130 175"
+		>
+			{/* 渐变彩绳：色族取自 T 恤描边的蓝紫系 */}
+			<defs>
+				<linearGradient id="wpull-rope" x1="0" y1="0" x2="0" y2="1">
+					<stop offset="0" stop-color="#b39ddb"></stop>
+					<stop offset="0.5" stop-color="#7e57c2"></stop>
+					<stop offset="1" stop-color="#4527a0"></stop>
+				</linearGradient>
+			</defs>
+			<line
+				class="wpull__rope"
+				x1="65"
+				y1="0"
+				x2="65"
+				y2="76"
+				stroke="url(#wpull-rope)"
+				stroke-width="2"
+			></line>
+			{/* 衣服：白色短袖 + 蓝紫描边 + 红爱心，轮廓参考 icon.png 的矢量形状 */}
+			<g class="wpull__shirt">
+				<path
+					class="wpull__shirt-fill"
+					d="M44 76 L50 74 Q60 79 70 74 L76 76 L97 93 L88 105 L79 101 L79 152 Q65 158 51 152 L51 101 L42 105 L33 93 Z"
+					fill="#fffefb"
+					stroke="#5c6bc0"
+					stroke-width="3"
+					stroke-linejoin="round"
+				></path>
+				<path
+					class="wpull__heart"
+					d="M65 105 Q59 96 53 100 Q48 104 51 111 Q55 120 65 128 Q75 120 79 111 Q82 104 77 100 Q71 96 65 105 Z"
+					fill="#f5233a"
+				></path>
+			</g>
+		</svg>
+	</button>
+	{/* hover / 聚焦时的轻提示；触摸设备首次自动出现，由运行时控制 */}
+	<span class="wpull__hint" aria-hidden="true">
+		拉一下，换一张
+	</span>
+	{/* 结果播报：换好了 / 没得换 / 加载失败 */}
+	<span class="wpull__live" role="status" aria-live="polite"></span>
+</div>;
+---

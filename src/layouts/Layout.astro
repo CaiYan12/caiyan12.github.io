@@ -14,6 +14,8 @@ import "../styles/markdown-extended.css";
 import "../styles/font-awesome.css";
 import Pio from "../components/widget/Pio.svelte";
 import Sakura from "../components/control/Sakura.astro";
+// 拉绳壁纸挂件（spec #127）：视口右上角常驻，下拉换背景壁纸
+import WallpaperPull from "../components/control/WallpaperPull.astro";
 import {
 	backgroundConfig,
 	myhkwPlayerConfig,
@@ -171,6 +173,9 @@ const myhkwScriptAttributes: Record<string, string> = {
 			</defs>
 		</svg>
 		<Sakura />
+
+		{/* 拉绳壁纸挂件：与背景层同在 Swup 容器之外，切页不重建 */}
+		<WallpaperPull />
 
 		<slot />
 

@@ -7632,3 +7632,125 @@ body,
 #sidebar .article-toc li.current a {
   color: var(--colorful-green-accessible);
 }
+
+/* ---------- 拉绳壁纸挂件（spec #127） ----------
+
+   定位口径（GLOSSARY.md「拉绳壁纸挂件」）：中心线对齐主导航右缘、衣服底边
+   对齐桌面头部标题顶边。两个锚点都不写死像素——
+   · 水平：运行时按 #head-nav 的实际 rect 算，--wpull-left 由 initWallpaperPull 下发；
+     这里只给兜底值（导航 1100 居中时右缘 = 视口中心 + 550）。
+   · 垂直：绳子从视口顶边（top:0）垂到退回 #header .box 的 padding 顶沿，
+     即 --wpull-drop，与 .site-title 顶边齐平；由运行时按实际盒高下发。
+
+   层级：高于 #head-nav(100)、低于 #mmenu(200) 与 #mmenu-backdrop(199)，
+   所以打开移动端菜单时菜单仍在最上层。
+
+   颜色全部取自站内既有 token / T 恤描边色族：不引入第四套配色。 */
+
+.wpull {
+  position: fixed;
+  top: 0;
+  /* 运行时下发 --wpull-left（中心线 x）；兜底值对应 1440 视口、导航 1100 居中 */
+  left: var(--wpull-left, calc(50% + 550px));
+  z-index: 105;
+  /* 组件盒宽大于衣服本体，为 hover 提示浮出与回弹留余量 */
+  width: 130px;
+  /* 盒子以自身中心对齐锚点，故整体左移半宽 */
+  translate: -50% 0;
+  /* 盒子本身是惰性的：只有衣服按钮捕获指针，绳与空白不吞点击 */
+  pointer-events: none;
+}
+
+.wpull__grab {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  /* 站点既有自定义光标 token（smoke:ui 的手型负扫按它判；裸写 pointer 会被
+     a,button 的 (0,0,1) 与类的 (0,1,0) 对比反转，见 styles.md「自定义光标」条） */
+  cursor: var(--cursor-link);
+  /* 只有衣服可拖：触摸行为只压在这一块，页面其余部分照常滚动 */
+  touch-action: none;
+  pointer-events: auto;
+  /* 拖动时不误选文字 */
+  user-select: none;
+  -webkit-user-select: none;
+  /* 静态：衣服整体下移 --wpull-drop，使衣服底边落到标题顶边；
+     拉伸时叠加 --wpull-pull，两者都只动 transform，不触发布局 */
+  transform: translateY(calc(var(--wpull-drop, 0px) + var(--wpull-pull, 0px)));
+}
+
+.wpull__art {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* 绳尾要长过衣服才能接上，overflow 必须放行 */
+  overflow: visible;
+}
+
+/* 绳只在垂直方向随 drop 拉长：transform 不改 viewBox、不重算路径。
+   缩放原点是绳顶（y=0），所以变长时下端向下延伸、上端钉在视口顶边。 */
+.wpull__rope {
+  transform-origin: 65px 0;
+  transform: scaleY(var(--wpull-rope-scale, 1));
+}
+
+/* 确认环：键盘聚焦时可见（不依赖 hover） */
+.wpull__grab:focus-visible {
+  outline: 2px solid var(--colorful-green);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+
+.wpull__hint {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 8px);
+  z-index: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(92, 107, 192, 0.28);
+  background: #fff;
+  color: var(--colorful-text-secondary);
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  /* 仅淡入淡出，不做位移（票 #133） */
+  opacity: 0;
+  transition: opacity 160ms var(--ease-out);
+  translate: 0 -50%;
+  pointer-events: none;
+}
+
+/* hover 与键盘聚焦都显示；粗指针上由运行时挂 .is-hinting 显示约 3 秒 */
+.wpull__grab:hover ~ .wpull__hint,
+.wpull__grab:focus-visible ~ .wpull__hint,
+.wpull.is-hinting .wpull__hint {
+  opacity: 1;
+}
+
+/* 结果播报区：只供读屏，不占视觉空间（沿用站点既有的视觉隐藏手法） */
+.wpull__live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 宽度窄到背景层被整体隐藏的那一档（global.css 既有 ≤680px 规则：
+   .bg-image / .bg-image-pattern 均 display:none !important），
+   此时页面根本没有壁纸可换，挂件一并隐藏。 */
+@media screen and (max-width: 680px) {
+  .wpull {
+    display: none !important;
+  }
+}

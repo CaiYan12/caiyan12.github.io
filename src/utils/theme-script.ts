@@ -34,6 +34,8 @@ import { initDblClickScroll } from "./runtime/dblclick-scroll";
 import { loadKatexCss } from "./runtime/katex";
 import { renderMermaid } from "./runtime/mermaid";
 import { initRandomBackground } from "./runtime/random-background";
+// 拉绳壁纸挂件（spec #127）：容器外布局级，只随 pagefindReady 跑一次，无 swap 号
+import { initWallpaperPull } from "./runtime/wallpaper-pull";
 import { initMMenu } from "./runtime/mobile-menu";
 import { initHeaderTicker } from "./runtime/header-ticker";
 import { initPaginationJump } from "./runtime/pagination-jump";
@@ -103,6 +105,8 @@ type RuntimeEntry = { init: () => void; swap?: number };
 
 const runtimeTable: RuntimeEntry[] = [
 	{ init: initRandomBackground },
+	// 挂件在 Swup 容器外、切页不重建，故不进 swap 序（与 random-background 同档）
+	{ init: initWallpaperPull },
 	{ init: syncNavHighlight, swap: 1 },
 	{ init: initReadingProgress, swap: 2 },
 	{ init: initBackToTop },
