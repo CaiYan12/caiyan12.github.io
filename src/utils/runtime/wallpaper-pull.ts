@@ -19,6 +19,12 @@
  */
 
 import { selectNextWallpaper } from "../wallpaper-candidates";
+import {
+	isDragStarted,
+	isPullPastThreshold,
+	resolvePull,
+} from "../wallpaper-pull-drag";
+import { prefersReducedMotion } from "./reduced-motion";
 
 const HOST_SELECTOR = "[data-wallpaper-pull]";
 /** 挂件里唯一可聚焦、可点击的按钮（T1 输出） */
@@ -46,6 +52,16 @@ const LOAD_TIMEOUT_MS = 12000;
  * 浏览器补发的 click 与 pointerup 在同一任务里，差值只有几毫秒。
  */
 const CLICK_AFTER_DRAG_MS = 250;
+
+/**
+ * 回弹时长（毫秒）——必须与 global.css 里 `.is-settling` 那段 transform
+ * 过渡的时长一致；改一处就要改另一处。
+ *
+ * 320ms 配 `--ease-out`（减速曲线、无过冲）是「弹回原位」而不是「弹簧」：
+ * 弹簧会来回抖动，正是票面点名要避免的。手感上比单击反馈略长一点，
+ * 让「松手 → 回去」有可感知的收束感，但不至于让人等。
+ */
+const SETTLE_MS = 320;
 
 /** 三类结果播报文本：必须各不相同（票面硬约束） */
 const ANNOUNCEMENT = {
@@ -128,7 +144,7 @@ function applyPlacement(host: HTMLElement) {
 		widgetW,
 		viewportW,
 	});
-	if (!placement) return;
+	if (!placement) return null;
 	host.style.setProperty("--wpull-left", `${placement.left}px`);
 	host.style.setProperty("--wpull-drop", `${placement.drop}px`);
 	// 绳在 SVG 里画到 ROPE_END，衣服整体下移 drop，绳必须同步伸长才接得上：
@@ -137,6 +153,8 @@ function applyPlacement(host: HTMLElement) {
 		"--wpull-rope-scale",
 		String((ROPE_END + placement.drop) / ROPE_END),
 	);
+	// 返回值供拖动把「伸展量」当成额外的 drop 叠进绳长（见 writePull）
+	return placement;
 }
 
 /**
@@ -199,7 +217,8 @@ export function initWallpaperPull() {
 	// 收窄后固定成常量别名：下面的闭包（requestChange 等）里 TS 不再认为它可能为 null
 	const host: HTMLElement = found;
 
-	applyPlacement(host);
+	/** 静止位姿下衣服要下移多少（T1 的 --wpull-drop）；拖动时叠在它上面 */
+	let dropPx = Math.max(0, applyPlacement(host)?.drop ?? 0);
 
 	const button = host.querySelector<HTMLButtonElement>(BUTTON_SELECTOR);
 	const live = host.querySelector<HTMLElement>(LIVE_SELECTOR);
@@ -273,7 +292,203 @@ export function initWallpaperPull() {
 		}
 	}
 
+	// ---------- T3：下拉拖拽与回弹 ----------
+	//
+	// 状态机只有三档：空闲 / 拖动中 / 收尾中（回弹过渡里）。
+	// 指针事件全部挂在**衣服按钮**上（绳子在 SVG 里，从不挂监听、从不捕获指针）；
+	// pointerup / pointercancel / 捕获丢失 / Escape / 失焦五路共用 releasePointer()。
+
+	/** 当前按下的指针 id；null 表示没有进行中的手势（也排除多指混入） */
+	let activePointerId: number | null = null;
+	/** 是否已越过死区、真的进入拖动状态（死区内松手 = 单击，不是拖动） */
+	let dragging = false;
+	/** 起始坐标：只读一次，之后每个 pointermove 只写 transform 变量 */
+	let startX = 0;
+	let startY = 0;
+	/** 本帧最新一次算出来的伸展量；rAF 合帧后才写进 CSS */
+	let latestPull = 0;
+	/** 已写进 CSS 的伸展量，供回弹时判断要不要处理 */
+	let appliedPull = 0;
+	let frame = 0;
+	let settleTimer: ReturnType<typeof setTimeout> | null = null;
+
+	/**
+	 * 把伸展量写进两个 CSS 变量：衣服位移 + 绳子同步伸长。
+	 *
+	 * 减少动态时**一律写 0**：跟手位移本身就是位移，正是 vestibular 风险源。
+	 * 手势仍照常被识别、阈值照常判定——只是衣服不跟着走。
+	 * （完整降级——含单击脚本动画、交叉淡入——留给 T7。）
+	 */
+	function writePull(pull: number) {
+		const effective = prefersReducedMotion() ? 0 : pull;
+		appliedPull = effective;
+		host.style.setProperty("--wpull-pull", `${effective}px`);
+		// 绳子必须和衣服一起变长，否则中间断开：以「静止 drop + 本次伸展」重算 scaleY
+		host.style.setProperty(
+			"--wpull-rope-scale",
+			String((ROPE_END + dropPx + effective) / ROPE_END),
+		);
+	}
+
+	/** 合帧写变量：每个 pointermove 只更新 latestPull，一帧最多一次样式写入 */
+	function scheduleWrite() {
+		if (frame) return;
+		frame = requestAnimationFrame(() => {
+			frame = 0;
+			writePull(latestPull);
+		});
+	}
+
+	function cancelFrame() {
+		if (!frame) return;
+		cancelAnimationFrame(frame);
+		frame = 0;
+	}
+
+	/** 清掉收尾计时器（回弹被新一次按下打断时用） */
+	function cancelSettle() {
+		if (settleTimer === null) return;
+		clearTimeout(settleTimer);
+		settleTimer = null;
+	}
+
+	/**
+	 * 收尾：复位挂件、释放指针。**五路（pointerup / pointercancel /
+	 * lostpointercapture / Escape / 失焦）共用这一个函数**。
+	 *
+	 * @param opts.change  本次收尾要不要判定阈值并换图。
+	 *                     pointercancel / 捕获丢失 / Escape / 失焦 一律 false——
+	 *                     被打断的手势不该产生结果。
+	 * @param opts.timeStamp 用于 noteDragRelease 的时间戳（抑制补发的 click）
+	 */
+	function releasePointer(opts: {
+		change: boolean;
+		timeStamp: number;
+		pointerId?: number;
+	}) {
+		cancelFrame();
+
+		// 只处理我们真正在跟的那根指针；别的指针（第二根手指）抬起不该收掉手势
+		if (
+			opts.pointerId !== undefined &&
+			opts.pointerId !== activePointerId
+		) {
+			return;
+		}
+		const wasDragging = dragging;
+		const pull = latestPull;
+		activePointerId = null;
+		dragging = false;
+		delete host.dataset.dragging;
+
+		const shouldChange =
+			opts.change && wasDragging && isPullPastThreshold(pull);
+
+		// 先按当前值落地，再进回弹：否则被合帧吞掉的那几像素会跳变
+		writePull(pull);
+
+		// 真正拖动过才记时刻：单击（死区内没进入拖动）不该抑制随后的 click
+		if (wasDragging) noteDragRelease(host, opts.timeStamp);
+
+		if (shouldChange) {
+			// T3 只管「拉到阈值后换图」；交叉淡入与失败反馈分别留给 T4 / T5
+			void requestChange();
+		}
+
+		settle();
+	}
+
+	/** 回弹到静止位姿。reduced-motion 下直接归位、不留过渡（T7 会补全降级）。 */
+	function settle() {
+		cancelSettle();
+		if (prefersReducedMotion()) {
+			// 最小降级：不做跟手位移的余韵，直接回原位（T7 补全完整降级）
+			host.classList.remove("is-settling");
+			latestPull = 0;
+			writePull(0);
+			return;
+		}
+		host.classList.add("is-settling");
+		latestPull = 0;
+		writePull(0);
+		settleTimer = setTimeout(() => {
+			settleTimer = null;
+			host.classList.remove("is-settling");
+		}, SETTLE_MS);
+	}
+
 	if (button) {
+		button.addEventListener("pointerdown", (event) => {
+			// 只跟上主指针按下；已有手势进行中时忽略（多指不叠加）
+			if (activePointerId !== null) return;
+			if (event.button !== 0 && event.pointerType === "mouse") return;
+
+			cancelSettle();
+			// 回弹被打断：先摘掉过渡类，否则新的跟手位移会被过渡拖慢
+			host.classList.remove("is-settling");
+
+			activePointerId = event.pointerId;
+			dragging = false;
+			// 起始坐标只读这一次；之后每个 move 只做减法 + 写变量
+			startX = event.clientX;
+			startY = event.clientY;
+			latestPull = 0;
+
+			// 捕获指针：指针滑出衣服范围后仍然收到 move/up（票面硬约束）。
+			// 捕获失败（元素已脱离文档等）不阻止后续逻辑。
+			try {
+				button.setPointerCapture(event.pointerId);
+			} catch {
+				// 某些环境（合成事件、旧内核）不支持捕获，继续走普通监听
+			}
+		});
+
+		button.addEventListener("pointermove", (event) => {
+			if (event.pointerId !== activePointerId) return;
+
+			const dx = event.clientX - startX;
+			const dy = event.clientY - startY;
+
+			if (!dragging) {
+				// 死区内：不写任何变量，视觉上完全静止，避免手抖被当成拖动
+				if (!isDragStarted(dx, dy)) return;
+				dragging = true;
+				host.dataset.dragging = "true";
+			}
+
+			// 只吃向下的有效位移（向上 / 横向由 resolvePull 返回 0）
+			latestPull = resolvePull({ dx, dy }).pull;
+			scheduleWrite();
+		});
+
+		button.addEventListener("pointerup", (event) => {
+			releasePointer({
+				change: true,
+				timeStamp: event.timeStamp,
+				pointerId: event.pointerId,
+			});
+		});
+
+		button.addEventListener("pointercancel", (event) => {
+			// 系统手势 / 滚动抢走指针：安全复位，不换图
+			releasePointer({
+				change: false,
+				timeStamp: event.timeStamp,
+				pointerId: event.pointerId,
+			});
+		});
+
+		button.addEventListener("lostpointercapture", (event) => {
+			// 捕获被浏览器收回（元素移除、指针被其它元素拿走）：同样安全复位
+			if (
+				activePointerId === null ||
+				event.pointerId !== activePointerId
+			) {
+				return;
+			}
+			releasePointer({ change: false, timeStamp: event.timeStamp });
+		});
+
 		button.addEventListener("click", (event) => {
 			// 指针单击（detail >= 1）若紧跟在拖动释放之后，是浏览器补发的那一次——
 			// 抑制它，避免一次手势换两次图。键盘产生的合成点击 detail === 0，
@@ -299,9 +514,36 @@ export function initWallpaperPull() {
 		});
 	}
 
+	/** Escape 与失焦共用的取消入口：中途放弃，不换图 */
+	function abortGesture(timeStamp: number) {
+		if (activePointerId === null) return;
+		releasePointer({ change: false, timeStamp });
+	}
+
+	// Escape：任何时候按都能放弃这次拉动（票面硬约束）。
+	// 挂 document 而不是按钮上，因为拖动中焦点可能在别处。
+	document.addEventListener("keydown", (event) => {
+		if (event.key !== "Escape" && event.key !== "Esc") return;
+		abortGesture(event.timeStamp);
+	});
+
+	// 页面失焦（切标签页 / 切窗口）：安全复位。passive：纯复位，不阻默认行为。
+	//
+	// 时间戳必须用 `performance.now()`：它与 `event.timeStamp` 同属一个
+	// time origin，相减才有意义。改用 `Date.now()` 会得到约 -1.7e12 的差值，
+	// 于是「差值 < 抑制窗口」永远成立 —— 一次失焦就把此后所有单击永久吞掉。
+	window.addEventListener("blur", () => abortGesture(performance.now()), {
+		passive: true,
+	});
+
 	// 视口变化时重算（标题盒高、导航宽度都随断点变化）。
 	// passive：纯读取，不与滚动竞争。
-	const reflow = () => applyPlacement(host);
+	const reflow = () => {
+		// 静止 drop 变了，绳长的基准也要跟着变（拖动中用 latestPull 叠加）。
+		const placement = applyPlacement(host);
+		if (placement) dropPx = Math.max(0, placement.drop);
+		writePull(appliedPull);
+	};
 	let pending = 0;
 	window.addEventListener(
 		"resize",

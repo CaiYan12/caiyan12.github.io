@@ -7698,6 +7698,27 @@ body,
   transform: scaleY(var(--wpull-rope-scale, 1));
 }
 
+/* 回弹（票 #130）：拖动结束时由运行时挂 .is-settling，回去的过程才走过渡。
+   拖动中**不能**有这条过渡——每个 pointermove 都写变量，过渡会把跟手拖成橡皮糖。
+   曲线用既有 --ease-out（减速无过冲），所以是「弹回」而不是「弹簧」：
+   弹簧会来回抖动，正是票面点名要避免的。时长与 runtime 的 SETTLE_MS 一致。 */
+.wpull.is-settling .wpull__grab {
+  transition: transform 320ms var(--ease-out);
+}
+
+/* 绳的 scaleY 也要跟着回去，否则衣服回去了、绳还挂在下面 */
+.wpull.is-settling .wpull__rope {
+  transition: transform 320ms var(--ease-out);
+}
+
+/* 减少动态：不做弹性回弹（完整降级与 T7 一起补，这里先保证拖动路径不抖） */
+@media (prefers-reduced-motion: reduce) {
+  .wpull.is-settling .wpull__grab,
+  .wpull.is-settling .wpull__rope {
+    transition: none;
+  }
+}
+
 /* 确认环：键盘聚焦时可见（不依赖 hover） */
 .wpull__grab:focus-visible {
   outline: 2px solid var(--colorful-green);

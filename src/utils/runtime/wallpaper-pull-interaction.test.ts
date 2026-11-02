@@ -13,6 +13,7 @@
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { initWallpaperPull, noteDragRelease } from "./wallpaper-pull";
+import { PULL_THRESHOLD } from "../wallpaper-pull-drag";
 
 const BASE = "https://example.test/";
 const BACKGROUNDS = [
@@ -29,6 +30,12 @@ type FakeEventInit = {
 	timeStamp?: number;
 	key?: string;
 	repeat?: boolean;
+	// T3 的指针字段
+	pointerId?: number;
+	clientX?: number;
+	clientY?: number;
+	button?: number;
+	pointerType?: string;
 };
 
 type FakeEvent = {
@@ -37,6 +44,11 @@ type FakeEvent = {
 	timeStamp: number;
 	key?: string;
 	repeat: boolean;
+	pointerId: number;
+	clientX: number;
+	clientY: number;
+	button: number;
+	pointerType: string;
 	defaultPrevented: boolean;
 	preventDefault: () => void;
 };
@@ -58,6 +70,11 @@ function makeEventTarget() {
 				timeStamp: init.timeStamp ?? 0,
 				key: init.key,
 				repeat: init.repeat ?? false,
+				pointerId: init.pointerId ?? 1,
+				clientX: init.clientX ?? 0,
+				clientY: init.clientY ?? 0,
+				button: init.button ?? 0,
+				pointerType: init.pointerType ?? "mouse",
 				defaultPrevented: false,
 				preventDefault: () => {
 					event.defaultPrevented = true;
@@ -95,6 +112,9 @@ type Harness = {
 };
 
 let harness: Harness | null = null;
+/** document / window 上的监听目标：Escape 与失焦要能被测试派发到 */
+let docEvents: ReturnType<typeof makeEventTarget> | null = null;
+let winEvents: ReturnType<typeof makeEventTarget> | null = null;
 
 function currentHarness(): Harness {
 	assert.ok(harness, "harness 必须先建好");
@@ -109,11 +129,27 @@ function buildHarness(
 		options.current ?? (pool.length > 0 ? abs(pool[0]!) : "");
 
 	const button = makeEventTarget();
+	// 指针捕获是 T3 的必需调用；桩只需可调用，不模拟捕获语义
+	const buttonWithCapture = Object.assign(button, {
+		setPointerCapture: () => {},
+		releasePointerCapture: () => {},
+	});
 	const live = { textContent: "" };
 	const hostTarget = makeEventTarget();
 	const host = Object.assign(hostTarget, {
 		dataset: {} as Record<string, string | undefined>,
 		offsetWidth: 130,
+		// T3 的跟手位移靠 .is-settling 类切换过渡，桩要能收 classList
+		classList: {
+			added: [] as string[],
+			removed: [] as string[],
+			add(this: { added: string[] }, name: string) {
+				this.added.push(name);
+			},
+			remove(this: { removed: string[] }, name: string) {
+				this.removed.push(name);
+			},
+		},
 		style: {
 			props: {} as Record<string, string>,
 			setProperty(name: string, value: string) {
@@ -121,7 +157,8 @@ function buildHarness(
 			},
 		},
 		querySelector(selector: string) {
-			if (selector === ".wpull__grab") return button as unknown;
+			if (selector === ".wpull__grab")
+				return buttonWithCapture as unknown;
 			if (selector === ".wpull__live") return live as unknown;
 			throw new Error(`unexpected selector: ${selector}`);
 		},
@@ -145,9 +182,14 @@ function buildHarness(
 /** 在全局上挂出运行时需要的那些东西（每个用例重装，避免跨用例串味） */
 function installGlobals() {
 	const g = globalThis as unknown as Record<string, unknown>;
+	const documentTarget = makeEventTarget();
+	// Escape 与失焦的取消入口挂在 document / window 上，测试要能派发到它们
+	docEvents = documentTarget;
+	winEvents = makeEventTarget();
 	g.document = {
 		baseURI: BASE,
 		documentElement: { clientWidth: 1440 },
+		addEventListener: documentTarget.addEventListener,
 		querySelector(selector: string) {
 			switch (selector) {
 				case "[data-wallpaper-pull]":
@@ -163,8 +205,14 @@ function installGlobals() {
 			}
 		},
 	};
-	g.window = { addEventListener: () => {} };
+	g.window = {
+		addEventListener: winEvents.addEventListener,
+		// prefersReducedMotion() 读的是 window.matchMedia
+		matchMedia: () => ({ matches: false }),
+	};
 	g.requestAnimationFrame = (cb: () => void) => setTimeout(cb, 0);
+	g.cancelAnimationFrame = (handle: ReturnType<typeof setTimeout>) =>
+		clearTimeout(handle);
 	g.getComputedStyle = () => ({ width: "130px" });
 	g.Image = function FakeImageConstructor() {
 		const created = currentHarness().pending;
@@ -463,4 +511,250 @@ test("首次加载不预取整个壁纸池：没触发就一次预载都没有",
 		0,
 		"挂件初始化不得预载壁纸池（首屏只保留既有那一张）",
 	);
+});
+// ---- T3（票 #130）：下拉拖拽与回弹 ----
+
+/** 一次完整的按下 → 移动 → 抬起；`dy` 是相对起点的垂直位移 */
+function drag(pointerId: number, dy: number, dx = 0) {
+	const button = currentHarness().button;
+	button.dispatch("pointerdown", { pointerId, clientX: 100, clientY: 100 });
+	button.dispatch("pointermove", {
+		pointerId,
+		clientX: 100 + dx,
+		clientY: 100 + dy,
+	});
+}
+
+/** 松手 */
+function release(pointerId: number, timeStamp = 1000) {
+	currentHarness().button.dispatch("pointerup", { pointerId, timeStamp });
+}
+
+/** 等合帧的 rAF 把变量写下去 */
+async function settleFrame() {
+	await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+test("拉到阈值以上松手：换图一次，走的是同一个 requestChange 入口", async () => {
+	harness = buildHarness();
+	Math.random = () => 0.2;
+	initWallpaperPull();
+
+	drag(1, 120);
+	await flush();
+	release(1);
+	await flush();
+	await finishLastPreload(true);
+
+	assert.equal(
+		currentHarness().background.src,
+		abs(BACKGROUNDS[1]!),
+		"达到阈值松手应当换图",
+	);
+	assert.equal(currentHarness().live.textContent, "换好了");
+});
+
+test("未达阈值松手：只回弹，不换图、不预载", async () => {
+	harness = buildHarness();
+	initWallpaperPull();
+
+	const before = currentHarness().background.src;
+	drag(1, 40);
+	await flush();
+	release(1);
+	await flush();
+
+	assert.equal(currentHarness().background.src, before, "未达阈值不得换图");
+	assert.equal(currentHarness().pending.length, 0, "未达阈值不该开候选预载");
+});
+
+test("恰好等于阈值松手算达成（边界口径 >=）", async () => {
+	harness = buildHarness();
+	Math.random = () => 0.2;
+	initWallpaperPull();
+
+	drag(1, PULL_THRESHOLD);
+	await flush();
+	release(1);
+	await flush();
+	await finishLastPreload(true);
+
+	assert.equal(currentHarness().background.src, abs(BACKGROUNDS[1]!));
+});
+
+test("死区内松手不算拖动：不伸展、不抑制随后的真实单击", async () => {
+	harness = buildHarness();
+	Math.random = () => 0.2;
+	initWallpaperPull();
+
+	// 手抖 2px 后松手：既不该换图，也不该把随后的单击当成「拖动补发」
+	drag(1, 2);
+	await flush();
+	release(1, 100);
+
+	assert.equal(
+		currentHarness().host.dataset.dragReleaseAt,
+		undefined,
+		"死区内不该写拖动释放时刻",
+	);
+	assert.equal(currentHarness().pending.length, 0);
+
+	// 紧随其后的单击必须照常换图（timeStamp 落在抑制窗口内也不该被吞）
+	currentHarness().button.dispatch("click", { detail: 1, timeStamp: 104 });
+	await flush();
+	assert.equal(
+		currentHarness().pending.length,
+		1,
+		"死区不是拖动，随后的单击必须放行",
+	);
+	await finishLastPreload(true);
+});
+
+test("pointercancel 一律不换图，但会安全复位", async () => {
+	harness = buildHarness();
+	initWallpaperPull();
+
+	drag(1, 200);
+	await flush();
+	currentHarness().button.dispatch("pointercancel", {
+		pointerId: 1,
+		timeStamp: 1000,
+	});
+	await flush();
+
+	assert.equal(currentHarness().pending.length, 0, "pointercancel 不得换图");
+	assert.equal(
+		currentHarness().host.dataset.dragging,
+		undefined,
+		"必须回到静止态",
+	);
+});
+
+test("指针捕获丢失一律不换图", async () => {
+	harness = buildHarness();
+	initWallpaperPull();
+
+	drag(1, 200);
+	await flush();
+	currentHarness().button.dispatch("lostpointercapture", {
+		pointerId: 1,
+		timeStamp: 1000,
+	});
+	await flush();
+
+	assert.equal(currentHarness().pending.length, 0, "捕获丢失不得换图");
+	assert.equal(currentHarness().host.dataset.dragging, undefined);
+});
+
+test("Escape 中途取消：拉到阈值也不换图", async () => {
+	harness = buildHarness();
+	initWallpaperPull();
+
+	drag(1, 200);
+	await flush();
+	docEvents!.dispatch("keydown", { key: "Escape", timeStamp: 1000 });
+	await settleFrame();
+
+	assert.equal(currentHarness().pending.length, 0, "Escape 不得换图");
+	assert.equal(
+		currentHarness().host.dataset.dragging,
+		undefined,
+		"Escape 后必须复位",
+	);
+});
+
+test("页面失焦中途取消：拉到阈值也不换图", async () => {
+	harness = buildHarness();
+	initWallpaperPull();
+
+	drag(1, 200);
+	await flush();
+	winEvents!.dispatch("blur", { timeStamp: 1000 });
+	await settleFrame();
+
+	assert.equal(currentHarness().pending.length, 0, "失焦不得换图");
+	assert.equal(currentHarness().host.dataset.dragging, undefined);
+});
+
+test("收尾后回弹到 0：--wpull-pull 被写回 0px 并进入收尾过渡", async () => {
+	harness = buildHarness();
+	initWallpaperPull();
+
+	drag(1, 60);
+	await settleFrame();
+	const style = (
+		currentHarness().host as unknown as {
+			style: { props: Record<string, string> };
+		}
+	).style;
+	assert.equal(style.props["--wpull-pull"], "60px", "拖动中应当跟手写伸展量");
+
+	release(1);
+	await settleFrame();
+	assert.equal(style.props["--wpull-pull"], "0px", "松手后必须回弹到 0");
+});
+
+test("一次拖动只换一次图：松手后补发的 click 被抑制", async () => {
+	harness = buildHarness();
+	Math.random = () => 0.2;
+	initWallpaperPull();
+
+	drag(1, 120);
+	await flush();
+	release(1, 1000);
+	// 浏览器在同一任务链上补发 click
+	currentHarness().button.dispatch("click", { detail: 1, timeStamp: 1004 });
+	await flush();
+
+	assert.equal(
+		currentHarness().pending.length,
+		1,
+		"拖动已经换过图，补发的 click 不得再开一笔事务",
+	);
+	await finishLastPreload(true);
+	assert.equal(currentHarness().live.textContent, "换好了");
+});
+
+test("向上拖动（dy 为负）不伸展、也不换图", async () => {
+	harness = buildHarness();
+	initWallpaperPull();
+
+	drag(1, -120);
+	await settleFrame();
+	const style = (
+		currentHarness().host as unknown as {
+			style: { props: Record<string, string> };
+		}
+	).style;
+	assert.equal(style.props["--wpull-pull"], "0px", "向上不该有伸展");
+
+	release(1);
+	await flush();
+	assert.equal(currentHarness().pending.length, 0, "向上拖不该换图");
+});
+
+test("失焦取消后，随后的单击不被抑制逻辑误伤（时间戳必须同源）", async () => {
+	harness = buildHarness();
+	Math.random = () => 0.2;
+	initWallpaperPull();
+
+	// 拖动中失焦：安全复位、不换图
+	drag(1, 200);
+	await flush();
+	winEvents!.dispatch("blur", { timeStamp: 1000 });
+	await settleFrame();
+	assert.equal(currentHarness().pending.length, 0, "失焦不得换图");
+
+	// 失焦后的第一次真实单击必须照常工作。
+	// 若 blur 用 Date.now() 记时刻，它与 click 的 timeStamp 不同源，
+	// 差值会是极大的负数、永远落在抑制窗口内，这次单击就会被永久吞掉。
+	currentHarness().button.dispatch("click", { detail: 1, timeStamp: 5000 });
+	await flush();
+	assert.equal(
+		currentHarness().pending.length,
+		1,
+		"失焦取消不该给后续单击留下抑制标志",
+	);
+	await finishLastPreload(true);
+	assert.equal(currentHarness().background.src, abs(BACKGROUNDS[1]!));
 });
