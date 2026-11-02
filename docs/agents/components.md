@@ -30,7 +30,7 @@
 - `pio.js` / `pio.css` 为 vendored 第三方代码但随本项目自维护（无上游升级管道），可直接修改；入口组件是 `src/components/widget/Pio.svelte`，文案与“关于我”链接配置在 `src/config.ts` 的 `pioConfig`。
 - 操作按钮列固定顺序 `home → info → side（停靠切换）→ close`；左/右停靠通过容器 `.left`/`.right` 类驱动，偏好存 `localStorage.pioSide`；折叠状态存 `localStorage.posterGirl`，**默认折叠**（仅 `=== "1"` 时展开）。新增按钮必须用 `appendChild` 按顺序追加，不得用 `insertBefore` 引用尚未入 DOM 的节点。
 - 右侧停靠时所有元素必须对称适配：按钮列（`.pio-action`）、折叠按钮（`.pio-show`，含 hover 方向与“点击召唤Pio”提示方向）、消息框（`.pio-dialog`）。消息框居中 + 底部三角，`max-width: 100%` + `width: max-content` 防止长消息溢出视口。
-- pio 定位样式在 `pio.css`（`public/` 静态文件，不走构建管线），改动后需同步 `dist/` 才能在 preview 验证；**`pnpm dev` 下 Pio 因 Svelte hydration 报错不渲染（仅 dev），验证 pio 必须用 `pnpm build && pnpm preview`**。
+- pio 定位样式在 `pio.css`（`public/` 静态文件，不走构建管线），改动后需同步 `dist/` 才能在 preview 验证。**「`pnpm dev` 下 Pio 因 Svelte hydration 报错不渲染」这条旧结论已在 2026-11-02 实测推翻，勿再据此绕道 build**：`start.bat`（= `pnpm start --open`）与 `pnpm dev` 都是 `astro dev`，该形态下 `.pio-container` 确实存在、带 Svelte 作用域类（水合成功）、`pageerror` 为 0；它看起来「没渲染」是因为**默认折叠**（`localStorage.posterGirl` 非 `"1"` 时带 `hidden` 类、盒子 0×0，见下一条的折叠口径），不是 hydration 失败。验证 Pio 交互时点一下左下角的「召唤」把它展开即可；只有在验 `pio.css` 改动（不经构建管线）时才需要 `pnpm build && pnpm preview` 同步 `dist/`。
 - myhkw 播放器以 `z-index` 压制 Pio（Layout.astro 内联样式）；Pio 的按钮/消息框位置调整需同时考虑播放器展开面板与底部歌词框的遮挡。
 
 ### Nice Books 每日好书（src/nice-books/ + src/pages/books/，2026-09-06 移植）

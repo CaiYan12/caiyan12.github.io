@@ -42,6 +42,13 @@ pnpm audit:ledger <票册.md> [--offline]   # 票册自检：把票册「本文�
 pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ```
 
+### 本地预览该用哪一条（2026-11-02 立）
+
+- **`pnpm dev` / `start.bat`（= `pnpm start --open`）就是 `astro dev`**，两者同一个命令；日常改样式、验交互、验 Pio 用它即可，热更新、无需构建。
+- **`pnpm preview` 只是给「构建产物」用的**：验 `dist/` 相关的东西（`public/` 下不经构建管线的文件、`pio.css` 改动、pagefind 索引、需要在产物里才成立的行为）才需要它。preview **默认也用 4321**，与 dev 撞端口时显式 `--port 4322`。
+- **建产物只跑 `pnpm exec astro build` 就够了**，不要为了预览跑整条 `pnpm build`——后者还串了 `fetch-github-*` / `fetch-friend-icons` / `generate-lqips` 等联网脚本，慢且易被网络拖垮。
+- **本机构建只需设 `NODE_USE_ENV_PROXY=1`**（与 AGENTS.md 的既有口径一致）。2026-11-02 实测纠正过一条错记：当时记录「必须同时设 `HTTPS_PROXY`、缺一即红」，但该次 A/B 对照**本身失效**——实验 shell 里 `HTTPS_PROXY` 本来就是未设置状态（`env -u` 清了个空），两组跑的其实是同一条件；两组都 exit 0、都没有 `No fonts are loaded`。结论回到既有口径：设 `NODE_USE_ENV_PROXY=1` 即可；仅当该变量开启后仍报字体错误时才考虑补 `HTTPS_PROXY`。
+
 注意：Windows 上 pnpm build 失败时尾部可能看不到完整错误（esbuild 崩溃断言），务必看完整输出而非 tail。
 
 ## A-8 全页非预期错误门禁
