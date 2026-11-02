@@ -64,6 +64,12 @@ const AUTO_HINT_MS = 3000;
 /** SVG 里绳画到的 y 坐标（与 WallpaperPull.astro 的 viewBox 保持一致） */
 const ROPE_END = 76;
 /**
+ * T 恤在 SVG 自身坐标系里的底边 y（viewBox 为 0 0 130 175，衣服 path 的
+ * y 区间是 74…158）。`drop` 必须扣掉这段固有高度，否则「衣服底边对齐标题
+ * 顶边」会退化成「衣服顶端对齐标题顶边」——实测底边会低 155px 并压住导航。
+ */
+const SHIRT_SVG_BOTTOM = 158;
+/**
  * 候选图加载上限：超过按失败处理并解除忙碌，避免弱网下永久锁死
  * （spec「需要设置明确的加载上限」）。
  */
@@ -157,9 +163,10 @@ export function computePlacement({
 			? viewportW / 2
 			: Math.min(Math.max(nav.right, minCenter), maxCenter);
 
-	// 垂直：绳长让衣服底边落到标题顶边。取标题顶边作为 drop，
-	// 缺失标题（独立壳/窄屏不显示标题块）时退回 0，挂件自然贴顶。
-	const drop = title ? Math.max(0, title.top) : 0;
+	// 垂直：绳长让**衣服底边**落到标题顶边。
+	// SVG 顶端钉在视口 y=0，衣服自身已占 [74, 158]，所以名义位移 = 标题顶边 − 衣服固有底边；
+	// 结果为负（标题顶边在衣服固有位置之上）时夹到 0，挂件贴顶、不向上拉出视口。
+	const drop = title ? Math.max(0, title.top - SHIRT_SVG_BOTTOM) : 0;
 
 	return { left, drop };
 }

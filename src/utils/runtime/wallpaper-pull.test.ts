@@ -36,7 +36,9 @@ test("宽视口：中心线正好落在导航右缘，不做额外位移", () =>
 		widgetW: W,
 		viewportW: 1430,
 	});
-	assert.deepEqual(p, { left: 1265, drop: 45 });
+	// drop 要让**衣服底边**落到标题顶边：SVG 顶端钉在 y=0、衣服固有底边在 158，
+	// 所以 title.top=45 时名义位移为负 → 夹到 0（挂件贴顶，衣服底边落在 158）
+	assert.deepEqual(p, { left: 1265, drop: 0 });
 });
 
 test("装着会右溢时整体左移，右缘距视口右至少留出空隙", () => {
@@ -79,7 +81,24 @@ test("夹取只在会溢出时生效：差一点点溢出也要收", () => {
 	assert.equal(fits.left, 867, "放得下时保持与导航右缘对齐");
 });
 
-test("绳长来自标题顶边；标题缺失时贴顶", () => {
+test("绳长让**衣服底边**对齐标题顶边（不是衣服顶端对齐）", () => {
+	// 契约原文（票 #128 / spec 故事 3）：衣服底边与桌面头部标题顶边齐平。
+	// 衣服在 SVG 内固有占 y∈[74,158]，SVG 顶端钉在视口 y=0，
+	// 所以要让底边落到 title.top，名义位移必须是 title.top − 158。
+	const SHIRT_BOTTOM = 158;
+
+	// 标题顶边在衣服固有位置之下：需要真实下移
+	assert.equal(
+		computePlacement({
+			nav: rect(1265),
+			title: rect(1265, 400),
+			widgetW: W,
+			viewportW: 1430,
+		})?.drop,
+		400 - SHIRT_BOTTOM,
+	);
+
+	// 标题顶边在衣服固有位置之上：夹到 0，挂件贴顶、不向上拉出视口
 	assert.equal(
 		computePlacement({
 			nav: rect(1265),
@@ -87,8 +106,10 @@ test("绳长来自标题顶边；标题缺失时贴顶", () => {
 			widgetW: W,
 			viewportW: 1430,
 		})?.drop,
-		45,
+		0,
 	);
+
+	// 标题缺失（独立壳等）：同样贴顶
 	assert.equal(
 		computePlacement({
 			nav: rect(1265),
@@ -98,6 +119,28 @@ test("绳长来自标题顶边；标题缺失时贴顶", () => {
 		})?.drop,
 		0,
 	);
+});
+
+test("衣服底边落点 = drop + 衣服固有底边，等价于标题顶边（可直接算回去）", () => {
+	const SHIRT_BOTTOM = 158;
+	for (const titleTop of [45, 300, 500]) {
+		const drop =
+			computePlacement({
+				nav: rect(1265),
+				title: rect(1265, titleTop),
+				widgetW: W,
+				viewportW: 1430,
+			})?.drop ?? Number.NaN;
+		const bottom = drop + SHIRT_BOTTOM;
+		// 只有当不吃夹取、不贴顶时，底边才严格等于标题顶边
+		if (titleTop >= SHIRT_BOTTOM) {
+			assert.equal(
+				bottom,
+				titleTop,
+				`titleTop=${titleTop} 时衣服底边应与标题顶边齐平`,
+			);
+		}
+	}
 });
 
 test("标题顶边为负（滚过头部）时不产生负绳长", () => {

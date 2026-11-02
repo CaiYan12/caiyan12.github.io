@@ -127,8 +127,7 @@ async function waitIdle(page, timeout = 20000) {
  */
 async function boot(page) {
 	await page.waitForFunction(
-		() =>
-			!!document.querySelector("[data-wallpaper-pull]")?.dataset.bound,
+		() => !!document.querySelector("[data-wallpaper-pull]")?.dataset.bound,
 		undefined,
 		{ timeout: 30000 },
 	);
@@ -168,7 +167,9 @@ async function instrument(page) {
 			const temp = document.querySelectorAll(".bg-image--temp").length;
 			if (temp > probe.maxTemp) probe.maxTemp = temp;
 			const pull =
-				parseFloat(host?.style.getPropertyValue("--wpull-pull") ?? "") || 0;
+				parseFloat(
+					host?.style.getPropertyValue("--wpull-pull") ?? "",
+				) || 0;
 			if (pull > probe.maxPull) probe.maxPull = pull;
 			if (host?.dataset.busy === "true") probe.busySeen = true;
 			if (host?.dataset.dragging === "true") probe.draggingSeen = true;
@@ -201,7 +202,9 @@ const readProbe = (page) =>
 		settling: !!document
 			.querySelector("[data-wallpaper-pull]")
 			?.classList.contains("is-settling"),
-		busy: document.querySelector("[data-wallpaper-pull]")?.dataset.busy ?? null,
+		busy:
+			document.querySelector("[data-wallpaper-pull]")?.dataset.busy ??
+			null,
 	}));
 
 /**
@@ -318,7 +321,9 @@ await dragBy(page, 40);
 const shortProbe = await readProbe(page);
 check(
 	"未达阈值：拖动确实已越过死区（相位由真实状态定义）",
-	shortProbe.draggingSeen && shortProbe.maxPull >= 30 && shortProbe.maxPull < 80,
+	shortProbe.draggingSeen &&
+		shortProbe.maxPull >= 30 &&
+		shortProbe.maxPull < 80,
 	`dy=40 → 跟手伸展峰值 ${Math.round(shortProbe.maxPull)}px，dragging=${
 		shortProbe.draggingSeen
 	}`,
@@ -343,7 +348,9 @@ const longDuring = await readState(page);
 const longHeldRect = await page.locator(GRAB).boundingBox();
 await page.mouse.move(longDuring.grab.x, longDuring.grab.y);
 await page.mouse.down();
-await page.mouse.move(longDuring.grab.x, longDuring.grab.y + 130, { steps: 10 });
+await page.mouse.move(longDuring.grab.x, longDuring.grab.y + 130, {
+	steps: 10,
+});
 const longHeld = await readProbe(page);
 const heldRect = await page.locator(GRAB).boundingBox();
 check(
@@ -385,10 +392,7 @@ check(
 	afterLong.tempCount === 0 && longAfter.maxTemp >= 1,
 	`过渡峰值 ${longAfter.maxTemp} 层，落定后 ${afterLong.tempCount} 层`,
 );
-check(
-	"交叉淡入结束后临时层不堆积",
-	(await waitForNoTempLayer(page)) === true,
-);
+check("交叉淡入结束后临时层不堆积", (await waitForNoTempLayer(page)) === true);
 
 // ---- 指针取消：复位且不换图 ----
 const beforeCancel = await readState(page);
@@ -602,17 +606,25 @@ check(
 // 所以这里改用真实的 Swup 站内切页（window.swup.navigate 与点击站内链接同一条路径），
 // 挂件与背景层都在 Swup 容器之外、切页不重建，回归会表现为「一个手势换两次图」
 // 或「挂件实例变多 / 监听器翻倍」。
-await page.waitForFunction(() => typeof window.swup !== "undefined", undefined, {
-	timeout: 15000,
-});
+await page.waitForFunction(
+	() => typeof window.swup !== "undefined",
+	undefined,
+	{
+		timeout: 15000,
+	},
+);
 const beforeSwup = await readState(page);
 for (const path of ["/about/", "/archive/", "/diary/"]) {
 	await page.evaluate(async (target) => {
 		await window.swup.navigate(target);
 	}, path);
-	await page.waitForFunction((expected) => location.pathname === expected, path, {
-		timeout: 15000,
-	});
+	await page.waitForFunction(
+		(expected) => location.pathname === expected,
+		path,
+		{
+			timeout: 15000,
+		},
+	);
 }
 const afterSwup = await readState(page);
 const instances = await page.evaluate(
@@ -633,7 +645,10 @@ await instrument(page);
 await resetProbe(page);
 const beforeSwupGesture = await readState(page);
 await page.locator(GRAB).click();
-const swupChanged = await waitForBackgroundChange(page, beforeSwupGesture.bgSrc);
+const swupChanged = await waitForBackgroundChange(
+	page,
+	beforeSwupGesture.bgSrc,
+);
 await waitIdle(page);
 const swupProbe = await readProbe(page);
 check(
@@ -649,14 +664,16 @@ await page.setViewportSize({ width: 680, height: 900 });
 // 断点生效的真实信号：计算值 display 真的变成 none（不睡固定毫秒）
 await page.waitForFunction(
 	() =>
-		getComputedStyle(document.querySelector("[data-wallpaper-pull]")).display ===
-		"none",
+		getComputedStyle(document.querySelector("[data-wallpaper-pull]"))
+			.display === "none",
 	undefined,
 	{ timeout: 10000 },
 );
 const narrow = await readState(page);
 const narrowRect = await page.evaluate(
-	() => document.querySelector("[data-wallpaper-pull]").getBoundingClientRect().width,
+	() =>
+		document.querySelector("[data-wallpaper-pull]").getBoundingClientRect()
+			.width,
 );
 check(
 	"窄屏 680px 挂件隐藏",
@@ -666,21 +683,18 @@ check(
 await page.setViewportSize({ width: 390, height: 844 });
 await page.waitForFunction(
 	() =>
-		getComputedStyle(document.querySelector("[data-wallpaper-pull]")).display ===
-		"none",
+		getComputedStyle(document.querySelector("[data-wallpaper-pull]"))
+			.display === "none",
 	undefined,
 	{ timeout: 10000 },
 );
-check(
-	"窄屏 390px 挂件隐藏",
-	(await readState(page)).display === "none",
-);
+check("窄屏 390px 挂件隐藏", (await readState(page)).display === "none");
 // 宽屏对照：证明这条断点规则不是「恒隐藏」——回到 1024 必须重新可见且不出屏。
 await page.setViewportSize({ width: 1024, height: 900 });
 await page.waitForFunction(
 	() =>
-		getComputedStyle(document.querySelector("[data-wallpaper-pull]")).display !==
-		"none",
+		getComputedStyle(document.querySelector("[data-wallpaper-pull]"))
+			.display !== "none",
 	undefined,
 	{ timeout: 10000 },
 );
@@ -739,7 +753,10 @@ check(
 // 这个变量），等于恒真。真正要验的是「减少动态下拖动时衣服不动」——必须真的拖。
 await resetProbe(rmPage);
 const rmRest = await rmPage.locator(GRAB).boundingBox();
-await rmPage.mouse.move(rmRest.x + rmRest.width / 2, rmRest.y + rmRest.height / 2);
+await rmPage.mouse.move(
+	rmRest.x + rmRest.width / 2,
+	rmRest.y + rmRest.height / 2,
+);
 await rmPage.mouse.down();
 await rmPage.mouse.move(
 	rmRest.x + rmRest.width / 2,
@@ -747,9 +764,13 @@ await rmPage.mouse.move(
 	{ steps: 10 },
 );
 // 相位由真实状态定义：手势已被识别（dragging 置起）才谈得上「有没有位移」
-await rmPage.waitForFunction(() => window.__wpullProbe.draggingSeen, undefined, {
-	timeout: 10000,
-});
+await rmPage.waitForFunction(
+	() => window.__wpullProbe.draggingSeen,
+	undefined,
+	{
+		timeout: 10000,
+	},
+);
 const rmHeld = await readProbe(rmPage);
 const rmHeldRect = await rmPage.locator(GRAB).boundingBox();
 check(
