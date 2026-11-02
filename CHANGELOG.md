@@ -1,5 +1,12 @@
 # 更新日志
 
+## 2026-11-02：独立升级 Astro 检查器至 0.9.12
+
+- `package.json` / `pnpm-lock.yaml` 将 `@astrojs/check` 0.9.10 升至精确 0.9.12，其他直接依赖不变。必要传递变化包括语言服务 2.17.3、新增 astro2tsx/WASM 检查链、chokidar 5、yargs 18.2.0 与语言服务使用的 vscode-uri 3.2.0；未联动 Svelte、Pagefind 或 TypeScript。
+- 2026-11-02 Windows / Node 24.18.0 本地检查新旧均为 0 errors / 0 warnings / 6 hints；公式保护 38/38。旧新版监听对照中，已有 TS/Astro 文件错误依次检出、修正后清零，单次负向检查 exit 1。**新建文件漏检两版均复现**，记录为既有限制；新增文件后需重新执行单次检查或重启 watch，未修改依赖代码规避。
+- 同数据构建均 229 页、产物文件清单相同；全部非 HTML 逐字节一致，146 个 HTML 仅随机推荐侧栏不同。1280px / 390px 本地搜索、公式、切页后退验证通过，页面异常和本站请求失败为零。
+- 对照入口的新 CLI/旧 API 边界、失败路径、依赖审查及命令见 `docs/plans/2026-11-02-astro-check-upgrade.md`；同步 `docs/agents/build-and-deploy.md` 和 `docs/agents/commands.md`。本地验收，未运行远端 CI 或发布。
+
 ## 2026-11-02：Prettier 升至 3.9.8，加入公式保护门禁
 
 - `package.json` / `pnpm-lock.yaml` 将 Prettier 从 3.9.6 升至精确版本 3.9.8，其他直接依赖安装版本保持不变。保留 Astro/Svelte 插件、文章单美元公式与现有格式化范围，不忽略文章、不切 MDX、不修改渲染管线。

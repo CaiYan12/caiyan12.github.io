@@ -6,6 +6,8 @@
 
 ## 构建链与依赖约束（2026-11-02 起 Astro 7）
 
+- **检查器独立升级（2026-11-02）**：`@astrojs/check` 精确固定 0.9.12；语言服务更新至 2.17.3，检查链新增 `@astrojs/astro2tsx` 0.1.3 及其 WASM 依赖，文件监听使用 chokidar 5。TypeScript 仍为 5.9.3，其他直接依赖不联动。旧新版本地单次检查均为 0 errors / 0 warnings / 6 hints；已有 `.ts` / `.astro` 文件的错误修改、修正及单次检查失败码均已验证。**watch 的既有限制**：0.9.10 与 0.9.12 均复现新增文件未进入当前诊断清单；不能把“Watching for changes”或零错误视为新文件已检查，新增文件后应重新运行单次检查或重启 watch。没有为此修改依赖源码或放宽诊断级别。对照方法和构建/浏览器证据见 [检查器专项验收](../plans/2026-11-02-astro-check-upgrade.md)。
+
 - **Astro 7 实施（2026-11-02）**：已安装 Astro 7.4.4 / Svelte 集成 9.1.2 / Markdown 7.3.5 / Expressive Code 与两插件 0.44.3。升级信息的原始快照见 [复核报告](../plans/2026-11-02-build-system-upgrade-recheck.md)，实际构建与 A/B、浏览器结果及剩余边界见 [实施验收](../plans/2026-11-02-astro7-upgrade.md)。该批保持 Tailwind 3.4.19、TypeScript 5.9.3、Prettier 3.9.6、pnpm 10.26.2；随后 Prettier 单独升至精确版本 3.9.8，见下条。
 - **Prettier 公式保护（2026-11-02）**：当前精确固定 `prettier: "3.9.8"`，不放宽为 caret；保留 Astro/Svelte 插件及现有格式化覆盖范围。3.9.9 / 3.9.10 的 Markdown 解析器内部关闭单美元公式识别，会把公式星号识别为 emphasis；这是 [PR #20140](https://github.com/prettier/prettier/pull/20140) 与未关闭的 [issue #20199](https://github.com/prettier/prettier/issues/20199) 所记录的问题，不是本站 KaTeX 渲染器故障。`pnpm test:prettier-math` 以本站 remark-math 提取格式化前后的公式，比较公式内容与 KaTeX 渲染结果；已接入 `lint.yml`。它不依赖 Prettier 内部 AST，不忽略文章、不改美元分隔符、不切 MDX、不打私有补丁。实施证据与验证边界见 [专项验收](../plans/2026-11-02-prettier-upgrade.md)。
 - **AI 日报迁移已完成（2026-11-02 收尾）**：本仓库不再包含日报源码、快照或 React 页面集成；`tailwind.config.cjs` 的日报 `--t-*` 映射与 `tsconfig.json` 的 JSX 设置已清理，`react` 运行时依赖已移除。OG 图 `src/pages/og/[...slug].png.ts` 给 Satori 传普通元素对象，仍使用 `ReactNode` 类型，因此保留 `@types/react`。主站仅维护导航/sitemap 与边界验证；`pnpm test:ai-news-ownership` 在构建后检查源目录及日报产物目录缺席。独立项目的配置、应用测试与发布均在 `CaiYan12/ai-news` 维护，历史回退说明不代表主站仍持有其实现。

@@ -6,6 +6,8 @@
 
 ## 常用命令
 
+`pnpm check` 的检查器现固定为 `@astrojs/check` 0.9.12。使用 `pnpm exec astro check --watch --preserveWatchOutput` 时，新增文件需要重新运行单次检查或重启 watch：2026-11-02 在旧版 0.9.10 和新版 0.9.12 均复现当前监听诊断清单未纳入新文件；已有文件修改可检出错误并在修正后清零。该限制与本次升级的验证边界见 [检查器专项验收](../plans/2026-11-02-astro-check-upgrade.md)。
+
 ```bash
 pnpm install     # 安装依赖（中国网络需先设 registry 为 https://registry.npmmirror.com）
 pnpm dev         # 本地开发 http://localhost:4321
