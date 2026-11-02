@@ -448,3 +448,45 @@ test("减少动态：不建临时层，直接切换（spec 故事 40）", async 
 	assert.equal(tempLayers().length, 0, "减少动态下不播交叉淡入");
 	assert.equal(created.length, 0, "不建任何临时层");
 });
+
+test("减少动态是每次调用即时查询：会话中途打开偏好，下一笔立即不再建层", async () => {
+	// 第一笔：偏好关闭，正常淡入并提交
+	const first = crossfadeBackground(asImage(original), NEW_URL);
+	await flush();
+	assert.equal(tempLayers().length, 1);
+	endFade();
+	await flush();
+	assert.equal(await first, "committed");
+
+	// 用户中途改了系统设置：不重新初始化、不重新加载页面
+	const g = globalThis as unknown as Record<string, unknown>;
+	g.window = { matchMedia: () => ({ matches: true }) };
+
+	const third = "https://example.test/images/bg/c.jpg";
+	const second = await crossfadeBackground(asImage(original), third);
+
+	assert.equal(second, "committed");
+	assert.equal(original.src, third, "减少动态下直接换地址");
+	assert.equal(
+		tempLayers().length,
+		0,
+		"判定若被缓存（模块级常量 / 一次性闭包），这里会重新建层",
+	);
+});
+
+test("减少动态下直接切换不依赖临时层：原图层一次就落到新地址", async () => {
+	const g = globalThis as unknown as Record<string, unknown>;
+	g.window = { matchMedia: () => ({ matches: true }) };
+	const seen: string[] = [];
+	const originalInsert = original.insertAdjacentElement;
+	original.insertAdjacentElement = (position: string, child: FakeElement) => {
+		seen.push("insert");
+		return originalInsert(position, child);
+	};
+
+	const result = await crossfadeBackground(asImage(original), NEW_URL);
+
+	assert.equal(result, "committed");
+	assert.deepEqual(seen, [], "没有临时层就没有插入动作");
+	assert.equal(original.src, NEW_URL);
+});

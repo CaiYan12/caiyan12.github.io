@@ -563,6 +563,62 @@ test("减少动态时不摇头，但播报照旧（信息通道不砍）", async
 	);
 });
 
+test("减少动态下「没得换」也不摇头，但播报照旧（三类结果都靠播报区）", async () => {
+	reducedMotion = true;
+	harness = buildHarness({
+		pool: [BACKGROUNDS[0]!],
+		current: abs(BACKGROUNDS[0]!),
+	});
+	initWallpaperPull();
+
+	currentHarness().button.dispatch("click", { detail: 1, timeStamp: 100 });
+	await flush();
+
+	assert.equal(
+		currentHarness().classes.added.includes("is-shaking"),
+		false,
+		"两档「没换成」在减少动态下都跳过摇头（前庭风险）",
+	);
+	assert.equal(
+		currentHarness().live.textContent,
+		"没得换",
+		"视觉反馈被去掉后，播报区是唯一的信息通道，不能少",
+	);
+});
+
+test("减少动态是每次调用即时查询：会话中途打开偏好，下一次失败立即不摇头", async () => {
+	harness = buildHarness({
+		pool: [BACKGROUNDS[0]!],
+		current: abs(BACKGROUNDS[0]!),
+	});
+	initWallpaperPull();
+
+	// 偏好关闭：正常摇头
+	currentHarness().button.dispatch("click", { detail: 1, timeStamp: 100 });
+	await flush();
+	assert.equal(currentHarness().live.textContent, "没得换");
+	assert.ok(
+		currentHarness().classes.added.includes("is-shaking"),
+		"偏好关闭时必须摇",
+	);
+
+	// 用户中途改了系统设置（没有重新初始化、没有重新加载页面）
+	reducedMotion = true;
+	// 清空已记录的类名，只看这一轮
+	currentHarness().classes.added.length = 0;
+
+	// 同一句话再播一次也要能被重新播报（播报区不是一次性写入）
+	currentHarness().button.dispatch("click", { detail: 1, timeStamp: 900 });
+	await flush();
+
+	assert.equal(
+		currentHarness().classes.added.includes("is-shaking"),
+		false,
+		"模块级缓存或一次性闭包会让这里仍然摇头",
+	);
+	assert.equal(currentHarness().live.textContent, "没得换", "降级后播报照常");
+});
+
 // ---- 无候选与失败是不同的结果 ----
 
 test("无候选与加载失败是两个不同结果（不同播报词），但反馈共用摇头", async () => {

@@ -115,6 +115,12 @@ let harness: Harness | null = null;
 /** document / window 上的监听目标：Escape 与失焦要能被测试派发到 */
 let docEvents: ReturnType<typeof makeEventTarget> | null = null;
 let winEvents: ReturnType<typeof makeEventTarget> | null = null;
+/**
+ * 当前「减少动态」偏好（票 #134）。运行时每次调用 `prefersReducedMotion()` 都会
+ * 重新读它，所以**用例中途改这个变量就等于用户在系统里改了设置**——这正是
+ * 「即时查询 vs 模块级缓存」那条契约的可观察判据。
+ */
+let reducedMotion = false;
 
 function currentHarness(): Harness {
 	assert.ok(harness, "harness 必须先建好");
@@ -207,8 +213,9 @@ function installGlobals() {
 	};
 	g.window = {
 		addEventListener: winEvents.addEventListener,
-		// prefersReducedMotion() 读的是 window.matchMedia
-		matchMedia: () => ({ matches: false }),
+		// prefersReducedMotion() 读的是 window.matchMedia；
+		// 返回的是**每次新建**的查询对象，与真实 matchMedia 的同形语义一致
+		matchMedia: () => ({ matches: reducedMotion }),
 	};
 	g.requestAnimationFrame = (cb: () => void) => setTimeout(cb, 0);
 	g.cancelAnimationFrame = (handle: ReturnType<typeof setTimeout>) =>
@@ -257,6 +264,7 @@ const realRandom = Math.random;
 
 beforeEach(() => {
 	harness = null;
+	reducedMotion = false;
 	Math.random = realRandom;
 	installGlobals();
 });
@@ -488,6 +496,147 @@ test("拖动释放后浏览器补发的 click（detail >= 1）被抑制，一次
 	assert.equal(currentHarness().pending.length, 1, "窗口外的单击必须放行");
 	await finishLastPreload(true);
 	assert.equal(currentHarness().background.src, abs(BACKGROUNDS[1]!));
+});
+
+// ---- T7（票 #134）：减少动态降级 ----
+//
+// 降级不是「砍功能」：手势照常识别、阈值照常判定、播报照常写；被去掉的只有
+// **位移与渐变**（跟手位移、弹性回弹、交叉淡入、摇头）。这一组用例把这条边界钉死，
+// 其中「即时查询」那条守着 reduced-motion.ts 的核心语义——判定不许被缓存。
+
+/** 宿主的可观察副作用：下发的 CSS 变量与挂上的类名（都是外部可见的真实现象） */
+function hostEffects() {
+	const host = currentHarness().host as unknown as {
+		style: { props: Record<string, string> };
+		classList: { added: string[]; removed: string[] };
+	};
+	return { style: host.style.props, classes: host.classList };
+}
+
+test("减少动态：拖拽全程 --wpull-pull 恒为 0px，绳子也不跟着伸长", async () => {
+	reducedMotion = true;
+	harness = buildHarness();
+	initWallpaperPull();
+
+	drag(1, 120);
+	await settleFrame();
+
+	assert.equal(
+		hostEffects().style["--wpull-pull"],
+		"0px",
+		"跟手位移本身就是位移，减少动态下一律为 0",
+	);
+	assert.equal(
+		hostEffects().style["--wpull-rope-scale"],
+		"1",
+		"衣服不动，绳子也不该被拉长（两者同一来源）",
+	);
+});
+
+test("减少动态：松手不做弹性回弹（不挂回弹过渡类），直接归位", async () => {
+	reducedMotion = true;
+	harness = buildHarness();
+	initWallpaperPull();
+
+	drag(1, 120);
+	await settleFrame();
+	release(1);
+	await settleFrame();
+
+	assert.equal(
+		hostEffects().classes.added.includes("is-settling"),
+		false,
+		"没有位移就没有「弹回去」，不该进入回弹过渡",
+	);
+	assert.equal(hostEffects().style["--wpull-pull"], "0px");
+});
+
+test("减少动态：拖动达阈值松手**仍然换图**（阈值判定与选择逻辑不降级）", async () => {
+	reducedMotion = true;
+	harness = buildHarness();
+	Math.random = () => 0.2;
+	initWallpaperPull();
+
+	drag(1, 120);
+	await settleFrame();
+	release(1);
+	await flush();
+	await finishLastPreload(true);
+
+	assert.equal(
+		currentHarness().background.src,
+		abs(BACKGROUNDS[1]!),
+		"视觉降级不得顺手把功能也降级掉",
+	);
+	assert.equal(currentHarness().live.textContent, "换好了");
+});
+
+test("减少动态：单击仍走完整换图流程并播报「换好了」", async () => {
+	reducedMotion = true;
+	harness = buildHarness();
+	Math.random = () => 0.2;
+	initWallpaperPull();
+
+	currentHarness().button.dispatch("click", { detail: 1, timeStamp: 100 });
+	await flush();
+	// 与常规路径同一份契约：先确认候选可用，再提交
+	assert.equal(currentHarness().background.src, abs(BACKGROUNDS[0]!));
+	await finishLastPreload(true);
+
+	assert.equal(currentHarness().background.src, abs(BACKGROUNDS[1]!));
+	assert.equal(currentHarness().live.textContent, "换好了");
+});
+
+test("减少动态：Space 与 Enter 都仍能换图（键盘路径不砍）", async () => {
+	reducedMotion = true;
+	harness = buildHarness();
+	Math.random = () => 0.2;
+	initWallpaperPull();
+
+	// Space：keydown 自行触发（并 preventDefault 掉滚页）
+	const space = currentHarness().button.dispatch("keydown", {
+		key: " ",
+		timeStamp: 100,
+	});
+	assert.equal(space.defaultPrevented, true);
+	await flush();
+	await finishLastPreload(true);
+	assert.equal(currentHarness().background.src, abs(BACKGROUNDS[1]!));
+
+	// Enter：浏览器补发的合成 click（detail === 0）照常放行
+	currentHarness().host.dataset.dragReleaseAt = undefined;
+	currentHarness().button.dispatch("click", { detail: 0, timeStamp: 900 });
+	await flush();
+	assert.equal(
+		currentHarness().pending.length,
+		2,
+		"Enter 产生的合成 click 必须仍然发起事务",
+	);
+	await finishLastPreload(true);
+	assert.equal(currentHarness().live.textContent, "换好了");
+});
+
+test("减少动态是每次调用即时查询：会话中途打开偏好，下一次手势立即不跟手", async () => {
+	harness = buildHarness();
+	initWallpaperPull();
+
+	// 偏好关闭时：正常跟手
+	drag(1, 60);
+	await settleFrame();
+	assert.equal(hostEffects().style["--wpull-pull"], "60px");
+	release(1);
+	await settleFrame();
+
+	// 用户中途改了系统设置（不重新初始化、不重新加载页面）
+	reducedMotion = true;
+
+	drag(2, 60);
+	await settleFrame();
+	assert.equal(
+		hostEffects().style["--wpull-pull"],
+		"0px",
+		"判定必须即时查询；模块级缓存或一次性闭包会让这里仍然写出 60px",
+	);
 });
 
 // ---- 幂等与不预取整池 ----
