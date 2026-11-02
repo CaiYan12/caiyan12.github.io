@@ -352,6 +352,16 @@ test("候选加载失败：背景保持原样、播报「加载失败」，之�
 	const before = currentHarness().background.src;
 	currentHarness().button.dispatch("click", { detail: 1, timeStamp: 100 });
 	await flush();
+	// 票 #132：单个候选失败不再立即收口，而是换用尚未尝试过的候选；
+	// 「加载失败」要等**全部候选都用尽**才播报。池里共 3 张、排除当前图后
+	// 只剩 2 个候选，所以要把两次都失败掉，事务才结算。
+	await finishLastPreload(false);
+	await flush();
+	assert.equal(
+		currentHarness().pending.length,
+		2,
+		"第一个候选失败后应换用下一个候选",
+	);
 	await finishLastPreload(false);
 
 	assert.equal(
@@ -366,7 +376,7 @@ test("候选加载失败：背景保持原样、播报「加载失败」，之�
 	await flush();
 	assert.equal(
 		currentHarness().pending.length,
-		2,
+		3,
 		"失败之后控件必须恢复可用（忙碌锁要覆盖失败路径）",
 	);
 	await finishLastPreload(true);

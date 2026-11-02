@@ -18,7 +18,15 @@
  * 本文件只负责「取当前图 → 取候选 → 预载确认 → 提交 → 播报 → 解锁」。
  */
 
-import { selectNextWallpaper } from "../wallpaper-candidates";
+import {
+	collectWallpaperCandidates,
+	selectNextWallpaper,
+} from "../wallpaper-candidates";
+import {
+	orderAttempts,
+	runAttempts,
+	type TryLoadResult,
+} from "../wallpaper-pull-attempts";
 import {
 	isDragStarted,
 	isPullPastThreshold,
@@ -78,6 +86,15 @@ const CLICK_AFTER_DRAG_MS = 250;
  * 让「松手 → 回去」有可感知的收束感，但不至于让人等。
  */
 const SETTLE_MS = 320;
+
+/**
+ * 摇头反馈时长（毫秒）——必须与 global.css 里 `.wpull.is-shaking` 的
+ * `animation: ... SHAKE_MS` 一致；改一处就要改另一处（与 SETTLE_MS 同一口径）。
+ *
+ * 220ms 是「短摇头」：足够被看见一次左右摆，又短到不会被当成故障抖动。
+ * 只摇**一次**（animation-iteration-count: 1），不循环。
+ */
+const SHAKE_MS = 220;
 
 /** 三类结果播报文本：必须各不相同（票面硬约束） */
 const ANNOUNCEMENT = {
@@ -303,21 +320,23 @@ function applyHintPlacement(
  *
  * 判据不是「decode 成功」而是「能用」：decode 被拒绝时退化为
  * 「加载完成且具有固有尺寸」——并发与大尺寸图片会拒掉合法图片（spec 原文）。
- * 每个候选只尝试一次；超时按失败处理。
+ *
+ * 每个候选只尝试一次；超过 `LOAD_TIMEOUT_MS` 返回 `timeout`（**按失败处理**，
+ * 让调用方换下一个候选并解除忙碌，弱网下不永久锁死）。
  */
-function preloadCandidate(url: string): Promise<boolean> {
-	return new Promise<boolean>((resolve) => {
+function preloadCandidate(url: string): Promise<TryLoadResult> {
+	return new Promise<TryLoadResult>((resolve) => {
 		const image = new Image();
 		let settled = false;
 		let timer: ReturnType<typeof setTimeout> | null = null;
 
-		const finish = (ok: boolean) => {
+		const finish = (result: TryLoadResult) => {
 			if (settled) return;
 			settled = true;
 			if (timer !== null) clearTimeout(timer);
 			image.onload = null;
 			image.onerror = null;
-			resolve(ok);
+			resolve(result);
 		};
 
 		image.onload = () => {
@@ -326,14 +345,16 @@ function preloadCandidate(url: string): Promise<boolean> {
 				typeof image.decode === "function"
 					? image.decode()
 					: Promise.resolve();
-			Promise.resolve(decoded).then(
-				() => finish(image.complete && image.naturalWidth > 0),
-				() => finish(image.complete && image.naturalWidth > 0),
-			);
+			const settle = () =>
+				finish(
+					image.complete && image.naturalWidth > 0 ? "ok" : "failed",
+				);
+			Promise.resolve(decoded).then(settle, settle);
 		};
-		image.onerror = () => finish(false);
+		image.onerror = () => finish("failed");
 
-		timer = setTimeout(() => finish(false), LOAD_TIMEOUT_MS);
+		// 明确的加载上限：到点按超时收口，绝不无限挂着忙碌锁
+		timer = setTimeout(() => finish("timeout"), LOAD_TIMEOUT_MS);
 		image.src = url;
 	});
 }
@@ -367,6 +388,31 @@ export function initWallpaperPull() {
 	/** 一次换图事务未完成前拒绝重复触发（成功/无候选/失败都由 finally 解锁） */
 	let busy = false;
 
+	/** 摇头动画的清理计时器：连续失败时要能重新起一次，不叠加 */
+	let shakeTimer: ReturnType<typeof setTimeout> | null = null;
+
+	/**
+	 * 「没换成」的非颜色反馈：衣服短摇头一次（T5）。
+	 *
+	 * 「没得换」与「加载失败」共用这一个反馈——票面要求两档结果在视觉上一致，
+	 * 区别交给播报区。**非颜色**是硬约束：只变色会让色觉障碍访客拿不到信息。
+	 *
+	 * 减少动态时整体跳过（前庭风险），信息通道仍由播报区承担。
+	 * 动画本体在 global.css 的 `.wpull.is-shaking`，时长与 SHAKE_MS 一致。
+	 */
+	function shake() {
+		if (prefersReducedMotion()) return;
+		// 摘掉再加重排：连续两次失败时，同一个类名不会重启动画
+		host.classList.remove("is-shaking");
+		void host.offsetWidth;
+		host.classList.add("is-shaking");
+		if (shakeTimer !== null) clearTimeout(shakeTimer);
+		shakeTimer = setTimeout(() => {
+			shakeTimer = null;
+			host.classList.remove("is-shaking");
+		}, SHAKE_MS);
+	}
+
 	/** 读 T3 写下的拖动释放时刻（见 noteDragRelease 的注释） */
 	const readDragReleaseAt = () => {
 		const raw = host.dataset.dragReleaseAt;
@@ -392,6 +438,13 @@ export function initWallpaperPull() {
 	 *
 	 * 顺序是承重的：**先确认候选可用，再提交背景** —— 不得先把 src 改成
 	 * 尚未加载完成的地址，否则会先露出空白。
+	 *
+	 * 失败与边界（T5）：
+	 * · 首选由 selectNextWallpaper 均匀选出，失败后依次换用尚未尝试过的候选，
+	 *   **每个最多试一次**（记账在 runAttempts 里）；
+	 * · 全部失败 / 超时 → 背景保持不变、播报「加载失败」、摇头；
+	 * · 无候选 → 播报「没得换」、同样是摇头（两档共用非颜色反馈）；
+	 * · 四条路径都从 finally 解除忙碌锁，不遗留锁定。
 	 */
 	async function requestChange() {
 		if (busy) return;
@@ -403,34 +456,48 @@ export function initWallpaperPull() {
 			if (!background) {
 				// 背景层缺失（独立壳或结构变更）：没有可换的东西，不伪造切换
 				announce(ANNOUNCEMENT.none);
+				shake();
 				return;
 			}
 
+			const current = background.currentSrc || background.src || null;
+			const pool = readBackgroundPool(background);
+			// 首选仍走既有的均匀随机选图（保证「换到的一定不是当前这张」）
 			const choice = selectNextWallpaper({
-				pool: readBackgroundPool(background),
-				current: background.currentSrc || background.src || null,
+				pool,
+				current,
 				baseUrl: document.baseURI,
 			});
 			if (!choice.ok) {
 				// 池是空的 / 只有当前这一张：两种原因都对访客说「没得换」
 				announce(ANNOUNCEMENT.none);
+				shake();
 				return;
 			}
 
-			const usable = await preloadCandidate(choice.url);
-			if (!usable) {
-				// 加载失败：当前背景原样保留，控件解锁后可以再试
+			// 首选失败时依次换用尚未尝试过的候选；每个候选最多试一次
+			const report = await runAttempts(
+				orderAttempts(
+					collectWallpaperCandidates(pool, current, document.baseURI),
+					choice.url,
+				),
+				preloadCandidate,
+			);
+			if (report.status === "exhausted") {
+				// 全部候选都加载不出来（含超时）：当前背景原样保留
 				announce(ANNOUNCEMENT.failed);
+				shake();
 				return;
 			}
 
 			// 交叉淡入（T4）：旧图原地不动、只新建一层单向淡入；临时层建不起来
 			// （受限环境）时退化为直接切换，保证功能仍在。
-			const result = await crossfadeBackground(background, choice.url);
-			if (result === "skipped") background.src = choice.url;
+			const result = await crossfadeBackground(background, report.url);
+			if (result === "skipped") background.src = report.url;
 			if (result === "failed") {
 				// 提交阶段失败：原背景已回滚，按「加载失败」告诉访客
 				announce(ANNOUNCEMENT.failed);
+				shake();
 				return;
 			}
 			if (result === "cancelled") return;
