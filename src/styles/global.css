@@ -7789,6 +7789,19 @@ body,
   }
 }
 
+/* 忙碌态可感知（spec 故事 22：换图期间继续操作不能静默吞掉）。
+   克制做法：只把衣服轻微压暗并给出 wait 光标，不做循环动画——循环动画会
+   变成持续抢注意力的装饰，与「静止时不摇摆」的口径冲突。
+   光标沿用站内既有的语义态例外：显示 wait 表示「暂时不可操作」。 */
+.wpull__grab[aria-busy="true"] {
+  cursor: wait;
+}
+
+.wpull__grab[aria-busy="true"] .wpull__art {
+  opacity: 0.72;
+  transition: opacity 160ms var(--ease-out);
+}
+
 /* 确认环：键盘聚焦时可见（不依赖 hover） */
 .wpull__grab:focus-visible {
   outline: 2px solid var(--colorful-green);

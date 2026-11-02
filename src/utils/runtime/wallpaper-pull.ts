@@ -28,6 +28,7 @@ import {
 	type TryLoadResult,
 } from "../wallpaper-pull-attempts";
 import {
+	PULL_THRESHOLD,
 	isDragStarted,
 	isPullPastThreshold,
 	resolvePull,
@@ -101,6 +102,9 @@ const SETTLE_MS = 320;
  * 只摇**一次**（animation-iteration-count: 1），不循环。
  */
 const SHAKE_MS = 220;
+
+/** 脚本化下拉的行程（px）：与阈值同量级，够看出拉了一下 */
+const SCRIPTED_TUG_PX = 56;
 
 /** 三类结果播报文本：必须各不相同（票面硬约束） */
 const ANNOUNCEMENT = {
@@ -391,6 +395,16 @@ export function initWallpaperPull() {
 	const button = host.querySelector<HTMLButtonElement>(BUTTON_SELECTOR);
 	const live = host.querySelector<HTMLElement>(LIVE_SELECTOR);
 
+	/**
+	 * 给按钮写可访问性状态。宿主可能来自裁剪过的 DOM（含单测里的最小桩），
+	 * 缺 setAttribute 时静默跳过——状态设置不该让换图事务整体失败。
+	 */
+	const setButtonState = (name: string, value: string) => {
+		if (typeof button?.setAttribute === "function") {
+			button.setAttribute(name, value);
+		}
+	};
+
 	/** 一次换图事务未完成前拒绝重复触发（成功/无候选/失败都由 finally 解锁） */
 	let busy = false;
 
@@ -456,6 +470,8 @@ export function initWallpaperPull() {
 		if (busy) return;
 		busy = true;
 		host.dataset.busy = "true";
+		// 忙碌态必须可被辅助技术感知（spec 故事 22：不能静默吞掉操作）
+		setButtonState("aria-busy", "true");
 		try {
 			const background =
 				document.querySelector<HTMLImageElement>(BACKGROUND_SELECTOR);
@@ -511,6 +527,7 @@ export function initWallpaperPull() {
 		} finally {
 			busy = false;
 			delete host.dataset.busy;
+			setButtonState("aria-busy", "false");
 		}
 	}
 
@@ -711,6 +728,54 @@ export function initWallpaperPull() {
 			releasePointer({ change: false, timeStamp: event.timeStamp });
 		});
 
+		/**
+		 * 脚本化下拉：单击 / Enter / Space 时，让挂件自己演一遍「拉下去 → 回弹」，
+		 * 使键盘与指针单击的反馈与手动拖动一致（spec 故事 18；票 #129 与 #130 收口时
+		 * 明确要求两者走同一段动画，不另写第二套）。
+		 *
+		 * 减少动态时**整套跳过**：位移是 vestibular 风险源，但功能不降级——
+		 * 直接去换图即可（T7 口径：撤位移、保功能）。
+		 *
+		 * 复用拖拽的同一个 CSS 变量（--wpull-pull），所以观感天然一致；
+		 * 用 WAAPI 而不是 CSS transition，因为这条是「一次性的演出」，
+		 * 需要 promise 化的结束点来决定何时发起换图。
+		 */
+		async function playScriptedTug(
+			targetHost: HTMLElement,
+			targetButton: HTMLElement,
+		) {
+			if (prefersReducedMotion()) return;
+			// 按钮可能来自裁剪过的宿主（含单测里的最小 DOM 桩）：查不到就不演，直接换图
+			const art =
+				typeof targetButton.querySelector === "function"
+					? targetButton.querySelector<HTMLElement>(".wpull__art")
+					: null;
+			if (!art || typeof art.animate !== "function") return;
+
+			// 行程取阈值量级：够看出「拉了一下」，又不至于把衣服甩到导航带以下
+			const tug = Math.min(SCRIPTED_TUG_PX, PULL_THRESHOLD);
+			const half = Math.max(160, SETTLE_MS * 0.5);
+
+			try {
+				const animation = art.animate(
+					[
+						{ transform: "translateY(0px)" },
+						{ transform: `translateY(${tug}px)`, offset: 0.55 },
+						{ transform: "translateY(0px)" },
+					],
+					{
+						duration: half * 2,
+						easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+						fill: "none",
+					},
+				);
+				await animation.finished.catch(() => {});
+			} catch {
+				// WAAPI 不可用或被取消：不影响换图本身
+			}
+			targetHost.dataset.tugged = "true";
+		}
+
 		button.addEventListener("click", (event) => {
 			// 指针单击（detail >= 1）若紧跟在拖动释放之后，是浏览器补发的那一次——
 			// 抑制它，避免一次手势换两次图。键盘产生的合成点击 detail === 0，
@@ -721,7 +786,8 @@ export function initWallpaperPull() {
 			) {
 				return;
 			}
-			void requestChange();
+			// 先演一遍下拉再换图（脚本化动画），让单击/键盘与手拖的反馈一致
+			void playScriptedTug(host, button).then(() => requestChange());
 		});
 
 		button.addEventListener("keydown", (event) => {
@@ -732,7 +798,8 @@ export function initWallpaperPull() {
 			event.preventDefault();
 			// 按住不放的自动重复不叠加请求（忙碌锁之外的第二道闸）
 			if (event.repeat) return;
-			void requestChange();
+			// 先演一遍下拉再换图（脚本化动画），让单击/键盘与手拖的反馈一致
+			void playScriptedTug(host, button).then(() => requestChange());
 		});
 	}
 

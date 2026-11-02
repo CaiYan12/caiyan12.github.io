@@ -106,10 +106,18 @@ async function waitIdle(page, timeout = 20000) {
 		await page.waitForFunction(
 			(sel) => {
 				const host = document.querySelector("[data-wallpaper-pull]");
+				// 还要等**单击的脚本化下拉**放完：那段时间 busy 未起、无临时层、
+				// 也没有 is-settling，只看前三个信号会立即返回「已空闲」，
+				// 而换图其实还没发起（票 #129 加了脚本化动画后这里必须一起等）。
+				const art = document.querySelector(".wpull__art");
+				const animating = art
+					? art.getAnimations().some((a) => a.playState === "running")
+					: false;
 				return (
 					document.querySelectorAll(sel).length === 0 &&
 					!host?.dataset.busy &&
-					!host?.classList.contains("is-settling")
+					!host?.classList.contains("is-settling") &&
+					!animating
 				);
 			},
 			TEMP,
