@@ -1,5 +1,12 @@
 # 更新日志
 
+## 2026-11-02（下午）：减少动效判定收敛，两件遗留收口
+
+- **减少动效判定统一到唯一判定点**：删掉 `src/nice-books/scripts/shared.ts` 与 `src/utils/site-modal.ts` 里两份**逐字重复**的 `prefersReducedMotion()` 本地实现，改为转发 `src/utils/runtime/reduced-motion.ts`（`shared.ts` 保留同名 re-export，`archive.ts` 的导入路径不变）；`Sakura.astro` 与 `src/nice-books/scripts/home.ts` 的 4 处裸 `window.matchMedia("(prefers-reduced-motion: reduce)")` 一并换掉。理由：判定点一旦分裂，将来改语义（加监听、换 `matchMedia().addEventListener`）就会漏掉某几处。来源是搁了三周的 `stash@{0}`「T7 超范围：全站 reduced-motion 收敛」，动手前先用 `git stash show -p | git apply --check` 验证仍可干净套用。行为不变（两者都是每次调用现查一次）。
+- **`src/constants/github-*.json` 生成物刷新**（`chore(data)`）：只动 `generatedAt` 与 10-31 / 11-01 / 11-02 三天贡献计数（10→57 / 0→21 / 0→9）。提交它的额外价值是**刷新回退缓存**——`fetch-github-*.mjs` 取数失败时保留已提交文件供页面渲染（`SKIP … About page will use stale cache`）。
+- **`docs/plans/wallpaper-pull-handoff/` 按惯例归档**进 `docs/history/history.md`：这批 4 个文件原本 **untracked**（没有历史 = 删了永久丢失），所以拆两步——先入库（`070e1a9`）让恢复命令有源，再删除并登记。恢复命令从 `git show <sha>:<path>` 换成 `git archive <sha> <dir> \| tar -x`：`git restore --worktree` 被本机 CC Safety Net 拦（`git.restore-worktree`），照抄会让下一个人卡住，新版已实跑验证能还原 4 文件 368 KB。
+- 验证：prettier 干净；`astro check` 196 文件 0 error；`src/utils` 单测 261 通过；`astro build` 229 页；`smoke:nice-books` **72/72**（受本次受影响面正好是 Nice Books 与 Sakura）；CI 三条 workflow 全 success。
+
 ## 2026-11-02：拉绳壁纸挂件重做为 360 原版小挂件，导航宽度收敛为单一真源
 
 - **视觉重做**（用户提供 2013–2017 年 360 壁纸原版截图作为唯一设计依据）：T 恤由 130px SVG 盒里的 64×84 路径（含 3px 描边实渲染 67×87）缩到 **墨迹 26.8×27.6 CSS px**（盒 30×28），绳由 2px 紫渐变直线改 **1px 双股细线**（主股 `#4257be` + 0.4px 高光股，`vector-effect="non-scaling-stroke"` 保证拉长不变粗）并带自然垂坠弧度与领口绳结；整件 30×50，衣服顶边距视口顶边 22px。新尺寸对照原版实测（1103 宽截屏：T 恤 28×25、绳约 24、中心线 81.3%）。

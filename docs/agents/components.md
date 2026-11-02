@@ -18,6 +18,12 @@
 - 生产 console 清理在 `astro.config.mjs` 的 vite `esbuild` 段（`drop: ["debugger"]`、`pure: ["console.log", "console.debug"]`）；`console.warn/error` 保留供线上排错，勿移除该配置；mermaid cynefin chunk 内 2 处残留为第三方压缩代码，已知且接受
 - 页面内 `<script>` 若含 `{...}` 模板插值必须加 `is:inline`（否则 Astro 当 TS 模块处理会解析失败）
 
+### 减少动效只有这一个判定点（2026-11-02 收敛）
+
+- 全站唯一实现是 `src/utils/runtime/reduced-motion.ts` 的 `prefersReducedMotion()`，**每次调用都重新查询**（不缓存、不订阅）。Sakura（`src/components/control/Sakura.astro`）、Nice Books（`scripts/home.ts` 与 `scripts/shared.ts`，后者保留同名 re-export 供 `archive.ts` 用）、`src/utils/site-modal.ts`、拉绳壁纸挂件都已改为转发它。
+- **不要在组件里再写 `window.matchMedia("(prefers-reduced-motion: reduce)")`**：判定点一分裂，将来要改语义（挂监听、换成 `addEventListener`、统一加一层「用户手动关闭动效」）就会漏改某几处。这条由 `smoke:nice-books` 间接覆盖（它的动效路径走这个判定点）。
+- 收敛前状态可查：`git show af618cd^:src/utils/site-modal.ts` 能看到那份被删掉的本地副本。
+
 ### 拉绳壁纸挂件（src/components/control/WallpaperPull.astro + src/utils/runtime/wallpaper-pull.ts，2026-11-02 视觉重做）
 
 - **布局级组件，只在 Swup 容器外初始化一次**：挂在 `Layout.astro` 的 Swup 容器之外，随 `pagefindReady()` 跑一次 `initWallpaperPull()`，`dataset.bound` 守卫防重入，**不进 `runtimeTable` 的 swap 清单**（切页不重建，实测切三页后仍只有一个实例、单次手势仍只换一次图）。
