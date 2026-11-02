@@ -1,5 +1,7 @@
 # vendored 第三方库（Font Awesome 4）
 src/styles/font-awesome.css
+# 原始技能图标按 SOURCES.json 的 SHA-256 保留，不改写供应商 SVG。
+public/skill-icons/**/*.svg
 # Historical session transcript, retained verbatim
 docs/history/qweather-settingup-history-sessions.md
 # Original Colorful theme stylesheet kept as a reference snapshot

@@ -1,0 +1,37 @@
+[
+	{
+		"prefix": "mdi",
+		"source": "https://raw.githubusercontent.com/Templarian/MaterialDesign/master/LICENSE",
+		"file": "licenses/mdi.txt",
+		"bytes": 992,
+		"sha256": "3bae6305bcaa6d10219b999f65c342034c2d40b1c0e8567fa08605e73ccba829"
+	},
+	{
+		"prefix": "ep",
+		"source": "https://raw.githubusercontent.com/element-plus/element-plus-icons/main/LICENSE",
+		"file": "licenses/ep.txt",
+		"bytes": 1121,
+		"sha256": "5db4ebb3abd8353774ae148723ccc14087d6dab99473f77a7b799b55defd8dfe"
+	},
+	{
+		"prefix": "devicon",
+		"source": "https://raw.githubusercontent.com/devicons/devicon/master/LICENSE",
+		"file": "licenses/devicon.txt",
+		"bytes": 1072,
+		"sha256": "121194741d4a915b9f5890fdd6dd95121f9b1f816517c792358d72d7c838d664"
+	},
+	{
+		"prefix": "logos",
+		"source": "https://raw.githubusercontent.com/gilbarbara/logos/master/LICENSE.txt",
+		"file": "licenses/logos.txt",
+		"bytes": 6555,
+		"sha256": "36ffd9dc085d529a7e60e1276d73ae5a030b020313e6c5408593a6ae2af39673"
+	},
+	{
+		"prefix": "Apache-2.0",
+		"source": "https://www.apache.org/licenses/LICENSE-2.0",
+		"file": "licenses/Apache-2.0.txt",
+		"bytes": 11358,
+		"sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+	}
+]

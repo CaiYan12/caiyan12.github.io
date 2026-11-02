@@ -2,3 +2,6 @@
 # （本仓库 core.autocrlf=true，这两处必须与工作区/blob 逐字节一致）
 vendor/pelican-bike/** -text
 public/pelican-bike/** -text
+# 技能图标与许可按来源 SHA-256 保留原始字节，检出时也不得转换换行。
+public/skill-icons/**/*.svg -text
+public/skill-icons/licenses/*.txt -text

@@ -66,10 +66,10 @@ test("外部域报错按调用点策略不计失败（台子不预设清单）",
 	assert.deepEqual(h.errors, []);
 });
 
-test("pageerror 与按文案的噪声策略都生效（ai-news 那类离线快照场景）", () => {
+test("pageerror 与按文案的噪声策略都生效（离线快照场景）", () => {
 	const h = makeHarness({
 		envVar: "HARNESS_TEST_BASE",
-		defaultBase: "http://127.0.0.1:4321/ai-news/",
+		defaultBase: "http://127.0.0.1:4321/fixture/offline/",
 		isNoise: ({ text }) => text.includes("[feed] 实时抓取失败"),
 	});
 	const page = fakePage();
@@ -113,7 +113,7 @@ test("多页面各一个报错汇，互不污染", () => {
 	page.emit("console", {
 		type: () => "error",
 		text: () => "Failed to load resource: net::ERR_FAILED",
-		location: () => ({ url: "https://daily.juya.uk/feed.xml" }),
+		location: () => ({ url: "https://example.com/feed.xml" }),
 	});
 	assert.deepEqual(offline.errors, []);
 	assert.deepEqual(h.errors, [], "主汇不应看到子汇的事件");

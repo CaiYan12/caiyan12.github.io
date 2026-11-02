@@ -11,7 +11,7 @@
 // console.error 分成两条独立判据，台子那个合并汇把两者压进同一个数组就分不开了。
 //
 // ⚠️ PELICAN_BASE_URL 传的是**站点根**（脚本自己拼 /pelican-bike/），与 FANCY_BASE_URL /
-//    UI_SMOKE_BASE_URL 同形；而 NICE_BOOKS_BASE_URL / AI_NEWS_BASE_URL 传的是**完整页面地址**。
+//    UI_SMOKE_BASE_URL 同形；而 NICE_BOOKS_BASE_URL 传的是**完整页面地址**。
 //    两种形态混用是这个仓库记过三次的坑，传错的表现是「选择器等不到」的假失败 —— 所以写在这里。
 //    默认 4322 对应 `pnpm preview --port 4322`；Astro preview 在 Windows 只绑 `[::1]`，
 //    故默认值写 localhost 而不是 127.0.0.1，与 test:fancybox / smoke:ui 同口径。

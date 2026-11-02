@@ -347,6 +347,18 @@ export function initArticleToc() {
 		if (revealDebounce) clearTimeout(revealDebounce);
 		revealDebounce = window.setTimeout(() => {
 			revealDebounce = 0;
+			// scroll 的 rAF 可能还没执行：activeIndex 不是到期时的实时阅读位置。
+			// 先现量；变化时由 update 重排防抖，不能提前启动后再走“在飞追新”。
+			const latestIndex = pickActiveIndex(
+				measureTops(),
+				window.scrollY,
+				window.innerHeight,
+				document.documentElement.scrollHeight,
+			);
+			if (latestIndex !== activeIndex) {
+				update();
+				return;
+			}
 			if (revealPendingIndex === activeIndex) {
 				startReveal(
 					pickTocRevealScrollTop(

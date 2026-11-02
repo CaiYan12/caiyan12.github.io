@@ -7,7 +7,7 @@
 //       文章页顶部与末尾两行、侧栏章节目录、目录页与总览页 200 + 封面（含 og:image）。
 // 台子（check / 报错采集 / 汇总）来自 scripts/lib/smoke-harness.mjs，本文件只写判据。
 // SERIES_BASE_URL 传的是**站点根**（脚本自己拼 /posts/... 与 /series/...），
-// 与 NICE_BOOKS_BASE_URL / AI_NEWS_BASE_URL 那种「完整页面地址」形态不同。
+// 与 NICE_BOOKS_BASE_URL 那种「完整页面地址」形态不同。
 //
 // 判据总数写死在 EXPECTED_CHECKS：同批固定后不得增减（沿用 #49 的不变量做法）。
 // 改判据必须同时改这个常量，否则脚本以退出码 2 拒绝运行——防止「顺手加一条」
@@ -1203,19 +1203,30 @@ const installTocSettleWait = (pg) =>
 		),
 	);
 
-	// 防抖：从第 50 条居中位出发，连续两次激活变化（先深第 55 条、间隔 <100ms
-	// 后回第 45 条）——目标稳定前容器必须一动不动。两段方向相反是判据的牙齿：
-	// 漏掉防抖的实现会立刻朝第 55 条的居中位走（起点之上），采样会在起点之上
-	// 读到值；防抖生效则随后只向第 45 条的居中位（起点之下）走。
-	// **前提自证**：两次激活变化落在 100ms 防抖窗内是被测前提——rAF 双帧间隔
-	// 遇机器抖动可能被拉过 100ms，运行时届时对第一个目标起跳是**合法行为**
-	// （防抖窗已过，2026-10-15 实测假红 max=start+16）。改显式时钟间隔：两次
-	// scrollTo 相隔 <100ms 才继续；超窗则等容器稳定后重做（至多 5 轮），采样
-	// 窗口只覆盖「目标尚未稳定」的时段。
-	const debounceStart = (await tocSpyProbe()).scrollTop;
-	const debounceSamples = await sp2.evaluate(
-		async ([yA, yB]) => {
+	// 防抖前先等旧动画真正静止。±2px 居中只证明“接近”，不证明在飞动画结束。
+	// 第一次真实激活后马上反向改变阅读位置；同步 scrollTo 两次会被浏览器合并，
+	// 无法证明防抖。独立的可控时钟测试另守“到期早于 scroll 的 rAF”边界。
+	const debounceRun = await sp2.evaluate(
+		async ([yA, yB, indexA]) => {
 			const sc = document.querySelector("#sidebar [data-article-toc]");
+			await new Promise((resolve, reject) => {
+				const deadline = performance.now() + 5000;
+				let last = NaN,
+					stable = 0;
+				const tick = () => {
+					stable =
+						Math.abs(sc.scrollTop - last) < 0.5 ? stable + 1 : 0;
+					last = sc.scrollTop;
+					if (stable >= 8) return resolve();
+					if (performance.now() > deadline)
+						return reject(
+							new Error("previous TOC animation did not settle"),
+						);
+					requestAnimationFrame(tick);
+				};
+				requestAnimationFrame(tick);
+			});
+			const start = sc.scrollTop;
 			const samples = [];
 			let raf = 0;
 			const tick = () => {
@@ -1223,28 +1234,53 @@ const installTocSettleWait = (pg) =>
 				raf = requestAnimationFrame(tick);
 			};
 			raf = requestAnimationFrame(tick);
-			// 同步连发两跳（间隔≈0ms，物理上不可能越过 100ms 防抖窗）——
-			// 前提「两次激活变化落在窗内」由构造保证，不赌 rAF 节流节奏。
-			// （前版用 rAF 双帧分隔 + 时钟重试，实测机器抖动下前提仍会被
-			// 违反——运行时对第一个目标起跳是合法行为，判据假红。）
-			window.scrollTo(0, yA);
+			const activeAt = await new Promise((resolve, reject) => {
+				const timer = setTimeout(() => {
+					observer.disconnect();
+					reject(new Error("first TOC activation missing"));
+				}, 5000);
+				const observer = new MutationObserver(() => {
+					if (
+						!sc
+							.querySelectorAll("li")
+							[indexA]?.classList.contains("current")
+					)
+						return;
+					observer.disconnect();
+					clearTimeout(timer);
+					resolve(performance.now());
+				});
+				observer.observe(sc, {
+					attributes: true,
+					subtree: true,
+					attributeFilter: ["class"],
+				});
+				window.scrollTo(0, yA);
+			});
 			window.scrollTo(0, yB);
+			const changeGap = performance.now() - activeAt;
 			// 等落定：连续 8 帧不动且确有位移（防抖静默期不算落定）——页内 helper。
 			await window.__tocWaitScrollSettled(sc);
 			cancelAnimationFrame(raf);
-			return samples;
+			return { samples, start, changeGap };
 		},
-		[y55, await yOfHeading(45)],
+		[y55, await yOfHeading(45), exp55],
 	);
+	const {
+		samples: debounceSamples,
+		start: debounceStart,
+		changeGap,
+	} = debounceRun;
 	const debounceProbe = await tocSpyProbe();
 	check(
 		"激活态：连续激活变化防抖生效（目标稳定前容器不动，动画不逐帧启停）",
-		Math.max(...debounceSamples) <= debounceStart + 2 &&
+		changeGap < 100 &&
+			Math.max(...debounceSamples) <= debounceStart + 2 &&
 			debounceProbe !== null &&
 			debounceProbe.scrollTop < debounceStart - 10 &&
 			debounceProbe.centerOffset !== null &&
 			Math.abs(debounceProbe.centerOffset) <= 2,
-		`max=${Math.max(...debounceSamples).toFixed(1)} start=${debounceStart} fin=${debounceProbe?.scrollTop}`,
+		`max=${Math.max(...debounceSamples).toFixed(1)} start=${debounceStart} fin=${debounceProbe?.scrollTop} first-active→reverse=${changeGap.toFixed(1)}ms`,
 	);
 
 	// 判据 3：滚到页底 → 最后一条被点亮（页底兜底分支）。

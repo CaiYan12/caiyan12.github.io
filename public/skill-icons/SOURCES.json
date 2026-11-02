@@ -1,0 +1,365 @@
+{
+	"retrievedAt": "2026-11-02T11:59:07.527Z",
+	"metadataSource": "https://api.iconify.design/collections?prefixes=arcticons,devicon,ep,logos,mdi",
+	"collections": {
+		"mdi": {
+			"name": "Material Design Icons",
+			"total": 7447,
+			"author": {
+				"name": "Pictogrammers",
+				"url": "https://github.com/Templarian/MaterialDesign"
+			},
+			"license": {
+				"title": "Apache 2.0",
+				"spdx": "Apache-2.0",
+				"url": "https://github.com/Templarian/MaterialDesign/blob/master/LICENSE"
+			},
+			"samples": [
+				"account-check",
+				"bell-alert-outline",
+				"calendar-edit",
+				"skip-previous",
+				"home-variant",
+				"lock-open-outline"
+			],
+			"height": 24,
+			"category": "Material",
+			"tags": ["Precise Shapes", "Has Padding"],
+			"palette": false
+		},
+		"ep": {
+			"name": "Element Plus",
+			"total": 293,
+			"version": "2.3.2",
+			"author": {
+				"name": "Element Plus",
+				"url": "https://github.com/element-plus/element-plus-icons"
+			},
+			"license": {
+				"title": "MIT",
+				"spdx": "MIT",
+				"url": "https://github.com/element-plus/element-plus-icons/blob/main/packages/svg/package.json"
+			},
+			"samples": [
+				"home-filled",
+				"partly-cloudy",
+				"avatar",
+				"briefcase",
+				"platform",
+				"flag"
+			],
+			"height": 32,
+			"displayHeight": 16,
+			"category": "UI 16px / 32px",
+			"tags": ["Precise Shapes", "Has Padding"],
+			"palette": false
+		},
+		"devicon": {
+			"name": "Devicon",
+			"total": 1087,
+			"author": {
+				"name": "konpa",
+				"url": "https://github.com/devicons/devicon/tree/master"
+			},
+			"license": {
+				"title": "MIT",
+				"spdx": "MIT",
+				"url": "https://github.com/devicons/devicon/blob/master/LICENSE"
+			},
+			"samples": [
+				"windows8",
+				"tensorflow",
+				"logstash",
+				"stackblitz",
+				"fsharp",
+				"vite"
+			],
+			"height": 32,
+			"displayHeight": 16,
+			"category": "Programming",
+			"palette": true
+		},
+		"logos": {
+			"name": "SVG Logos",
+			"total": 2043,
+			"author": {
+				"name": "Gil Barbara",
+				"url": "https://github.com/gilbarbara/logos"
+			},
+			"license": {
+				"title": "CC0",
+				"spdx": "CC0-1.0",
+				"url": "https://raw.githubusercontent.com/gilbarbara/logos/master/LICENSE.txt"
+			},
+			"samples": [
+				"npm-icon",
+				"uikit",
+				"patreon",
+				"serverless",
+				"vue",
+				"modernizr"
+			],
+			"category": "Logos",
+			"palette": true
+		},
+		"arcticons": {
+			"name": "Arcticons",
+			"total": 15322,
+			"author": {
+				"name": "Donnnno",
+				"url": "https://github.com/Arcticons-Team/Arcticons"
+			},
+			"license": {
+				"title": "CC BY-SA 4.0",
+				"spdx": "CC-BY-SA-4.0",
+				"url": "https://creativecommons.org/licenses/by-sa/4.0/"
+			},
+			"samples": ["instagram", "color-capture"],
+			"height": 48,
+			"displayHeight": 24,
+			"category": "High Detail",
+			"tags": ["Precise Shapes", "Has Padding"],
+			"palette": false
+		}
+	},
+	"files": [
+		{
+			"icon": "arcticons:fl-studio-mobile",
+			"file": "arcticons/fl-studio-mobile.svg",
+			"source": "https://api.iconify.design/arcticons/fl-studio-mobile.svg",
+			"bytes": 976,
+			"sha256": "bcd7dccf50c84b56c7e1a0272fa983cb1128d6d99291c2f624f415d3d99f72dd"
+		},
+		{
+			"icon": "devicon:cmake",
+			"file": "devicon/cmake.svg",
+			"source": "https://api.iconify.design/devicon/cmake.svg",
+			"bytes": 314,
+			"sha256": "b63b73fdeb36cb73ab5e514eb844a595475dc908e5d9a2bf9228e0fffccd26e7"
+		},
+		{
+			"icon": "ep:element-plus",
+			"file": "ep/element-plus.svg",
+			"source": "https://api.iconify.design/ep/element-plus.svg",
+			"bytes": 936,
+			"sha256": "f374dc8165ed2c9ef6ca4014de6e106bd73fd1a851b314155caedab9f85a938c"
+		},
+		{
+			"icon": "logos:adobe-photoshop",
+			"file": "logos/adobe-photoshop.svg",
+			"source": "https://api.iconify.design/logos/adobe-photoshop.svg",
+			"bytes": 2189,
+			"sha256": "7cde791af9ab2c6843d3094dc24f6d922b6f3faa21dc607f895184997f3cfc30"
+		},
+		{
+			"icon": "logos:astro",
+			"file": "logos/astro.svg",
+			"source": "https://api.iconify.design/logos/astro.svg",
+			"bytes": 4253,
+			"sha256": "4a887c27bc2e30a0690c2818449546b0305e2b8af81b53f46536a0ea9eeb11fb"
+		},
+		{
+			"icon": "logos:electron",
+			"file": "logos/electron.svg",
+			"source": "https://api.iconify.design/logos/electron.svg",
+			"bytes": 2439,
+			"sha256": "97fe73c8c8b3683ae3a31cea60aafe167a036ff1ffe4801e2bf656dd157afaaf"
+		},
+		{
+			"icon": "logos:git-icon",
+			"file": "logos/git-icon.svg",
+			"source": "https://api.iconify.design/logos/git-icon.svg",
+			"bytes": 854,
+			"sha256": "0a4112261a7dc83b9ced135bcbf86452df4893da6ec68b311cd777ff42cbe0bc"
+		},
+		{
+			"icon": "logos:greensock",
+			"file": "logos/greensock.svg",
+			"source": "https://api.iconify.design/logos/greensock.svg",
+			"bytes": 29085,
+			"sha256": "0ee3ccba2ccbc0c48065523be591520778d419fc467fc9fe9ccf829373b0b6b0"
+		},
+		{
+			"icon": "logos:javascript",
+			"file": "logos/javascript.svg",
+			"source": "https://api.iconify.design/logos/javascript.svg",
+			"bytes": 843,
+			"sha256": "67e94812a20dce9698882b8302fe5bf198689ef0049752673aa3763a97ed1ab8"
+		},
+		{
+			"icon": "logos:linux-tux",
+			"file": "logos/linux-tux.svg",
+			"source": "https://api.iconify.design/logos/linux-tux.svg",
+			"bytes": 11277,
+			"sha256": "6af4f3f6ccac538e2aef9c59f855b7d70b9058c2cda4bfb433a99026dfee95f7"
+		},
+		{
+			"icon": "logos:mysql-icon",
+			"file": "logos/mysql-icon.svg",
+			"source": "https://api.iconify.design/logos/mysql-icon.svg",
+			"bytes": 3119,
+			"sha256": "a376791cb7bf643d69dc7cb8c4c7e09fa81e781127fb7ea1188bbd77e54d93d4"
+		},
+		{
+			"icon": "logos:nodejs",
+			"file": "logos/nodejs.svg",
+			"source": "https://api.iconify.design/logos/nodejs.svg",
+			"bytes": 7765,
+			"sha256": "aef03ded59edc5e9d1d5205431a556982e70d54a36ad31408c58e998f6cb17a0"
+		},
+		{
+			"icon": "logos:pinia",
+			"file": "logos/pinia.svg",
+			"source": "https://api.iconify.design/logos/pinia.svg",
+			"bytes": 4397,
+			"sha256": "2a9ad081a5f932f05caa62f8b5ae6c4fee415769f76f2177386dfd4da253eab2"
+		},
+		{
+			"icon": "logos:pycharm",
+			"file": "logos/pycharm.svg",
+			"source": "https://api.iconify.design/logos/pycharm.svg",
+			"bytes": 3385,
+			"sha256": "8e6e5630a97d7d52e7754c3f5e06d335e81be5f40e44c108e35199c34fc419ef"
+		},
+		{
+			"icon": "logos:qt",
+			"file": "logos/qt.svg",
+			"source": "https://api.iconify.design/logos/qt.svg",
+			"bytes": 1129,
+			"sha256": "8f02c524621c977943beff4064847ef54cde7a86ef2dd44e659f43ea18417692"
+		},
+		{
+			"icon": "logos:react",
+			"file": "logos/react.svg",
+			"source": "https://api.iconify.design/logos/react.svg",
+			"bytes": 3695,
+			"sha256": "f76f0d5f4ac4492db6e8c35f70a6b7d158ffe75bb34f8b1c2eb1a6fc80b4eee0"
+		},
+		{
+			"icon": "logos:rust",
+			"file": "logos/rust.svg",
+			"source": "https://api.iconify.design/logos/rust.svg",
+			"bytes": 5221,
+			"sha256": "5ef6704ad6df56d3e6f134b16a9b3f6470555423bd5af7b6110207d2d94945bf"
+		},
+		{
+			"icon": "logos:sqlite",
+			"file": "logos/sqlite.svg",
+			"source": "https://api.iconify.design/logos/sqlite.svg",
+			"bytes": 5757,
+			"sha256": "1e08724212c7283677ae19df743c20aec9a3e036bc0a26f62359386d02f40b00"
+		},
+		{
+			"icon": "logos:svelte",
+			"file": "logos/svelte.svg",
+			"source": "https://api.iconify.design/logos/svelte.svg",
+			"bytes": 2970,
+			"sha256": "808b79675024aedede1e8cc3578d484d0509ed2e60372af8b6f0557de2bfc64d"
+		},
+		{
+			"icon": "logos:tailwindcss",
+			"file": "logos/tailwindcss.svg",
+			"source": "https://api.iconify.design/logos/tailwindcss.svg",
+			"bytes": 3397,
+			"sha256": "5ab49cb7143219ede60d855108b1c31858e1ed26de5ed10187c4ab441f75d6c7"
+		},
+		{
+			"icon": "logos:tauri",
+			"file": "logos/tauri.svg",
+			"source": "https://api.iconify.design/logos/tauri.svg",
+			"bytes": 1187,
+			"sha256": "38eba23be43e7d1fb150a29e095889ea1f84b994f42a99c70689ddb5ff32104e"
+		},
+		{
+			"icon": "logos:typescript",
+			"file": "logos/typescript.svg",
+			"source": "https://api.iconify.design/logos/typescript.svg",
+			"bytes": 3036,
+			"sha256": "0fb20c6c90b9c70b52df8b69ab36616488399215880b56e7e605edbaa0d65260"
+		},
+		{
+			"icon": "logos:visual-studio-code",
+			"file": "logos/visual-studio-code.svg",
+			"source": "https://api.iconify.design/logos/visual-studio-code.svg",
+			"bytes": 2321,
+			"sha256": "a59cf7d786ac4f8b74f7ddcafcfcb8c52b6e43781f494f601d8640b934f5eaae"
+		},
+		{
+			"icon": "logos:vite",
+			"file": "logos/vite.svg",
+			"source": "https://api.iconify.design/logos/vite.svg",
+			"bytes": 8348,
+			"sha256": "015ab6d43f0b1742aae7ca7f8b376a7612929e596d00e66fc698e1f009e6ab76"
+		},
+		{
+			"icon": "logos:vue",
+			"file": "logos/vue.svg",
+			"source": "https://api.iconify.design/logos/vue.svg",
+			"bytes": 326,
+			"sha256": "8e8238eb23b0ddcab29175838f0bc21a67237708ed896ff70eadcc0ee6b72268"
+		},
+		{
+			"icon": "mdi:bootstrap",
+			"file": "mdi/bootstrap.svg",
+			"source": "https://api.iconify.design/mdi/bootstrap.svg",
+			"bytes": 521,
+			"sha256": "e6f4d59e7278b7a12817f67d78f4aeeed2240793a941f9d2905a1c3a94ecf01d"
+		},
+		{
+			"icon": "mdi:code-block-tags",
+			"file": "mdi/code-block-tags.svg",
+			"source": "https://api.iconify.design/mdi/code-block-tags.svg",
+			"bytes": 299,
+			"sha256": "3d3aa2d3a0bf23880dafe4e1f16075e7b0d8c339cd651d80498d65986c5f8f3f"
+		},
+		{
+			"icon": "mdi:jquery",
+			"file": "mdi/jquery.svg",
+			"source": "https://api.iconify.design/mdi/jquery.svg",
+			"bytes": 522,
+			"sha256": "b2faad10d7d8043b56e80545c2baabd88c4eda5c06f518e61ed8f2313b670cea"
+		},
+		{
+			"icon": "mdi:language-cpp",
+			"file": "mdi/language-cpp.svg",
+			"source": "https://api.iconify.design/mdi/language-cpp.svg",
+			"bytes": 561,
+			"sha256": "0521e1e878e49e03309c39ee51b0492c1198ed3cdc915afba6976cdcc13c7b99"
+		},
+		{
+			"icon": "mdi:language-css3",
+			"file": "mdi/language-css3.svg",
+			"source": "https://api.iconify.design/mdi/language-css3.svg",
+			"bytes": 267,
+			"sha256": "0730ed38eab9eaf75908c0f04a9852b8eca455087f7bdec7be30f925ace855b2"
+		},
+		{
+			"icon": "mdi:language-html5",
+			"file": "mdi/language-html5.svg",
+			"source": "https://api.iconify.design/mdi/language-html5.svg",
+			"bytes": 280,
+			"sha256": "360964e38d834ff24e38f7c02d457025cde9c70e2528a39742a253d789acd7f5"
+		},
+		{
+			"icon": "mdi:language-java",
+			"file": "mdi/language-java.svg",
+			"source": "https://api.iconify.design/mdi/language-java.svg",
+			"bytes": 1102,
+			"sha256": "9a0ecc30196e48e940a30ef98b79b5dec26f7b0e6532989375f73cbfb2e90cec"
+		},
+		{
+			"icon": "mdi:language-python",
+			"file": "mdi/language-python.svg",
+			"source": "https://api.iconify.design/mdi/language-python.svg",
+			"bytes": 723,
+			"sha256": "28c692363c63b11f4f395382e4937f0fa38071c7510fb08b688e9390417c8813"
+		},
+		{
+			"icon": "mdi:wechat",
+			"file": "mdi/wechat.svg",
+			"source": "https://api.iconify.design/mdi/wechat.svg",
+			"bytes": 656,
+			"sha256": "d0a830940ee4e1b7d1397223554b02cb40f5dc007ffcada56ca852b393b8bf97"
+		}
+	]
+}

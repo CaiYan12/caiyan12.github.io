@@ -18,14 +18,18 @@ const view = slug
 	view && (
 		<WidgetLayout title="文集目录" icon="fa-list-ol" class="widget-series">
 			{/* 标题栏 actions 槽：与「换一批」同族（图标 + 文字，hover 变绿），导航用 <a> */}
+			{/* 固定静态标记保持旧版间距；不要将用户或外部内容传给 set:html。 */}
 			<a
 				slot="actions"
 				class="series-toc-link"
 				href={`/series/${view.series.slug}/`}
 				title={`查看《${view.series.name}》目录`}
 			>
-				<i class="fa fa-book" aria-hidden="true" />
-				<span>查看目录</span>
+				<Fragment
+					set:html={
+						'<i class="fa fa-book" aria-hidden="true"></i><span>查看目录</span>'
+					}
+				/>
 			</a>
 			<ol class="series-toc">
 				{view.members.map((member) => (

@@ -1,5 +1,36 @@
 # 更新日志
 
+## 2026-11-02：Astro 7 验收剩余项收口
+
+- **技能图标脱网**：`skills.astro` 改用 `public/skill-icons/` 的原始 SVG，去掉访客 Iconify 请求，保留既有图形/配色与首字回退。手动同步脚本不进构建链；来源 hash、作者、许可及完整 Apache-2.0 等许可副本随资源入库。外网阻断的桌面/移动解码测试通过；console 门禁现完整采集 23/23 页 **PASS**，没有扩大放行清单。
+- **文章目录真实竞态**：防抖到期前位置已变、scroll 的 rAF 未处理时，缓存激活项会让旧动画提前启动并跳过新目标静默期。定时器到期先现量位置，再按 update 重排；真实 DOM + 可控时钟先复现 1354≠1415，再验证 2/2。文集烟测也修正相位：先等前段动画静止、确认首次真实激活再立即反向，不再同步连发两次会合并的 scrollTo。
+- **相册脚本错误归属**：同一第二标签中同时复现播放器“已在其他页面加载”异常和 window 的 opaque `Script error.`，与供应商 storage 心跳互斥规则一致。灯箱测试全部页面补异常/本站请求监听，独立场景隔离 context；不改播放器互斥、不屏蔽异常。正常流程 27/27，给相册注入错误则按预期失败，证明后续页面错误不会遗漏。
+- **旧版间距恢复**：`WidgetHotLog.astro` / `WidgetSeries.astro` 的固定静态 Fragment 保持图标与 span 相邻；两处动作宽度恢复 60.4375 / 62.15625px，复用原 3px 图标 margin，未改共用 CSS。
+- 本地构建 229 页，check 0 errors / 0 warnings / 6 hints，utils 261/261，文集产物烟测 88/88。命令、红绿证据及失败路径见 `docs/plans/2026-11-02-astro7-followup.md`；此前初轮“待复核”记录保留历史，并补最新结果指针。未推送或部署。
+
+## 2026-11-02：Astro 7 联动升级与同数据构建验收
+
+- Astro 6.4.8→7.4.4、Svelte 集成 8.1.2→9.1.2、Markdown 7.2.0→7.3.5、Expressive Code 与两插件 0.43.1→0.44.3；仅这六个直接包改变安装版本，更新锁文件。保持 Tailwind 3、TypeScript 5、Prettier 3.9.6 及现有 unified 插件管线，未把独立项目 AI News 加回主站。
+- `astro.config.mjs` 显式 `compressHTML: true`；将 Vite 8 不再自动迁移的 `esbuild.drop/pure` 改为 Oxc minify 配置。探针先复现日志仍输出，再验证日志/调试器被剔除、实参副作用与 warn/error 保留。CI 检查/构建的 Node 改为 24，部署缓存策略不变。
+- **2026-11-02 Windows 本地 A/B**：两侧 Astro 均构建 229 页，完整产物均 230 个 HTML；路由、链接、图片、标题、代码与公式语义一致，49 页仅总文本空白有差异。OG 与 Pagefind 目录逐字节一致。16 组同状态桌面/移动首屏截图像素差异为零；原始样式指纹差异保留，区分 CSS 等价序列化、随机/外部服务状态与两处链接约 2.5/3px 宽度变化，不声称全部资源 hash 相同或性能提升。
+- **发现并处理**：dev 首次文件监听阻塞导致 Vite 模块通信超时、文章集合为空；CPU profile 的主要时间落在 `fs.watch` 注册。排除本地 `.pnpm-store` / `output` 后，默认 CLI 约 13 秒同步内容并启动；真实内容、CSS 与 Svelte 热更新及恢复通过。没有增加超时、外部化整包或修改依赖源码。
+- 本地 check 为 0 errors / 0 warnings / 6 hints，相关单测通过；UI 142/142、好书 72/72、灯箱 27/27、壁纸 47/47、AI News 主站边界通过。文集首次目录防抖判据失败、独立确认 88/88，首次失败仍保存；全页 console 门禁新旧均 REVIEW（技能页 32 个外部 Iconify 请求），不写成全绿。dev 相册另出现一条来源待核的 `Script error.`，调查结果在实施记录维护。
+- 范围、命令、逐项差异、失败日志与剩余边界见 `docs/plans/2026-11-02-astro7-upgrade.md`；当前为本地升级验收，未运行线上 CI、未推送或部署。
+
+## 2026-11-02：构建系统升级复核（尚未升级）
+
+- AI News 迁出后重新查询官方发布信息：Astro 当前 6.4.8、最新稳定版 7.4.4；Svelte 集成、Markdown 处理器和 Expressive Code 的最小联动组已在临时独立 workspace 中通过严格 peer 解析。主站依赖保持原版本，未用解析成功代替构建或实机验收。
+- Prettier 3.9.6 → 3.9.10 的内存对照覆盖当前 34 篇 Markdown，1 篇的 13 行仍会改坏公式，KaTeX 样例实测报错；文章未写回。Tailwind 4、TypeScript 7 等独立升级不捆绑进 Astro 联动组。
+- 本日 registry 来源、官方迁移说明、命令与验证边界见 `docs/plans/2026-11-02-build-system-upgrade-recheck.md`；`docs/agents/build-and-deploy.md` 已补充复核指针。未升级、提交、推送或发布。
+
+## 2026-11-02：AI 日报独立项目迁移收尾
+
+- **归属定稿**：AI News 移植已完成，本项目不再包含日报实现。README 移除独立项目内部维护表项，技术栈不再把 React 日报页列为本站功能；旧性能评估明确为迁移前历史，非主站待办。GLOSSARY、相关 `docs/agents/`、历史索引及 ADR 0001 的替代提示同步更新，AGENTS 可编辑区加入项目记忆入口。
+- **配置清理**：`tailwind.config.cjs` 删除无消费者的日报 `--t-*` 色板/字体/圆角映射，`tsconfig.json` 删除无 JSX/TSX 消费者的 React JSX 设置，`package.json` / `pnpm-lock.yaml` 移除 `react` 运行时依赖。OG 图仍给 Satori 传普通元素对象，`ReactNode` 类型仍被使用，故保留 `@types/react`。冻结锁文件的离线安装确认仅移除该运行时包，未升级依赖。
+- **边界与回归**：按 ADR 0009 保留 `/ai-news/` 桌面/移动导航、sitemap 与现有边界脚本；历史 ADR/日志、文章和项目展示保留。`scripts/ai-news-ownership.test.mjs` 改查源目录及整个日报产物目录缺席；通用测试 fixture 与脚本注释不再沿用旧日报页面地址或 `AI_NEWS_BASE_URL`。
+- **2026-11-02 本地 Windows 实测**：`pnpm check` 为 0 error / 0 warning / 6 hints；`pnpm test:lib` 16/16；修改前后 `pnpm exec astro build` 均成功生成 229 页，12 份 CSS 逐字节相同，33 张 OG PNG 均为 1200×630；`pnpm test:ai-news-ownership` 通过，临时产物目录注入多余日报文件后按预期失败。`MAIN_SITE_URL=http://localhost:4323/` 的 `pnpm smoke:ai-news` 在无窗口 Chromium 下通过 1280px / 390px 两档入口 DOM 检查；变更文件 Prettier 与 `git diff --check` 见本轮计划的最终复核记录。
+- **环境失败路径**：首次沙箱构建字体域名 DNS 返回 `ENOTFOUND`，联网环境设 `NODE_USE_ENV_PROXY=1` 后构建成功；原子写入测试在沙箱默认临时目录 rename 返回 `EPERM`，将 `TEMP` / `TMP` 指向工作区证据目录后通过；沙箱浏览器缓存缺席、沙箱 preview 端口不可达，改用本机已有浏览器与本机 preview 后通过。未修改生产代码来绕开这些限制。完整证据、剩余引用分类与命令边界见 `docs/plans/2026-11-02-ai-news-closeout.md`；未执行完整 `pnpm build` 联网刷新链、线上旅程或独立项目内部验收，未推送/发布。
+
 ## 2026-11-02（下午）：减少动效判定收敛，两件遗留收口
 
 - **减少动效判定统一到唯一判定点**：删掉 `src/nice-books/scripts/shared.ts` 与 `src/utils/site-modal.ts` 里两份**逐字重复**的 `prefersReducedMotion()` 本地实现，改为转发 `src/utils/runtime/reduced-motion.ts`（`shared.ts` 保留同名 re-export，`archive.ts` 的导入路径不变）；`Sakura.astro` 与 `src/nice-books/scripts/home.ts` 的 4 处裸 `window.matchMedia("(prefers-reduced-motion: reduce)")` 一并换掉。理由：判定点一旦分裂，将来改语义（加监听、换 `matchMedia().addEventListener`）就会漏掉某几处。来源是搁了三周的 `stash@{0}`「T7 超范围：全站 reduced-motion 收敛」，动手前先用 `git stash show -p | git apply --check` 验证仍可干净套用。行为不变（两者都是每次调用现查一次）。

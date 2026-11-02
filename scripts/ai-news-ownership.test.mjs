@@ -2,15 +2,17 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 const dist = resolve(process.env.MAIN_DIST || "dist");
+for (const path of ["src/ai-news", "src/pages/ai-news", "public/ai-news"]) {
+	assert.equal(
+		existsSync(resolve(path)),
+		false,
+		`${path} belongs to the independent project`,
+	);
+}
 assert.equal(
-	existsSync(resolve(dist, "ai-news/index.html")),
+	existsSync(resolve(dist, "ai-news")),
 	false,
-	"main build must not publish AI news HTML",
-);
-assert.equal(
-	existsSync(resolve(dist, "ai-news/snapshot/juya.xml")),
-	false,
-	"main build must not publish AI news snapshot",
+	"main build must not publish any AI news files",
 );
 const sitemap = readFileSync(resolve(dist, "sitemap-0.xml"), "utf8");
 assert.ok(

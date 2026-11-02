@@ -18,6 +18,9 @@ pnpm fetch-friend-icons     # 增量补齐缺失的友链图标缓存
 pnpm fetch-friend-icons --refresh  # 手动刷新当前友链图标缓存
 pnpm preview     # 预览构建产物（需先 build）
 pnpm check       # astro check 类型检查
+pnpm test:article-toc-browser # 手动 Chromium + 可控时钟验证目录防抖边界，无需 dev server，不接 CI/build
+pnpm smoke:skills # 构建并启动预览后验证技能图标在外网不可用时仍全部解码；SKILLS_BASE_URL 传不带尾斜杠的站点根
+node scripts/sync-skill-icons.mjs # 手动更新本地技能图标及来源记录；不进普通构建链，原图/许可见 public/skill-icons/README.md
 pnpm test:contributions  # 贡献日历数据脚本离线单测（node --test，注入 fetchImpl 不访问真实网络）
 pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/搜索/封面，node --test，已串入 build 链头部）
 pnpm test:site-stats # Giscus 同步单测（fetchImpl/输出路径全注入，无需令牌、0.6s，已串入 build 链头部）
@@ -25,7 +28,7 @@ pnpm test:utils      # src/utils 纯函数单测（content-utils 排序/评分/�
 pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl，不访问真实网络）
 pnpm smoke:ai-news   # MAIN_SITE_URL 为站点根（默认 http://localhost:4321/）；本地只检查桌面/移动入口 DOM
 # 线上同源完整旅程：$env:MAIN_SITE_URL="https://caiyan12.github.io/"; $env:AI_NEWS_INTEGRATION_LIVE="1"; pnpm smoke:ai-news
-pnpm test:ai-news-ownership  # build 后检查主站不发布日报文件且 sitemap 保留日报地址
+pnpm test:ai-news-ownership  # build 后检查 src/ai-news、src/pages/ai-news、public/ai-news 与整个 dist/ai-news 均不存在，且 sitemap 保留独立项目地址
 pnpm smoke:series    # 文集（series）接线烟测，39 条判据：组内相邻 href／组内边界不渲染／非成员跳过整块／两行提示／侧栏目录／三页 200+封面／粘性跟随；SERIES_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形），需先 `pnpm build && pnpm preview --port 4322`；**不进 CI 只手工跑**
 pnpm qa:nice-books-geometry  # Nice Books 统一 3D 几何运行时检查（默认 127.0.0.1:4321；NICE_BOOKS_BASE_URL 可覆盖。注意另一个 `scripts/nice-books-design-qa.mjs` 默认才是 4322 preview）
 pnpm smoke:nice-books  # Nice Books 三页 Playwright Smoke；支持 NICE_BOOKS_BASE_URL 指向 build + preview
@@ -43,6 +46,8 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ```
 
 ### 本地预览该用哪一条（2026-11-02 立）
+
+- **Astro 7 本地监听（2026-11-02）**：`astro.config.mjs` 的 `vite.server.watch.ignored` 排除 `.pnpm-store` / `output`。Windows 上监听大量缓存/审计文件曾使启动阻塞到内容 RPC 超时，不能仅看首页 200 判断正常；检查日志有 `Synced content`、实际文章存在，以及内容/CSS/Svelte 的改动与恢复确实热更新。`pnpm dev` 会检查已有 dev server，换端口也不会绕过；先确认并停止本轮启动的旧进程，不要直接替换用户的服务。证据见 `docs/plans/2026-11-02-astro7-upgrade.md`。
 
 - **`pnpm dev` / `start.bat`（= `pnpm start --open`）就是 `astro dev`**，两者同一个命令；日常改样式、验交互、验 Pio 用它即可，热更新、无需构建。
 - **`pnpm preview` 只是给「构建产物」用的**：验 `dist/` 相关的东西（`public/` 下不经构建管线的文件、`pio.css` 改动、pagefind 索引、需要在产物里才成立的行为）才需要它。preview **默认也用 4321**，与 dev 撞端口时显式 `--port 4322`。

@@ -47,8 +47,7 @@ export const SHELL_PAGES = [
  *
  * 注意 `/images/` 与 `/this-page-should-404/`：它们**没有 Layout 壳**，
  * 「恰好一个可见 h1」类判据在上面不成立，故只能进本组、不能进 SHELL_PAGES。
- * `/ai-news/` 不参与：其内容按日从远端 feed 拉取，跨天采集必然合法地不同，
- * 原注释按页排除而非按子树排除（详见 upgrade-style-audit.mjs 该行注释）。
+ * `/ai-news/` 已迁为独立项目，不属于主站构建与样式审计范围（ADR 0009）。
  */
 export const AUDIT_EXTRA_PAGES = [
 	"/posts/20260831000000/",

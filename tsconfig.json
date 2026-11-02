@@ -3,7 +3,6 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "jsx": "react-jsx",
     "baseUrl": ".",
     "strictNullChecks": true,
     "allowJs": false,

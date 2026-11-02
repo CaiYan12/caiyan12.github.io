@@ -23,6 +23,8 @@ export default defineConfig({
 	trailingSlash: "always",
 
 	output: "static",
+	// Astro 7 默认改为 JSX 空白规则；保留本站 Astro 6 的行内空格语义。
+	compressHTML: true,
 
 	integrations: [
 		swup({
@@ -91,13 +93,21 @@ export default defineConfig({
 		}),
 		sitemap({
 			customPages: [new URL("/ai-news/", siteConfig.siteURL).href],
-			filter: (page) => !page.endsWith("/page/1/") && !page.includes("/books/data.json"),
+			filter: (page) =>
+				!page.endsWith("/page/1/") &&
+				!page.includes("/books/data.json"),
 		}),
 	],
 	markdown: {
 		processor: unified(markdownPipeline()),
 	},
 	vite: {
+		server: {
+			watch: {
+				// 本地依赖 store 与审计产物不参与 HMR；Windows 监听它们会阻塞内容初始化。
+				ignored: ["**/.pnpm-store/**", "**/output/**"],
+			},
+		},
 		plugins: [
 			{
 				// `public/pelican-bike/index.html` 是 vendored 的自包含单文件游戏，不是 Astro 路由。
@@ -108,7 +118,10 @@ export default defineConfig({
 				name: "pelican-bike-dev-directory-index",
 				configureServer(server) {
 					server.middlewares.use((req, _res, next) => {
-						if (req.url === "/pelican-bike/" || req.url === "/pelican-bike") {
+						if (
+							req.url === "/pelican-bike/" ||
+							req.url === "/pelican-bike"
+						) {
 							req.url = "/pelican-bike/index.html";
 						}
 						next();
@@ -118,11 +131,22 @@ export default defineConfig({
 		],
 		build: {
 			assetsInlineLimit: 4096,
-		},
-		esbuild: {
-			// 生产构建剔除 console.log/debug 与 debugger（warn/error 保留，线上排错用）
-			drop: ["debugger"],
-			pure: ["console.log", "console.debug"],
+			rolldownOptions: {
+				output: {
+					minify: {
+						compress: {
+							dropDebugger: true,
+							// 仅移除日志调用，保留实参副作用及 warn/error。
+							treeshake: {
+								manualPureFunctions: [
+									"console.log",
+									"console.debug",
+								],
+							},
+						},
+					},
+				},
+			},
 		},
 	},
 });

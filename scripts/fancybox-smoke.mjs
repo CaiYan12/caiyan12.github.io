@@ -4,7 +4,7 @@
 // 覆盖：关闭不跳位、焦点归还、定位到文章位置（含 reduced-motion）、下载新标签页、中文文案
 // 台子（check / 报错采集 / 汇总）来自 scripts/lib/smoke-harness.mjs，本文件只写判据。
 // FANCY_BASE_URL 传的是**站点根**（脚本自己拼 /posts/... 与 /albums/...），
-// 与 NICE_BOOKS_BASE_URL / AI_NEWS_BASE_URL 那种「完整页面地址」形态不同。
+// 与 NICE_BOOKS_BASE_URL 那种「完整页面地址」形态不同。
 import { makeHarness } from "./lib/smoke-harness.mjs";
 import {
 	FANCYBOX_POST_PAGES,
@@ -78,13 +78,19 @@ const browser = await harness.browser.launch(harness.launch);
 const ctx = await browser.newContext({
 	viewport: { width: 1280, height: 800 },
 });
-// 只有这一页挂报错采集（其余三页沿用改前口径：不进 errors）。
-const page = harness.attach(await ctx.newPage());
 const failedRequests = [];
-page.on("requestfailed", (r) => {
-	if (r.url().startsWith(base))
-		failedRequests.push(r.url().slice(base.length));
-});
+// 每个页面均采集，避免相册/减少动效分支报错却仍宣称“全程无报错”。
+// 各独立场景使用独立 context：播放器通过同源 storage 心跳实施跨页互斥，
+// 不应让测试之前留下的活动播放器给下一场景制造异常；不修改供应商互斥行为。
+async function trackedPage(context) {
+	const page = harness.attach(await context.newPage());
+	page.on("requestfailed", (r) => {
+		if (r.url().startsWith(base))
+			failedRequests.push(r.url().slice(base.length));
+	});
+	return page;
+}
+const page = await trackedPage(ctx);
 
 await page.goto(base + articlePath, { waitUntil: "load" });
 const imgSel = '.post-context img[data-fancybox="post-gallery"]';
@@ -231,7 +237,7 @@ check(
 const ctx2 = await browser.newContext({
 	viewport: { width: 1280, height: 800 },
 });
-const page2 = await ctx2.newPage();
+const page2 = await trackedPage(ctx2);
 await page2.goto(base + articlePath, { waitUntil: "load" });
 const src = await page2.evaluate(
 	(s) => document.querySelectorAll(s)[0].src,
@@ -264,7 +270,7 @@ const ctx3 = await browser.newContext({
 	viewport: { width: 1280, height: 800 },
 	reducedMotion: "reduce",
 });
-const page3 = await ctx3.newPage();
+const page3 = await trackedPage(ctx3);
 await page3.goto(base + articlePath, { waitUntil: "load" });
 await openLightbox(page3, imgSel, 2);
 await page3.locator(".fancybox__container [data-fancybox-locate]").click();
@@ -281,7 +287,9 @@ check(
 );
 
 // ---------------- 含对比表格的文章：表格内头像不得进灯箱 ----------------
-const tablePost = await ctx.newPage();
+const tablePost = await trackedPage(
+	await browser.newContext({ viewport: { width: 1280, height: 800 } }),
+);
 await tablePost.goto(base + FANCYBOX_POST_PAGES.table, { waitUntil: "load" });
 await tablePost.waitForTimeout(800);
 const tableStats = await tablePost.evaluate((sel) => {
@@ -306,7 +314,9 @@ check(
 );
 
 // ---------------- 灯箱顶部净空与放大不受影响 ----------------
-const padPost = await ctx.newPage();
+const padPost = await trackedPage(
+	await browser.newContext({ viewport: { width: 1280, height: 800 } }),
+);
 await padPost.goto(base + "/albums/" + encodeURIComponent("背景收藏") + "/", {
 	waitUntil: "load",
 });
@@ -378,7 +388,9 @@ await padPost.waitForTimeout(800);
 await padPost.close();
 
 // ---------------- 相册页：album ----------------
-const page4 = await ctx.newPage();
+const page4 = await trackedPage(
+	await browser.newContext({ viewport: { width: 1280, height: 800 } }),
+);
 await page4.goto(base + albumPath, { waitUntil: "load" });
 const albumSel = 'a[data-fancybox="album"]';
 await openLightbox(page4, albumSel, 1);
