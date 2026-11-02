@@ -7648,6 +7648,20 @@ body,
    颜色全部取自站内既有 token / T 恤描边色族：不引入第四套配色。 */
 
 .wpull {
+  /* 挂件局部 token：全部派生自站内既有 tag 色板（--tag-c4 紫 #b12bff、--tag-c6 蓝 #0077da）
+     与品牌绿，不引入新的色相家族。标记里不写死色值，一律走这几个变量：
+     · --wpull-ink 描边（蓝，压暗 --tag-c6 得到中低明度）
+     · --wpull-ink-soft 提示边框（描边的低透明度形态）
+     · --wpull-cloth 衣服底色（近白，略暖，与站内卡片白区分）
+     · --wpull-heart 爱心红（暖红，同 --tag-c1 家族但提明度以免发暗）
+     · --wpull-rope-a/b/c 绳渐变三段（紫族由浅到深，取自 --tag-c4 的色相轴） */
+  --wpull-ink: #5c6bc0;
+  --wpull-ink-soft: rgba(92, 107, 192, 0.28);
+  --wpull-cloth: #fffefb;
+  --wpull-heart: #f5233a;
+  --wpull-rope-a: #b39ddb;
+  --wpull-rope-b: #7e57c2;
+  --wpull-rope-c: #4527a0;
   position: fixed;
   top: 0;
   /* 运行时下发 --wpull-left（中心线 x）；兜底值对应 1440 视口、导航 1100 居中 */
@@ -7687,6 +7701,28 @@ body,
   display: block;
   width: 100%;
   height: auto;
+  /* SVG 内部元素消费上面的局部 token（标记里不写色值） */
+  .wpull__shirt-fill {
+    fill: var(--wpull-cloth);
+    stroke: var(--wpull-ink);
+  }
+
+  .wpull__heart {
+    fill: var(--wpull-heart);
+  }
+
+  .wpull__rope-a {
+    stop-color: var(--wpull-rope-a);
+  }
+
+  .wpull__rope-b {
+    stop-color: var(--wpull-rope-b);
+  }
+
+  .wpull__rope-c {
+    stop-color: var(--wpull-rope-c);
+  }
+
   /* 绳尾要长过衣服才能接上，overflow 必须放行 */
   overflow: visible;
 }
@@ -7771,7 +7807,7 @@ body,
   z-index: 0;
   padding: 4px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(92, 107, 192, 0.28);
+  border: 1px solid var(--wpull-ink-soft);
   background: #fff;
   color: var(--colorful-text-secondary);
   font-size: 12px;
@@ -7793,18 +7829,8 @@ body,
 }
 
 /* 结果播报区：只供读屏，不占视觉空间（沿用站点既有的视觉隐藏手法） */
-.wpull__live {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
+/* 结果播报区只供读屏：视觉隐藏手法复用站内既有 .pagenavi-sr-only
+   （标记里同时带两个类），本节不再复制一份同样的规则。 */
 
 /* ---------- 壁纸交叉淡入的临时层（票 #131） ----------
 

@@ -52,7 +52,7 @@ const NAV_SELECTOR = "#head-nav";
 const TITLE_SELECTOR = "#header .site-title";
 /** 挂件右缘与视口右缘之间至少要留出的空隙，窄屏夹取时用 */
 const EDGE_GAP = 8;
-/** 提示气泡与 T 恤之间的视觉间距（与 global.css 的 --wpull-hint-gap 一致） */
+/** 提示气泡与 T 恤之间的视觉间距；唯一来源是本常量，样式侧不另存一份 */
 const HINT_GAP = 8;
 /**
  * 粗指针设备上自动提示停留的时长（毫秒）——票面「约三秒」。
@@ -124,7 +124,6 @@ export function noteDragRelease(host: HTMLElement, timeStamp: number) {
  * @param title   桌面头部标题的矩形（缺失时退回 null）
  * @param widgetW 挂件盒宽（px）
  * @param viewportW 可用宽度（已扣除滚动条）
- * @param viewportH 视口高（当前用于兜底，保留参数以便后续票按需使用）
  * @returns left（盒子中心线的 x 坐标）与 drop（绳长，即衣服顶端的 y 偏移）
  */
 export function computePlacement({

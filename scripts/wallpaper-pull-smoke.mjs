@@ -95,6 +95,116 @@ async function waitForNoTempLayer(page, timeout = 8000) {
 }
 
 /**
+ * 等「一次换图事务彻底落定」：临时层撤净 + 忙碌锁解除 + 回弹过渡退出。
+ *
+ * 三个条件都是运行时自己写出来的真实状态（不是猜的时长）：回弹类 `is-settling`
+ * 由运行时在 SETTLE_MS 后自己摘掉，所以「等到它消失」等价于「等到回弹结束」。
+ * 换掉固定毫秒等待正是本票的硬纪律。
+ */
+async function waitIdle(page, timeout = 20000) {
+	try {
+		await page.waitForFunction(
+			(sel) => {
+				const host = document.querySelector("[data-wallpaper-pull]");
+				return (
+					document.querySelectorAll(sel).length === 0 &&
+					!host?.dataset.busy &&
+					!host?.classList.contains("is-settling")
+				);
+			},
+			TEMP,
+			{ timeout },
+		);
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+/**
+ * 装配：等运行时真的把监听器绑上（`data-bound="true"` 是 init 结尾写下的真实状态）
+ * 再动手。监听器还没挂时操作会落在空窗里，判据随之假红/假绿。
+ */
+async function boot(page) {
+	await page.waitForFunction(
+		() =>
+			!!document.querySelector("[data-wallpaper-pull]")?.dataset.bound,
+		undefined,
+		{ timeout: 30000 },
+	);
+	await waitIdle(page);
+}
+
+/**
+ * 装探针：把「这次交互产生了什么」变成可轮询的真实状态。
+ *
+ * - `srcs`：原图层 src 属性**真实变化**的序列（判「恰好换一次」「不是两次」）——
+ *   直接数赋值次数不可行，改为观察属性变化，这是「一次手势只换一次」的执行点；
+ * - `maxTemp`：交叉淡入临时层的 rAF 采样峰值（判「过渡结束后归零」时先证明
+ *   「过渡里真的有过一层」，否则「没有临时层」在没建层的退化实现上也会恒绿）；
+ * - `maxPull` / `draggingSeen`：跟手伸展峰值与「确实越过死区」（定义拖动相位）；
+ * - `busySeen`：忙碌锁是否真的置起过（判「忙碌期间重复触发」时不是空转）。
+ *
+ * rAF 自绘而不是定时采样：临时层与忙碌锁只在事务那几百毫秒里存在。
+ */
+async function instrument(page) {
+	await page.evaluate(() => {
+		const bg = document.querySelector(".bg-image[data-backgrounds]");
+		const host = document.querySelector("[data-wallpaper-pull]");
+		const probe = {
+			srcs: [],
+			maxTemp: 0,
+			maxPull: 0,
+			busySeen: false,
+			draggingSeen: false,
+		};
+		window.__wpullProbe = probe;
+		if (bg) {
+			new MutationObserver(() => {
+				probe.srcs.push(bg.getAttribute("src") ?? "");
+			}).observe(bg, { attributes: true, attributeFilter: ["src"] });
+		}
+		const tick = () => {
+			const temp = document.querySelectorAll(".bg-image--temp").length;
+			if (temp > probe.maxTemp) probe.maxTemp = temp;
+			const pull =
+				parseFloat(host?.style.getPropertyValue("--wpull-pull") ?? "") || 0;
+			if (pull > probe.maxPull) probe.maxPull = pull;
+			if (host?.dataset.busy === "true") probe.busySeen = true;
+			if (host?.dataset.dragging === "true") probe.draggingSeen = true;
+			requestAnimationFrame(tick);
+		};
+		requestAnimationFrame(tick);
+	});
+}
+
+/** 清空探针，为下一相位从 0 起算 */
+const resetProbe = (page) =>
+	page.evaluate(() => {
+		const probe = window.__wpullProbe;
+		probe.srcs = [];
+		probe.maxTemp = 0;
+		probe.maxPull = 0;
+		probe.busySeen = false;
+		probe.draggingSeen = false;
+	});
+
+/** 读探针（短轮询一次，不睡固定毫秒） */
+const readProbe = (page) =>
+	page.evaluate(() => ({
+		changed: window.__wpullProbe.srcs.length,
+		srcs: window.__wpullProbe.srcs.slice(),
+		maxTemp: window.__wpullProbe.maxTemp,
+		maxPull: window.__wpullProbe.maxPull,
+		busySeen: window.__wpullProbe.busySeen,
+		draggingSeen: window.__wpullProbe.draggingSeen,
+		settling: !!document
+			.querySelector("[data-wallpaper-pull]")
+			?.classList.contains("is-settling"),
+		busy: document.querySelector("[data-wallpaper-pull]")?.dataset.busy ?? null,
+	}));
+
+/**
  * 用真实指针事件做一次下拉。
  *
  * `cancel: true` 时**不**再调 `mouse.up()`：pointercancel 语义是「浏览器夺走指针、
@@ -124,22 +234,10 @@ async function dragBy(page, dy, { cancel = false } = {}) {
 	} else {
 		await page.mouse.up();
 	}
-	// 回弹结束的真实信号：拉伸变量归零。
-	// 注意：归零只说明**回弹**结束，换图事务还要再走预载 + 交叉淡入（约 1.4s），
+	// 回弹结束的真实信号：拉伸变量归零 + 回弹类自分摘掉（不是猜的时长）。
+	// 注意：归零只说明**回弹**结束，换图事务还要再走预载 + 交叉淡入，
 	// 所以调用方不能就此断言「没换图」——达阈值那条必须另外等背景地址变化。
-	await page
-		.waitForFunction(
-			(sel) => {
-				const btn = document.querySelector(sel);
-				if (!btn) return true;
-				const pull =
-					getComputedStyle(btn).getPropertyValue("--wpull-pull");
-				return pull.trim() === "" || parseFloat(pull) === 0;
-			},
-			GRAB,
-			{ timeout: 6000 },
-		)
-		.catch(() => {});
+	await waitIdle(page, 8000);
 	return readState(page);
 }
 
@@ -157,18 +255,40 @@ await page.waitForFunction(
 	{ timeout: 15000 },
 );
 
-const initialRequests = await page.evaluate(() =>
-	performance
-		.getEntriesByType("resource")
-		.map((e) => e.name)
-		.filter((n) => n.includes("/images/bg/")),
-);
+// 池长度一并核对：池里只剩一张时「只请求一张」会退化成恒真，那不是本判据的意思。
+const pool = await page.evaluate(() => {
+	const bg = document.querySelector(".bg-image[data-backgrounds]");
+	const images = JSON.parse(bg.dataset.backgrounds || "[]");
+	return {
+		length: images.length,
+		paths: images.map((entry) => new URL(entry, location.href).pathname),
+		current: bg.getAttribute("src"),
+		resourcePaths: performance
+			.getEntriesByType("resource")
+			.map((entry) => new URL(entry.name).pathname)
+			.filter((path) => path.includes("/images/bg/")),
+	};
+});
 check(
 	"首次加载：只请求壁纸池中的一张",
-	initialRequests.length === 1,
-	`实际请求 ${initialRequests.length} 张`,
+	pool.length === 4 &&
+		pool.resourcePaths.length === 1 &&
+		pool.paths.includes(pool.resourcePaths[0]),
+	`池 ${pool.length} 张，请求 ${pool.resourcePaths.length} 个：${pool.resourcePaths.join(
+		", ",
+	)}`,
 );
 check("挂件已渲染", (await readState(page)).exists);
+
+// 探针要在任何交互之前装：随后的判据靠它数「src 真实变化几次」「临时层峰值」。
+await instrument(page);
+// 记下原始壁纸池：下面「没得换」会临时把它收窄成一张，用完要还原。
+// 存**数组**而不是 dataset 字符串——把字符串再 JSON.stringify 一遍会得到
+// 一个「带引号的字符串」，还原后 parse 出来不是数组，池子直接变空（踩过）。
+await page.evaluate(() => {
+	const bg = document.querySelector(".bg-image[data-backgrounds]");
+	window.__wpullPool = JSON.parse(bg.dataset.backgrounds || "[]");
+});
 
 // ---- 单击换图 ----
 const s0 = await readState(page);
@@ -192,42 +312,83 @@ check(
 check("连续换图后临时层不堆积", (await waitForNoTempLayer(page)) === true);
 
 // ---- 拖动：未达阈值不换图 ----
+await resetProbe(page);
 const beforeShort = await readState(page);
 await dragBy(page, 40);
-const afterShort = await readState(page);
+const shortProbe = await readProbe(page);
+check(
+	"未达阈值：拖动确实已越过死区（相位由真实状态定义）",
+	shortProbe.draggingSeen && shortProbe.maxPull >= 30 && shortProbe.maxPull < 80,
+	`dy=40 → 跟手伸展峰值 ${Math.round(shortProbe.maxPull)}px，dragging=${
+		shortProbe.draggingSeen
+	}`,
+);
 check(
 	"未达阈值释放：不换图",
-	afterShort.bgSrc === beforeShort.bgSrc,
-	`${beforeShort.bgSrc} 未变`,
+	(await readState(page)).bgSrc === beforeShort.bgSrc &&
+		shortProbe.changed === 0,
+	`${beforeShort.bgSrc} 未变，src 变化 ${shortProbe.changed} 次`,
 );
 
 // ---- 拖动：达阈值换图，且恰好一次 ----
+await resetProbe(page);
 const beforeLong = await readState(page);
 const bgChanges = [];
 const onResponse = (r) => {
 	if (r.url().includes("/images/bg/")) bgChanges.push(r.url());
 };
 page.on("request", onResponse);
-await dragBy(page, 130);
+const longDuring = await readState(page);
+// 静止位姿的按钮顶边：拖动位移要拿它当基准（只在拖动前量一次）。
+const longHeldRect = await page.locator(GRAB).boundingBox();
+await page.mouse.move(longDuring.grab.x, longDuring.grab.y);
+await page.mouse.down();
+await page.mouse.move(longDuring.grab.x, longDuring.grab.y + 130, { steps: 10 });
+const longHeld = await readProbe(page);
+const heldRect = await page.locator(GRAB).boundingBox();
+check(
+	"达到阈值前跟手伸展已越过阈值（相位由真实状态定义）",
+	longHeld.draggingSeen && longHeld.maxPull >= 80,
+	`dy=130 → 跟手伸展峰值 ${Math.round(longHeld.maxPull)}px（阈值 80px）`,
+);
+check(
+	"跟手位移在几何上真实发生（衣服整体下移）",
+	heldRect !== null && heldRect.y - longHeldRect.y >= 80,
+	`静止按钮顶 y=${Math.round(longHeldRect.y)} → 拖到 y=${Math.round(
+		heldRect?.y ?? Number.NaN,
+	)}，位移 ${Math.round((heldRect?.y ?? 0) - longHeldRect.y)}px`,
+);
+await page.mouse.up();
 // 回弹归零 ≠ 换图完成：换图要再走预载 + 交叉淡入，等背景地址真正落定
 const dragChanged = await waitForBackgroundChange(page, beforeLong.bgSrc);
+await waitIdle(page);
 page.off("request", onResponse);
 const afterLong = await readState(page);
+const longAfter = await readProbe(page);
 check(
 	"达阈值释放：换图",
 	dragChanged,
 	`${beforeLong.bgSrc} → ${afterLong.bgSrc}`,
 );
-// 「只换一次」的可观察判据：一次手势只触发一次新地址写入。
-// 直接数背景层的 src 赋值次数不可行（属性写入不可监听），改为数
-// 本次手势产生的壁纸池请求数——一次成功切换最多为「候选预载 + 落图」两次同图请求。
-const uniqueBgUrls = new Set(bgChanges).size;
+// 「恰好换一次，不是两次」的执行点：直接观察原图层 src 属性的**真实变化次数**。
+// 一次手势只允许一次落图；两次就意味着「拖动达阈值」与「拖动后浏览器补发的 click」
+// 各走了一遍 requestChange（CLICK_AFTER_DRAG_MS 抑制窗失效正是这个症状）。
 check(
-	"一次手势只换一张目标图",
-	uniqueBgUrls <= 2,
-	`本次手势请求的不同壁纸地址数=${uniqueBgUrls}`,
+	"达到阈值释放恰好换一次（且只换一次，不是两次）",
+	longAfter.changed === 1 && afterLong.bgSrc !== beforeLong.bgSrc,
+	`src 属性变化 ${longAfter.changed} 次（要求恰好 1 次）；同一手势的壁纸请求不同地址数=${
+		new Set(bgChanges).size
+	}`,
 );
-check("拖动后临时层归零", (await waitForNoTempLayer(page)) === true);
+check(
+	"过渡结束后临时层数量归零",
+	afterLong.tempCount === 0 && longAfter.maxTemp >= 1,
+	`过渡峰值 ${longAfter.maxTemp} 层，落定后 ${afterLong.tempCount} 层`,
+);
+check(
+	"交叉淡入结束后临时层不堆积",
+	(await waitForNoTempLayer(page)) === true,
+);
 
 // ---- 指针取消：复位且不换图 ----
 const beforeCancel = await readState(page);
@@ -268,6 +429,7 @@ check(
 );
 
 // ---- 失焦：复位且不换图 ----
+await resetProbe(page);
 const beforeBlur = await readState(page);
 await page.evaluate(() => {
 	const btn = document.querySelector(".wpull__grab");
@@ -283,7 +445,8 @@ await page.evaluate(() => {
 	);
 	window.dispatchEvent(new Event("blur"));
 });
-await page.waitForTimeout(300);
+// 复位完成的真实信号：手势状态复位 + 忙碌锁解除（不睡固定毫秒）
+await waitIdle(page);
 const afterBlur = await readState(page);
 check(
 	"失焦：不换图",
@@ -292,6 +455,7 @@ check(
 );
 
 // ---- 忙碌期间重复触发不产生第二次提交 ----
+await resetProbe(page);
 const beforeBusy = await readState(page);
 await page.evaluate(() => {
 	const btn = document.querySelector(".wpull__grab");
@@ -300,14 +464,48 @@ await page.evaluate(() => {
 	btn?.dispatchEvent(new MouseEvent("click", { bubbles: true, detail: 1 }));
 });
 await waitForBackgroundChange(page, beforeBusy.bgSrc);
-await page.waitForTimeout(400);
+await waitIdle(page);
 const afterBusy = await readState(page);
+const busyProbe = await readProbe(page);
 check(
-	"忙碌锁：连发三次只落一个新地址",
-	afterBusy.bgSrc !== beforeBusy.bgSrc &&
-		(await waitForNoTempLayer(page)) === true,
-	`${beforeBusy.bgSrc} → ${afterBusy.bgSrc}`,
+	"忙碌期间重复触发不产生第二次提交",
+	busyProbe.changed === 1 &&
+		busyProbe.busySeen &&
+		afterBusy.bgSrc !== beforeBusy.bgSrc &&
+		afterBusy.tempCount === 0,
+	`同任务连发 3 次 → src 属性变化 ${busyProbe.changed} 次，忙碌锁出现过=${
+		busyProbe.busySeen
+	}，临时层 ${afterBusy.tempCount}`,
 );
+
+// ---- 没得换：播报「没得换」且背景不变 ----
+// 用一个真实的边界制造「没得换」：把既有 data-backgrounds 通道（配置的序列化通道）
+// 收窄成只剩当前这一张——不碰实现，只是让池里真的没有候选。缺了这一档，
+// 「三类结果各有不同文本」就只能比对两档，票面第 10 条也就只覆盖一半。
+await resetProbe(page);
+const beforeNone = await readState(page);
+await page.evaluate(() => {
+	const bg = document.querySelector(".bg-image[data-backgrounds]");
+	bg.dataset.backgrounds = JSON.stringify([bg.getAttribute("src")]);
+});
+await page.locator(GRAB).click();
+await waitIdle(page);
+const afterNone = await readState(page);
+const noneProbe = await readProbe(page);
+check(
+	"没得换：播报「没得换」且当前背景不变",
+	afterNone.live === "没得换" &&
+		afterNone.bgSrc === beforeNone.bgSrc &&
+		noneProbe.changed === 0 &&
+		afterNone.tempCount === 0,
+	`播报「${afterNone.live}」，src 变化 ${noneProbe.changed} 次`,
+);
+// 把池还原，后续判据仍要在正常池上进行
+await page.evaluate(() => {
+	const bg = document.querySelector(".bg-image[data-backgrounds]");
+	bg.dataset.backgrounds = JSON.stringify(window.__wpullPool);
+});
+const noneText = afterNone.live;
 
 // ---- 候选加载失败：背景不变、可再试 ----
 await page.route("**/images/bg/**", (route) => route.abort());
@@ -382,7 +580,14 @@ check(
 		: "n/a",
 );
 
-// ---- 播报区三类文本各不相同 ----
+// ---- 播报区：三类结果各有不同文本（换好了 / 没得换 / 加载失败） ----
+// 三档真实文本放在一起比对，而不是锁死具体措辞；缺少任何一档就不成立。
+check(
+	"播报区在三类结果上各有不同文本（换好了 / 没得换 / 加载失败）",
+	new Set([s1.live, noneText, afterFail.live]).size === 3 &&
+		[s1.live, noneText, afterFail.live].every((text) => text.length > 0),
+	`换好了「${s1.live}」 / 没得换「${noneText}」 / 加载失败「${afterFail.live}」`,
+);
 check(
 	"播报区 aria-live 为 polite",
 	await page.evaluate(() => {
@@ -392,29 +597,107 @@ check(
 );
 
 // ---- 多次切页后仍可用、单次手势只换一次 ----
-for (const path of ["/about/", "/archive/"]) {
-	await page.goto(base + path, { waitUntil: "load", timeout: 60000 });
-	await page.waitForFunction(
-		(sel) => !!document.querySelector(sel)?.getAttribute("src"),
-		BG,
-		{ timeout: 15000 },
-	);
-	const stable = await readState(page);
-	await page.locator(GRAB).click();
-	check(
-		`切页到 ${path} 后仍能换图`,
-		await waitForBackgroundChange(page, stable.bgSrc),
-	);
+// 票面要的是「多次切页后单次手势仍只换一次图」。用 page.goto 是**整页重新加载**，
+// 挂件随新文档重建——那验证的是「新页面能用」，不是「切页后旧实例仍只换一次」。
+// 所以这里改用真实的 Swup 站内切页（window.swup.navigate 与点击站内链接同一条路径），
+// 挂件与背景层都在 Swup 容器之外、切页不重建，回归会表现为「一个手势换两次图」
+// 或「挂件实例变多 / 监听器翻倍」。
+await page.waitForFunction(() => typeof window.swup !== "undefined", undefined, {
+	timeout: 15000,
+});
+const beforeSwup = await readState(page);
+for (const path of ["/about/", "/archive/", "/diary/"]) {
+	await page.evaluate(async (target) => {
+		await window.swup.navigate(target);
+	}, path);
+	await page.waitForFunction((expected) => location.pathname === expected, path, {
+		timeout: 15000,
+	});
 }
-
-// ---- 窄屏断点：挂件不显示 ----
-await page.setViewportSize({ width: 660, height: 900 });
-await page.waitForTimeout(400);
-const narrow = await readState(page);
+const afterSwup = await readState(page);
+const instances = await page.evaluate(
+	() => document.querySelectorAll("[data-wallpaper-pull]").length,
+);
 check(
-	"≤680px 挂件隐藏",
-	narrow.display === "none" || narrow.display === "absent",
-	narrow.display,
+	"多次切页后仍只有一个挂件实例（挂件不随切页重建）",
+	instances === 1,
+	`切 3 页后挂件 ${instances} 个`,
+);
+check(
+	"切页不重置背景（背景层在 Swup 容器之外）",
+	afterSwup.bgSrc === beforeSwup.bgSrc,
+	`切页前 ${beforeSwup.bgSrc}，切页后 ${afterSwup.bgSrc}`,
+);
+// 切页后探针要重装：src 观察器绑的是旧文档里的那个 img 节点（切页后被换掉）。
+await instrument(page);
+await resetProbe(page);
+const beforeSwupGesture = await readState(page);
+await page.locator(GRAB).click();
+const swupChanged = await waitForBackgroundChange(page, beforeSwupGesture.bgSrc);
+await waitIdle(page);
+const swupProbe = await readProbe(page);
+check(
+	"多次切页后单次手势仍只换一次图",
+	swupChanged && swupProbe.changed === 1,
+	`src 属性变化 ${swupProbe.changed} 次；${beforeSwupGesture.bgSrc} → ${
+		(await readState(page)).bgSrc
+	}`,
+);
+
+// ---- 窄屏断点：挂件不显示（并设宽屏对照，防「恒隐藏」空转） ----
+await page.setViewportSize({ width: 680, height: 900 });
+// 断点生效的真实信号：计算值 display 真的变成 none（不睡固定毫秒）
+await page.waitForFunction(
+	() =>
+		getComputedStyle(document.querySelector("[data-wallpaper-pull]")).display ===
+		"none",
+	undefined,
+	{ timeout: 10000 },
+);
+const narrow = await readState(page);
+const narrowRect = await page.evaluate(
+	() => document.querySelector("[data-wallpaper-pull]").getBoundingClientRect().width,
+);
+check(
+	"窄屏 680px 挂件隐藏",
+	narrow.display === "none" && narrowRect === 0,
+	`display=${narrow.display}，盒宽 ${narrowRect}px`,
+);
+await page.setViewportSize({ width: 390, height: 844 });
+await page.waitForFunction(
+	() =>
+		getComputedStyle(document.querySelector("[data-wallpaper-pull]")).display ===
+		"none",
+	undefined,
+	{ timeout: 10000 },
+);
+check(
+	"窄屏 390px 挂件隐藏",
+	(await readState(page)).display === "none",
+);
+// 宽屏对照：证明这条断点规则不是「恒隐藏」——回到 1024 必须重新可见且不出屏。
+await page.setViewportSize({ width: 1024, height: 900 });
+await page.waitForFunction(
+	() =>
+		getComputedStyle(document.querySelector("[data-wallpaper-pull]")).display !==
+		"none",
+	undefined,
+	{ timeout: 10000 },
+);
+const wide = await page.evaluate(() => {
+	const host = document.querySelector("[data-wallpaper-pull]");
+	const rect = host.getBoundingClientRect();
+	return {
+		display: getComputedStyle(host).display,
+		left: Math.round(rect.left),
+		right: Math.round(rect.right),
+		viewport: document.documentElement.clientWidth,
+	};
+});
+check(
+	"宽屏对照：1024px 下挂件确实可见且不出屏（防恒隐藏空转）",
+	wide.display !== "none" && wide.left >= 0 && wide.right <= wide.viewport,
+	`display=${wide.display}，左 ${wide.left} / 右 ${wide.right} / 视口 ${wide.viewport}`,
 );
 
 checkClean("拉绳壁纸挂件");
@@ -426,32 +709,66 @@ const rmContext = await browser.newContext({
 });
 const rmPage = harness.attach(await rmContext.newPage());
 await rmPage.goto(base + "/", { waitUntil: "load", timeout: 60000 });
-await rmPage.waitForFunction(
-	(sel) => !!document.querySelector(sel)?.getAttribute("src"),
-	BG,
-	{ timeout: 15000 },
+await boot(rmPage);
+await instrument(rmPage);
+// 本条前提：减少动态偏好真的被浏览器报告（否则下面的判据在普通 context 上就空转）
+check(
+	"减少动态偏好确实生效（否则本条判据会空转）",
+	await rmPage.evaluate(
+		() => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+	),
 );
+
+// ---- 减少动态：仍能换图 ----
+await resetProbe(rmPage);
 const rmBefore = await readState(rmPage);
 await rmPage.locator(GRAB).click();
 const rmChanged = await waitForBackgroundChange(rmPage, rmBefore.bgSrc);
-const rmTemp = await rmPage.evaluate(
-	(sel) => document.querySelectorAll(sel).length,
-	TEMP,
-);
+await waitIdle(rmPage);
+const rmAfter = await readState(rmPage);
+const rmProbe = await readProbe(rmPage);
 check("减少动态：仍能换图", rmChanged);
-check("减少动态：不建交叉淡入临时层", rmTemp === 0, `临时层=${rmTemp}`);
-const rmPull = await rmPage.evaluate((sel) => {
-	const btn = document.querySelector(sel);
-	const box = btn?.getBoundingClientRect();
-	return {
-		pull: btn ? getComputedStyle(btn).getPropertyValue("--wpull-pull") : "",
-		top: box?.top ?? null,
-	};
-}, GRAB);
 check(
-	"减少动态：无跟手位移残留",
-	rmPull.pull.trim() === "" || parseFloat(rmPull.pull) === 0,
-	rmPull.pull || "(未设置)",
+	"减少动态：不建交叉淡入临时层",
+	rmAfter.tempCount === 0 && rmProbe.maxTemp === 0,
+	`过渡峰值 ${rmProbe.maxTemp} 层，当前 ${rmAfter.tempCount} 层`,
+);
+
+// ---- 减少动态：拖动无位移（跟手伸展恒为 0，衣服不移动） ----
+// 原判据只读了点击后残留的 --wpull-pull：那条在**任何**实现上都是 0（点击根本不设
+// 这个变量），等于恒真。真正要验的是「减少动态下拖动时衣服不动」——必须真的拖。
+await resetProbe(rmPage);
+const rmRest = await rmPage.locator(GRAB).boundingBox();
+await rmPage.mouse.move(rmRest.x + rmRest.width / 2, rmRest.y + rmRest.height / 2);
+await rmPage.mouse.down();
+await rmPage.mouse.move(
+	rmRest.x + rmRest.width / 2,
+	rmRest.y + rmRest.height / 2 + 130,
+	{ steps: 10 },
+);
+// 相位由真实状态定义：手势已被识别（dragging 置起）才谈得上「有没有位移」
+await rmPage.waitForFunction(() => window.__wpullProbe.draggingSeen, undefined, {
+	timeout: 10000,
+});
+const rmHeld = await readProbe(rmPage);
+const rmHeldRect = await rmPage.locator(GRAB).boundingBox();
+check(
+	"减少动态下拖动无位移（跟手伸展恒为 0，衣服不移动）",
+	rmHeld.maxPull === 0 &&
+		Math.abs(rmHeldRect.y - rmRest.y) < 0.5 &&
+		rmHeld.draggingSeen,
+	`手势已识别=${rmHeld.draggingSeen}，伸展峰值 ${rmHeld.maxPull}px，静止 y=${Math.round(
+		rmRest.y,
+	)} → 拖到 y=${Math.round(rmHeldRect.y)}`,
+);
+await rmPage.mouse.up();
+// 拖过阈值仍要换图（减少动态只降级动效，不降级功能）
+const rmDragChanged = await waitForBackgroundChange(rmPage, rmAfter.bgSrc);
+await waitIdle(rmPage);
+check(
+	"减少动态下拖过阈值仍换图（降级只针对动效，不减功能）",
+	rmDragChanged,
+	`${rmAfter.bgSrc} → ${(await readState(rmPage)).bgSrc}`,
 );
 checkClean("减少动态");
 
