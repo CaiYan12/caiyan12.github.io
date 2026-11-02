@@ -38,8 +38,8 @@
 | 改「我的技能」                       | `src/data/skills.ts`                                                                       | dev 热更新                                                                         |
 | 改「时间线」                         | `src/data/timeline.ts`                                                                     | dev 热更新                                                                         |
 | 改「每日好书」书单                   | `src/nice-books/data/books.ts`                                                             | dev 热更新                                                                         |
-| 换 AI 日报的 RSS 源                  | 独立仓库 `CaiYan12/ai-news` 的 `src/config/sources.ts` 的 `DEFAULT_SOURCE`                                        | dev 热更新                                                                         |
-| 换 AI 日报的离线快照                 | 在独立仓库把当期 RSS 的 XML 原样覆盖到 `public/snapshot/juya.xml`                            | 强刷浏览器                                                                         |
+| 换 AI 日报的 RSS 源                  | 独立仓库 `CaiYan12/ai-news` 的 `src/config/sources.ts` 的 `DEFAULT_SOURCE`                 | dev 热更新                                                                         |
+| 换 AI 日报的离线快照                 | 在独立仓库把当期 RSS 的 XML 原样覆盖到 `public/snapshot/juya.xml`                          | 强刷浏览器                                                                         |
 
 ### 🤝 友链与项目
 
@@ -93,7 +93,7 @@
 | 版权声明整句                                    | `src/components/misc/License.astro`                                                  |
 | `/domain/` 终端壳的名片、自述、友链、署名       | `src/domain.html`（整份都是硬编码）                                                  |
 | `/books/` 三页的标题与导航                      | `src/nice-books/components/SiteHead.astro` / `SiteHeader.astro` / `SiteFooter.astro` |
-| `/ai-news/` 的界面文案                          | 独立仓库 `CaiYan12/ai-news` 的 `src/components/*.tsx`                                                       |
+| `/ai-news/` 的界面文案                          | 独立仓库 `CaiYan12/ai-news` 的 `src/components/*.tsx`                                |
 
 ### 🔌 需要跑命令的刷新
 
@@ -389,24 +389,24 @@ Astro 6.4.8 + TypeScript + Svelte 5（搜索组件）+ React 19（AI 日报独�
 
 **测试与冒烟**（离线单测注入 `fetchImpl`，不访问真实网络）
 
-| 命令                          | 作用                                                          |
-| ----------------------------- | ------------------------------------------------------------- |
-| `pnpm test:utils`             | `src/utils` 纯函数（排序/评分/邻篇/canonical）                |
-| `pnpm test:nice-books`        | Nice Books 数据契约与搜索                                     |
-| `pnpm test:site-stats`        | Giscus 同步                                                   |
-| `pnpm test:contributions`     | 贡献日历数据脚本                                              |
-| `pnpm test:friend-icons`      | 友链图标缓存                                                  |
-| `pnpm test:projects`          | 项目同步/缓存/合并/排序                                       |
-| `pnpm test:lib`               | `scripts/lib` 与 `src/plugins` 单测                           |
-| `pnpm test:weather`           | 天气码表与城市目录（**不在 build 链**）                       |
-| `pnpm smoke:ui`               | 主站 UI 实机烟测，需先 `build + preview`                      |
-| `pnpm test:fancybox`          | 灯箱冒烟，需先 `build + preview`                              |
-| `pnpm smoke:nice-books`       | Nice Books 三页冒烟                                           |
+| 命令                          | 作用                                                           |
+| ----------------------------- | -------------------------------------------------------------- |
+| `pnpm test:utils`             | `src/utils` 纯函数（排序/评分/邻篇/canonical）                 |
+| `pnpm test:nice-books`        | Nice Books 数据契约与搜索                                      |
+| `pnpm test:site-stats`        | Giscus 同步                                                    |
+| `pnpm test:contributions`     | 贡献日历数据脚本                                               |
+| `pnpm test:friend-icons`      | 友链图标缓存                                                   |
+| `pnpm test:projects`          | 项目同步/缓存/合并/排序                                        |
+| `pnpm test:lib`               | `scripts/lib` 与 `src/plugins` 单测                            |
+| `pnpm test:weather`           | 天气码表与城市目录（**不在 build 链**）                        |
+| `pnpm smoke:ui`               | 主站 UI 实机烟测，需先 `build + preview`                       |
+| `pnpm test:fancybox`          | 灯箱冒烟，需先 `build + preview`                               |
+| `pnpm smoke:nice-books`       | Nice Books 三页冒烟                                            |
 | `pnpm smoke:ai-news`          | 主站日报入口检查；线上完整双向旅程见 `docs/agents/commands.md` |
-| `pnpm smoke:pelican`          | 鹈鹕骑车冒烟，需先 `build + preview --port 4322`              |
-| `pnpm qa:nice-books-geometry` | Nice Books 3D 几何检查                                        |
-| `pnpm qa:weather-mainland`    | wttr.in 大陆直连实测（须在大陆网络，`NET`/`WINDOW` 两栏必填） |
-| `pnpm audit:ledger <票册.md>` | 票册自检（刻意不接进 build 与 CI）                            |
+| `pnpm smoke:pelican`          | 鹈鹕骑车冒烟，需先 `build + preview --port 4322`               |
+| `pnpm qa:nice-books-geometry` | Nice Books 3D 几何检查                                         |
+| `pnpm qa:weather-mainland`    | wttr.in 大陆直连实测（须在大陆网络，`NET`/`WINDOW` 两栏必填）  |
+| `pnpm audit:ledger <票册.md>` | 票册自检（刻意不接进 build 与 CI）                             |
 
 > 冒烟脚本的基址参数形态不同，传错会表现为「选择器等不到」的假失败：`FANCY_BASE_URL` / `UI_SMOKE_BASE_URL` / `PELICAN_BASE_URL` 传**站点根**；`NICE_BOOKS_BASE_URL` 传**完整页面地址**。
 
@@ -503,6 +503,10 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 - [x] **纯 HTML 页面资源移植**（2026-09-19 完成评估；结论：全部候选不移植，本项关闭）：源为 2020–2022 的手写多页站，实际路径 `C:\Users\Einn Tzai\Documents\HTML5网页`（本条目旧写法「文档\HTML5页面」按字面搜不到），入口 `index.html`（"WindowsIt's Music Site"）链向 `about/`、`login/`、`quesion/` 与 5 个 `tools/` 子页，全站 25 个 HTML 已逐一核对。排除理由分四类：**第三方「另存为」产物**（版权与外部依赖风险）——`!downloaded/`（Google 翻译镜像、jQuery MP4 播放器、css3 3D 翻牌）、`tools/eeslap`、`tools/burymewithmymoney`、`tools/smashthewalls`，特征为 `*_files/` 子目录 + 脚本文件名带 `.下载` + 内嵌 analytics/firebase/three.js，`login/index.html` 标题本身即下载代码片段且静态站无鉴权场景；**已被本站取代的前代模板残留**——`myblog/`、`HACKEREMPIER/`、`officialblog/`、`about/index.html`、需后端的 `_UNUSED TESTED PAGE/` 留言表单；**纯 CSS 演示无内容增量**——`tools/chemicals`（诞生石药水瓶）、`tools/newtonbai`（牛顿摆）、`tools/moonnight`（星空月景）虽零依赖可搬，但属装饰性 demo；`tools/makebridge` 系 freeCodeCamp "Santa's Helper" 教程复刻（`santaX`/`perfectAreaSize` 变量名原样），移植需去圣诞主题化并注明来源，收益不抵成本；`tools/daojishi` 倒计时硬编码 `12/31/2020 23:59:59`，原样移植即死页；**原创文字资产不宜沿用页面形态**——`quesion/`（恶搞产品文案）与`slide/`（"HOT IDEAS" 卡片）为站主 2020 年的吐槽，若将来启用应以重新撰写的文章呈现，旧页面不搬。`MainSources/` 仅字体与两个未核授权的音视频，同样不动。
 
 - [x] **原模板未移植页面评估**（2026-09-04 完成）：对 `../limh.me` 全部 12 个 page-_.php / t.php / reg.php / function/_.php 逐一核对，与 myblog 现有 14 个路由 + sidebarConfig 侧栏清单对齐。结论：已移植清单（log_list/echo_log/header/footer/side/options→config.ts/归档/微语/留言板/关于/友链/图片墙/相册/404/全部侧栏 widget/文章尾部表情/吐槽水军）无遗漏。未移植 9 项取舍：**标签云集页**已作为 TODO 10 落地为 `/tag/`（2026-09-04 完成）；**读者墙**与**微语分页+[F\*]表情码解析**移入远期规划（触发条件见该节）；分享组件（分享目标大半死链）、日历 widget（Emlog ajax 依赖，交互已被归档/时间线替代）、读者等级（Giscus 无访客邮箱数据源）不移植；前台注册（需后端写库+验证码）、评论 UA/IP 属地（Giscus 不提供该数据）、通用页面模板变体 page-test/page1/page-colorful（已被 `spec` collection 的 `[...slug]` 覆盖）为架构性/数据源排除项，永久排除。原 `module.php`（eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）维持严禁搬运。
+
+### 待办（背景壁纸池体积上限）
+
+- [ ] **限制壁纸池单张体积上限**（2026-11-02 登记，拉绳壁纸挂件 spec #127 收口时发现）：当前 `src/config.ts` 的 `backgroundConfig.images` 四张实测 **876KB / 2.1MB / 3.1MB / 9.6MB**（原图未压缩）。换壁纸时按「均匀随机 × 排除当前图 × 每候选最多试一次」选图并预载，最坏情况一次操作要串行等待最多 3 个候选；而**大尺寸图片还会让解码被判据拒绝**——Chromium 在并发或大尺寸下会对合法图片抛 `EncodingError`（见 Odoo PR #243133 与 Chromium issue 40261318，其修复正是把 `Promise.all` 改成 `allSettled`）。挂件侧已做兼容兜底（decode 被拒时退化为「加载完成且具有固有尺寸」再判定），但**上限本身应落在资源侧**。触发条件：出现访客反馈换图慢 / 内存占用高，或新增壁纸。实施时建议统一压到单张 ≤ 1.5MB（保留现有 4 张不动、只约定新图口径），并同步更新 `public/images/bg/PEXELS-SOURCES.md` 的体积记录。
 
 ### 远期规划（观望项，均已完成评估、明确触发条件，未触发不排期）
 
