@@ -6,6 +6,8 @@
 
 ## 常用命令
 
+Pagefind 当前固定 1.6.0；`pnpm exec pagefind --site dist` 需要在 Astro 构建之后运行，并完整发布该次 `dist/pagefind/` 的脚本、WASM 与分片。升级比较应使用完整 API 结果，本站 UI 的 12 条上限不能代替命中总量；31 组查询、桌面/移动 UI 与分片失败重试的 A/B 方法见 [Pagefind 专项验收](../plans/2026-11-02-pagefind-upgrade.md)。
+
 `pnpm check` 的检查器现固定为 `@astrojs/check` 0.9.12。使用 `pnpm exec astro check --watch --preserveWatchOutput` 时，新增文件需要重新运行单次检查或重启 watch：2026-11-02 在旧版 0.9.10 和新版 0.9.12 均复现当前监听诊断清单未纳入新文件；已有文件修改可检出错误并在修正后清零。该限制与本次升级的验证边界见 [检查器专项验收](../plans/2026-11-02-astro-check-upgrade.md)。
 
 ```bash

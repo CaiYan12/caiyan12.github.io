@@ -6,6 +6,8 @@
 
 ## 构建链与依赖约束（2026-11-02 起 Astro 7）
 
+- **Pagefind 独立升级（2026-11-02）**：精确固定 1.6.0，Extended 构建使用 ICU4X 分词；部署应包含同一轮生成的整个 `dist/pagefind/`，含 JS、WASM 与索引分片。保留自定义 `Search.svelte`、Svelte 版本、收录规则与默认权重。本地 A/B 收录文档集合与标题相同；查询候选集、排名、摘要和索引大小有变化，既有单字误匹配减少，也出现新的弱相关部分匹配，不能统称检索质量提升。分片失败后再次提交在新版可恢复，但首轮仍表现为“没有找到”；主模块加载失败才走现有通用错误提示。具体变化、故障对照和验收边界见 [Pagefind 专项验收](../plans/2026-11-02-pagefind-upgrade.md)。
+
 - **检查器独立升级（2026-11-02）**：`@astrojs/check` 精确固定 0.9.12；语言服务更新至 2.17.3，检查链新增 `@astrojs/astro2tsx` 0.1.3 及其 WASM 依赖，文件监听使用 chokidar 5。TypeScript 仍为 5.9.3，其他直接依赖不联动。旧新版本地单次检查均为 0 errors / 0 warnings / 6 hints；已有 `.ts` / `.astro` 文件的错误修改、修正及单次检查失败码均已验证。**watch 的既有限制**：0.9.10 与 0.9.12 均复现新增文件未进入当前诊断清单；不能把“Watching for changes”或零错误视为新文件已检查，新增文件后应重新运行单次检查或重启 watch。没有为此修改依赖源码或放宽诊断级别。对照方法和构建/浏览器证据见 [检查器专项验收](../plans/2026-11-02-astro-check-upgrade.md)。
 
 - **Astro 7 实施（2026-11-02）**：已安装 Astro 7.4.4 / Svelte 集成 9.1.2 / Markdown 7.3.5 / Expressive Code 与两插件 0.44.3。升级信息的原始快照见 [复核报告](../plans/2026-11-02-build-system-upgrade-recheck.md)，实际构建与 A/B、浏览器结果及剩余边界见 [实施验收](../plans/2026-11-02-astro7-upgrade.md)。该批保持 Tailwind 3.4.19、TypeScript 5.9.3、Prettier 3.9.6、pnpm 10.26.2；随后 Prettier 单独升至精确版本 3.9.8，见下条。

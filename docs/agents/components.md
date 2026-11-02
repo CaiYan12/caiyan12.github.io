@@ -6,6 +6,8 @@
 
 ## 客户端脚本与 Swup 生命周期
 
+- **全局搜索升级边界（2026-11-02）**：`src/components/control/Search.svelte` 仍使用 Pagefind JavaScript API 与现有 12 条展示上限，不使用官方 Component UI。Pagefind 1.6.0 改变分词后的匹配、排名和摘要，源码与权重没有随升级调整。主模块加载失败会显示“搜索暂时不可用”；索引分片失败首轮仍可能显示“没有找到”，新版再次提交可恢复，不能称为所有网络异常都有错误提示。现有相关链接/热门推荐文字会进入部分页面的索引内容，因此命中未必来自文章正文；本轮保持旧收录集合，不在依赖升级里改内容排除策略。证据与已知行为见 [Pagefind 专项验收](../plans/2026-11-02-pagefind-upgrade.md)。
+
 - `src/utils/theme-script.ts` 已收薄为装配表、生命周期声明与 page-load 辅助三件：功能块按关注面分文件置于 `src/utils/runtime/`
 - **Swup 重初始化协议（2026-09-06 审查后统一，新增客户端代码必须遵守）**：`main` Swup 容器内的组件统一监听自定义事件 `colorful:page:loaded`（切换后重跑）并配 `dataset` 守卫防重复初始化（如 Slideshow 的 `data-initialized`）；`main` 容器外的布局级组件（导航/移动菜单/返回顶部/背景）只随 `pagefindReady()` 初始化一次，靠 `*Bound` 旗帜或 dataset 守卫防重入，勿自行监听 `astro:*` 原生事件——容器外布局级确需 before-swap 清理（如 Fancybox destroy）才允许直接听 `astro:*`。历史上四轨并存（_Bound 委托/dataset 守卫/自定义事件/内联 astro:_），新代码不得新增第四种形态；theme-script 按"唯一协议 + 多 init 函数"保持单文件，按关注面拆分已于 2026-10-29 完成，见规格 #115
 - **Swup 切换页面时组件脚本不会重跑**，所以需要重绑定的东西（Fancybox、导航高亮）由三处声明驱动、由 `initSwupHooks()` 统一挂到 `astro:before-swap`/`astro:after-swap`/`astro:page-load` 三个事件上（swup/astro 把 swup 自身的换页 hook 转译成这组 `astro:*` 事件）：换页前要清理的写在 `runtimeHooks.beforeSwap`，换页后要重跑的由装配表 `runtimeTable` 的 `swap` 号驱动（装配表每行同时带 `init` 与 `swap` 两个字段），换页后其余三件事写在 `runtimeHooks.pageLoad`；新增交互若依赖新页面 DOM，按这三处声明的形态加，不要另找地方注册
