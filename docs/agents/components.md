@@ -18,6 +18,15 @@
 - 生产 console 清理在 `astro.config.mjs` 的 vite `esbuild` 段（`drop: ["debugger"]`、`pure: ["console.log", "console.debug"]`）；`console.warn/error` 保留供线上排错，勿移除该配置；mermaid cynefin chunk 内 2 处残留为第三方压缩代码，已知且接受
 - 页面内 `<script>` 若含 `{...}` 模板插值必须加 `is:inline`（否则 Astro 当 TS 模块处理会解析失败）
 
+### 拉绳壁纸挂件（src/components/control/WallpaperPull.astro + src/utils/runtime/wallpaper-pull.ts，2026-11-02 视觉重做）
+
+- **布局级组件，只在 Swup 容器外初始化一次**：挂在 `Layout.astro` 的 Swup 容器之外，随 `pagefindReady()` 跑一次 `initWallpaperPull()`，`dataset.bound` 守卫防重入，**不进 `runtimeTable` 的 swap 清单**（切页不重建，实测切三页后仍只有一个实例、单次手势仍只换一次图）。
+- **横向锚点 = 主导航右缘，且不许再抄一份导航宽度**：导航宽度只有 `global.css` 的 `:root` 一处（`--nav-w` / `--nav-side`），挂件的 CSS 兜底用三选一 `min()` 自算、不带断点。**首帧必须等于运行时落定值**——运行时写 `--wpull-left` 要等 `pagefindReady()`（实测首帧 140ms、写入 370–395ms），CSS 兜底若是个近似值，强刷就会「先停在旧位置再闪过去」。裁决与代价见 ADR 0010，回归由 `pnpm smoke:wallpaper-pull` 的四条判据守着。
+- **导航不可用时运行时撤变量、不另立口径**：`readNavRect()` 把「元素不存在」「`display:none`（rect 全 0）」「`right` 非有限」都当无锚点，此时 `host.style.removeProperty("--wpull-left")` 让 CSS 的 `min()` 接管（删掉的 `LEFT_RATIO = 0.81` 近似口径会与 CSS 打架，勿恢复）。
+- **两段 SVG 各有坐标系**：绳（6×22）与衣服（30×28）都是 viewBox 与渲染尺寸 1:1，path 坐标即 CSS 像素；绳只按 `--wpull-rope-scale` 做 `scaleY`（`transform-origin` 在绳顶，所以上端钉在视口顶边），衣服按 `translateY(calc(--wpull-rope-rest + --wpull-pull))` 跟随。`ROPE_REST`（JS）与 `--wpull-rope-rest`（CSS）必须同值——分处两侧，靠冒烟的「绳尾与衣服顶边相接」判据守。
+- **点击区大于图形**：图形 30×50，命中区由 `.wpull__grab` 单独撑到 46×50；`cursor` 必须走 `var(--cursor-link)`（裸写 `pointer` 会被 `a,button` 的 (0,0,1) 与类的 (0,1,0) 对比反转，见 styles.md「自定义光标」）。
+- **减少动态**：跟手位移、回弹过渡、摇头、悬停倾斜全部撤掉，功能（换图 / 阈值判定 / 播报）不降级；≤680px 整件 `display:none`（此时页面本来也没有壁纸）。
+
 ### 侧栏“最新评论”换一批交互硬约束
 
 - “换一批”必须提供可感知的加载状态：切换期间显示加载图标动画与“加载中…”文案，设置 `aria-busy="true"` 并禁用按钮，防止重复点击。
@@ -30,7 +39,7 @@
 - `pio.js` / `pio.css` 为 vendored 第三方代码但随本项目自维护（无上游升级管道），可直接修改；入口组件是 `src/components/widget/Pio.svelte`，文案与“关于我”链接配置在 `src/config.ts` 的 `pioConfig`。
 - 操作按钮列固定顺序 `home → info → side（停靠切换）→ close`；左/右停靠通过容器 `.left`/`.right` 类驱动，偏好存 `localStorage.pioSide`；折叠状态存 `localStorage.posterGirl`，**默认折叠**（仅 `=== "1"` 时展开）。新增按钮必须用 `appendChild` 按顺序追加，不得用 `insertBefore` 引用尚未入 DOM 的节点。
 - 右侧停靠时所有元素必须对称适配：按钮列（`.pio-action`）、折叠按钮（`.pio-show`，含 hover 方向与“点击召唤Pio”提示方向）、消息框（`.pio-dialog`）。消息框居中 + 底部三角，`max-width: 100%` + `width: max-content` 防止长消息溢出视口。
-- pio 定位样式在 `pio.css`（`public/` 静态文件，不走构建管线），改动后需同步 `dist/` 才能在 preview 验证；**`pnpm dev` 下 Pio 因 Svelte hydration 报错不渲染（仅 dev），验证 pio 必须用 `pnpm build && pnpm preview`**。
+- pio 定位样式在 `pio.css`（`public/` 静态文件，不走构建管线），改动后需同步 `dist/` 才能在 preview 验证。**「`pnpm dev` 下 Pio 因 Svelte hydration 报错不渲染」这条旧结论已在 2026-11-02 实测推翻，勿再据此绕道 build**：`start.bat`（= `pnpm start --open`）与 `pnpm dev` 都是 `astro dev`，该形态下 `.pio-container` 确实存在、带 Svelte 作用域类（水合成功）、`pageerror` 为 0；它看起来「没渲染」是因为**默认折叠**（`localStorage.posterGirl` 非 `"1"` 时带 `hidden` 类、盒子 0×0，见下一条的折叠口径），不是 hydration 失败。验证 Pio 交互时点一下左下角的「召唤」把它展开即可；只有在验 `pio.css` 改动（不经构建管线）时才需要 `pnpm build && pnpm preview` 同步 `dist/`。
 - myhkw 播放器以 `z-index` 压制 Pio（Layout.astro 内联样式）；Pio 的按钮/消息框位置调整需同时考虑播放器展开面板与底部歌词框的遮挡。
 
 ### Nice Books 每日好书（src/nice-books/ + src/pages/books/，2026-09-06 移植）
