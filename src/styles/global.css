@@ -7767,6 +7767,29 @@ body,
   border: 0;
 }
 
+/* ---------- 壁纸交叉淡入的临时层（票 #131） ----------
+
+   换图时**旧图原地不动**，只新建一层单向淡入；淡入到不透明之后才把新地址
+   写到原图层，最后撤掉临时层。绝不先淡出旧图再淡入新图——顺序式过渡中途会
+   露出页面底色（jQuery Backstretch 的 fadeinout 分支被报 Flash 正是这个）。
+
+   层叠值由运行时按原图层的**计算值**下发（本站 -9999），这里刻意不写死数字：
+   临时层靠「紧跟原图层之后的 DOM 位次」压住旧图，绝不能高过纹理遮罩的 -998，
+   否则淡入期间遮罩会被顶掉一帧，正是要避免的跳变。 */
+.bg-image--temp {
+  /* 旧图仍在，本层只负责把自己淡进来 */
+  transition: opacity 320ms var(--ease-out);
+  /* 淡入期间不该拦任何指针（背景层本来也不接收事件） */
+  pointer-events: none;
+}
+
+/* 减少动态：不播交叉淡入（运行时也直接跳过建层，这里是第二道保险） */
+@media (prefers-reduced-motion: reduce) {
+  .bg-image--temp {
+    transition: none;
+  }
+}
+
 /* 宽度窄到背景层被整体隐藏的那一档（global.css 既有 ≤680px 规则：
    .bg-image / .bg-image-pattern 均 display:none !important），
    此时页面根本没有壁纸可换，挂件一并隐藏。 */

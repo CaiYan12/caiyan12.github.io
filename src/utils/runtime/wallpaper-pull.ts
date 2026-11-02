@@ -25,6 +25,7 @@ import {
 	resolvePull,
 } from "../wallpaper-pull-drag";
 import { prefersReducedMotion } from "./reduced-motion";
+import { crossfadeBackground } from "./wallpaper-crossfade";
 
 const HOST_SELECTOR = "[data-wallpaper-pull]";
 /** 挂件里唯一可聚焦、可点击的按钮（T1 输出） */
@@ -283,8 +284,16 @@ export function initWallpaperPull() {
 				return;
 			}
 
-			// 交叉淡入留给 T4；本票只提交已确认可用的地址
-			background.src = choice.url;
+			// 交叉淡入（T4）：旧图原地不动、只新建一层单向淡入；临时层建不起来
+			// （受限环境）时退化为直接切换，保证功能仍在。
+			const result = await crossfadeBackground(background, choice.url);
+			if (result === "skipped") background.src = choice.url;
+			if (result === "failed") {
+				// 提交阶段失败：原背景已回滚，按「加载失败」告诉访客
+				announce(ANNOUNCEMENT.failed);
+				return;
+			}
+			if (result === "cancelled") return;
 			announce(ANNOUNCEMENT.changed);
 		} finally {
 			busy = false;
