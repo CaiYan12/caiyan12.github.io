@@ -1975,7 +1975,9 @@ img:hover {
 
 #header .box {
   position: relative;
-  width: 1100px;
+  /* 与 #head-nav 同宽、同源：改 --nav-w 时头部标题带与导航必须一起变，
+     否则挂件压在导航右缘、标题却还在旧宽度上，两者会错位 */
+  width: var(--nav-w);
   margin: 0 auto;
   padding: 45px 0;
 }
@@ -2064,12 +2066,28 @@ img:hover {
   color: #fff;
 }
 
+/* ---------- 导航宽度 = 挂件横向锚点的单一真源 ----------
+
+   拉绳壁纸挂件的中心线要压在 #head-nav 的右缘上。挂件是 position:fixed、
+   挂在导航之外，靠 CSS 无法读到导航的实际宽度，所以两边的尺寸必须同源：
+   这里定义 `--nav-w`（宽档固定宽）与 `--nav-side`（窄档两侧留白），
+   #head-nav 的 width 与 .wpull 的兜底 left 都只消费这两个变量。
+
+   改导航宽度 = 改这两个值，挂件自动跟上；不要再在别处写 1100 / 40 这类字面量
+   （2026-11-02 就因为挂件里硬编码镜像了 1100/40 而与导航脱钩，首帧错了 187px）。 */
+:root {
+  /* 导航在宽档的固定宽度 */
+  --nav-w: 1100px;
+  /* 窄档（≤1100px）导航两侧各留的白：宽 = 100% - 2 × 该值 */
+  --nav-side: 20px;
+}
+
 #head-nav {
   position: relative;
   z-index: 100;
   display: block;
   box-sizing: border-box;
-  width: 1100px;
+  width: var(--nav-w);
   height: 55px;
   margin: 0 auto;
   padding: 0 10px;
@@ -5028,7 +5046,7 @@ html.with-fancybox .backtop {
 @media screen and (max-width: 1100px) {
   #header .box,
   #head-nav {
-    width: calc(100% - 40px);
+    width: calc(100% - var(--nav-side) * 2);
   }
 
   #header .box {
@@ -7633,126 +7651,203 @@ body,
   color: var(--colorful-green-accessible);
 }
 
-/* ---------- 拉绳壁纸挂件（spec #127） ----------
+/* ---------- 拉绳壁纸挂件（spec #127；视觉于 2026-11-02 按 360 壁纸原版重做） ----------
 
-   定位口径（GLOSSARY.md「拉绳壁纸挂件」）：中心线对齐主导航右缘、衣服底边
-   对齐桌面头部标题顶边。两个锚点都不写死像素——
-   · 水平：运行时按 #head-nav 的实际 rect 算，--wpull-left 由 initWallpaperPull 下发；
-     这里只给兜底值（导航 1100 居中时右缘 = 视口中心 + 550）。
-   · 垂直：绳子从视口顶边（top:0）垂到退回 #header .box 的 padding 顶沿，
-     即 --wpull-drop，与 .site-title 顶边齐平；由运行时按实际盒高下发。
+   定位口径（GLOSSARY.md「拉绳壁纸挂件」）：挂在**视口顶边**，中心线压在主导航
+   的右缘上，不随滚动移动。
+   · 水平：**中心线压在主导航 `#head-nav` 的右缘**（站长口径）。导航宽度随断点
+     变化，所以落点不能写在这里：运行时按实际 rect 算完用 --wpull-left 下发。
+     兜底值由 --nav-w / --nav-side 直接算出（见 .wpull 的 left），不是近似值。
+   · 垂直：绳从 top:0 垂下来，静止长 22px（--wpull-rope-rest），所以 T 恤顶边
+     距视口顶边 22px、底边 50px，整件挂件 30×50px。
+
+   尺寸是硬约束：T 恤的 SVG 盒是 30×28，**墨迹**（含 1px 描边）实渲染 27.4×27.8；
+   绳 1px。两份 SVG 的 viewBox 与渲染尺寸 1:1（30×28 / 6×22），path 坐标即 CSS
+   像素——不要靠改 viewBox 假装缩小。
 
    层级：高于 #head-nav(100)、低于 #mmenu(200) 与 #mmenu-backdrop(199)，
    所以打开移动端菜单时菜单仍在最上层。
 
-   颜色全部取自站内既有 token / T 恤描边色族：不引入第四套配色。 */
+   颜色：描边 #7186CD、爱心 #F32D4D 直接用站长给的 360 原版取色；衣服以 #EEEEEE
+   为基调提亮成 #fdfdfe→#e9ebf2 的极轻渐变（「白色主体 + 轻微柔和阴影」）。
+   这是站长本轮的明确裁决，不是又引入一套设计语言。 */
 
 .wpull {
-  /* 挂件局部 token：全部派生自站内既有 tag 色板（--tag-c4 紫 #b12bff、--tag-c6 蓝 #0077da）
-     与品牌绿，不引入新的色相家族。标记里不写死色值，一律走这几个变量：
-     · --wpull-ink 描边（蓝，压暗 --tag-c6 得到中低明度）
-     · --wpull-ink-soft 提示边框（描边的低透明度形态）
-     · --wpull-cloth 衣服底色（近白，略暖，与站内卡片白区分）
-     · --wpull-heart 爱心红（暖红，同 --tag-c1 家族但提明度以免发暗）
-     · --wpull-rope-a/b/c 绳渐变三段（紫族由浅到深，取自 --tag-c4 的色相轴） */
-  --wpull-ink: #5c6bc0;
-  --wpull-ink-soft: rgba(92, 107, 192, 0.28);
-  --wpull-cloth: #fffefb;
-  --wpull-heart: #f5233a;
-  --wpull-rope-a: #b39ddb;
-  --wpull-rope-b: #7e57c2;
-  --wpull-rope-c: #4527a0;
+  /* 挂件局部 token：标记里不写死色值，一律走这几个变量 */
+  --wpull-ink: #7186cd; /* 描边、领口、袖口 */
+  --wpull-ink-deep: #4257be; /* 绳主股：描边压暗两档并提饱和，1px 细线在亮壁纸上才站得住 */
+  --wpull-ink-lit: #a9b6e4; /* 绳高光股 */
+  --wpull-ink-soft: rgba(113, 134, 205, 0.28); /* 提示气泡描边 */
+  --wpull-cloth-top: #fdfdfe; /* 衣服底色（上） */
+  --wpull-cloth-bottom: #e9ebf2; /* 衣服底色（下）：极轻的柔和投影，不是渐变装饰 */
+  --wpull-heart: #f32d4d;
+  /* 绳的静止长度 = T 恤顶边距视口顶边的距离。唯一来源是本变量；
+     runtime 的 ROPE_REST 必须与它同值（改一个就要改另一个）。 */
+  --wpull-rope-rest: 22px;
+  /* 盒宽与视口边距：与 runtime 的 SHIRT_W / EDGE_GAP 同值。
+     下面那条 CSS 兜底用它们算夹取，所以两边在数学上必然相等。 */
+  --wpull-size: 30px;
+  --wpull-edge: 8px;
   position: fixed;
   top: 0;
-  /* 运行时下发 --wpull-left（中心线 x）；兜底值对应 1440 视口、导航 1100 居中 */
-  left: var(--wpull-left, calc(50% + 550px));
+  /* 首帧定位必须与运行时的值一致，否则会「先落在旧位置、加载完再闪过去」：
+     运行时下发 --wpull-left（= 导航右缘），但 JS 要等 pagefindReady() 才写，
+     实测首帧 140ms / 写入 370–395ms，中间 240ms 停错位置（Δ 最大 187px）。
+     所以兜底值必须自己算出同一个数，而且**不许再抄一份导航的宽度字面量**——
+     改导航宽度只需改 :root 的 --nav-w / --nav-side，这里自动跟上。
+     三选一取最小值，覆盖整条轴（没有断点，断点改了也不会脱钩）：
+       ① 宽档：导航 --nav-w 居中 → 右缘 = 50% + --nav-w / 2
+       ② 窄档：导航 100% - 2×--nav-side → 右缘 = 100% - --nav-side
+       ③ 视口边距夹取：盒子右缘至少留 --wpull-edge
+          → 100% - --wpull-size/2 - --wpull-edge
+     ①②在断点附近会同时偏大，但那时③一定更小，min() 取到的就是正确答案；
+     逐宽度验证见 smoke:wallpaper-pull 的「首帧定位 = 落定定位」两条判据。 */
+  left: var(--wpull-left, min(calc(50% + var(--nav-w) / 2), calc(100% - var(--nav-side)), calc(100% - var(--wpull-size) / 2 - var(--wpull-edge))));
   z-index: 105;
-  /* 组件盒宽大于衣服本体，为 hover 提示浮出与回弹留余量 */
-  width: 130px;
+  /* 盒宽 = T 恤的视觉宽度，**不是**命中区宽度：命中区由按钮单独撑开 */
+  width: var(--wpull-size);
+  /* 静止高 50px（绳 22 + 衣服 28）；拉长时衣服会走出盒子，overflow 放行 */
+  height: calc(var(--wpull-rope-rest) + 28px);
   /* 盒子以自身中心对齐锚点，故整体左移半宽 */
   translate: -50% 0;
-  /* 盒子本身是惰性的：只有衣服按钮捕获指针，绳与空白不吞点击 */
+  /* 盒子本身是惰性的：只有按钮捕获指针，绳与空白不吞点击 */
   pointer-events: none;
 }
 
+/* 绳：静止 22px 高，只在垂直方向拉伸（transform 不改盒高、不重排）。
+   缩放原点在绳顶，所以变长时上端钉在视口顶边、下端跟着衣服走。
+   stroke 带 vector-effect="non-scaling-stroke"（写在标记上），拉长后仍是 1px。 */
+.wpull__cord {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 6px;
+  height: var(--wpull-rope-rest);
+  translate: -50% 0;
+  transform: scaleY(var(--wpull-rope-scale, 1));
+  transform-origin: 50% 0;
+  overflow: visible;
+
+  /* 1px 主股 + 0.4px 高光股：两股细线读起来是绳，不是一根塑料棍 */
+  .wpull__cord-main {
+    fill: none;
+    stroke: var(--wpull-ink-deep);
+    stroke-width: 1;
+    stroke-linecap: round;
+  }
+
+  .wpull__cord-lit {
+    fill: none;
+    stroke: var(--wpull-ink-lit);
+    stroke-width: 0.4;
+    stroke-linecap: round;
+  }
+}
+
+/* 命中区 46×50px（≥44px 触控目标），覆盖绳与衣服的整个矩形。
+   视觉图形不跟着放大：SVG 自己写死 30×28，靠 margin 居中。 */
 .wpull__grab {
-  position: relative;
-  z-index: 1;
-  display: block;
-  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 46px;
+  height: 100%;
+  margin: 0;
   padding: 0;
   border: 0;
   background: none;
-  /* 站点既有自定义光标 token（smoke:ui 的手型负扫按它判；裸写 pointer 会被
+  translate: -50% 0;
+  /* 站内既有自定义光标 token（smoke:ui 的手型负扫按它判；裸写 pointer 会被
      a,button 的 (0,0,1) 与类的 (0,1,0) 对比反转，见 styles.md「自定义光标」条） */
   cursor: var(--cursor-link);
-  /* 只有衣服可拖：触摸行为只压在这一块，页面其余部分照常滚动 */
+  /* 只有挂件可拖：触摸行为只压在这一块，页面其余部分照常滚动 */
   touch-action: none;
   pointer-events: auto;
   /* 拖动时不误选文字 */
   user-select: none;
   -webkit-user-select: none;
-  /* 静态：衣服整体下移 --wpull-drop，使衣服底边落到标题顶边；
-     拉伸时叠加 --wpull-pull，两者都只动 transform，不触发布局 */
-  transform: translateY(calc(var(--wpull-drop, 0px) + var(--wpull-pull, 0px)));
 }
 
+/* 衣服：静止位姿 = 绳长处（22px），拉伸时叠加 --wpull-pull，两者都只动
+   transform，不触发布局。1:1 的 viewBox 保证 path 坐标就是 CSS 像素。 */
 .wpull__art {
-  display: block;
-  width: 100%;
-  height: auto;
-  /* SVG 内部元素消费上面的局部 token（标记里不写色值） */
+  /* 绝对定位而不是普通流：<button> 会把内容竖向居中，流内摆放会让衣服整体
+     下移 (盒高 − 衣服高)/2 = 11px，绳尾与领口之间就露出 11px 的断口。
+     钉在 top:0 再靠 transform 下移到绳长处，两段才严丝合缝。 */
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 30px;
+  height: 28px;
+  translate: -50% 0;
+  overflow: visible;
+  transform: translateY(calc(var(--wpull-rope-rest) + var(--wpull-pull, 0px)));
+  transform-origin: 50% 0;
+  /* 一点点投影：让衣服像是挂在壁纸上，而不是印在壁纸上 */
+  filter: drop-shadow(0 1px 1px rgba(56, 70, 128, 0.32));
+  /* hover 只转 0.8°，用独立的 rotate 属性，不和上面的 transform 抢过渡 */
+  rotate: 0deg;
+  transition: rotate 200ms var(--ease-out);
+
   .wpull__shirt-fill {
-    fill: var(--wpull-cloth);
+    fill: url(#wpull-cloth);
     stroke: var(--wpull-ink);
+  }
+
+  .wpull__cloth-top {
+    stop-color: var(--wpull-cloth-top);
+  }
+
+  .wpull__cloth-bottom {
+    stop-color: var(--wpull-cloth-bottom);
+  }
+
+  /* 领口与袖口的轮廓细节：描边同色、更细更淡，只做「有缝线」的暗示 */
+  .wpull__collar,
+  .wpull__cuff {
+    fill: none;
+    stroke: var(--wpull-ink);
+    stroke-linecap: round;
+    opacity: 0.62;
   }
 
   .wpull__heart {
     fill: var(--wpull-heart);
   }
 
-  .wpull__rope-a {
-    stop-color: var(--wpull-rope-a);
+  /* 绳结画在衣服坐标系里（cx=15 cy=0.2），所以绳伸长多少都不会变形 */
+  .wpull__knot {
+    fill: none;
+    stroke: var(--wpull-ink-deep);
+    opacity: 0.85;
   }
-
-  .wpull__rope-b {
-    stop-color: var(--wpull-rope-b);
-  }
-
-  .wpull__rope-c {
-    stop-color: var(--wpull-rope-c);
-  }
-
-  /* 绳尾要长过衣服才能接上，overflow 必须放行 */
-  overflow: visible;
 }
 
-/* 绳只在垂直方向随 drop 拉长：transform 不改 viewBox、不重算路径。
-   缩放原点是绳顶（y=0），所以变长时下端向下延伸、上端钉在视口顶边。 */
-.wpull__rope {
-  transform-origin: 65px 0;
-  transform: scaleY(var(--wpull-rope-scale, 1));
+/* 悬停：极轻的摆动（不是放大、不是旋转动画，就是它被碰了一下）。
+   0.8° 在 28px 高的衣服上约等于下摆横移 0.4px——能感觉到的量级。 */
+.wpull__grab:hover .wpull__art,
+.wpull__grab:focus-visible .wpull__art {
+  rotate: 0.8deg;
+}
+
+/* 拖动中不摆：那 0.8° 是「被碰了一下」的静态提示，挂在拉拽过程里会读成歪斜 */
+.wpull[data-dragging] .wpull__art {
+  rotate: 0deg;
 }
 
 /* 回弹（票 #130）：拖动结束时由运行时挂 .is-settling，回去的过程才走过渡。
    拖动中**不能**有这条过渡——每个 pointermove 都写变量，过渡会把跟手拖成橡皮糖。
    曲线用既有 --ease-out（减速无过冲），所以是「弹回」而不是「弹簧」：
    弹簧会来回抖动，正是票面点名要避免的。时长与 runtime 的 SETTLE_MS 一致。 */
-.wpull.is-settling .wpull__grab {
-  transition: transform 320ms var(--ease-out);
+.wpull.is-settling .wpull__art {
+  transition:
+    transform 320ms var(--ease-out),
+    rotate 200ms var(--ease-out);
 }
 
 /* 绳的 scaleY 也要跟着回去，否则衣服回去了、绳还挂在下面 */
-.wpull.is-settling .wpull__rope {
+.wpull.is-settling .wpull__cord {
   transition: transform 320ms var(--ease-out);
-}
-
-/* 减少动态：不做弹性回弹（完整降级与 T7 一起补，这里先保证拖动路径不抖） */
-@media (prefers-reduced-motion: reduce) {
-  .wpull.is-settling .wpull__grab,
-  .wpull.is-settling .wpull__rope {
-    transition: none;
-  }
 }
 
 /* ---------- 「没换成」的非颜色反馈：衣服短摇头一次（票 #132 T5） ----------
@@ -7761,8 +7856,8 @@ body,
    区别交给播报区。**非颜色**是硬约束：只变色对色觉障碍访客等于没给信息。
 
    只摇一次（iteration-count: 1）、不循环，220ms 与 runtime 的 SHAKE_MS 一致。
-   位移幅度用衣服自身宽度的比例表达（--wpull-shake-x），不写绝对值：
-   挂件盒宽随断点变化时，摇头幅度跟着走，不会在窄屏上甩出边界。 */
+   幅度按衣服自身宽度取（--wpull-shake-x），不写绝对值：2.5px 约等于衣服
+   宽度的 1/12，是「摇头」的最小可辨量级，不会把 27px 的小衣服甩出边界。 */
 
 @keyframes wpull-shake {
   0%,
@@ -7770,23 +7865,15 @@ body,
     translate: 0 0;
   }
   25% {
-    translate: calc(var(--wpull-shake-x, 6px) * -1) 0;
+    translate: calc(var(--wpull-shake-x, 2.5px) * -1) 0;
   }
   75% {
-    translate: var(--wpull-shake-x, 6px) 0;
+    translate: var(--wpull-shake-x, 2.5px) 0;
   }
 }
 
 .wpull.is-shaking .wpull__art {
   animation: wpull-shake 220ms var(--ease-out) 1;
-}
-
-/* 减少动态：整段跳过摇头（前庭风险），信息仍由播报区承担。
-   runtime 在减少动态时根本不加这个类，这里是第二道保险。 */
-@media (prefers-reduced-motion: reduce) {
-  .wpull.is-shaking .wpull__art {
-    animation: none;
-  }
 }
 
 /* 忙碌态可感知（spec 故事 22：换图期间继续操作不能静默吞掉）。
@@ -7802,29 +7889,29 @@ body,
   transition: opacity 160ms var(--ease-out);
 }
 
-/* 确认环：键盘聚焦时可见（不依赖 hover） */
+/* 确认环：键盘聚焦时可见（不依赖 hover）。
+   offset 取负值把环画在按钮内侧——按钮贴视口顶边，正 offset 的上半边会被裁掉。 */
 .wpull__grab:focus-visible {
   outline: 2px solid var(--colorful-green);
-  outline-offset: 4px;
-  border-radius: 6px;
+  outline-offset: -3px;
+  border-radius: 4px;
 }
 
 .wpull__hint {
   position: absolute;
-  top: 50%;
+  /* 与 T 恤竖向居中：绳 22 + 衣服高 28/2 = 36 */
+  top: calc(var(--wpull-rope-rest) + 14px);
   /* 挂哪一侧由运行时算（票 #133）：优先贴 T 恤右缘，放不下就翻到左边。
-     --wpull-hint-left 是**相对盒子左缘**的偏移。兜底值不能再写 100%+8px——
-     盒子固定 130 宽而 T 恤只占盒内 33..97，以盒右缘为锚会把提示推到盒外，
-     实测 1440 溢出 9px、≤1100 整颗出屏。兜底退到衣服右缘（盒内 97 + 8）。 */
-  left: var(--wpull-hint-left, 105px);
+     --wpull-hint-left 是**相对盒子左缘**的偏移；兜底贴衣服右缘（盒内 29）+8。 */
+  left: var(--wpull-hint-left, 37px);
   z-index: 0;
-  padding: 4px 10px;
+  padding: 3px 9px;
   border-radius: 999px;
   border: 1px solid var(--wpull-ink-soft);
   background: #fff;
   color: var(--colorful-text-secondary);
   font-size: 12px;
-  line-height: 18px;
+  line-height: 17px;
   white-space: nowrap;
   /* 仅淡入淡出，不做位移（票 #133 硬约束）：
      这里只有 opacity 一条过渡，不写 transform / translate 的过渡。 */
@@ -7841,9 +7928,30 @@ body,
   opacity: 1;
 }
 
-/* 结果播报区：只供读屏，不占视觉空间（沿用站点既有的视觉隐藏手法） */
 /* 结果播报区只供读屏：视觉隐藏手法复用站内既有 .pagenavi-sr-only
    （标记里同时带两个类），本节不再复制一份同样的规则。 */
+
+/* ---------- 减少动态：位移与动画一律撤掉，功能与可读性不变 ----------
+   跟手位移、回弹过渡、摇头、悬停摆动全部关掉；换图与播报照常。 */
+@media (prefers-reduced-motion: reduce) {
+  .wpull__art {
+    transition: none;
+  }
+
+  .wpull__grab:hover .wpull__art,
+  .wpull__grab:focus-visible .wpull__art {
+    rotate: 0deg;
+  }
+
+  .wpull.is-settling .wpull__art,
+  .wpull.is-settling .wpull__cord {
+    transition: none;
+  }
+
+  .wpull.is-shaking .wpull__art {
+    animation: none;
+  }
+}
 
 /* ---------- 壁纸交叉淡入的临时层（票 #131） ----------
 

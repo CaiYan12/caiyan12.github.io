@@ -49,9 +49,9 @@ const LIVE_SELECTOR = ".wpull__live";
 const HINT_SELECTOR = ".wpull__hint";
 /** 既有背景层：继续复用它，不另建 body 背景图 */
 const BACKGROUND_SELECTOR = ".bg-image[data-backgrounds]";
+/** 挂件的横向锚点：主导航（`.wpull` 中心线压在它的右缘上） */
 const NAV_SELECTOR = "#head-nav";
-const TITLE_SELECTOR = "#header .site-title";
-/** 挂件右缘与视口右缘之间至少要留出的空隙，窄屏夹取时用 */
+/** 挂件左右边缘与视口边缘之间至少要留出的空隙，窄屏夹取时用 */
 const EDGE_GAP = 8;
 /** 提示气泡与 T 恤之间的视觉间距；唯一来源是本常量，样式侧不另存一份 */
 const HINT_GAP = 8;
@@ -62,14 +62,18 @@ const HINT_GAP = 8;
  * 但同一次加载内绝不重复弹（票面硬约束）。
  */
 const AUTO_HINT_MS = 3000;
-/** SVG 里绳画到的 y 坐标（与 WallpaperPull.astro 的 viewBox 保持一致） */
-const ROPE_END = 76;
 /**
- * T 恤在 SVG 自身坐标系里的底边 y（viewBox 为 0 0 130 175，衣服 path 的
- * y 区间是 74…158）。`drop` 必须扣掉这段固有高度，否则「衣服底边对齐标题
- * 顶边」会退化成「衣服顶端对齐标题顶边」——实测底边会低 155px 并压住导航。
+ * T 恤 SVG 的固有宽度（px）——与 WallpaperPull.astro 里 `.wpull__art` 的
+ * viewBox 宽同值。运行时只在 offsetWidth 量不到时用它兜底。
  */
-const SHIRT_SVG_BOTTOM = 158;
+const SHIRT_W = 30;
+/**
+ * 绳的静止长度（px）：也就是 T 恤顶边距视口顶边的距离。
+ *
+ * 必须与 global.css 里 `--wpull-rope-rest` 同值（改一个就要改另一个）：
+ * CSS 用它算挂件盒高与衣服静止位姿，运行时用它把「伸展量」换算成绳的拉伸倍数。
+ */
+const ROPE_REST = 22;
 /**
  * 候选图加载上限：超过按失败处理并解除忙碌，避免弱网下永久锁死
  * （spec「需要设置明确的加载上限」）。
@@ -103,8 +107,13 @@ const SETTLE_MS = 320;
  */
 const SHAKE_MS = 220;
 
-/** 脚本化下拉的行程（px）：与阈值同量级，够看出拉了一下 */
-const SCRIPTED_TUG_PX = 56;
+/**
+ * 脚本化下拉的行程（px）。
+ *
+ * 30 约等于一件衣服的高度（28px）：单看位移也能认出「被拉了一下」，
+ * 又不会把 27px 的小衣服甩出两三个身位——票面点名不要大幅度弹跳。
+ */
+const SCRIPTED_TUG_PX = 30;
 
 /** 三类结果播报文本：必须各不相同（票面硬约束） */
 const ANNOUNCEMENT = {
@@ -126,58 +135,51 @@ export function noteDragRelease(host: HTMLElement, timeStamp: number) {
 }
 
 /**
- * 把挂件摆到「中心线对齐主导航右缘、衣服底边对齐标题顶边」的位置。
+ * 把挂件摆到「中心线对齐主导航右缘」的位置（垂直方向不在本函数里）。
  *
  * 纯几何计算，不读 DOM：便于在单测里注入矩形覆盖边界。
  *
- * @param nav     主导航的矩形（缺失时退回 null）
- * @param title   桌面头部标题的矩形（缺失时退回 null）
- * @param widgetW 挂件盒宽（px）
+ * 横向口径由站长两次确认：挂件是「压在导航右缘上的小饰物」，不是视口百分比
+ * 定位的按钮——所以随导航宽度（1100 居中 / calc(100% - 40px) 等）一起移动。
+ *
+ * **导航不可用时返回 null**，调用方不下发 --wpull-left，落点交给 global.css
+ * 里那条 min() 兜底（它由 --nav-w / --nav-side 直接算出，与导航同源）。
+ * 刻意**不**在这里另给一个「视口百分比」近似：两套口径一旦不同，导航缺失的
+ * 页面就会先按 CSS 画、再被 JS 拉走一截，正是要避免的闪动。
+ *
+ * @param nav       主导航的矩形（只需要 right）；不可用时传 null
+ * @param widgetW   挂件盒宽（px），即 T 恤的视觉宽度
  * @param viewportW 可用宽度（已扣除滚动条）
- * @returns left（盒子中心线的 x 坐标）与 drop（绳长，即衣服顶端的 y 偏移）
+ * @returns left（盒子中心线的 x 坐标）；无可用锚点时返回 null
  */
 export function computePlacement({
 	nav,
-	title,
 	widgetW,
 	viewportW,
 }: {
 	nav: DOMRectLike | null;
-	title: DOMRectLike | null;
 	widgetW: number;
 	viewportW: number;
-}): { left: number; drop: number } | null {
-	if (!nav) return null;
+}): { left: number } | null {
+	if (!(viewportW > 0)) return null;
+	if (!nav || !Number.isFinite(nav.right)) return null;
 
-	// 水平：中心线对齐导航右缘；若这样会右溢，则整体左移到不出屏为止。
-	// 「被裁时主动计算位移」——其余宽度保持对齐关系不变。
-	//
-	// 两侧都要夹：只夹右边的话，视口窄到接近盒宽时中心线会算出负坐标
-	// （viewportW - half - EDGE_GAP < half），盒子左缘被推到视口外，
-	// 反而把衣服的左半边裁掉——那与「T 恤完整可见」的目标正好相反。
-	// 下界 half + EDGE_GAP 让盒左缘至少停在 EDGE_GAP 处。
+	// 两侧都要夹：只夹右边的话，视口窄到接近盒宽时中心线会算出负坐标，
+	// 盒子左缘被推到视口外，反而把衣服的左半边裁掉——那与「T 恤完整可见」
+	// 的目标正好相反。下界 half + EDGE_GAP 让盒左缘至少停在 EDGE_GAP 处。
 	//
 	// 视口连盒子本身都放不下时（正式样式下不会发生：≤680px 挂件就隐藏了），
 	// 居中摆放，两侧均分裁切——比单侧全部丢光更接近「完整可见」。
 	const half = widgetW / 2;
 	const minCenter = half + EDGE_GAP;
 	const maxCenter = viewportW - half - EDGE_GAP;
-	const left =
-		maxCenter < minCenter
-			? viewportW / 2
-			: Math.min(Math.max(nav.right, minCenter), maxCenter);
+	if (maxCenter < minCenter) return { left: viewportW / 2 };
 
-	// 垂直：绳长让**衣服底边**落到标题顶边。
-	// SVG 顶端钉在视口 y=0，衣服自身已占 [74, 158]，所以名义位移 = 标题顶边 − 衣服固有底边；
-	// 结果为负（标题顶边在衣服固有位置之上）时夹到 0，挂件贴顶、不向上拉出视口。
-	const drop = title ? Math.max(0, title.top - SHIRT_SVG_BOTTOM) : 0;
-
-	return { left, drop };
+	return { left: Math.min(Math.max(nav.right, minCenter), maxCenter) };
 }
 
 /** 只取本模块需要的矩形字段，让单测能传普通对象而不必造真实 DOMRect */
 export type DOMRectLike = {
-	top: number;
 	right: number;
 };
 
@@ -252,34 +254,43 @@ export function shouldAutoHint({
 	return coarsePointer && !hasHover && !alreadyShown && visible;
 }
 
-function readRect(el: Element | null): DOMRectLike | null {
-	if (!el) return null;
-	const r = el.getBoundingClientRect();
-	return { top: r.top, right: r.right };
+/**
+ * 读主导航右缘；导航**不可用**时返回 null（落点交给 CSS 的 min() 兜底）。
+ *
+ * 「不可用」有两种，必须都挡掉：
+ * 1. 元素不存在（独立壳 / 尚未渲染 → querySelector 拿不到）；
+ * 2. 元素存在但 `display:none` —— 此时 getBoundingClientRect() 全 0，
+ *    `right` 是个**有限值 0**，直接喂给夹取会把挂件推到视口最左边（x = 半宽 + 8）。
+ *    靠 `Number.isFinite` 挡不住这种「合法的 0」，所以显式认尺寸为 0 的盒子。
+ */
+function readNavRect(): DOMRectLike | null {
+	const nav = document.querySelector(NAV_SELECTOR);
+	if (!nav) return null;
+	const rect = nav.getBoundingClientRect();
+	if (rect.width === 0 && rect.height === 0) return null;
+	return { right: rect.right };
 }
 
-/** 按当前视口重算并下发 CSS 变量 */
+/** 按当前视口重算并下发 CSS 变量（--wpull-left）；无锚点时撤掉它让 CSS 接管 */
 function applyPlacement(host: HTMLElement) {
 	const widgetW =
-		host.offsetWidth || parseFloat(getComputedStyle(host).width) || 130;
+		host.offsetWidth || parseFloat(getComputedStyle(host).width) || SHIRT_W;
 	const viewportW = document.documentElement.clientWidth;
 	const placement = computePlacement({
-		nav: readRect(document.querySelector(NAV_SELECTOR)),
-		title: readRect(document.querySelector(TITLE_SELECTOR)),
+		nav: readNavRect(),
 		widgetW,
 		viewportW,
 	});
-	if (!placement) return null;
+	if (!placement) {
+		// 没有可用锚点：撤掉变量让 global.css 的 min() 兜底决定落点，
+		// 提示的位置从盒子实际渲染位置反读——保证只有一套口径。
+		host.style.removeProperty("--wpull-left");
+		const box = host.getBoundingClientRect();
+		applyHintPlacement(host, box.x + box.width / 2, widgetW, viewportW);
+		return null;
+	}
 	host.style.setProperty("--wpull-left", `${placement.left}px`);
-	host.style.setProperty("--wpull-drop", `${placement.drop}px`);
-	// 绳在 SVG 里画到 ROPE_END，衣服整体下移 drop，绳必须同步伸长才接得上：
-	// scaleY = (ROPE_END + drop) / ROPE_END，以绳顶为原点缩放。
-	host.style.setProperty(
-		"--wpull-rope-scale",
-		String((ROPE_END + placement.drop) / ROPE_END),
-	);
 	applyHintPlacement(host, placement.left, widgetW, viewportW);
-	// 返回值供拖动把「伸展量」当成额外的 drop 叠进绳长（见 writePull）
 	return placement;
 }
 
@@ -389,8 +400,9 @@ export function initWallpaperPull() {
 	// 收窄后固定成常量别名：下面的闭包（requestChange 等）里 TS 不再认为它可能为 null
 	const host: HTMLElement = found;
 
-	/** 静止位姿下衣服要下移多少（T1 的 --wpull-drop）；拖动时叠在它上面 */
-	let dropPx = Math.max(0, applyPlacement(host)?.drop ?? 0);
+	// 首屏摆位：下发 --wpull-left（中心线）。垂直方向不再需要下发布局量——
+	// 挂件钉在视口顶边，绳的静止长度由 CSS 的 --wpull-rope-rest 决定。
+	applyPlacement(host);
 
 	const button = host.querySelector<HTMLButtonElement>(BUTTON_SELECTOR);
 	const live = host.querySelector<HTMLElement>(LIVE_SELECTOR);
@@ -562,10 +574,11 @@ export function initWallpaperPull() {
 		const effective = prefersReducedMotion() ? 0 : pull;
 		appliedPull = effective;
 		host.style.setProperty("--wpull-pull", `${effective}px`);
-		// 绳子必须和衣服一起变长，否则中间断开：以「静止 drop + 本次伸展」重算 scaleY
+		// 绳子必须和衣服一起变长，否则中间断开：以「静止绳长 + 本次伸展」重算
+		// scaleY（缩放原点是绳顶，所以上端钉在视口顶边不动）。
 		host.style.setProperty(
 			"--wpull-rope-scale",
-			String((ROPE_END + dropPx + effective) / ROPE_END),
+			String((ROPE_REST + effective) / ROPE_REST),
 		);
 	}
 
@@ -736,9 +749,9 @@ export function initWallpaperPull() {
 		 * 减少动态时**整套跳过**：位移是 vestibular 风险源，但功能不降级——
 		 * 直接去换图即可（T7 口径：撤位移、保功能）。
 		 *
-		 * 复用拖拽的同一个 CSS 变量（--wpull-pull），所以观感天然一致；
-		 * 用 WAAPI 而不是 CSS transition，因为这条是「一次性的演出」，
-		 * 需要 promise 化的结束点来决定何时发起换图。
+		 * 与手动拖动同一个终点：衣服位移量一致、绳同步拉长，所以观感天然一致
+		 * （拖动走 CSS 变量，这里走等价的 transform 关键帧，因为需要 promise
+		 * 化的结束点来决定何时发起换图）。
 		 */
 		async function playScriptedTug(
 			targetHost: HTMLElement,
@@ -751,25 +764,50 @@ export function initWallpaperPull() {
 					? targetButton.querySelector<HTMLElement>(".wpull__art")
 					: null;
 			if (!art || typeof art.animate !== "function") return;
+			// 绳与衣服是两段 SVG：各自变形，所以两段动画要一起演、一起收
+			const cord =
+				typeof targetHost.querySelector === "function"
+					? targetHost.querySelector<HTMLElement>(".wpull__cord")
+					: null;
 
-			// 行程取阈值量级：够看出「拉了一下」，又不至于把衣服甩到导航带以下
+			// 行程约一件衣服高度；衣服从静止位姿（绳长处）往下走，绳同步拉长
 			const tug = Math.min(SCRIPTED_TUG_PX, PULL_THRESHOLD);
 			const half = Math.max(160, SETTLE_MS * 0.5);
+			const from = `translateY(${ROPE_REST}px)`;
+			const to = `translateY(${ROPE_REST + tug}px)`;
+			const stretch = `scaleY(${(ROPE_REST + tug) / ROPE_REST})`;
+			const options: KeyframeAnimationOptions = {
+				duration: half * 2,
+				easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+				fill: "none",
+			};
 
 			try {
-				const animation = art.animate(
-					[
-						{ transform: "translateY(0px)" },
-						{ transform: `translateY(${tug}px)`, offset: 0.55 },
-						{ transform: "translateY(0px)" },
-					],
-					{
-						duration: half * 2,
-						easing: "cubic-bezier(0.23, 1, 0.32, 1)",
-						fill: "none",
-					},
+				const animations: Animation[] = [
+					art.animate(
+						[
+							{ transform: from },
+							{ transform: to, offset: 0.55 },
+							{ transform: from },
+						],
+						options,
+					),
+				];
+				if (cord && typeof cord.animate === "function") {
+					animations.push(
+						cord.animate(
+							[
+								{ transform: "scaleY(1)" },
+								{ transform: stretch, offset: 0.55 },
+								{ transform: "scaleY(1)" },
+							],
+							options,
+						),
+					);
+				}
+				await Promise.all(
+					animations.map((a) => a.finished.catch(() => {})),
 				);
-				await animation.finished.catch(() => {});
 			} catch {
 				// WAAPI 不可用或被取消：不影响换图本身
 			}
@@ -825,12 +863,11 @@ export function initWallpaperPull() {
 		passive: true,
 	});
 
-	// 视口变化时重算（标题盒高、导航宽度都随断点变化）。
+	// 视口变化时重算横向中心线（81% 的落点随视口宽度变化，窄屏还可能被夹取）。
 	// passive：纯读取，不与滚动竞争。
 	const reflow = () => {
-		// 静止 drop 变了，绳长的基准也要跟着变（拖动中用 latestPull 叠加）。
-		const placement = applyPlacement(host);
-		if (placement) dropPx = Math.max(0, placement.drop);
+		applyPlacement(host);
+		// 拖动中被打断时也要把伸展量写回去（变量在 resize 后不该丢）
 		writePull(appliedPull);
 	};
 	let pending = 0;

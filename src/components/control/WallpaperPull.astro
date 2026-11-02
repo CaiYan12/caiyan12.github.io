@@ -2,67 +2,105 @@
 /**
  * 拉绳壁纸挂件（spec #127 / 票 #128 起）。
  *
- * 本文件只负责结构与局部视觉：原生按钮 + 内联 SVG 的绳与 T 恤 + 状态播报区。
+ * 本文件只负责结构与局部视觉：原生按钮 + 两段内联 SVG（绳 / T 恤）+ 状态播报区。
  * 交互（下拉拖拽、换图、交叉淡入）在 src/utils/runtime/wallpaper-pull.ts；
- * 样式在 global.css 的「拉绳壁纸挂件」一节；SVG 的填充与描边一律走该节
- * 定义的 --wpull-* 局部 token（派生自站内 tag 色板的蓝 / 紫两族），不在标记里写死色值。
+ * 样式在 global.css 的「拉绳壁纸挂件」一节；SVG 的填充与描边一律走该节定义的
+ * --wpull-* 局部 token，不在标记里写死色值。
  *
- * 挂在 Layout.astro、Swup 容器之外，随 pagefindReady() 整页初始化一次。
- * 定位口径见 GLOSSARY.md「拉绳壁纸挂件」：中心线对齐主导航右缘、
- * 衣服底边对齐桌面头部标题顶边；被裁时由运行时主动左移。
+ * 尺寸口径（2026-11-02 重做视觉时定，硬约束）：T 恤的**真实 CSS 渲染尺寸**
+ * 约 27×28px，绳 1px、静止长 22px，整个挂件 30×50px。SVG 的 viewBox 与渲染
+ * 尺寸 1:1（30×28 / 6×22），所以 path 坐标就是 CSS 像素，不存在「改 viewBox
+ * 假装缩小」的余地。
+ *
+ * 定位口径见 GLOSSARY.md「拉绳壁纸挂件」：垂直钉在视口顶边（top: 0），
+ * 横向让**中心线压在主导航 `#head-nav` 的右缘**，不随滚动移动。
+ * 导航宽度与挂件的兜底 left 共用 :root 的 --nav-w / --nav-side（单一真源）。
  */
 ---
 
 <div class="wpull" data-wallpaper-pull>
+	{
+		/* 绳：两股 1px 细线（主股 + 高光股），带一点自然垂坠弧度。
+		   只在垂直方向按 --wpull-rope-scale 拉伸，所以拉长时不会变粗
+		   （stroke 上带 vector-effect="non-scaling-stroke"）。 */
+	}
+	<svg
+		class="wpull__cord"
+		aria-hidden="true"
+		focusable="false"
+		viewBox="0 0 6 22"
+	>
+		<path
+			class="wpull__cord-main"
+			d="M3 0C2.66 4.6 2.34 8.9 2.62 12.9C2.82 15.9 2.94 18.6 3 21.6"
+			vector-effect="non-scaling-stroke"></path>
+		<path
+			class="wpull__cord-lit"
+			d="M3.34 0.2C3 4.8 2.68 9.1 2.96 13.1C3.16 16.1 3.28 18.8 3.34 21.8"
+			vector-effect="non-scaling-stroke"></path>
+	</svg>
 	<button
 		class="wpull__grab"
 		type="button"
 		aria-label="拉一下，换一张"
 		aria-busy="false"
 	>
-		{/* 绳与衣服整体随拉伸位移；绳子只是视觉，不捕获指针 */}
+		{
+			/* 衣服：白色短袖 + 蓝紫细描边 + 中央红爱心 + 领口/袖口轮廓细节。
+			   坐标系 30×28，衣服实占 x≈1.3…28.7、y≈0.4…28.2（含 1px 描边）。 */
+		}
 		<svg
 			class="wpull__art"
 			aria-hidden="true"
 			focusable="false"
-			viewBox="0 0 130 175"
+			viewBox="0 0 30 28"
 		>
-			{/* 渐变彩绳：色族取自 T 恤描边的蓝紫系 */}
 			<defs>
-				<linearGradient id="wpull-rope" x1="0" y1="0" x2="0" y2="1">
-					<stop class="wpull__rope-a" offset="0"></stop>
-					<stop class="wpull__rope-b" offset="0.5"></stop>
-					<stop class="wpull__rope-c" offset="1"></stop>
+				<linearGradient id="wpull-cloth" x1="0" y1="0" x2="0" y2="1">
+					<stop class="wpull__cloth-top" offset="0"></stop>
+					<stop class="wpull__cloth-bottom" offset="1"></stop>
 				</linearGradient>
 			</defs>
-			<line
-				class="wpull__rope"
-				x1="65"
-				y1="0"
-				x2="65"
-				y2="76"
-				stroke="url(#wpull-rope)"
-				stroke-width="2"></line>
-			{
-				/* 衣服：白色短袖 + 蓝紫描边 + 红爱心，轮廓参考 icon.png 的矢量形状 */
-			}
 			<g class="wpull__shirt">
 				<path
 					class="wpull__shirt-fill"
-					d="M44 76 L50 74 Q60 79 70 74 L76 76 L97 93 L88 105 L79 101 L79 152 Q65 158 51 152 L51 101 L42 105 L33 93 Z"
-					stroke-width="3"
+					d="M15 3.9C14.1 2.4 13.2 1.1 12.2 0.98C10.9 0.9 9 0.9 7.4 0.9C5.4 0.9 3.6 4.2 2.6 8.6C2.2 10.6 2.05 11.5 2.1 11.9C2.15 12.65 2.75 13.05 3.5 13C4.9 12.9 6.2 12.95 7.2 13.5C7.35 13.6 7.4 13.9 7.4 14.2L7.4 24.3C7.4 25.9 7.75 26.75 8.4 27.05C10.1 27.7 19.9 27.7 21.6 27.05C22.25 26.75 22.6 25.9 22.6 24.3L22.6 14.2C22.6 13.9 22.65 13.6 22.8 13.5C23.8 12.95 25.1 12.9 26.5 13C27.25 13.05 27.85 12.65 27.9 11.9C27.95 11.5 27.8 10.6 27.4 8.6C26.4 4.2 24.6 0.9 22.6 0.9C21 0.9 19.1 0.9 17.8 0.98C16.8 1.1 15.9 2.4 15 3.9Z"
+					stroke-width="1"
 					stroke-linejoin="round"></path>
 				<path
+					class="wpull__collar"
+					d="M13 1.8C13.6 2.55 14.3 3.25 15 3.25C15.7 3.25 16.4 2.55 17 1.8"
+					stroke-width="0.55"></path>
+				<path
+					class="wpull__cuff"
+					d="M3.7 11.95L6.9 12.4"
+					stroke-width="0.55"></path>
+				<path
+					class="wpull__cuff"
+					d="M26.3 11.95L23.1 12.4"
+					stroke-width="0.55"></path>
+				<path
 					class="wpull__heart"
-					d="M65 105 Q59 96 53 100 Q48 104 51 111 Q55 120 65 128 Q75 120 79 111 Q82 104 77 100 Q71 96 65 105 Z"
+					d="M15 18.2C12.68 16.22 10.87 14.33 10.87 12.52C10.87 11.06 11.99 9.6 13.45 9.6C14.31 9.6 14.91 10.12 15 10.72C15.09 10.12 15.69 9.6 16.55 9.6C18.01 9.6 19.13 11.06 19.13 12.52C19.13 14.33 17.32 16.22 15 18.2Z"
 				></path>
+				{
+					/* 绳结：绳的下端永远停在衣服 SVG 的 y=0，这枚小环画在那里，
+					   于是无论绳伸长多少，绳与领口都接在一起（环长在衣服上，不随绳变形）。 */
+				}
+				<ellipse
+					class="wpull__knot"
+					cx="15"
+					cy="0.2"
+					rx="1.25"
+					ry="0.8"
+					stroke-width="0.7"></ellipse>
 			</g>
 		</svg>
 	</button>
 	{/* hover / 聚焦时的轻提示；触摸设备首次自动出现，由运行时控制 */}
 	<span class="wpull__hint" aria-hidden="true"> 拉一下，换一张 </span>
 	{/* 结果播报：换好了 / 没得换 / 加载失败 */}
-	{/* 复用站内既有的视觉隐藏类 .pagenavi-sr-only，不再复制一份同样手法 */}
+	{/* 复用站内既有的视觉隐藏类 .pagenavi-sr-only，不再复制一次同样手法 */}
 	<span class="pagenavi-sr-only wpull__live" role="status" aria-live="polite"
 	></span>
 </div>

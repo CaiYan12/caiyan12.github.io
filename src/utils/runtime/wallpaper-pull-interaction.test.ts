@@ -144,7 +144,7 @@ function buildHarness(
 	const hostTarget = makeEventTarget();
 	const host = Object.assign(hostTarget, {
 		dataset: {} as Record<string, string | undefined>,
-		offsetWidth: 130,
+		offsetWidth: 30,
 		// T3 的跟手位移靠 .is-settling 类切换过渡，桩要能收 classList
 		classList: {
 			added: [] as string[],
@@ -161,11 +161,23 @@ function buildHarness(
 			setProperty(name: string, value: string) {
 				this.props[name] = value;
 			},
+			// 运行时在「导航不可用」时会撤掉 --wpull-left，桩要能接住
+			removeProperty(name: string) {
+				delete this.props[name];
+			},
+		},
+		// 兜底路径要用盒子实际渲染位置反读提示位置，桩给一个等宽居中的矩形
+		getBoundingClientRect() {
+			return { x: 0, y: 0, width: 30, height: 50, right: 30, bottom: 50 };
 		},
 		querySelector(selector: string) {
 			if (selector === ".wpull__grab")
 				return buttonWithCapture as unknown;
 			if (selector === ".wpull__live") return live as unknown;
+			// 提示气泡与衣服 SVG：本文件不测几何（提示另有 hint 单测），
+			// 桩里刻意缺席，让 applyHintPlacement 走「量不到 → 交 CSS 兜底」那条路
+			if (selector === ".wpull__hint" || selector === ".wpull__art")
+				return null;
 			throw new Error(`unexpected selector: ${selector}`);
 		},
 	});
@@ -202,9 +214,8 @@ function installGlobals() {
 					return harness?.host ?? null;
 				case ".bg-image[data-backgrounds]":
 					return harness?.background ?? null;
-				// 定位所需的两个锚点桩成「不存在」，走 CSS 兜底值即可（几何另有单测）
+				// 横向锚点桩成「不存在」：几何另有单测，这里走兜底比例即可
 				case "#head-nav":
-				case "#header .site-title":
 					return null;
 				default:
 					throw new Error(`unexpected selector: ${selector}`);
@@ -220,7 +231,7 @@ function installGlobals() {
 	g.requestAnimationFrame = (cb: () => void) => setTimeout(cb, 0);
 	g.cancelAnimationFrame = (handle: ReturnType<typeof setTimeout>) =>
 		clearTimeout(handle);
-	g.getComputedStyle = () => ({ width: "130px" });
+	g.getComputedStyle = () => ({ width: "30px" });
 	g.Image = function FakeImageConstructor() {
 		const created = currentHarness().pending;
 		const image: FakeImage = {

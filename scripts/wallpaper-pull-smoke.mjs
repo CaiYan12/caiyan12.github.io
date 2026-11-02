@@ -32,6 +32,8 @@ const { check, checkClean } = harness;
 
 const WIDGET = "[data-wallpaper-pull]";
 const GRAB = ".wpull__grab";
+/** 真正位移的那一层（衣服 SVG）；按钮盒子是固定命中区，量它永远不动 */
+const ART = ".wpull__art";
 const LIVE = ".wpull__live";
 const BG = ".bg-image[data-backgrounds]";
 const TEMP = ".bg-image--temp";
@@ -109,10 +111,15 @@ async function waitIdle(page, timeout = 20000) {
 				// 还要等**单击的脚本化下拉**放完：那段时间 busy 未起、无临时层、
 				// 也没有 is-settling，只看前三个信号会立即返回「已空闲」，
 				// 而换图其实还没发起（票 #129 加了脚本化动画后这里必须一起等）。
-				const art = document.querySelector(".wpull__art");
-				const animating = art
-					? art.getAnimations().some((a) => a.playState === "running")
-					: false;
+				// 衣服与绳是两段独立 SVG、各自变形，两段动画都要等（缺一段会让
+				// 「绳还伸着」的瞬间被当成已空闲，后续判据读到中间态）。
+				const running = (el) =>
+					!!el &&
+					el.getAnimations().some((a) => a.playState === "running");
+				const animating =
+					// 注意：这段代码在**页面**里求值，模块级的 ART 常量在这里不可见
+					running(document.querySelector(".wpull__art")) ||
+					running(document.querySelector(".wpull__cord"));
 				return (
 					document.querySelectorAll(sel).length === 0 &&
 					!host?.dataset.busy &&
@@ -352,15 +359,17 @@ const onResponse = (r) => {
 };
 page.on("request", onResponse);
 const longDuring = await readState(page);
-// 静止位姿的按钮顶边：拖动位移要拿它当基准（只在拖动前量一次）。
-const longHeldRect = await page.locator(GRAB).boundingBox();
+// 静止位姿的衣服顶边：拖动位移要拿它当基准（只在拖动前量一次）。
+// 量的是 .wpull__art（真正位移的那一层），不是按钮——按钮盒子是固定命中区，
+// 量它会恒等，这条判据就成了恒真的假绿。
+const longHeldRect = await page.locator(ART).boundingBox();
 await page.mouse.move(longDuring.grab.x, longDuring.grab.y);
 await page.mouse.down();
 await page.mouse.move(longDuring.grab.x, longDuring.grab.y + 130, {
 	steps: 10,
 });
 const longHeld = await readProbe(page);
-const heldRect = await page.locator(GRAB).boundingBox();
+const heldRect = await page.locator(ART).boundingBox();
 check(
 	"达到阈值前跟手伸展已越过阈值（相位由真实状态定义）",
 	longHeld.draggingSeen && longHeld.maxPull >= 80,
@@ -369,7 +378,7 @@ check(
 check(
 	"跟手位移在几何上真实发生（衣服整体下移）",
 	heldRect !== null && heldRect.y - longHeldRect.y >= 80,
-	`静止按钮顶 y=${Math.round(longHeldRect.y)} → 拖到 y=${Math.round(
+	`静止衣服顶 y=${Math.round(longHeldRect.y)} → 拖到 y=${Math.round(
 		heldRect?.y ?? Number.NaN,
 	)}，位移 ${Math.round((heldRect?.y ?? 0) - longHeldRect.y)}px`,
 );
@@ -722,6 +731,138 @@ check(
 	`display=${wide.display}，左 ${wide.left} / 右 ${wide.right} / 视口 ${wide.viewport}`,
 );
 
+// ---- 首帧定位：CSS 兜底值必须等于运行时落定值（防「先停在旧位置再闪过去」） ----
+// 用户实测的症状是**强刷时挂件先在旧位置、加载完闪到新位置**，所以光验「最终
+// 位置对」是不够的 —— 闪动照样发生。这里把 --wpull-left 临时摘掉再读计算值，
+// 得到的就是「JS 还没写变量时浏览器会用哪个 left」；它必须与落定值相同。
+// 量的是 getComputedStyle 的 used value，不是源码里的字面量，所以 CSS 镜像
+// 表达式算错、或与 #head-nav 的断点不同源，都会在这里变红。
+const firstPaintDelta = async (width, height) => {
+	await page.setViewportSize({ width, height });
+	await page.waitForFunction(
+		() =>
+			getComputedStyle(document.querySelector("[data-wallpaper-pull]"))
+				.display !== "none",
+		undefined,
+		{ timeout: 10000 },
+	);
+	return page.evaluate(() => {
+		const host = document.querySelector("[data-wallpaper-pull]");
+		const settled = parseFloat(getComputedStyle(host).left);
+		const saved = host.style.getPropertyValue("--wpull-left");
+		host.style.removeProperty("--wpull-left");
+		const firstPaint = parseFloat(getComputedStyle(host).left);
+		host.style.setProperty("--wpull-left", saved);
+		const nav = document.querySelector("#head-nav").getBoundingClientRect();
+		return {
+			settled: +settled.toFixed(2),
+			firstPaint: +firstPaint.toFixed(2),
+			navRight: +nav.right.toFixed(2),
+			viewport: document.documentElement.clientWidth,
+		};
+	});
+};
+for (const [w, h] of [
+	[1440, 900],
+	[1024, 900],
+]) {
+	const m = await firstPaintDelta(w, h);
+	const delta = Math.abs(m.firstPaint - m.settled);
+	check(
+		`首帧定位 = 落定定位（${w}px，防强刷闪动）`,
+		delta <= 0.5,
+		`首帧 ${m.firstPaint} / 落定 ${m.settled}（Δ=${delta.toFixed(2)}，导航右缘 ${m.navRight}，视口 ${m.viewport}）`,
+	);
+}
+
+// ---- 绳尾接在领口上：JS 的 ROPE_REST 与 CSS 的 --wpull-rope-rest 必须同值 ----
+// 这两个数分处两侧（wallpaper-pull.ts / global.css），谁改了另一个没跟，衣服就会
+// 与绳脱开一截。可观察后果很直接：绳的下沿 == 衣服的上沿。
+const joint = await page.evaluate(() => {
+	const cord = document.querySelector(".wpull__cord").getBoundingClientRect();
+	const art = document.querySelector(".wpull__art").getBoundingClientRect();
+	return {
+		cordBottom: +cord.bottom.toFixed(2),
+		artTop: +art.y.toFixed(2),
+		gap: +(art.y - cord.bottom).toFixed(2),
+	};
+});
+check(
+	"绳尾与衣服顶边相接（ROPE_REST 与 CSS 变量同值）",
+	Math.abs(joint.gap) <= 1,
+	`绳下沿 ${joint.cordBottom} / 衣服上沿 ${joint.artTop}（缝隙 ${joint.gap}px）`,
+);
+
+// ---- 单一真源：改 :root 的 --nav-w，导航与挂件的首帧值必须一起动 ----
+// 这条守的是「隐患」本身：挂件是 position:fixed、挂在导航之外，CSS 读不到导航的
+// 真实宽度，两边的尺寸只能共享 :root 的 --nav-w / --nav-side。若有人再在挂件里
+// 抄一份 1100/40 的字面量，导航被 token 改宽后挂件不跟，下面的 Δ 会立刻变红。
+// 相位用真实状态定义：等运行时把 --wpull-left 写成新的导航右缘，不睡固定毫秒。
+// 回到宽档：--nav-w 只在 >1100px 生效（窄档导航宽度由 --nav-side 决定）
+await page.setViewportSize({ width: 1440, height: 900 });
+await page.waitForFunction(
+	() =>
+		document
+			.querySelector("[data-wallpaper-pull]")
+			?.style.getPropertyValue("--wpull-left"),
+	undefined,
+	{ timeout: 10000 },
+);
+const tokenBefore = await page.evaluate(() => ({
+	navRight: +document
+		.querySelector("#head-nav")
+		.getBoundingClientRect()
+		.right.toFixed(2),
+}));
+await page.addStyleTag({ content: ":root{--nav-w:900px}" });
+// 只改 token 不会触发 resize，所以手动派发一次让运行时重算（挂件监听的是
+// window 的 resize，纯几何重算，不依赖视口真的变了）
+await page.evaluate(() => window.dispatchEvent(new Event("resize")));
+await page.waitForFunction(
+	() => {
+		const host = document.querySelector("[data-wallpaper-pull]");
+		const nav = document.querySelector("#head-nav");
+		if (!host || !nav) return false;
+		const v = parseFloat(host.style.getPropertyValue("--wpull-left"));
+		return (
+			Number.isFinite(v) &&
+			Math.abs(v - nav.getBoundingClientRect().right) < 0.6
+		);
+	},
+	undefined,
+	{ timeout: 10000 },
+);
+const tokenMove = await page.evaluate(() => {
+	const host = document.querySelector("[data-wallpaper-pull]");
+	const nav = document.querySelector("#head-nav").getBoundingClientRect();
+	const settled = parseFloat(getComputedStyle(host).left);
+	const saved = host.style.getPropertyValue("--wpull-left");
+	host.style.removeProperty("--wpull-left");
+	const firstPaint = parseFloat(getComputedStyle(host).left);
+	host.style.setProperty("--wpull-left", saved);
+	return {
+		settled: +settled.toFixed(2),
+		firstPaint: +firstPaint.toFixed(2),
+		navRight: +nav.right.toFixed(2),
+	};
+});
+// 不硬编码期望坐标（那等于把被测几何又抄一份）：只要求「导航确实被改宽了」
+// 且「挂件首帧仍然等于落定值」。前一条防 token 没生效造成的假绿，
+// 后一条才是隐患本体——挂件若另抄了字面量，改 token 后首帧就与落定值分家。
+check(
+	"改 --nav-w 后导航确实变宽，且挂件首帧仍等于落定值（单一真源有效）",
+	Math.abs(tokenMove.navRight - tokenBefore.navRight) > 50 &&
+		Math.abs(tokenMove.firstPaint - tokenMove.settled) < 0.5 &&
+		Math.abs(tokenMove.settled - tokenMove.navRight) < 0.6,
+	`导航右缘 ${tokenBefore.navRight} → ${tokenMove.navRight}；挂件首帧 ${tokenMove.firstPaint} / 落定 ${tokenMove.settled}`,
+);
+// 复原，避免影响后续判据
+await page.evaluate(() => {
+	for (const el of document.querySelectorAll("style"))
+		if (el.textContent?.includes("--nav-w:900px")) el.remove();
+	window.dispatchEvent(new Event("resize"));
+});
+
 checkClean("拉绳壁纸挂件");
 
 // ---- 减少动态：仍能换图且无位移 ----
@@ -760,15 +901,18 @@ check(
 // 原判据只读了点击后残留的 --wpull-pull：那条在**任何**实现上都是 0（点击根本不设
 // 这个变量），等于恒真。真正要验的是「减少动态下拖动时衣服不动」——必须真的拖。
 await resetProbe(rmPage);
-const rmRest = await rmPage.locator(GRAB).boundingBox();
+const rmGrab = await rmPage.locator(GRAB).boundingBox();
+// 位移要看**衣服**，不是按钮：按钮的盒子是固定的命中区，2026-11-02 重做视觉后
+// 位移落在 .wpull__art 上，量按钮的 y 会恒等，这条判据就成了恒真的假绿。
+const rmRest = await rmPage.locator(ART).boundingBox();
 await rmPage.mouse.move(
-	rmRest.x + rmRest.width / 2,
-	rmRest.y + rmRest.height / 2,
+	rmGrab.x + rmGrab.width / 2,
+	rmGrab.y + rmGrab.height / 2,
 );
 await rmPage.mouse.down();
 await rmPage.mouse.move(
-	rmRest.x + rmRest.width / 2,
-	rmRest.y + rmRest.height / 2 + 130,
+	rmGrab.x + rmGrab.width / 2,
+	rmGrab.y + rmGrab.height / 2 + 130,
 	{ steps: 10 },
 );
 // 相位由真实状态定义：手势已被识别（dragging 置起）才谈得上「有没有位移」
@@ -780,7 +924,7 @@ await rmPage.waitForFunction(
 	},
 );
 const rmHeld = await readProbe(rmPage);
-const rmHeldRect = await rmPage.locator(GRAB).boundingBox();
+const rmHeldRect = await rmPage.locator(ART).boundingBox();
 check(
 	"减少动态下拖动无位移（跟手伸展恒为 0，衣服不移动）",
 	rmHeld.maxPull === 0 &&

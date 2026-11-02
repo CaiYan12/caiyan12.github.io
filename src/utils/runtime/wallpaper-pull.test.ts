@@ -1,26 +1,89 @@
 // 挂件定位的纯几何单测（票 #128）。
 //
-// 口径：只测 computePlacement 的外部行为——给定矩形与盒宽，它给出中心线 x 与绳长。
-// 不断言 DOM、不断言 CSS 变量名、不复制实现里的算式。
+// 口径：只测 computePlacement 的外部行为——给定导航右缘、盒宽与视口宽度，
+// 它给出中心线 x。不断言 DOM、不断言 CSS 变量名、不复制实现里的算式。
 //
-// 两条真实约束（来自全局布局，不是拍的）：
-// · 1440 视口、站点固定 10px 滚动条下，#head-nav 1100 宽居中 → 右缘 1265；
-// · 1100 视口下导航变 calc(100% - 40px)，右缘逼近视口右缘，中心线对齐会把
-//   T 恤推出屏外 —— 此时必须主动左移，这正是票面「被裁时主动计算位移」。
+// 横向锚点是站长两次确认的硬口径：**中心线压在主导航右缘**（GLOSSARY.md
+// 「拉绳壁纸挂件」）。所以它跟着导航宽度走（1100 居中 / calc(100% - 40px)
+// 两档都得跟），不是视口百分比定位；导航缺失时才退回兜底比例。
 import test from "node:test";
 import assert from "node:assert/strict";
 import { computePlacement } from "./wallpaper-pull";
 
-const W = 130; // 组件盒宽
+const W = 30; // 挂件盒宽 = T 恤视觉宽度
+/** 构造只读测试用的矩形（DOMRectLike 只要 right） */
+const rect = (right: number) => ({ right });
 
-/** 构造只读测试用的矩形（DOMRectLike 只要 top/right） */
-const rect = (right: number, top = 45) => ({ right, top });
+test("视口宽度无效时不摆位（交给 CSS 兜底值）", () => {
+	for (const viewportW of [0, -1, Number.NaN]) {
+		assert.equal(
+			computePlacement({ nav: rect(1000), widgetW: W, viewportW }),
+			null,
+		);
+	}
+});
 
-test("导航缺失时不摆位（交给 CSS 兜底值）", () => {
+test("宽视口：中心线正好落在导航右缘，不做额外位移", () => {
+	// 1440 视口扣 10px 滚动条 = 1430 可用；导航 1100 居中 → 右缘 1265
+	const p = computePlacement({
+		nav: rect(1265),
+		widgetW: W,
+		viewportW: 1430,
+	});
+	assert.deepEqual(p, { left: 1265 });
+});
+
+test("跟着导航右缘走，不是固定视口百分比", () => {
+	// 同一个视口、两个不同的导航宽度：落点必须跟着右缘变。
+	// （1024 那档导航是 calc(100% - 40px)，右缘已贴视口边，会被夹取；
+	//   夹取本身另有用例，这里只验「锚点跟着导航」这件事。）
+	const viewportW = 1440;
+	const narrow = computePlacement({ nav: rect(1100), widgetW: W, viewportW });
+	const wide = computePlacement({ nav: rect(1300), widgetW: W, viewportW });
+	assert.ok(narrow && wide);
+	assert.equal(narrow.left, 1100);
+	assert.equal(wide.left, 1300);
+	assert.notEqual(narrow.left, wide.left, "导航变宽，落点必须跟着变");
+});
+
+test("会右溢时整体左移，右缘距视口右至少留出空隙", () => {
+	// 导航右缘已经贴到视口右缘（1000）：中心线若照抄，盒右缘 1015 会出屏
+	const p = computePlacement({
+		nav: rect(1000),
+		widgetW: W,
+		viewportW: 1000,
+	});
+	assert.ok(p);
+	assert.equal(
+		p.left,
+		1000 - W / 2 - 8,
+		"中心线应退到可用宽度减半宽再留 8px",
+	);
+	assert.ok(p.left + W / 2 <= 1000, "右缘不得超出视口");
+	// 恰好放得下时不该再左移
+	const fits = computePlacement({
+		nav: rect(900),
+		widgetW: W,
+		viewportW: 1000,
+	});
+	assert.ok(fits);
+	assert.equal(fits.left, 900, "放得下时保持与导航右缘对齐");
+});
+
+test("导航缺失时返回 null：落点交给 CSS 的 min() 兜底，不另立一套口径", () => {
+	// 独立壳 / 导航 display:none：运行时最后会「撤掉 --wpull-left」，
+	// 由 global.css 里那条由 --nav-w / --nav-side 算出的 min() 决定位置。
+	// 这里若再给一个视口百分比近似，两套口径就会在首帧与落定之间打架。
+	assert.equal(
+		computePlacement({ nav: null, widgetW: W, viewportW: 1440 }),
+		null,
+	);
+});
+
+test("导航里量到 NaN（异常布局）时同样返回 null，不产生 NaN 坐标", () => {
 	assert.equal(
 		computePlacement({
-			nav: null,
-			title: null,
+			nav: rect(Number.NaN),
 			widgetW: W,
 			viewportW: 1440,
 		}),
@@ -28,127 +91,28 @@ test("导航缺失时不摆位（交给 CSS 兜底值）", () => {
 	);
 });
 
-test("宽视口：中心线正好落在导航右缘，不做额外位移", () => {
-	// 1440 视口扣 10px 滚动条 = 1430 可用；导航 1100 居中 → 右缘 1265
-	const p = computePlacement({
-		nav: rect(1265),
-		title: rect(1265, 45),
-		widgetW: W,
-		viewportW: 1430,
-	});
-	// drop 要让**衣服底边**落到标题顶边：SVG 顶端钉在 y=0、衣服固有底边在 158，
-	// 所以 title.top=45 时名义位移为负 → 夹到 0（挂件贴顶，衣服底边落在 158）
-	assert.deepEqual(p, { left: 1265, drop: 0 });
+test("视口比挂件还窄时两侧均分裁切，而不是把盒子整个推出屏外", () => {
+	// 退化情形：可用宽度 20 < 盒宽 30。正式样式下不可达（≤680px 挂件隐藏），
+	// 但夹取不能因此产生越界坐标：居中摆放，左右各溢出 half - viewportW/2。
+	const viewportW = 20;
+	const p = computePlacement({ nav: rect(20), widgetW: W, viewportW });
+	assert.ok(p);
+	assert.equal(p.left, viewportW / 2, "中心线落在视口中线");
+	const boxLeft = p.left - W / 2;
+	const boxRight = p.left + W / 2;
+	assert.ok(
+		boxLeft < 0 && boxRight > viewportW,
+		"两侧各裁一半，而不是单侧全丢",
+	);
+	assert.equal(-boxLeft, boxRight - viewportW, "两侧裁掉的一样多");
 });
 
-test("装着会右溢时整体左移，右缘距视口右至少留出空隙", () => {
-	// 1100 视口扣 10px = 1090 可用；导航 calc(100%-40px) → 右缘 1070
-	// 中心线若对齐 1070，右缘 = 1070 + 65 = 1135 > 1090，必须左移
+test("返回值只有 left：垂直方向不是运行时算出来的量", () => {
 	const p = computePlacement({
-		nav: rect(1070),
-		title: rect(1070, 45),
+		nav: rect(1265),
 		widgetW: W,
-		viewportW: 1090,
+		viewportW: 1430,
 	});
 	assert.ok(p);
-	assert.equal(
-		p.left,
-		1090 - W / 2 - 8,
-		"中心线应退到可用宽度减半宽再留 8px",
-	);
-	// 位移结果必须让整件挂件在视口内
-	assert.ok(p.left + W / 2 <= 1090, "右缘不得超出视口");
-});
-
-test("夹取只在会溢出时生效：差一点点溢出也要收", () => {
-	const justOver = computePlacement({
-		nav: rect(1000),
-		title: null,
-		widgetW: W,
-		viewportW: 1000, // 中心线对齐 1000 → 右缘 1065，明显溢出
-	});
-	assert.ok(justOver);
-	assert.equal(justOver.left, 1000 - W / 2 - 8);
-
-	// 恰好放得下（中心线 + 半宽 + 8 == 可用宽度）时不应再左移
-	const fits = computePlacement({
-		nav: rect(867),
-		title: null,
-		widgetW: W,
-		viewportW: 1000, // 867 + 65 + 8 = 940 <= 1000
-	});
-	assert.ok(fits);
-	assert.equal(fits.left, 867, "放得下时保持与导航右缘对齐");
-});
-
-test("绳长让**衣服底边**对齐标题顶边（不是衣服顶端对齐）", () => {
-	// 契约原文（票 #128 / spec 故事 3）：衣服底边与桌面头部标题顶边齐平。
-	// 衣服在 SVG 内固有占 y∈[74,158]，SVG 顶端钉在视口 y=0，
-	// 所以要让底边落到 title.top，名义位移必须是 title.top − 158。
-	const SHIRT_BOTTOM = 158;
-
-	// 标题顶边在衣服固有位置之下：需要真实下移
-	assert.equal(
-		computePlacement({
-			nav: rect(1265),
-			title: rect(1265, 400),
-			widgetW: W,
-			viewportW: 1430,
-		})?.drop,
-		400 - SHIRT_BOTTOM,
-	);
-
-	// 标题顶边在衣服固有位置之上：夹到 0，挂件贴顶、不向上拉出视口
-	assert.equal(
-		computePlacement({
-			nav: rect(1265),
-			title: rect(1265, 45),
-			widgetW: W,
-			viewportW: 1430,
-		})?.drop,
-		0,
-	);
-
-	// 标题缺失（独立壳等）：同样贴顶
-	assert.equal(
-		computePlacement({
-			nav: rect(1265),
-			title: null,
-			widgetW: W,
-			viewportW: 1430,
-		})?.drop,
-		0,
-	);
-});
-
-test("衣服底边落点 = drop + 衣服固有底边，等价于标题顶边（可直接算回去）", () => {
-	const SHIRT_BOTTOM = 158;
-	for (const titleTop of [45, 300, 500]) {
-		const drop =
-			computePlacement({
-				nav: rect(1265),
-				title: rect(1265, titleTop),
-				widgetW: W,
-				viewportW: 1430,
-			})?.drop ?? Number.NaN;
-		const bottom = drop + SHIRT_BOTTOM;
-		// 只有当不吃夹取、不贴顶时，底边才严格等于标题顶边
-		if (titleTop >= SHIRT_BOTTOM) {
-			assert.equal(
-				bottom,
-				titleTop,
-				`titleTop=${titleTop} 时衣服底边应与标题顶边齐平`,
-			);
-		}
-	}
-});
-
-test("标题顶边为负（滚过头部）时不产生负绳长", () => {
-	const p = computePlacement({
-		nav: rect(1265),
-		title: rect(1265, -30),
-		widgetW: W,
-		viewportW: 1430,
-	});
-	assert.equal(p?.drop, 0, "负值要夹到 0，否则会把衣服拽到视口外");
+	assert.deepEqual(Object.keys(p), ["left"]);
 });
