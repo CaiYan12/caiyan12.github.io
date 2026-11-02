@@ -1,3 +1,7 @@
+// 减少动效判定统一走站内唯一判定点（票 #134/T7 收敛）：
+// 本文件原有一份逐字相同的本地副本，重复实现正是「判定点分裂」的来源。
+import { prefersReducedMotion } from "./runtime/reduced-motion";
+
 const closeAnimationDuration = 220;
 
 interface SiteModalElements {
@@ -95,10 +99,6 @@ function getModalElements() {
 	}
 
 	return modalElements;
-}
-
-function prefersReducedMotion() {
-	return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 export function showSiteModal({

@@ -6,15 +6,14 @@ import { sakuraConfig } from "../../config";
 
 <script>
 	import { sakuraConfig } from "../../config";
+	// 减少动效判定统一走站内唯一判定点（票 #134/T7 收敛）
+	import { prefersReducedMotion } from "../../utils/runtime/reduced-motion";
 
 	const canvas = document.getElementById(
 		"sakura-canvas",
 	) as HTMLCanvasElement | null;
 
-	if (
-		canvas &&
-		!window.matchMedia("(prefers-reduced-motion: reduce)").matches
-	) {
+	if (canvas && !prefersReducedMotion()) {
 		const context = canvas.getContext("2d");
 		const image = new Image();
 		let width = window.innerWidth;

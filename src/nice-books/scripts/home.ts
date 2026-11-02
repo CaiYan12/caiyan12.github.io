@@ -6,7 +6,12 @@
 import { books, featuredBooks } from "../data/books";
 import { pickOne, sampleUnique } from "../lib/random";
 import { bookCardHTML, heroCardHTML } from "../lib/render";
-import { bindShuffle, registerPageCleanup, qs } from "./shared";
+import {
+	bindShuffle,
+	prefersReducedMotion,
+	registerPageCleanup,
+	qs,
+} from "./shared";
 
 const FEATURED_COUNT = 6;
 const HERO_ROTATION = -1.4;
@@ -98,11 +103,7 @@ export function initHome(): void {
 		const targets = [parts.book, parts.copy].filter(
 			(el): el is HTMLElement => el !== null,
 		);
-		if (
-			targets.length === 0 ||
-			window.matchMedia("(prefers-reduced-motion: reduce)").matches
-		)
-			return;
+		if (targets.length === 0 || prefersReducedMotion()) return;
 		const context = gsap.context(() => {
 			if (parts.book) gsap.set(parts.book, { transition: "none" });
 			heroTimeline = gsap.timeline({
@@ -249,7 +250,7 @@ export function initHome(): void {
 		const next = pickOne(books, currentId);
 		swapCount += 1;
 		try {
-			if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+			if (prefersReducedMotion()) {
 				renderHero(next.id);
 				return;
 			}
@@ -280,7 +281,7 @@ export function initHome(): void {
 			animation.cancel();
 		groupAnimations = [];
 		const next = sampleUnique(featuredBooks, FEATURED_COUNT, group);
-		if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+		if (prefersReducedMotion()) {
 			renderGroup(
 				next.map((b) => b.id),
 				false,

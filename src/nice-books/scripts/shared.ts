@@ -47,9 +47,14 @@ export function syncHeaderNav(): void {
 		});
 }
 
-export function prefersReducedMotion(): boolean {
-	return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
+/**
+ * 减少动效判定：**转发**站内唯一判定点，不再自带一份实现（票 #134/T7 收敛）。
+ *
+ * 原先这里有一份逐字相同的本地副本（连同 home.ts 三处直接写的 matchMedia 查询），
+ * 判定点一旦分裂，改语义（比如加监听）就会漏掉某几处。保留这个导出名只是为了
+ * 让既有调用方（archive.ts）的导入路径不变。
+ */
+export { prefersReducedMotion } from "../../utils/runtime/reduced-motion";
 
 export { esc } from "../lib/render";
 
