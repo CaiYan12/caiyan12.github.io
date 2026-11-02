@@ -7719,6 +7719,40 @@ body,
   }
 }
 
+/* ---------- 「没换成」的非颜色反馈：衣服短摇头一次（票 #132 T5） ----------
+
+   「没得换」与「加载失败」共用这一个反馈——两档结果的视觉表现必须一致，
+   区别交给播报区。**非颜色**是硬约束：只变色对色觉障碍访客等于没给信息。
+
+   只摇一次（iteration-count: 1）、不循环，220ms 与 runtime 的 SHAKE_MS 一致。
+   位移幅度用衣服自身宽度的比例表达（--wpull-shake-x），不写绝对值：
+   挂件盒宽随断点变化时，摇头幅度跟着走，不会在窄屏上甩出边界。 */
+
+@keyframes wpull-shake {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  25% {
+    translate: calc(var(--wpull-shake-x, 6px) * -1) 0;
+  }
+  75% {
+    translate: var(--wpull-shake-x, 6px) 0;
+  }
+}
+
+.wpull.is-shaking .wpull__art {
+  animation: wpull-shake 220ms var(--ease-out) 1;
+}
+
+/* 减少动态：整段跳过摇头（前庭风险），信息仍由播报区承担。
+   runtime 在减少动态时根本不加这个类，这里是第二道保险。 */
+@media (prefers-reduced-motion: reduce) {
+  .wpull.is-shaking .wpull__art {
+    animation: none;
+  }
+}
+
 /* 确认环：键盘聚焦时可见（不依赖 hover） */
 .wpull__grab:focus-visible {
   outline: 2px solid var(--colorful-green);
@@ -7729,7 +7763,11 @@ body,
 .wpull__hint {
   position: absolute;
   top: 50%;
-  left: calc(100% + 8px);
+  /* 挂哪一侧由运行时算（票 #133）：优先贴 T 恤右缘，放不下就翻到左边。
+     --wpull-hint-left 是**相对盒子左缘**的偏移。兜底值不能再写 100%+8px——
+     盒子固定 130 宽而 T 恤只占盒内 33..97，以盒右缘为锚会把提示推到盒外，
+     实测 1440 溢出 9px、≤1100 整颗出屏。兜底退到衣服右缘（盒内 97 + 8）。 */
+  left: var(--wpull-hint-left, 105px);
   z-index: 0;
   padding: 4px 10px;
   border-radius: 999px;
@@ -7739,7 +7777,8 @@ body,
   font-size: 12px;
   line-height: 18px;
   white-space: nowrap;
-  /* 仅淡入淡出，不做位移（票 #133） */
+  /* 仅淡入淡出，不做位移（票 #133 硬约束）：
+     这里只有 opacity 一条过渡，不写 transform / translate 的过渡。 */
   opacity: 0;
   transition: opacity 160ms var(--ease-out);
   translate: 0 -50%;

@@ -32,12 +32,27 @@ const HOST_SELECTOR = "[data-wallpaper-pull]";
 const BUTTON_SELECTOR = ".wpull__grab";
 /** 礼貌级别的结果播报区（T1 输出，role=status + aria-live=polite） */
 const LIVE_SELECTOR = ".wpull__live";
+/**
+ * 发现性提示气泡（T1 输出，aria-hidden 装饰）。
+ *
+ * 宽度随字体与语言变化，只能实测；挂哪一侧见 computeHintPlacement。
+ */
+const HINT_SELECTOR = ".wpull__hint";
 /** 既有背景层：继续复用它，不另建 body 背景图 */
 const BACKGROUND_SELECTOR = ".bg-image[data-backgrounds]";
 const NAV_SELECTOR = "#head-nav";
 const TITLE_SELECTOR = "#header .site-title";
 /** 挂件右缘与视口右缘之间至少要留出的空隙，窄屏夹取时用 */
 const EDGE_GAP = 8;
+/** 提示气泡与 T 恤之间的视觉间距（与 global.css 的 --wpull-hint-gap 一致） */
+const HINT_GAP = 8;
+/**
+ * 粗指针设备上自动提示停留的时长（毫秒）——票面「约三秒」。
+ *
+ * 只标记一次「已经提示过」，不写 localStorage：刷新页面后重新算首次，
+ * 但同一次加载内绝不重复弹（票面硬约束）。
+ */
+const AUTO_HINT_MS = 3000;
 /** SVG 里绳画到的 y 坐标（与 WallpaperPull.astro 的 viewBox 保持一致） */
 const ROPE_END = 76;
 /**
@@ -110,10 +125,21 @@ export function computePlacement({
 
 	// 水平：中心线对齐导航右缘；若这样会右溢，则整体左移到不出屏为止。
 	// 「被裁时主动计算位移」——其余宽度保持对齐关系不变。
+	//
+	// 两侧都要夹：只夹右边的话，视口窄到接近盒宽时中心线会算出负坐标
+	// （viewportW - half - EDGE_GAP < half），盒子左缘被推到视口外，
+	// 反而把衣服的左半边裁掉——那与「T 恤完整可见」的目标正好相反。
+	// 下界 half + EDGE_GAP 让盒左缘至少停在 EDGE_GAP 处。
+	//
+	// 视口连盒子本身都放不下时（正式样式下不会发生：≤680px 挂件就隐藏了），
+	// 居中摆放，两侧均分裁切——比单侧全部丢光更接近「完整可见」。
 	const half = widgetW / 2;
+	const minCenter = half + EDGE_GAP;
 	const maxCenter = viewportW - half - EDGE_GAP;
-	const navRight = nav.right;
-	const left = Math.min(navRight, maxCenter);
+	const left =
+		maxCenter < minCenter
+			? viewportW / 2
+			: Math.min(Math.max(nav.right, minCenter), maxCenter);
 
 	// 垂直：绳长让衣服底边落到标题顶边。取标题顶边作为 drop，
 	// 缺失标题（独立壳/窄屏不显示标题块）时退回 0，挂件自然贴顶。
@@ -127,6 +153,77 @@ export type DOMRectLike = {
 	top: number;
 	right: number;
 };
+
+/**
+ * 决定发现性提示挂在挂件哪一侧、距盒子左缘多远（票 #133）。
+ *
+ * 为什么不能直接 `left: calc(100% + 8px)`（原来的写法）：
+ * 挂件盒固定 130 宽，T 恤只占盒内 33..97，盒子右侧还有 33px 空白。
+ * 以盒子右缘为锚时提示左缘落在盒内 138 处 —— 1440 视口下右缘 1449 溢出 9px，
+ * 1100 及以下整颗跑到视口外（实测左缘正好等于 clientWidth），提示等于不存在。
+ *
+ * 口径：优先贴 **T 恤右缘** +8；右侧放不下就翻到 T 恤左侧；两侧都放不下时
+ * 贴视口左缘兜底（宁可压住衣服，也不让字被裁掉）。返回的 left 是**相对盒子
+ * 左缘**的偏移，直接写进 CSS 变量。
+ *
+ * @param shirtLeft / shirtRight T 恤在盒内的横向占位（实测，不写死视觉常量）
+ * @returns null 表示宽度还没量到（元素未渲染 / 字体未就绪），交给 CSS 兜底
+ */
+export function computeHintPlacement({
+	boxLeft,
+	widgetW,
+	viewportW,
+	hintW,
+	shirtLeft,
+	shirtRight,
+}: {
+	boxLeft: number;
+	widgetW: number;
+	viewportW: number;
+	hintW: number;
+	shirtLeft: number;
+	shirtRight: number;
+}): { side: "right" | "left" | "clamped"; left: number } | null {
+	if (widgetW <= 0 || viewportW <= 0 || hintW <= 0) return null;
+
+	const fitsOn = (left: number) =>
+		boxLeft + left >= EDGE_GAP &&
+		boxLeft + left + hintW <= viewportW - EDGE_GAP;
+
+	// 右侧：贴 T 恤右缘
+	const right = shirtRight + HINT_GAP;
+	if (fitsOn(right)) return { side: "right", left: right };
+
+	// 左侧：右缘贴 T 恤左缘
+	const left = shirtLeft - HINT_GAP - hintW;
+	if (fitsOn(left)) return { side: "left", left };
+
+	// 两侧都放不下：贴视口左缘（换算回盒内坐标）
+	return { side: "clamped", left: EDGE_GAP - boxLeft };
+}
+
+/**
+ * 要不要在首次出现时自动把提示亮一下（票 #133）。
+ *
+ * 触摸设备没有 hover，不自动提示就永远发现不了这个交互；反过来，能 hover 的
+ * 设备自动弹一次是多余的打扰。判定收敛成一个纯函数，便于覆盖各档组合。
+ *
+ * `alreadyShown` 由调用方在**同一次页面加载内**维护：票面要求不写 localStorage、
+ * 不重复弹出，所以状态只活在内存里，刷新页面才会重置。
+ */
+export function shouldAutoHint({
+	coarsePointer,
+	hasHover,
+	alreadyShown,
+	visible,
+}: {
+	coarsePointer: boolean;
+	hasHover: boolean;
+	alreadyShown: boolean;
+	visible: boolean;
+}): boolean {
+	return coarsePointer && !hasHover && !alreadyShown && visible;
+}
 
 function readRect(el: Element | null): DOMRectLike | null {
 	if (!el) return null;
@@ -154,8 +251,51 @@ function applyPlacement(host: HTMLElement) {
 		"--wpull-rope-scale",
 		String((ROPE_END + placement.drop) / ROPE_END),
 	);
+	applyHintPlacement(host, placement.left, widgetW, viewportW);
 	// 返回值供拖动把「伸展量」当成额外的 drop 叠进绳长（见 writePull）
 	return placement;
+}
+
+/**
+ * 把提示气泡摆到 T 恤旁边（票 #133）。
+ *
+ * 宽度只能实测：它取决于字体与文案，写死会随字体加载或语言变化而错位。
+ * 量不到（display:none / 尚未渲染）时清掉变量，让 global.css 的兜底值接管。
+ *
+ * @param boxCenter computePlacement 给出的**中心线** x（CSS 靠 translate:-50% 对中）
+ */
+function applyHintPlacement(
+	host: HTMLElement,
+	boxCenter: number,
+	widgetW: number,
+	viewportW: number,
+) {
+	const hint = host.querySelector<HTMLElement>(HINT_SELECTOR);
+	const art = host.querySelector<SVGElement>(".wpull__art");
+	if (!hint || !art) return;
+	const hintW = hint.offsetWidth;
+	const shirt = art.querySelector<SVGGraphicsElement>(".wpull__shirt");
+	if (!shirt) return;
+	// 屏幕坐标差换算回「盒内坐标」：两者都相对视口左上角，相减即盒内偏移
+	const artBox = art.getBoundingClientRect();
+	const shirtBox = shirt.getBoundingClientRect();
+	const placement = computeHintPlacement({
+		// computePlacement 返回的是**中心线**（CSS 靠 translate:-50% 把盒子左右对中），
+		// 这里要的是盒子左缘 —— 差一个半宽，漏掉会把提示整体算偏 65px。
+		boxLeft: boxCenter - widgetW / 2,
+		widgetW,
+		viewportW,
+		hintW,
+		shirtLeft: shirtBox.left - artBox.left,
+		shirtRight: shirtBox.right - artBox.left,
+	});
+	if (!placement) {
+		host.style.removeProperty("--wpull-hint-left");
+		delete host.dataset.hintSide;
+		return;
+	}
+	host.style.setProperty("--wpull-hint-left", `${placement.left}px`);
+	host.dataset.hintSide = placement.side;
 }
 
 /**
@@ -566,6 +706,64 @@ export function initWallpaperPull() {
 		},
 		{ passive: true },
 	);
+
+	// ---------- T6：发现性提示 ----------
+	//
+	// 两条通道共用同一个 `.wpull__hint` 与 `.is-hinting` 类：
+	// · hover / 键盘聚焦：纯 CSS（global.css 里的 `:hover` / `:focus-visible` 兄弟选择器）；
+	// · 粗指针设备首次出现：由这里挂类，AUTO_HINT_MS 后摘掉。
+	//
+	// 「只提示一次」的状态**只活在这次页面加载的内存里**：票面明确不写
+	// localStorage，所以刷新页面视为首次，同一次加载内绝不重复弹。
+	let hintShown = false;
+	let hintTimer: ReturnType<typeof setTimeout> | null = null;
+	const hintQuery = window.matchMedia?.("(hover: hover) and (pointer: fine)");
+	const coarseQuery = window.matchMedia?.("(pointer: coarse)");
+
+	/**
+	 * 首次出现时给触摸设备自动亮一下提示（鼠标设备靠 hover 自己发现）。
+	 *
+	 * 视口窄到挂件整体隐藏时（≤680px）不触发，也不消耗「已提示」名额——
+	 * 否则在窄屏加载过一次，宽屏上就再也看不到了。
+	 */
+	function maybeAutoHint() {
+		const visible = getComputedStyle(host).display !== "none";
+		const wanted = shouldAutoHint({
+			coarsePointer: coarseQuery?.matches ?? false,
+			hasHover: hintQuery?.matches ?? true,
+			alreadyShown: hintShown,
+			visible,
+		});
+		if (!wanted || hintShown) return;
+		hintShown = true;
+		host.classList.add("is-hinting");
+		hintTimer = setTimeout(() => {
+			hintTimer = null;
+			host.classList.remove("is-hinting");
+		}, AUTO_HINT_MS);
+	}
+
+	// 用户一旦主动 hover / 聚焦，自动提示就该让位（否则三秒内会与 CSS 打架）
+	const dismissAutoHint = () => {
+		if (hintTimer === null) return;
+		clearTimeout(hintTimer);
+		hintTimer = null;
+		host.classList.remove("is-hinting");
+	};
+	button?.addEventListener("pointerenter", dismissAutoHint, {
+		passive: true,
+	});
+	button?.addEventListener("focus", dismissAutoHint, { passive: true });
+
+	// 字体就绪后再量：提示气泡宽度取决于字体，早量会拿到回退字体的宽度
+	if (document.fonts?.ready) {
+		void document.fonts.ready.then(() => {
+			reflow();
+			maybeAutoHint();
+		});
+	} else {
+		maybeAutoHint();
+	}
 
 	host.dataset.bound = "true";
 }
