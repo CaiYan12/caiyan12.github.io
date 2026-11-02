@@ -445,7 +445,7 @@ OG 图由 Satori 接收普通元素对象生成；`@types/react` 供其 `ReactNo
 
 ### CI 与部署
 
-- **PR**：`build.yml` 跑 `Astro Check` + 完整 `Astro Build`；`lint.yml` 跑 `prettier --check ./src`。
+- **PR**：`build.yml` 跑 `Astro Check` + 完整 `Astro Build`；`lint.yml` 跑 `prettier --check ./src ./docs` 与 `pnpm test:prettier-math`，后者检查格式化前后的公式内容和 KaTeX 渲染。
 - **push 到 main**：`build.yml` 的 Build job 跳过，完整构建只由 `deploy.yml` 执行一次后部署。
 - **定时**：`deploy.yml` 每 6 小时跑一次同步评论数据再部署；同步失败会阻止当次部署，线上保留上一个成功版本。
 - `deploy.yml` 的同步步骤跑在 `pnpm install` **之前**，所以那条链路只能用 Node 内置模块——给它加任何包依赖都会让部署秒失败。

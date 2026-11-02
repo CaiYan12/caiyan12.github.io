@@ -1,5 +1,13 @@
 # 更新日志
 
+## 2026-11-02：Prettier 升至 3.9.8，加入公式保护门禁
+
+- `package.json` / `pnpm-lock.yaml` 将 Prettier 从 3.9.6 升至精确版本 3.9.8，其他直接依赖安装版本保持不变。保留 Astro/Svelte 插件、文章单美元公式与现有格式化范围，不忽略文章、不切 MDX、不修改渲染管线。
+- **暂缓 3.9.9 / 3.9.10**：上游关闭单美元公式识别后会把公式星号当成 emphasis。当前已找到单行最小复现，修正旧文档“需要整篇解析态”的推论；历史测量数字保留。详见 `docs/agents/build-and-deploy.md` 与上游 issue #20199。
+- 新增 `scripts/prettier-math.test.mjs` / `pnpm test:prettier-math` 并接入 `lint.yml`。用独立 remark-math 比较格式化前后的公式类型、原文与 KaTeX 渲染，不以格式化器自己的 AST 自证。2026-11-02 Windows 本地覆盖 36 个内容文件、307 个公式，3.9.8 为 38/38；3.9.10 的最小样例与真实文章按预期失败。
+- 升级前后 342 个受检文件的格式化输出一致（实际加载 78 个 Astro 文件、2 个 Svelte 文件的插件）；同数据 Astro 构建均为 229 页。1308 个产物的清单一致，非 HTML 逐字节一致；146 个 HTML 只在随机推荐侧栏有差异。Check 为 0 errors / 0 warnings / 6 hints，桌面 1280px / 移动 390px 的公式、Swup 切页后退与布局验证通过，页面异常和本站失败请求均为零。
+- 完整命令、测试计数、失败路径及验收边界见 `docs/plans/2026-11-02-prettier-upgrade.md`。本轮本地验收未执行网络快照刷新链、远端 CI 或发布；文章源文件未改变。
+
 ## 2026-11-02：Astro 7 验收剩余项收口
 
 - **技能图标脱网**：`skills.astro` 改用 `public/skill-icons/` 的原始 SVG，去掉访客 Iconify 请求，保留既有图形/配色与首字回退。手动同步脚本不进构建链；来源 hash、作者、许可及完整 Apache-2.0 等许可副本随资源入库。外网阻断的桌面/移动解码测试通过；console 门禁现完整采集 23/23 页 **PASS**，没有扩大放行清单。

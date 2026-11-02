@@ -17,6 +17,7 @@
 		"smoke:wallpaper-pull": "node scripts/wallpaper-pull-smoke.mjs",
 		"smoke:console": "node scripts/console-smoke.mjs",
 		"test:console": "node --test scripts/console-smoke.test.mjs",
+		"test:prettier-math": "node --test scripts/prettier-math.test.mjs",
 		"test:article-toc-browser": "node --test scripts/article-toc-browser.test.mjs",
 		"smoke:pelican": "node scripts/pelican-bike-smoke.mjs",
 		"smoke:series": "node scripts/series-smoke.mjs",
@@ -91,7 +92,7 @@
 		"@types/qrcode": "^1.5.6",
 		"@types/react": "19.2.18",
 		"playwright": "1.62.1",
-		"prettier": "^3.7.4",
+		"prettier": "3.9.8",
 		"prettier-plugin-astro": "^0.14.1",
 		"prettier-plugin-svelte": "^4.1.1"
 	},

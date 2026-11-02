@@ -18,6 +18,7 @@ pnpm fetch-friend-icons     # 增量补齐缺失的友链图标缓存
 pnpm fetch-friend-icons --refresh  # 手动刷新当前友链图标缓存
 pnpm preview     # 预览构建产物（需先 build）
 pnpm check       # astro check 类型检查
+pnpm test:prettier-math # 内存格式化 src/content 的 Markdown，比较公式内容与 KaTeX 渲染；只读，已接入 lint.yml
 pnpm test:article-toc-browser # 手动 Chromium + 可控时钟验证目录防抖边界，无需 dev server，不接 CI/build
 pnpm smoke:skills # 构建并启动预览后验证技能图标在外网不可用时仍全部解码；SKILLS_BASE_URL 传不带尾斜杠的站点根
 node scripts/sync-skill-icons.mjs # 手动更新本地技能图标及来源记录；不进普通构建链，原图/许可见 public/skill-icons/README.md
