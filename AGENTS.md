@@ -275,6 +275,54 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 | 领域术语与 ADR | `GLOSSARY.md`、`docs/adr/` |
 | issue 规范、标签 | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md` |
 
+## 文档同步（门禁级 · 每一轮变更都要做）
+
+> **为什么有这一节**：`docs/agents/` 与 `CHANGELOG.md` 是**下一个 agent（甚至下一个模型、另一个工具）唯一的上下文**。代码讲"怎么做的"，这些文档讲"为什么这么做、哪些路走过不通、哪些数字是实测的"。文档一落后，后来者就会照着过期口径改回去——本仓库已经为此付过三次代价（Pio「dev 下不渲染」的过期结论误导了一整轮排查；挂件里硬编码镜像导航宽度导致首帧错位 187px；CHANGELOG 空窗三周，2026-10-01 ~ 11-01 的九批变更事后才补）。
+
+### 1. 硬规则
+
+- **改了代码就改文档，同一笔 commit 里改完**。不许"等下次一起补"——2026-11-02 那次补记就是"下次"的代价：只能从 git log 反推出事实，当时的实测读数全丢了。
+- **文档与代码矛盾时，先证明哪边是真的，再改表述**；不许为了少改一行而把代码往过期文档上凑。
+- **写进文档的每个数字都要能指回来源**：当天实测（写日期 + 环境）、或某个 commit / ADR / issue。反推出来的必须标「补记」并写清证据来源。
+- **不许写会自己漂的计数**（ADR 份数、标签个数、烟测判据数、组件个数……）。要数字就现测；必须写时写成"由 X 派生、现测方式为 Y"。
+- 改完自查一遍：**文档里被这次改动推翻的句子**（旧数字、旧口径、旧文件路径）有没有残留。用 `grep` 找旧值，别靠记忆。
+
+### 2. 改什么 → 必须同步哪一份
+
+| 这轮改了什么 | 必须同步 |
+| --- | --- |
+| 任何用户可见的行为 / 视觉 / 交互 | `CHANGELOG.md`（新条目，日期在最新一条之上）+ 相关 `docs/agents/*.md` |
+| 样式、token、类名、层叠值、光标 | `docs/agents/styles.md`（层叠关系表是契约，改值前先核对） |
+| 客户端脚本、Swup 生命周期、layout 级组件 | `docs/agents/components.md`（含"新增客户端代码必须遵守"的协议条） |
+| 构建链、依赖、部署、remark/rehype 插件 | `docs/agents/build-and-deploy.md` |
+| 命令 / env 形态 / 烟测判据条数 / 已知坑 | `docs/agents/commands.md` |
+| 领域术语、称呼、"它是什么不是什么" | `GLOSSARY.md`（`_Avoid_` 行也要跟着改） |
+| 难以回退、有真实取舍、令人意外的决定 | 新建 `docs/adr/NNNN-*.md`（按序编号，不记份数）；**改了某个 ADR 的决定**就写新 ADR 并在开头写明替代谁，旧 ADR 保留为历史 |
+| 天气判据 / 取数 | `docs/agents/weather-capsule.md` |
+| 文章写法、外部 Markdown 导入、头图 | `docs/agents/post-authoring.md` |
+| issue / 标签规范 | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md` |
+| 本文件里的事实（工具名、命令、路径、协议、约束） | **本文件**；只改「项目背景」以下的可编辑区，上面的固定上下文一个字都不许动（见文首 `!IMPORTANT`） |
+
+### 3. `CHANGELOG.md` 的写法
+
+- **一条 = 一天或一批相关变更**，标题 `## YYYY-MM-DD：一句话说清"变了什么"`，**新的在最上面**。
+- 正文写四类东西，能少写但不能不写：**改了什么**（含选择器 / 文件锚点）、**为什么这么定**（裁决点，尤其"看起来该改但不许改"的地方）、**实测证据**（数字 + 日期 + 环境；没测就写"未验证"）、**怎么验证的**（命令 / 判据）。
+- 失败路径与踩坑要写进去——那是后来者最容易重复踩的部分。
+- 细节不在这里复述：指向 commit、ADR、`docs/agents/*.md`。
+- **允许补记**，但必须在该条目或该段开头标「补记（日期）」并写清证据来源（git log / ADR），且只写证据支持得住的结论。
+
+### 4. `docs/adr/` 的写法
+
+- 只记**难以回退、有真实取舍、令人意外**的决定；能顺手改回去的、纯实现细节的，写进 `CHANGELOG.md` 或 `docs/agents/` 就够。
+- 结构：一句话决定 → 背景（为什么需要决定）→ 决定 → **被否掉的其他方案及否决理由**（这一段最有价值）→ 代价与边界 → 守卫在哪（哪条判据/哪份文档守着它）。
+- ADR 里不复制代码全文，只写路径与锚点。
+
+### 5. 什么时候必须停下来问站长
+
+- 文档改动会**推翻一条既有裁决**（比如"这是有意为之，勿改"的那类）——先问，不要自行改写口径。
+- 发现**文档与代码矛盾但你无法证明哪边对**——把两边的证据摆出来问，不要猜。
+- 想删/归档既有文档——先问。
+
 ## 常用命令
 
 命令名与参数以 `package.json` 的 scripts 为准（**唯一真源**）。每条命令的用途、前置条件、env 变量形态与已知坑见 `docs/agents/commands.md` —— 要跑烟测/单测/构建期取数/票册自检时先读那一份。
@@ -290,7 +338,7 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 
 ## 环境区分（必须遵守）
 
-- **测试环境（本地）**：`http://localhost:4321`（`pnpm dev`；preview 可用 `pnpm preview --port 4322` 等指定端口）。验证交互、布局、Swup 切页均在本地做；注意 `pnpm dev` 下 Pio 不渲染（见 Pio 段），验证 Pio 必须 `pnpm build && pnpm preview`。
+- **测试环境（本地）**：`http://localhost:4321`（`pnpm dev`；preview 可用 `pnpm preview --port 4322` 等指定端口）。验证交互、布局、Swup 切页均在本地做。**`pnpm dev` 下 Pio 是正常渲染的**（`start.bat` = `pnpm start --open` = `astro dev`，与 `pnpm dev` 同一条命令；2026-11-02 实测 `.pio-container` 存在、水合成功、pageerror 为 0）。它「看起来没渲染」是因为**默认折叠**（`posterGirl` 不为 `"1"` 时带 `hidden`、盒子 0×0），点左下角「召唤」才展开。旧文档「dev 下 Pio 不渲染、必须 build && preview」的结论已作废，别再按它判断。
 - **生产环境（线上）**：`https://caiyan12.github.io/`（GitHub Actions 部署）。验证部署是否生效看响应头 `Last-Modified` 是否晚于部署完成时间，或下载 run 的 `github-pages` artifact；Fastly 边缘缓存 HTML `max-age=600` 且缓存键不含查询串（加 `?cb=` 无效）。playwright 线上偶发 30s 超时时可用 `Invoke-WebRequest` 直接下载 HTML/JS 做内容断言。
 
 ## 架构要点
