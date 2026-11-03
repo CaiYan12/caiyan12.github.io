@@ -10,6 +10,11 @@ export interface DiaryItem {
 
 export const diary: DiaryItem[] = [
 	{
+		date: "2026-11-03 15:35",
+		content:
+			"网站构建系统迎来全面更新，依靠全新的构建组件，安全性能大幅提升。",
+	},
+	{
 		date: "2026-10-29 23:51",
 		content:
 			"网站的 AI 新闻模块已移植为单独的仓库，访问速度显著提升，欢迎 Star 和 Fork。",

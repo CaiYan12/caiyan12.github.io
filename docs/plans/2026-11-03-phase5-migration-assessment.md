@@ -130,6 +130,9 @@ await satori(template, { width: 1200, height: 630, fonts });
 
 ---
 
+> **2026-11-03 后续裁定**：本评估覆盖的四项里，**KaTeX（第五批）与 Mermaid（第六批）已完成本地验收**（未推送），详见 [KaTeX 专项](2026-11-03-katex-upgrade.md)、[Mermaid 专项](2026-11-03-mermaid-upgrade.md)。
+> **Tailwind 与 Satori 不在依赖升级会话内推进**，已移交独立工作流，登记在 `README.md` 的「待办（依赖跨版本迁移，需独立工作流排期）」。理由：两者复杂度已超出「接在后面顺手做」的范围（Tailwind 是接入方式重写、Satori 无上游书面依据），适合专门跑一次 `/grill-spec-tickets-implement`。**本文件对这两项的评估仍有效，作为那份工作流的输入。**
+
 ## 建议执行顺序与理由
 
 1. ~~**KaTeX**（低风险）：唯一破坏性变更本站不触发（`strict` 默认 `warn`），307 个公式可全量机器比对，收益是公式渲染修复。~~ **已完成（2026-11-03，仅本地）。** 风险判断已改判：破坏性变更实为 3 条，其中 0.18.0 的 CSS 类名前缀命中全部公式，且 `rehype-katex` 的依赖范围使必须引入 `pnpm.overrides`。绝不能说「低风险直接升」。见 [KaTeX 专项验收](2026-11-03-katex-upgrade.md)。

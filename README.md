@@ -498,25 +498,93 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
 ## TODO 与远期规划
 
-以下条目为历史排行的销项索引，编号保持不变；完成记录已按惯例清理，实现细节见 git history 与 AGENTS.md 对应维护约束：优化项排行第 1–7 项于 2026-09-04 销项；内容扩充第 10 项（标签云集 `/tag/`，2026-09-04）、第 11 项（分类云集 `/category/`，2026-09-05）、第 12 项（热门页 `/hot/`，2026-09-05）、第 13 项（全站字体策略，2026-09-05）已完成；Nice Books「私人藏书桌」升级（2026-09-07）已交付，视觉契约见 `docs/nice-books-design.md`、验收记录见 `docs/nice-books-design-test.md`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕；TODO 13 遗留的「稿纸横线贯穿整纸」已于 2026-09-19 完成——网格改画在 `.letter-paper` 面板层，相位由脚本运行时按正文首行基线反推，头部高度无需确定化，同批把 `/about/` 装饰元件换成手绘墨迹 SVG（维护约束见 AGENTS.md「信纸稿纸」条目）；远期规划第 8 项（Astro 5 → 6）已于 2026-09-20 完成——先做 Tailwind 接入改造（去掉 @astrojs/tailwind，改由根 `postcss.config.mjs` 直连），再升 astro 6.4.8 / @astrojs/react 5.0.7 / @astrojs/svelte 8.1.2 / astro-expressive-code 0.43.1，`pnpm check` 零错误、206 页构建通过、三套 Playwright smoke（fancybox 27/27、nice-books 72/72、ai-news 9/9）全绿，样式经 24 页 15,554 个元素的计算样式逐元素比对确认零变化（详见 AGENTS.md「构建链与依赖约束」）；同批把 Astro 6 标记为 deprecated 的 `markdown.remarkPlugins` / `rehypePlugins` 迁到 `markdown.processor: unified({...})`（2026-09-20）——`@astrojs/markdown-remark` 按 astro 6.4.8 的硬钉版本 7.2.0 作直接依赖，构建告警清零，固定构建期随机后完整产物 1114 个文件（含 pagefind 索引）逐字节零差异，全站门禁（astro check 零错误 + fancybox 27/27 + nice-books 单测 51/51 与 smoke 72/72 + ai-news 9/9）全绿。
+> **编号是稳定标识符：不重排、不复用、不补位。** 外部文档按编号引用本表——`docs/agents/styles.md` 与 `CHANGELOG.md` 写「README TODO 13」（全站字体策略），`.workbuddy/memory/2026-10-29.md` 写「README 远期规划第 11 项」（读者墙）。改号会让这些引用失效。
+>
+> **两套编号各自独立，不要混读。** 「内容扩充」（10–13）与「远期规划」（8、9、11、12）是两个序列，**两边都有 11 和 12 但指向完全不同的条目**。引用时必须带序列名：内容扩充第 11 项 = 分类云集页，远期规划第 11 项 = 读者墙。远期规划的 10 号**从未使用过**（`git log -S"**10."` 无记录），属历史跳号，不补。
+>
+> 按可执行性分五组：**进行中**（可动手）→ **观望**（触发条件未满足）→ **已完成**（销项记录）→ **不实施**（评估过，防重复评估）→ **历史评估存档**（证据原文，不是指令）。
 
-### 评估已完成、明确不实施（保留结论以防重复评估）
+### 进行中
 
-- [x] **纯 HTML 页面资源移植**（2026-09-19 完成评估；结论：全部候选不移植，本项关闭）：源为 2020–2022 的手写多页站，实际路径 `C:\Users\Einn Tzai\Documents\HTML5网页`（本条目旧写法「文档\HTML5页面」按字面搜不到），入口 `index.html`（"WindowsIt's Music Site"）链向 `about/`、`login/`、`quesion/` 与 5 个 `tools/` 子页，全站 25 个 HTML 已逐一核对。排除理由分四类：**第三方「另存为」产物**（版权与外部依赖风险）——`!downloaded/`（Google 翻译镜像、jQuery MP4 播放器、css3 3D 翻牌）、`tools/eeslap`、`tools/burymewithmymoney`、`tools/smashthewalls`，特征为 `*_files/` 子目录 + 脚本文件名带 `.下载` + 内嵌 analytics/firebase/three.js，`login/index.html` 标题本身即下载代码片段且静态站无鉴权场景；**已被本站取代的前代模板残留**——`myblog/`、`HACKEREMPIER/`、`officialblog/`、`about/index.html`、需后端的 `_UNUSED TESTED PAGE/` 留言表单；**纯 CSS 演示无内容增量**——`tools/chemicals`（诞生石药水瓶）、`tools/newtonbai`（牛顿摆）、`tools/moonnight`（星空月景）虽零依赖可搬，但属装饰性 demo；`tools/makebridge` 系 freeCodeCamp "Santa's Helper" 教程复刻（`santaX`/`perfectAreaSize` 变量名原样），移植需去圣诞主题化并注明来源，收益不抵成本；`tools/daojishi` 倒计时硬编码 `12/31/2020 23:59:59`，原样移植即死页；**原创文字资产不宜沿用页面形态**——`quesion/`（恶搞产品文案）与`slide/`（"HOT IDEAS" 卡片）为站主 2020 年的吐槽，若将来启用应以重新撰写的文章呈现，旧页面不搬。`MainSources/` 仅字体与两个未核授权的音视频，同样不动。
+- [ ] **限制壁纸池单张体积上限**（2026-11-02 登记，拉绳壁纸挂件 spec #127 收口时发现）：`src/config.ts` 的 `backgroundConfig.images` 四张实测 **876KB / 2.1MB / 3.1MB / 9.6MB**（原图未压缩）。换壁纸按「均匀随机 × 排除当前图 × 每候选最多试一次」选图并预载，最坏一次操作要串行等最多 3 个候选；**大尺寸图片还会让解码被判据拒绝**——Chromium 在并发或大尺寸下会对合法图片抛 `EncodingError`（见 Odoo PR #243133 与 Chromium issue 40261318，其修复正是把 `Promise.all` 改成 `allSettled`）。挂件侧已做兜底（decode 被拒时退化为「加载完成且具固有尺寸」再判定），但**上限本身应落在资源侧**。触发条件：访客反馈换图慢 / 内存占用高，或新增壁纸。实施建议：统一压到单张 ≤ 1.5MB（现有 4 张不动、只约定新图口径），同步更新 `public/images/bg/PEXELS-SOURCES.md` 的体积记录。
 
-- [x] **原模板未移植页面评估**（2026-09-04 完成）：对 `../limh.me` 全部 12 个 page-_.php / t.php / reg.php / function/_.php 逐一核对，与 myblog 现有 14 个路由 + sidebarConfig 侧栏清单对齐。结论：已移植清单（log_list/echo_log/header/footer/side/options→config.ts/归档/微语/留言板/关于/友链/图片墙/相册/404/全部侧栏 widget/文章尾部表情/吐槽水军）无遗漏。未移植 9 项取舍：**标签云集页**已作为 TODO 10 落地为 `/tag/`（2026-09-04 完成）；**读者墙**与**微语分页+[F\*]表情码解析**移入远期规划（触发条件见该节）；分享组件（分享目标大半死链）、日历 widget（Emlog ajax 依赖，交互已被归档/时间线替代）、读者等级（Giscus 无访客邮箱数据源）不移植；前台注册（需后端写库+验证码）、评论 UA/IP 属地（Giscus 不提供该数据）、通用页面模板变体 page-test/page1/page-colorful（已被 `spec` collection 的 `[...slug]` 覆盖）为架构性/数据源排除项，永久排除。原 `module.php`（eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）维持严禁搬运。
+- [ ] **Tailwind 3.4.19 → 4.3.4（接入方式重写，不是升级）**（2026-11-03 登记，**移交独立工作流**）
 
-### 待办（背景壁纸池体积上限）
+    为什么必须单独排期：v4 不再是 PostCSS 插件（改用 `@tailwindcss/postcss` 或 Vite 插件）；配置从 `tailwind.config.cjs` 迁到 CSS-first 的 `@theme` 块；`@tailwind base/components/utilities` 三指令作废，**两套样式入口都要改**（`src/styles/global.css` 与 `src/nice-books/styles/books.css`）；Preflight 行为变化影响全站既有外观；**并且会推翻一条已固化的文档结论**——`docs/agents/build-and-deploy.md` 记录「v3 的 `@layer` 是构建期指令，产物里根本不存在 `@layer`，冲突按特异性→源顺序判定」，而 v4 引入真实 CSS 级联层。
 
-- [ ] **限制壁纸池单张体积上限**（2026-11-02 登记，拉绳壁纸挂件 spec #127 收口时发现）：当前 `src/config.ts` 的 `backgroundConfig.images` 四张实测 **876KB / 2.1MB / 3.1MB / 9.6MB**（原图未压缩）。换壁纸时按「均匀随机 × 排除当前图 × 每候选最多试一次」选图并预载，最坏情况一次操作要串行等待最多 3 个候选；而**大尺寸图片还会让解码被判据拒绝**——Chromium 在并发或大尺寸下会对合法图片抛 `EncodingError`（见 Odoo PR #243133 与 Chromium issue 40261318，其修复正是把 `Promise.all` 改成 `allSettled`）。挂件侧已做兼容兜底（decode 被拒时退化为「加载完成且具有固有尺寸」再判定），但**上限本身应落在资源侧**。触发条件：出现访客反馈换图慢 / 内存占用高，或新增壁纸。实施时建议统一压到单张 ≤ 1.5MB（保留现有 4 张不动、只约定新图口径），并同步更新 `public/images/bg/PEXELS-SOURCES.md` 的体积记录。
+    方案必须先获批，要回答七个问题：接入方式选型（PostCSS 还是 Vite 插件，v4 是否还需要 `postcssNesting`）、`theme.extend` 的颜色/字体/阴影/圆角如何映射到 `@theme`、两套样式入口各怎么写、`@layer` 语义变化影响哪些既有规则、Preflight 具体影响哪些元素、怎么退回 3.4.19、验收标准。
 
-### 远期规划（观望项，均已完成评估、明确触发条件，未触发不排期）
+    验收不能只跑构建：需 23 页计算样式指纹（复用 `scripts/upgrade-style-audit.mjs`）+ 桌面/移动截图 + 关键交互。
 
-- **9. /ai-news/ React 岛屿瘦身（已处置，非主站待办）**：2026-10-28 已改为独立项目，2026-11-02 迁移收尾；主站不再包含日报实现，性能目标归独立项目，未宣称客户端瘦身完成，见 `docs/adr/0009-ai-news-separate-deployment.md`。**以下仅保留 2026-09-04 迁移前的历史评估，不描述当前仓库，也不作为后续实施指令**：技术可行但 ROI 为负。dist 实测该页客户端 JS 为 react-dom chunk（178KB）+ AiNewsApp chunk（57KB）≈ 235KB 未压缩（gzip 估 70–80KB），且经 Astro 岛屿架构隔离**仅此一页加载**，其他页面零成本；Svelte 重写估省 40–50KB gzip，对低频单访客的日报阅读页无感知收益。重写成本被低估：`src/ai-news/` 共 43 文件 / 约 135KB 源码（2 个 zustand store、5 套橘鸦视觉模板 × 亮暗双变体、RSS 解析 / 离线快照兜底 / 搜索 / hash 路由 / localStorage 持久化）。迁移难点集中在 `useAppStore.ts` 的 `transitionRoute`：列表↔详情交叉淡入淡出依赖 `document.startViewTransition` + React `flushSync` 在回调内同步提交 DOM，Svelte 无直接等价 API，行为保真是最大风险点；回归面为 5 套模板 × 亮暗 × 列表/详情 = 20 种视觉组合。有利因素：hooks 仅 useState/useEffect/useMemo/useRef，zustand store 为纯 TS 逻辑可平移 runes，lucide-react 有 lucide-svelte 对应。附带收益：移除 6 个依赖。（TODO 8 的 @astrojs/react 未知项已在 2026-09-20 升级时实测消除——@astrojs/react 5.0.7 与 astro 6.4.8 兼容，ai-news 页 9/9 smoke 通过）**历史触发条件（已失效）：① Astro 升级受阻于 @astrojs/react 兼容性（重写从可选变被迫，届时正确时机）；② 该页出现真实访问量增长使 payload 成为可测量瓶颈**。旧方案建议先降级橘鸦模板（保留 1–2 套风格）压缩回归面。旧方案验收（已失效）：功能与视觉对齐（列表、筛选、20 种模板组合、View Transitions 过渡），构建产物无 React runtime 残留。
+    → 评估原文：`docs/plans/2026-11-03-phase5-migration-assessment.md` 第三节；实施骨架：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 11-15（**Task 12-15 是占位结构，方案获批后才可补写成可执行步骤**）。
 
-- **11. 读者墙**（limh.me 移植评估得分 10；2026-10-29 已转 [Issue #112](https://github.com/CaiYan12/caiyan12.github.io/issues/112) 延期管理，本地台账交接完成、需求延期、功能未实现）：原主题的评论区活跃者头像墙。**触发条件：留言板 / 文章评论参与者 >20 人**，2026-10-29 复核仍未触发。规格、统计口径与待决项以 #112 为准，此处不再维护第二份。
+    适合 `/grill-spec-tickets-implement` 工作流。
 
-- **12. 微言碎语分页 + 旧表情码**（limh.me 移植评估；2026-10-29 已转 [Issue #113](https://github.com/CaiYan12/caiyan12.github.io/issues/113)（分页）与 [Issue #114](https://github.com/CaiYan12/caiyan12.github.io/issues/114)（旧表情码）延期管理，本地台账交接完成、需求延期、功能未实现）：两项相互独立、分别触发、分别关闭。触发条件、判定口径、实施前待决事项与复核方法以两张 Issue 为准，此处不再维护第二份。
+- [ ] **Satori 0.26.0 → 0.63.2（跨 33 个 minor，无书面依据）**（2026-11-03 登记，**移交独立工作流**）
+
+    为什么必须单独排期：上游**没有 CHANGELOG**，60 条 release 无一条标注 BREAKING——不是「兼容」，是**没有书面依据**。依赖栈从 `opentype.js` 换到 `harfbuzzjs`，字体排版可能整体换过，而本站 33 张 OG 图全靠它渲染。
+
+    正确的第一步是**隔离试装 + 跑一次真实 OG 渲染**（项目目录外或 `output/` 下，主项目 `package.json` 全程不动），产出探针报告，回答三件事：能否装上、能否渲染 33 张 OG、差异性质（尺寸/换行/字体/截断）。据此三选一：值得排期 / 需先改模板 / 保留 0.26.0 并记录冻结理由。
+
+    已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori，本机 Node 的 fetch 不读 `HTTP_PROXY`，构建前须设 `$env:NODE_USE_ENV_PROXY='1'`（详见 `docs/agents/build-and-deploy.md`）。
+
+    → 探测步骤：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 16。
+
+    适合 `/grill-spec-tickets-implement` 工作流。
+
+> **两项迁移的共同前提**：不得全量 `update --latest`，不得跳过 A/B。本仓库已确立「每批只动一个直接依赖、同输入构建 A/B、真实浏览器验收、文档与代码同批」的流程，四批依赖升级（Svelte / Autoprefixer / KaTeX / Mermaid）都照此执行，证据格式参考 `docs/plans/2026-11-03-katex-upgrade.md` 与 `docs/plans/2026-11-03-mermaid-upgrade.md`。
+
+### 观望（触发条件未满足，不排期）
+
+- [ ] **远期规划第 11 项 · 读者墙**（limh.me 移植评估得分 10；2026-10-29 已转 [Issue #112](https://github.com/CaiYan12/caiyan12.github.io/issues/112) 延期管理，本地台账交接完成、需求延期、功能未实现）：原主题的评论区活跃者头像墙。**触发条件：留言板 / 文章评论参与者 > 20 人**，2026-10-29 复核仍未触发。规格、统计口径与待决项以 #112 为准，此处不再维护第二份。
+
+- [ ] **远期规划第 12 项 · 微言碎语分页 + 旧表情码**（limh.me 移植评估；2026-10-29 已转 [Issue #113](https://github.com/CaiYan12/caiyan12.github.io/issues/113)（分页）与 [Issue #114](https://github.com/CaiYan12/caiyan12.github.io/issues/114)（旧表情码）延期管理，本地台账交接完成、需求延期、功能未实现）：两项相互独立、分别触发、分别关闭。触发条件、判定口径、实施前待决事项与复核方法以两张 Issue 为准，此处不再维护第二份。
+
+### 已完成（销项记录，编号保留）
+
+- [x] **优化项排行第 1–7 项** —— 2026-09-04 全部销项，实现细节见 git history。
+- [x] **内容扩充第 10 项 · 标签云集 `/tag/`** —— 2026-09-04。
+- [x] **内容扩充第 11 项 · 分类云集 `/category/`** —— 2026-09-05。
+- [x] **内容扩充第 12 项 · 热门页 `/hot/`** —— 2026-09-05。
+- [x] **内容扩充第 13 项 · 全站字体策略** —— 2026-09-05 落地，`:root` 四 token 收敛全站字体（微软雅黑从所有主栈退场以消除版权风险）。维护约束见 `docs/agents/styles.md` 的「字体策略（README TODO 13）」条目；其中 `--font-serif` **token 就位但至今零消费者，不要再试着启用**（理由同上那份文档）。
+- [x] **Nice Books「私人藏书桌」升级** —— 2026-09-07 交付。视觉契约见 `docs/nice-books-design.md`，验收记录已于 2026-10-30 归档（全文见 `docs/history/history.md`）。
+- [x] **内容扩充第 13 项遗留 · 稿纸横线贯穿整纸** —— 2026-09-19 完成。网格改画在 `.letter-paper` 面板层，相位由脚本运行时按正文首行基线反推，头部高度无需确定化；同批把 `/about/` 装饰元件换成手绘墨迹 SVG。维护约束见 AGENTS.md「信纸稿纸」条目。
+- [x] **远期规划第 8 项 · Astro 5 → 6** —— 2026-09-20 完成。先做 Tailwind 接入改造（去掉 `@astrojs/tailwind`，改由根 `postcss.config.mjs` 直连），再升 `astro 6.4.8` / `@astrojs/react 5.0.7` / `@astrojs/svelte 8.1.2` / `astro-expressive-code 0.43.1`。`pnpm check` 零错误、206 页构建通过、三套 Playwright smoke 全绿（fancybox 27/27、nice-books 72/72、ai-news 9/9），样式经 **24 页 15,554 个元素**的计算样式逐元素比对确认零变化。详见 AGENTS.md「构建链与依赖约束」。
+- [x] **Markdown 插件迁移 · `markdown.remarkPlugins`/`rehypePlugins` → `markdown.processor: unified({...})`** —— 2026-09-20 随上一项同批完成（Astro 6 已弃用旧写法）。`@astrojs/markdown-remark` 按 astro 6.4.8 的硬钉版本 7.2.0 作直接依赖，构建告警清零；固定构建期随机后完整产物 **1114 个文件**（含 pagefind 索引）逐字节零差异；全站门禁全绿。
+- [x] **远期规划第 9 项 · /ai-news/ React 岛屿瘦身** —— 已处置，**非主站待办**：2026-10-28 改为独立项目 `CaiYan12/ai-news`，2026-11-02 迁移收尾，主站不再包含日报实现，性能目标归独立项目。见 `docs/adr/0009-ai-news-separate-deployment.md`。迁移前的历史评估收在文末存档（仅防重复评估，不作为实施指令）。
+
+### 评估后明确不实施（保留结论以防重复评估）
+
+- [x] **纯 HTML 页面资源移植** —— 2026-09-19 完成评估，**结论：全部候选不移植，本项关闭**。逐条排除理由收在本节「纯 HTML 页面资源移植」存档。
+- [x] **原模板未移植页面评估** —— 2026-09-04 完成，**结论：19 项逐一核对后按四类理由排除，永久关闭**。清单与分类理由收在本节「原模板未移植页面评估」存档。
+
+### 历史评估存档（不描述当前仓库，不作为实施指令）
+
+> 这些是**已完成判决的证据原文**，留在这里的唯一目的是防止后来者重复评估同一件事。当前仓库状态以正文与 `docs/agents/` 为准。
+
+#### 远期规划第 9 项：/ai-news/ React 岛屿瘦身（2026-09-04 迁移前评估）
+
+技术可行但 ROI 为负。dist 实测该页客户端 JS 为 react-dom chunk（178KB）+ AiNewsApp chunk（57KB）≈ 235KB 未压缩（gzip 估 70–80KB），且经 Astro 岛屿架构隔离**仅此一页加载**，其他页面零成本；Svelte 重写估省 40–50KB gzip，对低频单访客的日报阅读页无感知收益。重写成本被低估：`src/ai-news/` 共 43 文件 / 约 135KB 源码（2 个 zustand store、5 套橘鸦视觉模板 × 亮暗双变体、RSS 解析 / 离线快照兜底 / 搜索 / hash 路由 / localStorage 持久化）。迁移难点集中在 `useAppStore.ts` 的 `transitionRoute`：列表↔详情交叉淡入淡出依赖 `document.startViewTransition` + React `flushSync` 在回调内同步提交 DOM，Svelte 无直接等价 API，行为保真是最大风险点；回归面为 5 套模板 × 亮暗 × 列表/详情 = 20 种视觉组合。有利因素：hooks 仅 useState/useEffect/useMemo/useRef，zustand store 为纯 TS 逻辑可平移 runes，lucide-react 有 lucide-svelte 对应。附带收益：移除 6 个依赖。（远期规划第 8 项里 `@astrojs/react` 的未知项已在 2026-09-20 升级时实测消除——5.0.7 与 astro 6.4.8 兼容，ai-news 页 9/9 smoke 通过。）**历史触发条件（已随迁移收尾失效）：① Astro 升级受阻于 `@astrojs/react` 兼容性；② 该页出现真实访问量增长使 payload 成为可测量瓶颈。** 旧方案建议先降级橘鸦模板（保留 1–2 套风格）压缩回归面；旧方案验收（已失效）：功能与视觉对齐（列表、筛选、20 种模板组合、View Transitions 过渡），构建产物无 React runtime 残留。
+
+#### 纯 HTML 页面资源移植（2026-09-19 评估，结论：全部不移植）
+
+源为 2020–2022 的手写多页站，实际路径 `C:\Users\Einn Tzai\Documents\HTML5网页`（本条目旧写法「文档\HTML5页面」按字面搜不到），入口 `index.html`（"WindowsIt's Music Site"）链向 `about/`、`login/`、`quesion/` 与 5 个 `tools/` 子页，全站 25 个 HTML 已逐一核对。排除理由分四类：
+
+- **第三方「另存为」产物**（版权与外部依赖风险）——`!downloaded/`（Google 翻译镜像、jQuery MP4 播放器、css3 3D 翻牌）、`tools/eeslap`、`tools/burymewithmymoney`、`tools/smashthewalls`，特征为 `*_files/` 子目录 + 脚本文件名带 `.下载` + 内嵌 analytics/firebase/three.js；`login/index.html` 标题本身即下载代码片段，且静态站无鉴权场景。
+- **已被本站取代的前代模板残留**——`myblog/`、`HACKEREMPIER/`、`officialblog/`、`about/index.html`、需后端的 `_UNUSED TESTED PAGE/` 留言表单。
+- **纯 CSS 演示无内容增量**——`tools/chemicals`（诞生石药水瓶）、`tools/newtonbai`（牛顿摆）、`tools/moonnight`（星空月景）虽零依赖可搬但属装饰性 demo；`tools/makebridge` 系 freeCodeCamp "Santa's Helper" 教程复刻（`santaX`/`perfectAreaSize` 变量名原样），移植需去圣诞主题化并注明来源，收益不抵成本；`tools/daojishi` 倒计时硬编码 `12/31/2020 23:59:59`，原样移植即死页。
+- **原创文字资产不宜沿用页面形态**——`quesion/`（恶搞产品文案）与 `slide/`（"HOT IDEAS" 卡片）为站主 2020 年的吐槽，若将来启用应以重新撰写的文章呈现，旧页面不搬。`MainSources/` 仅字体与两个未核授权的音视频，同样不动。
+
+#### 原模板未移植页面评估（2026-09-04 完成，结论：永久关闭）
+
+对 `../limh.me` 全部 12 个 `page-*.php` / `t.php` / `reg.php` / `function/*.php` 逐一核对，与 myblog 现有 14 个路由 + `sidebarConfig` 侧栏清单对齐。**已移植清单无遗漏**：log_list / echo_log / header / footer / side / options→`config.ts` / 归档 / 微语 / 留言板 / 关于 / 友链 / 图片墙 / 相册 / 404 / 全部侧栏 widget / 文章尾部表情 / 吐槽水军。
+
+未移植项按理由分类：
+
+- **已转出**：标签云集页 → 落为 `/tag/`（内容扩充第 10 项）；读者墙 → 远期规划第 11 项（现 Issue #112）；微语分页 + `[F*]` 表情码解析 → 远期规划第 12 项（现 Issue #113 / #114）。
+- **功能被替代，不再移植**：分享组件（分享目标大半死链）、日历 widget（Emlog ajax 依赖，交互已被归档/时间线替代）、读者等级（Giscus 无访客邮箱数据源）。
+- **架构性 / 数据源排除，永久排除**：前台注册（需后端写库 + 验证码）、评论 UA/IP 属地（Giscus 不提供该数据）、通用页面模板变体 page-test / page1 / page-colorful（已被 `spec` collection 的 `[...slug]` 覆盖）。
+- **严禁搬运**：原 `module.php`（`/e` 修饰符 eval 漏洞）与 `function/favicon.php`、`image.php`（开放代理）维持永久禁止。
 
 ---
 
