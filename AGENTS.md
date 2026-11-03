@@ -2,197 +2,9 @@
 
 ## Skill Rule:
 
-We have compiled a set of "skills": folders of best practices for different forms of work. These encode hard-won trial-and-error about producing professional output. Several may apply to one task, so don't read just one. You need always be smart to use skills like:
-
-- /grill-me on big changes sessions or any other you need to know.
-
-- /design-flow on every ui/ux designing, changing or frontend processing. This is a leader skill, you need to dynamically check what position you are and load needing subskills matching the current status.
-
-- /self-improvement when you make mistakes.
-
-- /wayfinder on loose or unclear messages.
-
-- /chinese-encoding on chinese language write-in or bash sessions.
-
-- /obsidian-vault for local knowledge base, query firstly when needing knowledges.
-
-- /context7-mcp or other needing MCP servers.
-
-- /thesvg for needing brand icons.
-
-- /pexels for needing actual no-copyright pictures.
-
-- If it's the first time setting up the project be sure to use /setup-matt-pocock-skills and /using-superpowers to setup a skill-driven workflow, then strictly tighten the workflow with their skill series in this document.
-
-    Read the skills, and involve the useful skills in your plan before you already know what to plan and to do.
+按**当前会话宿主注入的技能清单**选用斜杠技能（宿主清单是唯一真源，本文件不再复述条目）。项目专属用法见 `docs/agents/`；改技能行为改下面「Agent skills」三份配置，不重跑 setup。
 
 ---
-
-## Coding Rule:
-
-### 1. Think Before Coding
-
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
-
-Before implementing:
-
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
-
-### 2. Simplicity First
-
-**Minimum code that solves the problem. Nothing speculative.**
-
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
-
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
-
-### 3. Surgical Changes
-
-**Touch only what you must. Clean up only your own mess.**
-
-When editing existing code:
-
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
-
-When your changes create orphans:
-
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
-
-The test: Every changed line should trace directly to the user's request.
-
-### 4. Goal-Driven Execution
-
-**Define success criteria. Loop until verified.**
-
-Transform tasks into verifiable goals:
-
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
-
-For multi-step tasks, state a brief plan:
-
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
-
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
-
----
-
-## Plan Mode Rule
-
-### 1. Automatically triggers Plan Mode on
-
-- Custom code solving a specific or foggy user problem
-
-- Any long-form creative writing
-
-- Structured reference content users will save or follow
-
-- Modifying/iterating on an existing artifact; content that will be edited or reused
-
-- A standalone text-heavy uploaded document >100 lines, or a plan or a handoff file mentioned by the user.
-
-### 2. Plan File
-
-When generating a plan, follow these instructions to sharpen a plan:
-
-1. Get precise project info directly in project docs, git history, important codes, etc.
-2. Run /grill-with-docs for a grilling session for more detailed info.
-3. Turn the detailed task into different workable steps.
-
-A finale plan should be detailed into phases and steps, A checkbox is needed for a step. When working for a plan, you need to update the status of each steps.
-
----
-
-## Memory & Experience Rule
-
-You have a persistent memory filesystem. You could reach your direct memories simply at "\.codex\memories" in Appdata
-
-### 1. Project Memory is Needed
-
-Except for your persist memory system, You could setup your specific project-based memory filesystem "\.codex\memories" on the project to make it enable to transfer messages between different agent sessions, kept for future-you, who re-reads these files at the start of every conversation.
-
-When a question concerns the user or their world — anything they may have told you before — check the memory listing before
-answering from conversation memory alone: if any file's description could plausibly hold the answer, read it first.
-
-Always read before saying you DON'T have or know something.
-
-You are ABLE to lead the user and the session to go with the relevant memories.
-
-### 2. Memory Settings
-
-- You are running in **chat**. Other running sessions may also write to the same filesystem, so you may see files you didn't create.
-- When it's a begin of a session, you need to load project memories for knowing the work status we're. Memories are needed for primal context.
-- For faster querying, the memory filesystem requires an index file.
-
-### 3. Memory Querying
-
-- When you've hit a wall, you can find the answers in your memories.
-- When you notice you've been in similar tasks, you can query the memories to find similar experience.
-- If the memory is `(empty)` or `<profile>` shows `(not yet written)`, you're starting from nothing. Just help the user and answer from the conversation.
-- Index file will help you querying.
-- You are able to query other agents' project memories by reaching their memory folder like .zcode/, .trae/, .workbuddy/, or .learning/, etc.
-
-### 4. Memory Appending
-
-- When user are stressing a point or you noticed some important messages, append that into your memories.
-
-### 5. Outdated Memories
-
-- Mission-completed tasks and dated over 60 days memories are considered outdated. When user are speaking of cleaning the memories, clear those outdated files.
-
----
-
-## Git Rule
-
-### 1. Commit Rule
-
-- .git folder, README.md, AGENTS.md, .gitignore or other any git needing file are needing for a git commit.
-- At most of the time, the .gitignore file is convincing and precise as long as it's updated. You can do the commit directly without file analysis.
-- An closely updated README.md, AGENTS.md or other needing docs shall never be ignored in a commit.
-
-### 2. Push Rule
-
-- Normally when a commit passed real testing, a push should be ready to lead by you.
-- Do not create branches unless the user mentions.
-- Do not add GitHub contributors or co-founders unless the users mentions.
-- Open-source publish uses MIT.
-
-### 3. .gitignore Updating Rule
-
-Agents memories(like .zcode/, .trae/, .workbuddy/, .claude/, .codex/), plugin files(like .mimosa/, playwright files), node modules or other files you think it's not necessary should be listed into a gitignore file.
-
-The gitignore file should be updated when:
-
-- New functions updated, or previous functions changed or deleted.
-- New essential library or dependency added.
-- User mentioned.
-
----
-
-## How to suggest
-
-- You should call online and local search with keywords drawn from the task itself and suggest only results genuinely relevant to what the person is doing, because irrelevant suggestions teach the person to ignore the cards — if nothing fits well, you should suggest nothing.
-- You should render at most one suggestion card per conversation total, unless the person asks for more, because repeated suggestions interrupt the conversation and feel pushy. If the person dismisses or doesn't engage with a card, you should not suggest again in that conversation.
-- You should keep in mind that not all the users are fully professional, they may find them in a wall if your responses are involving with mass professional terminologies. You should explain the current problem or progress in an easy-to-understand, a way that even a freshman could understand. Sometimes a metaphor would be useful.
-- Give me a simplified conclusion at the end if the responses are too long, the users' got limited time and patience.
-- You have the responsibility to lead the user what to do next. You can guess the user's intention this time and give the proper way to continue our task.
-- Your tone should be direct and precise, do not go around the bush.
 
 ## Running Environment
 
@@ -245,10 +57,11 @@ Your agent and bash are running on:
 - **约束以「选择器 + 文件路径」为锚点**，行号只作辅助且必须写「约」。本轮 UI 整改里三次误判的根源都是拿旧行号当现值（药丸样式记录漂了约 220 行、`.prose code` 的定位两次都错）。
 - 带日期的历史实测数字**保留原样**（它们是那次测量的记录，不是当前事实）；需要当前值就重新测。
 - 无法本地复核的数字（第三方图种数量、历史构建文件数）标 `UNKNOWN` 或明确写「未复核」，不得当作改动依据。
-- **本文件（`AGENTS.md`）不写会随仓库增长的计数**（ADR 份数、标签个数、模块数……）。这类现值一改就漂。需要数字时现测，别在这里留一份快照。**本文件自 2026-11-03 起已纳入格式门禁**（`lint.yml` 的 Prettier 范围含 `./*.md`，本地 pre-commit 同步覆盖仓库根的 md）；但**格式门禁不检查内容正确性**——数字写错不会因此变红，仍须实测。改动时注意：Prettier 只填充表格列宽、不碰文首声明的固定上下文（2026-11-03 实测第 1–222 行逐字节不变）。
-- **参考材料按分支拆在 `docs/agents/`**，本文件只留指针（见「深入文档」表）。**新增约束时先判断它属于哪条分支**：只对某一类工作成立的（改样式 / 改天气 / 动组件 / 改构建 / 写文章 / 跑命令）就写进对应那份，别塞回本文件——常驻上下文里的每一行都在每轮计价（2026-10-27 实测，当时预算 32KB：搬迁前本文件 247KB，运行时只注入前 32KB，样式/天气胶囊/大坑警告三节全在被截掉的那一半里）。**当前 `maxBytes` 已调到 262,144 B**（现值与改法见 `~/.dsh/AGENTS.md` §4，核验跑 `node ~/.dsh/tools/verify-maxbytes-override.mjs`）；但**这个预算由整条指令链共享，超了会从最宽泛的文件开始丢**——2026-11-03 实测链长 73,006 B、预算 65,536 B 时，全局文件被整份丢弃且无任何提示。预算调大只是把天花板抬高，没有取消「别把细则塞回这里」。
+- **本文件（`AGENTS.md`）不写会随仓库增长的计数**（ADR 份数、标签个数、模块数……）。这类现值一改就漂。需要数字时现测，别在这里留一份快照。**本文件自 2026-11-03 起已纳入格式门禁**（`lint.yml` 的 Prettier 范围含 `./*.md`，本地 pre-commit 同步覆盖仓库根的 md）；但**格式门禁不检查内容正确性**——数字写错不会因此变红，仍须实测。改动时注意：Prettier 只填充表格列宽、不碰文首声明的固定上下文（实测：格式化只改表格列宽填充，不碰 `!IMPORTANT` 以上的固定上下文；行号不写，它随增删漂移）。
+- **参考材料按分支拆在 `docs/agents/`**，本文件只留指针（见「深入文档」表）。**新增约束时先判断它属于哪条分支**：只对某一类工作成立的（改样式 / 改天气 / 动组件 / 改构建 / 写文章 / 跑命令）就写进对应那份，别塞回本文件——常驻上下文里每一行都在每轮计价。**注入预算的现值与改法不在本文件记录**（会漂）：见 `~/.dsh/AGENTS.md` §4，核验跑 `node ~/.dsh/tools/verify-maxbytes-override.mjs`；唯一要记住的是**这份预算由整条指令链共享，超了会从最宽泛的文件开始丢且无提示**。
+- **交付纪律（门禁级）**：未经允许**不 commit、不 push**，改完停在本地；只做点名的那几条，做完即停；选项选中后先讲清含义与后果再等指令。**push 到 `main` 等于生产部署**（`deploy.yml` 在 `push: branches [main]` 上触发），不是「备份一下」。 提交流程与 push 前核对见 [`docs/agents/commands.md`](docs/agents/commands.md)。
 - **写交接文档、台账或报告里的 git 状态与提交区间时**（远端状态分哪几档、历史区间怎么落死）→ `docs/agents/commands.md` 的「git 远端状态与提交区间的表述纪律」节（2026-10-30 立）。
-- **脚本往控制台打非 ASCII 会崩（2026-11-03 实测）**：本机 Windows 控制台是 GBK，Python 脚本 `print` 里带中文或 `✅` 直接抛 `UnicodeEncodeError: 'gbk' codec can't encode character '\u2705'`（复现：`print("ok \u2705")`）。本轮因此崩过两次。**规矩：脚本只打 ASCII，中文与 emoji 不进 stdout**；必须输出中文时显式 `sys.stdout.reconfigure(encoding="utf-8")` 或设 `PYTHONIOENCODING=utf-8`。长脚本一律写文件再跑（`node <file>` / `python <file>`），不塞进 `bash -c` 的 heredoc——引号与反斜杠会被吃掉（本轮实测把正则 `/^[^/]+\.md$/` 的转义吃掉，变成能匹配任意单字符的 `/^[^/]+.md$/`）。
+- **脚本输出编码、heredoc 吃掉转义等「跑命令」类坑**（Windows GBK 控制台、`print` 带 emoji 崩溃、正则转义被 shell 吃掉）→ [`docs/agents/commands.md`](docs/agents/commands.md) 的「脚本输出编码」节。本文件不再复述细节。
 
 ### Domain docs
 
@@ -280,7 +93,7 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 
 ## 文档同步（门禁级 · 每一轮变更都要做）
 
-> **为什么有这一节**：`docs/agents/` 与 `CHANGELOG.md` 是**下一个 agent（甚至下一个模型、另一个工具）唯一的上下文**。代码讲"怎么做的"，这些文档讲"为什么这么做、哪些路走过不通、哪些数字是实测的"。文档一落后，后来者就会照着过期口径改回去——本仓库已经为此付过三次代价（Pio「dev 下不渲染」的过期结论误导了一整轮排查；挂件里硬编码镜像导航宽度导致首帧错位 187px；CHANGELOG 空窗三周，2026-10-01 ~ 11-01 的九批变更事后才补）。
+> **为什么有这一节**：这些文档是下一个 agent 唯一的上下文，落后就会让后来者照过期口径改回去。这个仓库为此付过代价——具体三例与教训见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「文档同步的历史代价」节。
 
 ### 1. 硬规则
 
