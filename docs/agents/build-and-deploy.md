@@ -6,10 +6,14 @@
 
 ## 升级路线与交接（2026-11-03）
 
-完整分批顺序、已发布/仅本地提交的区别、剩余阻塞与解除条件、同输入构建 A/B 及最终发布门禁统一见[升级总计划](../plans/2026-11-03-dependency-upgrade-roadmap.md)。第三批 Svelte 与第四批 Autoprefixer 均已完成本地验收（详见下方对应条目），阶段四结束；重大版本迁移先讨论，不直接全量更新。各专项报告保留原阶段的历史结果，发布状态以总计划中的固定提交与发布证据为准。
+完整分批顺序、已发布/仅本地提交的区别、剩余阻塞与解除条件、同输入构建 A/B 及最终发布门禁统一见[升级总计划](../plans/2026-11-03-dependency-upgrade-roadmap.md)。第三批 Svelte、第四批 Autoprefixer 与第五批 KaTeX 均已完成本地验收（详见下方对应条目），阶段四结束；**阶段五的 KaTeX 已先落地，Tailwind 4 / Mermaid 12 / Satori 0.63 仍未开始**；重大版本迁移先讨论，不直接全量更新。各专项报告保留原阶段的历史结果，发布状态以总计划中的固定提交与发布证据为准。
 
 ## 构建链与依赖约束（2026-11-02 起 Astro 7）
 
+- **KaTeX 独立升级（2026-11-03）**：`katex` 精确固定 **0.19.1**（原 `^0.16.25` / 安装 0.16.47），并在 `package.json` 新增 **`"pnpm": { "overrides": { "katex": "0.19.1" } }`**。**这条 override 不是可选优化，是必需项**：`rehype-katex@7.0.1`（latest）把 katex 锚在 `^0.16.0`，对 0.x 等于 `>=0.16.0 <0.17.0`，不含 0.19.1；只升根包会让构建期 HTML（由嵌套 0.16.47 生成）输出旧类名 `.base`/`.strut`，而运行期 CSS（来自根包 0.19.1）选择新类名 `.katex-base`/`.katex-strut`，样式对不上、公式基线漂移。实测错配下 40 个真实公式样本有 **20 个几何尺寸改变**、页面 2139→2269 px、**5.02% 像素不同**。
+  **破坏性变更比评估文档多两条**：0.17.0 改内部 `__defineFunction`（本站不受影响）；**0.18.0 给 20 个内部 CSS 类加 `katex-` 前缀**（[#4229](https://github.com/KaTeX/KaTeX/pull/4229)），影响全部公式 HTML——若将来在 CSS 或内容消毒器白名单里写 KaTeX 内部类名，必须跟着改。另有 [CVE-2026-103923](https://nvd.nist.gov/vuln/detail/CVE-2026-103923)（`>=0.11.0 <0.18.2` 原型污染→XSS，0.18.2 修复），本站静态、无外部输入、未传 `trust`，实际不可利用。
+  **验收必须加一条判据（三项常规判据抓不到这类错配）**：直接数产物 HTML 里旧类名出现次数——`.base` 与 `.strut` 必须为 **0**，`.katex-base` 与 `.katex-strut` 必须非零。原因是：公式 A/B 脚本若 `import katex` 会命中根包、根本不测构建用的那一份；「字体族是否齐全」在错配下两侧都齐；「`.katex` 盒子宽高 > 0」在错配下也非零，只是高度错了。另外，`micromark-extension-math` 的包入口会 re-export `html.js`（其顶层 `import katex`），所以那份 katex 在构建期**确实会被加载**，不能当作「本站不经过」。
+  **`pnpm.overrides` 是本仓库第一次引入的机制**，它让 `rehype-katex` 与 `mermaid` 跑在超出各自声明范围的 katex 上（已获站长批准）。将来 `rehype-katex` 发布支持 katex 0.19+ 的版本后，应重新评估这条 override 是否还需要。证据见 [KaTeX 专项验收](../plans/2026-11-03-katex-upgrade.md)。
 - **Autoprefixer 独立升级（2026-11-03）**：`autoprefixer` 精确固定 **10.6.2**（原 `^10.5.4`）。10.6.x 抬高了数据依赖下限，升级**必然**联动 `browserslist 4.28.7→4.29.5`、`caniuse-lite 1.0.30001806→1.0.30001820`；本项目**没有显式 browserslist 配置**（无 `browserslist` 键、无 `.browserslistrc`），走 `defaults`，目标集因此由 **31 项变 36 项**。**实测 15 份产物 CSS 逐字节零变化、152 处前缀逐文件 0 差异**——本站用到的那些前缀属性在旧新目标集的最低版本上都需要同样前缀，前后都跨不过分界线。变量隔离实验（postcss 直处理同一份产物 CSS，旧代码+旧数据 vs 新代码+新数据）输出逐字节相同并含自检，排除了构建缓存造成的假相同。**不要把这个结论外推**：一旦本站新增使用某个处于前缀分界线附近的属性，或将来把 `defaults` 换成更保守的显式目标集，这次「数据更新零影响」就不再成立，必须重测。证据见 [Autoprefixer 专项验收](../plans/2026-11-03-autoprefixer-upgrade.md)。
 - **样式指纹 A/B 的端口陷阱（2026-11-03 实测）**：`scripts/upgrade-style-audit.mjs` 的 URL 归一化正则只匹配 `localhost:<port>`，**不匹配 `127.0.0.1:<port>`**。用两个不同端口分别 `capture` 再 `diff`，会把 `cursor: url(...)` 与 `background-image: url(...)` 里的端口号全判成差异（2026-11-03 一次性得到 15820 条假差异）。**两侧必须用同一个 `localhost:<port>`**；换端口就等于换了输入。
 - **`crypto.getRandomValues` 让语录页无法零差异判定**：`/albums/` 与 `/timeline/` 的语录块（`figure:5` 内的 `span.quote-band__char`）每次加载随机选句、逐字符宽度不同，`Math.random` 种子化也压不住。判断它是不是真噪声的方法：**对同一份构建连采两次**，若差异页集合与 A/B 的完全相同，即可归因为随机而非回归（2026-11-03 按此法把 208 条差异归零）。

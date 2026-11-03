@@ -1,5 +1,22 @@
 # 更新日志
 
+## 2026-11-03：KaTeX 升至 0.19.1，307 个公式逐条 A/B
+
+- `package.json` / `pnpm-lock.yaml` 将 `katex` 从 `^0.16.25`（安装 0.16.47）升至**精确 0.19.1**，并新增 **`pnpm.overrides: { katex: "0.19.1" }`**。其他直接依赖安装版本不变。
+- **为什么必须加 override（本次核心）**：`rehype-katex@7.0.1` 已是 latest，但它把 katex 锚在 `^0.16.0`（对 0.x 等于 `>=0.16.0 <0.17.0`，不含 0.19.1）。只升根包的话 pnpm 会给它一份嵌套的 0.16.47，于是**构建期 HTML 输出旧类名 `.base`/`.strut`、运行期 CSS 选择新类名 `.katex-base`/`.katex-strut`**，样式对不上。反证实验（真实 Chromium，40 个真实公式样本）：错配下 **20/40 几何尺寸改变**、页面 2139→2269 px、**5.02% 像素不同**；正确配对下 **0 差异**。override 把 `rehype-katex`、`mermaid`、`micromark-extension-math` 三个消费者统一到 0.19.1，`0.16.47` 目录虽仍在 store 里但无任何符号链接指向它。**这是本仓库第一次引入 `pnpm.overrides`，属超出「每批只动一个直接依赖」的决定，已获站长批准。**
+- **评估文档漏掉的破坏性变更**：原评估只记了 0.19.0 的 `strict` / `symbolNotInFont`。核对上游 CHANGELOG 后实际还有两条——0.17.0 的 `__defineFunction` 内部 API 变更（本站不受影响），以及 **0.18.0 给 20 个内部 CSS 类统一加 `katex-` 前缀**（[#4229](https://github.com/KaTeX/KaTeX/pull/4229)），后者影响全部 307 个公式的 HTML。本站实际用到其中 6 个：`katex-base` 669 次、`katex-strut` 669、`katex-sizing` 529、`katex-underline` 64、`katex-overline` 48、`katex-accent` 11。
+- 另补一条计划完全没有的：**[CVE-2026-103923](https://nvd.nist.gov/vuln/detail/CVE-2026-103923)**，KaTeX `>=0.11.0 <0.18.2` 存在原型污染→XSS（CWE-807），0.18.2 修复。当前 0.16.47 **在受影响区间内**，但本站是静态站、Markdown 由站长撰写、构建期无外部输入、`rehypeKatex` 未传 `trust`，前置条件（`Object.prototype` 被污染）无产生路径，**实际不可利用**。这是本批升级唯一的硬性收益。
+- **公式级 A/B**：全站 **307 个公式 / 4 篇文章 / 36 个内容文件**（块级 91 + 行内 216），新旧版本各渲染一次逐条比对。结果 **307/307 全部为 `class-rename-only`**：结构化变化 0、**新错误 0**、修复 0、原本报错 0。独立判据交叉验证——把两侧 HTML 的所有 `class` 属性剥掉后 **307/307 逐字节相同**，不依赖归一化逻辑自证。
+- **构建 A/B**：1322 文件对 1322，`onlyA=onlyB=59`、非 HTML 差异 **0**。59 个改名资产按文件族配对后，**57 个归一化哈希后完全相同**（mermaid 各 chunk 因 import katex chunk 的路径哈希变化而连锁改名），**真正有内容变化的只有 `katex.css`（32131→33084 B）和 `katex.js`**。156 页 HTML 差异全部是 asset 哈希引用，归一化后只剩 4 页，即 4 篇有公式的文章；这 4 页的差异**双向证明**是纯类名重命名（还原类名后逐字节相同，不还原则 4/4 全不同）。
+- **资产同源**：`_astro` 内 KaTeX 相关文件 61 个 / 21 个族，**缺失 0、新增 0**。字体族缺一个就会静默回退到系统字体、字形错但不报错，按阻断项处理。
+- **门禁**：`pnpm check` 0 errors / **0 warnings** / 6 hints；公式保护 38/38；`prettier --check ./src ./docs` 通过；`test:lib` 16/16；`test:utils` 261/261；`pnpm install --frozen-lockfile --offline` exit 0（CI 冻结锁不会红）。
+- **真实浏览器**：文章页 298 个 `.katex`、零尺寸 0、原生 MathML 298、`.katex-base`/`.katex-strut` 各 652 次而**旧类 `.base`/`.strut` 均为 0**（CSS 与 HTML 同源的直接证据）、`.katex-error` 0、横向溢出 0、`pageerror` 0、本站 `requestfailed` 0；移动端 390×900 同样 298 个公式、零溢出。加载的样式表为 `/_astro/katex.qjoI73Dg.css`。
+- **mermaid 回归**：override 把 mermaid 的 katex 也拉到 0.19.1，取图表最多的文章验证 **14/14 图表渲染成功**（14 个 `<svg>`、14 个已标记渲染、72 个节点标签、0 溢出、0 `pageerror`）。本站 99 个图表里没有一个使用 `$$…$$` 数学语法，该依赖是死代码。
+- **方法论收获（已写进构建文档）**：计划原本的三项判据**全部会绿而站点已坏**——Task 2 的公式 A/B 脚本 `import katex` 命中的是根包（恒 0.19.1）、根本不测构建用的那份；「字体族是否都在」在错配下两侧都是 61 个；「`.katex` 盒子宽高 > 0」在错配下也非零只是高度错了。补上的判据是**直接数产物 HTML 里的旧类名出现次数必须为 0**。
+- **连带传递依赖**：`katex@0.19.1` 声明 `commander: ^15.0.0`（0.16.47 是 `^8.0.0`），锁文件因此把 `commander@8.3.0` 换成 `commander@15.0.0`，`engines.node` 从 `>= 12` 抬到 **`>=22.12.0`**。已核对三处 Node：本机 24.18.0、`build.yml`/`deploy.yml` 的 Node 24 均满足；`lint.yml` 的 `node-version: 22` 由 `actions/setup-node` 解析为最新 22.x（2026-11-03 为 22.23.4）也满足。**产物不受影响**——`commander` 只被 `katex/cli.js` 用，`katex/dist/katex.js` 与 `katex.mjs` 两个库入口完全不引用它，本站也从不调用 katex 的 bin。残留风险：若把 lint.yml 钉到 22.11.0 以下或启用 `engine-strict`，安装会警告甚至失败（当前 `engine-strict` 未设置）。
+- 顺带修正：计划里的安装命令 `--store-dir .pnpm-store` 是错的，本机实际 store 在 `D:\.pnpm-store\v10`，照抄会报 `ERR_PNPM_UNEXPECTED_STORE`。
+- **未验证边界**：只验 Chromium，未在 Safari / Firefox 实机跑；未跑远端 CI、未推送、未部署；只比对了本站 307 个公式，未跑 KaTeX 官方完整语料；未测 `strict: "error"` 场景；错配反证只用了 40 个去重样本而非全部 307 个。详见 `docs/plans/2026-11-03-katex-upgrade.md`。
+
 ## 2026-11-03：四批依赖升级发布上线，线上功能验证 9/9
 
 - 推送 `93b90e7..8f19b98`（5 个提交：Astro 检查器 0.9.12、Pagefind 1.6.0、Svelte 5.57.3、Autoprefixer 10.6.2、`@swup/astro` 声明对齐），远端 `main` 现为 `8f19b98`。三个 workflow 全部 success：Lint `41592304534`、Build and Check `41592304545`、Deploy to GitHub Pages `41592304550`，headSha 均为 `8f19b98`。Linux CI 上 `Astro Check` 0 errors / 6 hints，与本机一致。
