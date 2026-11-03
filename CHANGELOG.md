@@ -1,5 +1,21 @@
 # 更新日志
 
+## 2026-11-03：Mermaid 升至 12.2.0，99 个图表逐图恢复原有尺寸
+
+- `package.json` / `pnpm-lock.yaml` 将 `mermaid` 从 `^11.17.2` 升至**精确 12.2.0**，直接依赖仅此一行变化。`pnpm add --save-exact` 实测写入 `^12.2.0`，已手工改回并重新 `pnpm install` 同步锁文件 specifier。
+- **站长已裁定接受 Safari 17.4+ 浏览器下限**（Mermaid 12 编译目标改为 ES2024，[#8213](https://github.com/mermaid-js/mermaid/pull/8213)）。**代价明确记录**：老 iOS 设备拿不到 Safari 大版本更新，这部分访客**将无法渲染本站任何图表**（99 个图 / 14 篇文章全部失效）。该下限来自编译目标，不是配置项，无法通过参数回退。
+- **四条破坏性变更逐条核对**：`ELK` 成为默认布局（[#8155](https://github.com/mermaid-js/mermaid/pull/8155)，**命中**本站 86 个未声明 layout 的 flowchart）；十种图表默认主题改 `redux-color` / look 改 `neo`（[#8148](https://github.com/mermaid-js/mermaid/pull/8148)，本站原本就显式写 `base`+`classic`，不命中但需保持显式）；移除 `defaultRenderer`（[#8211](https://github.com/mermaid-js/mermaid/pull/8211)，本站从未使用）；ES2024 要求（产品决策，见上）。
+- **`src/utils/runtime/mermaid.ts` 是本次唯一源码改动**，在 `initialize` 里新增三组钉值。除 `layout: "dagre"` 外，还发现一条**官方 CHANGELOG 未单列**的默认值变更：`flowchart.wrappingWidth` 从 **200 降到 120**、并新增 `minNodeWidth: 120`。这会让标签更早换行、节点被压窄、行数增加——实测全站 **宽度 66 个变窄 / 高度 75 个变高 / 无一变矮**，真实页图表区总高 5136px → **6009px（+17%）**。
+- **这条不是布局引擎差异，`layout: "dagre"` 挡不住**。只钉 dagre 而不处理 wrappingWidth，会让全站图表变形而**所有常规判据都绿**（渲染成功数、节点数、标签文本、溢出、pageerror 全不受影响）。修复方式：显式设回 `flowchart: { wrappingWidth: 200, minNodeWidth: 0 }` 与 `state: { wrappingWidth: 200, minNodeWidth: 0 }`；`minNodeWidth` 设 `0` 而非 120，因为 11.17.2 里该配置不存在（等价于不约束）。**类型约束**：`wrappingWidth` 不在顶层 `MermaidConfig` 也不在 `MindmapDiagramConfig`，写错位置会让 `pnpm check` 报 `ts(2353)`。
+- **恢复效果（全站 99 个图表全量，非抽样）**：宽度完全一致 **99/99**；宽高都完全一致 **96/99**；SVG 哈希与旧版逐字节相同 **89/99**（另 10 个不同中 7 个几何量完全一致）。残余 3 个为浮点取整级、视觉不可见：`#10` 高度 207→208（1px）、`#11` mindmap 403.25→404.92（1.7px）、`#44` 70.996→71（0.004px）。
+- **真实页面** `/posts/20261002081331/`（14 个图表）：块数 14、含 SVG 14、已标记渲染 14、节点标签 72、`foreignObject` 131、**图表区总高 5136px** —— 与升级前逐项相同，**14 个图表逐图宽高全部一致（14/14）**；横向溢出 0、长中文标签被裁 0、`pageerror` 0。
+- **证明 `layout: "dagre"` 确实生效**：在 mermaid 12 上对比 `dagre` 与 `elk`，**12/12 样本输出显著不同**（如 `#6` viewBox 宽 1346 vs 1296）。因此「99/99 全变」不是 dagre 失效，而是上面那条 wrappingWidth 造成。
+- **与第五批 KaTeX 的耦合已查清**：mermaid 12.2.0 声明 `katex: ^0.18.0`，与已落地的 `0.19.1` 范围冲突；但 `pnpm.overrides` 是全局的，**实测 mermaid 拿到 `katex@0.19.1` 且只有一份副本**。mermaid 只调 `katex.renderToString`，该 API 在 0.19.1 存在可用；本站 99 个图表无一使用 `$$…$$` 数学语法。
+- **对照器两次失败的教训（这批最贵的成本）**：(1) roughjs 的 `handDrawnSeed` 默认 `0` = 每次随机，导致圆角矩形贝塞尔控制点每次都变（`C-31.2`/`C-18.4`/`C-25.2`），必须固定种子；同时 webfont 分片未就绪会按回退字体度量算控制点，须按站点运行时的 `fonts.load`+`fonts.ready` 门补上。(2) **同一 page 内连续渲染 99 个图表会互相干扰**，不稳定项会在 classDiagram/gantt 之间转移；改为**每个 worker 独立 page** 后两版各自 99/99 两次渲染完全相同。不做隔离就拿不到可信基线。
+- **门禁**：`pnpm check` 0 errors / 0 warnings / 6 hints；`test:lib` 16/16（含两处视觉契约：字体就绪门、themeCSS 换行终态）；`test:utils` 261/261；`prettier --check ./src ./docs` 通过；`pnpm install --frozen-lockfile --offline` exit 0。
+- **连带传递依赖与 Node 边界**：mermaid 12 依赖栈整体换代——新增 `elkjs@0.9.3`（12 把 ELK 内置，原来要单独装 `@mermaid-js/layout-elk`；本站钉 dagre，不参与渲染）、`chevrotain` 11.1.2→13.2.0、`@mermaid-js/parser` 1.2.1→2.0.1，并**移除 `fastdom@1.0.12`**（`pnpm why fastdom` 已确认输出为空，不是遗漏）。**`mermaid@12.2.0` 要求 `node >=22.12.0`**（连同第五批带入的 `commander@15.0.0` 同要求）：本机 24.18.0、`build.yml`/`deploy.yml` 的 Node 24 均满足；`lint.yml` 的 `node-version: 22` 解析为最新 22.x（2026-11-03 为 22.23.4）也满足。**残留风险**：若把 lint.yml 钉到 22.11.0 及以下或启用 `engine-strict`，安装会警告甚至失败（当前 `engine-strict` 未设置）。
+- **未验证边界**：只验 Chromium，未在 Safari 17.4 以下实测（无法实机），也未在 Safari 17.4+ 验证渲染正确性；未跑远端 CI、未推送、未部署；未验证 ELK 布局的实际观感（本站钉回 dagre，ELK 路径从未在真实页面跑过）；mindmap 的 1.7px 差异未归因到底；只比对本站 99 个图表，未跑 mermaid 官方语料。详见 `docs/plans/2026-11-03-mermaid-upgrade.md`。
+
 ## 2026-11-03：KaTeX 升至 0.19.1，307 个公式逐条 A/B
 
 - `package.json` / `pnpm-lock.yaml` 将 `katex` 从 `^0.16.25`（安装 0.16.47）升至**精确 0.19.1**，并新增 **`pnpm.overrides: { katex: "0.19.1" }`**。其他直接依赖安装版本不变。

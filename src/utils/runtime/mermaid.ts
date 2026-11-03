@@ -112,8 +112,29 @@ export async function renderMermaid() {
 
 		mermaid.initialize({
 			startOnLoad: false,
+			// === 以下四组是 Mermaid 12 的「保住原外观」钉值，缺任何一个都会改变全站图表，不要删 ===
+			// 12.0.0 (#8155) 把 ELK 变成默认布局引擎：未声明 layout 的 flowchart / state /
+			// class / ER / requirement / use-case / agentflow 会改用 ELK 布局。本站 86 个
+			// flowchart 都没声明布局，显式钉回 dagre 保持 2026-11-03 之前的渲染结果。
+			// 改用 ELK 是视觉变更，须单独裁决并重跑全部 99 个图表的对照。
+			layout: "dagre",
+			// 12.0.0 (#8148) 把 flowchart / swimlane / class / ER / requirement / sequence /
+			// state / use-case / Venn / agentflow 这十种的默认主题改成 redux-color、look
+			// 改成 neo。本站原先显式写 theme: "base" + look: "classic"，保持不变即不受影响，
+			// 但**必须继续显式写**：一旦省略，这十种图表会自己换成新默认值。
+			// 另注：look: neo 在 base 主题下会把节点描边画成渐变，显式 base + classic 能规避。
 			theme: "base",
 			look: "classic",
+			// 12.0.0 把 flowchart / state 的文字换行宽度从 200 降到 120，并新增
+			// minNodeWidth: 120 的节点最小宽度。两者合起来让标签更早换行、节点被压窄、
+			// 行数增加，于是全站 99 个图表「宽度 66 个变窄、高度 75 个变高、无一变矮」，
+			// 页面上图表区实测变高 17%（/posts/20261002081331/ 5136px → 6009px）。
+			// 这两项不是布局引擎差异，dagre 挡不住，必须显式设回旧值。
+			// 实测跑全部 99 个图表：宽度 99/99 与 11.17.2 完全一致，宽高都一致 96/99，
+			// 残余 3 个是 0/1/1.7px 的浮点取整；SVG 哈希 89/99 与旧版逐字节相同。
+			// minNodeWidth 在 11.17.2 里不存在（等价于不约束），故设 0 而不是 120。
+			flowchart: { wrappingWidth: 200, minNodeWidth: 0 },
+			state: { wrappingWidth: 200, minNodeWidth: 0 },
 			fontFamily: bodyFont,
 			fontSize: 14,
 			themeVariables: {
