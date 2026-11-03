@@ -1,5 +1,13 @@
 # 更新日志
 
+## 2026-11-03：修正 @swup/astro 的声明偏差，触发一次 postcss 去重
+
+- `package.json` 的 `@swup/astro` 由 `^1.7.0` 改为 `^1.8.0`，与实际安装版本对齐（构建文档长期记录该偏差：lockfile 存 specifier，改 `package.json` 不改 lock 会让 CI 的 `--frozen-lockfile` 失败，因此必须连 lock 一起改并实测）。已核实 **1.8.0 就是当前 latest**，这次修改不带动任何版本解析前进。
+- **但安装后锁文件发生了超出预期的去重**：净 143 增 207 删。原因是 `@swup/astro` 的 specifier 变化让 pnpm 重算整棵依赖图，把 `postcss@8.5.25` 上下文下的那一整套副本（`cssnano` 族、`postcss-calc`/`colormin`/`minify-*` 等约 40 个包）并到了 `postcss@8.5.32` 上下文，`autoprefixer` 的 postcss peer 上下文也随之从 `8.5.25` 变为 `8.5.32`。同时 `browserslist@4.28.7`、`caniuse-lite@1.0.30001806`、`acorn@8.18.0` 等旧条目从锁文件中消失——**它们是同一批去重的副产品，不是版本倒退**：磁盘目录仍在，锁文件不再引用。
+- **已实测这次去重对产物零影响**：`pnpm list --depth 0` 直接依赖**零变化**；重新构建后与升级前基线逐字节比对，**1176 项产物完全相同、0 增 0 删**，146 个 HTML 差异剥除随机侧栏后归零；`pnpm check` 0 errors / 0 warnings / 6 hints，公式保护 38/38，格式门禁通过，浏览器 32/32。
+- `--frozen-lockfile --offline` 安装通过，CI 的冻结锁路径不受影响。
+- 这条记录的重点是：**改 specifier 不等于零风险**，它会触发依赖图重算。以后遇到同类"声明纠偏"必须像本次一样先比对 `pnpm list --depth 0` 与完整产物，不能只看 `package.json` 那一行 diff。
+
 ## 2026-11-03：Autoprefixer 升至 10.6.2，caniuse 数据更新但 CSS 零变化
 
 - `package.json` / `pnpm-lock.yaml` 将 `autoprefixer` 从 `^10.5.4` 升至**精确 10.6.2**，其他直接依赖安装版本不变（`src/` 与 `postcss.config.mjs` 零改动，`[tailwindcss/nesting, tailwindcss, autoprefixer]` 顺序保持，未连带迁 Tailwind 4）。

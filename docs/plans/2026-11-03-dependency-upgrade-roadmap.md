@@ -124,6 +124,21 @@ git diff --check
 
 ## 阶段五：其余依赖盘点与独立迁移
 
+**2026-11-03 实测盘点（第三、四批完成后）：** 站长裁定**收尾阶段五、进入发布验收**，下列跨版本项作为独立事项另排，不阻塞发布：
+
+| 项                    | 当前    | latest | 站长裁定                                        |
+| --------------------- | ------- | ------ | ----------------------------------------------- |
+| Prettier              | 3.9.8   | 3.9.10 | **继续钉死 3.9.8**，定期重查 issue              |
+| TypeScript            | 5.9.3   | 7.0.2  | 暂缓（check 与 svelte 集成 peer 只到 `^6.0.0`） |
+| Tailwind              | 3.4.19  | 4.3.4  | 暂缓（属接入方式重写，非升级）                  |
+| Mermaid               | 11.17.2 | 12.2.0 | 暂缓，逐个做、每次单独授权                      |
+| Satori                | 0.26.0  | 0.63.2 | 同上                                            |
+| KaTeX                 | 0.16.47 | 0.19.1 | 同上                                            |
+| prettier-plugin-astro | 0.14.1  | 1.1.2  | 暂缓                                            |
+| @types/node           | 24.13.3 | 26.6.6 | 保持 Node 24 类型线                             |
+
+**Prettier 仍钉 3.9.8 的硬依据**：2026-11-03 直接查询 GitHub，[issue #20199](https://github.com/prettier/prettier/issues/20199)（「Markdown regression in 3.9.9: inline math is modified after disabling singleDollarTextMath」）**状态仍为 OPEN，`closedAt` 为 null**；而 npm `latest` 就是有问题的 3.9.10。**上游至今没有可用修复版本**，不是我们拖延。
+
 - [ ] 第三、四批完成后重新保存全部直接依赖的已安装/声明/目标版本及支持范围，结合官方发布记录分类，补充本表遗漏的新版本；不凭历史表直接安装。
 - [ ] 将无变化的包记为无需升级；将低风险版本另排独立批次；以下跨版本迁移先形成具体方案和验收标准，再由站长确认实施。
 
@@ -139,7 +154,7 @@ git diff --check
 | KaTeX                 | 当前 0.16.47；历史目标 0.19.1                        | 0.x 跨 minor，公式渲染与 CSS/字体必须配套                                            | 全部公式语料解析与渲染对照，解释合法变化与旧错误，公式页真实截图/溢出、切页恢复及资源加载；不修改公式适应新错误                                                |
 | @types/node           | 当前 24.13.3；历史 latest 26.6.6                     | 保持 Node 24 类型线，不追跨主类型                                                    | 与实际 Node/CI 相匹配，具体 24.x 新版本另复核                                                                                                                  |
 
-历史查询中 typography 0.5.20、dayjs 1.11.23、@types/qrcode 1.5.6，以及 RSS 4.0.19、sitemap 3.7.4、Swup 1.8.0、sharp 0.35.5 无需升级；这不构成 2026-11-03 对 `latest` 的新查询。完整旧发布快照见[原复核报告](2026-11-02-build-system-upgrade-recheck.md)与 `output/build-upgrade-registry.json`。旧报告把 Svelte 跨 minor 写成“补丁”，本文已纠正，旧文件作为历史研究保留。
+历史查询中 typography 0.5.20、dayjs 1.11.23、@types/qrcode 1.5.6，以及 RSS 4.0.19、sitemap 3.7.4、Swup 1.8.0、sharp 0.35.5 无需升级（`@swup/astro` 的声明已于 2026-11-03 从 `^1.7.0` 对齐到 `^1.8.0`，安装版本未变）；这不构成 2026-11-03 对 `latest` 的新查询。完整旧发布快照见[原复核报告](2026-11-02-build-system-upgrade-recheck.md)与 `output/build-upgrade-registry.json`。旧报告把 Svelte 跨 minor 写成“补丁”，本文已纠正，旧文件作为历史研究保留。
 
 ## 阶段六：经授权后的发布与总验收
 
