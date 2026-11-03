@@ -20,7 +20,7 @@ export const diary: DiaryItem[] = [
 			"网站的 AI 新闻模块已移植为单独的仓库，访问速度显著提升，欢迎 Star 和 Fork。",
 	},
 	{
-		date: "2026-10-2 07:01",
+		date: "2026-10-02 07:01",
 		content: "给大伙写了点有用的东西。",
 	},
 	{
@@ -54,7 +54,7 @@ export const diary: DiaryItem[] = [
 		content: "生日撞到了六级，心情复杂ing。",
 	},
 	{
-		date: "2026-06-07 8:13",
+		date: "2026-06-07 08:13",
 		content: "绝密高考堵门2=1，浮木多的兄弟来。",
 	},
 	{
