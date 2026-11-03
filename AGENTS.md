@@ -245,9 +245,10 @@ Your agent and bash are running on:
 - **约束以「选择器 + 文件路径」为锚点**，行号只作辅助且必须写「约」。本轮 UI 整改里三次误判的根源都是拿旧行号当现值（药丸样式记录漂了约 220 行、`.prose code` 的定位两次都错）。
 - 带日期的历史实测数字**保留原样**（它们是那次测量的记录，不是当前事实）；需要当前值就重新测。
 - 无法本地复核的数字（第三方图种数量、历史构建文件数）标 `UNKNOWN` 或明确写「未复核」，不得当作改动依据。
-- **本文件（`AGENTS.md`）不写会随仓库增长的计数**（ADR 份数、标签个数、模块数……）。这类现值一改就漂，而且没有 CI 看管——`lint.yml` 只跑 `prettier --check ./src ./docs`，`AGENTS.md` 不在检查范围内。需要数字时现测，别在这里留一份快照。
-- **参考材料按分支拆在 `docs/agents/`**，本文件只留指针（见「深入文档」表）。**新增约束时先判断它属于哪条分支**：只对某一类工作成立的（改样式 / 改天气 / 动组件 / 改构建 / 写文章 / 跑命令）就写进对应那份，别塞回本文件——本文件只有 32KB 的注入预算，塞满了后面 87% 的内容会**永远进不了任何 agent 的上下文**（2026-10-27 实测：搬迁前本文件 247KB，运行时只注入前 32KB，样式/天气胶囊/大坑警告三节全在被截掉的那一半里）。
+- **本文件（`AGENTS.md`）不写会随仓库增长的计数**（ADR 份数、标签个数、模块数……）。这类现值一改就漂。需要数字时现测，别在这里留一份快照。**本文件自 2026-11-03 起已纳入格式门禁**（`lint.yml` 的 Prettier 范围含 `./*.md`，本地 pre-commit 同步覆盖仓库根的 md）；但**格式门禁不检查内容正确性**——数字写错不会因此变红，仍须实测。改动时注意：Prettier 只填充表格列宽、不碰文首声明的固定上下文（2026-11-03 实测第 1–222 行逐字节不变）。
+- **参考材料按分支拆在 `docs/agents/`**，本文件只留指针（见「深入文档」表）。**新增约束时先判断它属于哪条分支**：只对某一类工作成立的（改样式 / 改天气 / 动组件 / 改构建 / 写文章 / 跑命令）就写进对应那份，别塞回本文件——常驻上下文里的每一行都在每轮计价（2026-10-27 实测，当时预算 32KB：搬迁前本文件 247KB，运行时只注入前 32KB，样式/天气胶囊/大坑警告三节全在被截掉的那一半里）。**当前 `maxBytes` 已调到 262,144 B**（现值与改法见 `~/.dsh/AGENTS.md` §4，核验跑 `node ~/.dsh/tools/verify-maxbytes-override.mjs`）；但**这个预算由整条指令链共享，超了会从最宽泛的文件开始丢**——2026-11-03 实测链长 73,006 B、预算 65,536 B 时，全局文件被整份丢弃且无任何提示。预算调大只是把天花板抬高，没有取消「别把细则塞回这里」。
 - **写交接文档、台账或报告里的 git 状态与提交区间时**（远端状态分哪几档、历史区间怎么落死）→ `docs/agents/commands.md` 的「git 远端状态与提交区间的表述纪律」节（2026-10-30 立）。
+- **脚本往控制台打非 ASCII 会崩（2026-11-03 实测）**：本机 Windows 控制台是 GBK，Python 脚本 `print` 里带中文或 `✅` 直接抛 `UnicodeEncodeError: 'gbk' codec can't encode character '\u2705'`（复现：`print("ok \u2705")`）。本轮因此崩过两次。**规矩：脚本只打 ASCII，中文与 emoji 不进 stdout**；必须输出中文时显式 `sys.stdout.reconfigure(encoding="utf-8")` 或设 `PYTHONIOENCODING=utf-8`。长脚本一律写文件再跑（`node <file>` / `python <file>`），不塞进 `bash -c` 的 heredoc——引号与反斜杠会被吃掉（本轮实测把正则 `/^[^/]+\.md$/` 的转义吃掉，变成能匹配任意单字符的 `/^[^/]+.md$/`）。
 
 ### Domain docs
 
@@ -265,17 +266,17 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 
 本仓库的参考材料按分支拆开了。**命中下面哪一条，就去读那一份**；别把整份 AGENTS.md 背下来。
 
-| 触发条件 | 读哪份 |
-| --- | --- |
-| 查 Colorful 原版某功能本站怎么实现的 / 动主题行为 | `docs/agents/emlog-mapping.md` |
-| 改任何样式、token、组件类名 | `docs/agents/styles.md` |
-| 改天气胶囊、天气判据、天气取数 | `docs/agents/weather-capsule.md` |
-| 动客户端脚本、Swup 生命周期、看板娘、Nice Books、评论/表情/统计 | `docs/agents/components.md` |
-| 改构建链、依赖、部署，或**动 remark/rehype 插件**（不删 content layer 缓存会构建出旧 HTML 且无报错） | `docs/agents/build-and-deploy.md` |
-| 写文章、把外部 Markdown 导进来、生成头图 | `docs/agents/post-authoring.md` |
-| 跑烟测 / 单测 / 构建期取数 / 票册自检（每条命令的 env 形态与坑） | `docs/agents/commands.md`（含冒烟台子 `makeHarness` / base URL 结尾斜杠 / `norm` 聚合三条承重契约） |
-| 领域术语与 ADR | `GLOSSARY.md`、`docs/adr/` |
-| issue 规范、标签 | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md` |
+| 触发条件                                                                                             | 读哪份                                                                                              |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| 查 Colorful 原版某功能本站怎么实现的 / 动主题行为                                                    | `docs/agents/emlog-mapping.md`                                                                      |
+| 改任何样式、token、组件类名                                                                          | `docs/agents/styles.md`                                                                             |
+| 改天气胶囊、天气判据、天气取数                                                                       | `docs/agents/weather-capsule.md`                                                                    |
+| 动客户端脚本、Swup 生命周期、看板娘、Nice Books、评论/表情/统计                                      | `docs/agents/components.md`                                                                         |
+| 改构建链、依赖、部署，或**动 remark/rehype 插件**（不删 content layer 缓存会构建出旧 HTML 且无报错） | `docs/agents/build-and-deploy.md`                                                                   |
+| 写文章、把外部 Markdown 导进来、生成头图                                                             | `docs/agents/post-authoring.md`                                                                     |
+| 跑烟测 / 单测 / 构建期取数 / 票册自检（每条命令的 env 形态与坑）                                     | `docs/agents/commands.md`（含冒烟台子 `makeHarness` / base URL 结尾斜杠 / `norm` 聚合三条承重契约） |
+| 领域术语与 ADR                                                                                       | `GLOSSARY.md`、`docs/adr/`                                                                          |
+| issue 规范、标签                                                                                     | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md`                                      |
 
 ## 文档同步（门禁级 · 每一轮变更都要做）
 
@@ -291,19 +292,19 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 
 ### 2. 改什么 → 必须同步哪一份
 
-| 这轮改了什么 | 必须同步 |
-| --- | --- |
-| 任何用户可见的行为 / 视觉 / 交互 | `CHANGELOG.md`（新条目，日期在最新一条之上）+ 相关 `docs/agents/*.md` |
-| 样式、token、类名、层叠值、光标 | `docs/agents/styles.md`（层叠关系表是契约，改值前先核对） |
-| 客户端脚本、Swup 生命周期、layout 级组件 | `docs/agents/components.md`（含"新增客户端代码必须遵守"的协议条） |
-| 构建链、依赖、部署、remark/rehype 插件 | `docs/agents/build-and-deploy.md` |
-| 命令 / env 形态 / 烟测判据条数 / 已知坑 | `docs/agents/commands.md` |
-| 领域术语、称呼、"它是什么不是什么" | `GLOSSARY.md`（`_Avoid_` 行也要跟着改） |
-| 难以回退、有真实取舍、令人意外的决定 | 新建 `docs/adr/NNNN-*.md`（按序编号，不记份数）；**改了某个 ADR 的决定**就写新 ADR 并在开头写明替代谁，旧 ADR 保留为历史 |
-| 天气判据 / 取数 | `docs/agents/weather-capsule.md` |
-| 文章写法、外部 Markdown 导入、头图 | `docs/agents/post-authoring.md` |
-| issue / 标签规范 | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md` |
-| 本文件里的事实（工具名、命令、路径、协议、约束） | **本文件**；只改「项目背景」以下的可编辑区，上面的固定上下文一个字都不许动（见文首 `!IMPORTANT`） |
+| 这轮改了什么                                     | 必须同步                                                                                                                 |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| 任何用户可见的行为 / 视觉 / 交互                 | `CHANGELOG.md`（新条目，日期在最新一条之上）+ 相关 `docs/agents/*.md`                                                    |
+| 样式、token、类名、层叠值、光标                  | `docs/agents/styles.md`（层叠关系表是契约，改值前先核对）                                                                |
+| 客户端脚本、Swup 生命周期、layout 级组件         | `docs/agents/components.md`（含"新增客户端代码必须遵守"的协议条）                                                        |
+| 构建链、依赖、部署、remark/rehype 插件           | `docs/agents/build-and-deploy.md`                                                                                        |
+| 命令 / env 形态 / 烟测判据条数 / 已知坑          | `docs/agents/commands.md`                                                                                                |
+| 领域术语、称呼、"它是什么不是什么"               | `GLOSSARY.md`（`_Avoid_` 行也要跟着改）                                                                                  |
+| 难以回退、有真实取舍、令人意外的决定             | 新建 `docs/adr/NNNN-*.md`（按序编号，不记份数）；**改了某个 ADR 的决定**就写新 ADR 并在开头写明替代谁，旧 ADR 保留为历史 |
+| 天气判据 / 取数                                  | `docs/agents/weather-capsule.md`                                                                                         |
+| 文章写法、外部 Markdown 导入、头图               | `docs/agents/post-authoring.md`                                                                                          |
+| issue / 标签规范                                 | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md`                                                           |
+| 本文件里的事实（工具名、命令、路径、协议、约束） | **本文件**；只改「项目背景」以下的可编辑区，上面的固定上下文一个字都不许动（见文首 `!IMPORTANT`）                        |
 
 ### 3. `CHANGELOG.md` 的写法
 
@@ -376,4 +377,3 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 
 - 原始 Emlog 主题 `D:\pages\limh.me` 的 `module.php` 含 `/e` 修饰符 eval 漏洞、`function/favicon.php`/`image.php` 是开放代理——不可搬回本项目
 - 图片等静态资源都放 `public/` 直接引用，不走 Astro 的 import 管线
-

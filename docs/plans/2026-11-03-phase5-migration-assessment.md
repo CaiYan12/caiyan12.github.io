@@ -131,7 +131,7 @@ await satori(template, { width: 1200, height: 630, fonts });
 ---
 
 > **2026-11-03 后续裁定**：本评估覆盖的四项里，**KaTeX（第五批）与 Mermaid（第六批）已完成验收并随 `1073945` 推送上线**，详见 [KaTeX 专项](2026-11-03-katex-upgrade.md)、[Mermaid 专项](2026-11-03-mermaid-upgrade.md)。
-> **Tailwind 与 Satori 不在依赖升级会话内推进**，已移交独立工作流，登记在 `README.md` TODO 区的「进行中」分组（第 499 行起）。理由：两者复杂度已超出「接在后面顺手做」的范围（Tailwind 是接入方式重写、Satori 无上游书面依据），适合专门跑一次 `/grill-spec-tickets-implement`。**本文件对这两项的评估仍有效，作为那份工作流的输入。**
+> **Tailwind 与 Satori 不在依赖升级会话内推进**，已移交独立工作流，登记在 [README 的「进行中」分组](../../README.md#进行中)。理由：两者复杂度已超出「接在后面顺手做」的范围（Tailwind 是接入方式重写、Satori 无上游书面依据），适合专门跑一次 `/grill-spec-tickets-implement`。**本文件对这两项的评估仍有效，作为那份工作流的输入。**
 
 ## 建议执行顺序与理由
 

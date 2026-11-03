@@ -225,7 +225,7 @@ Linux CI 上 `Astro Check` 报 **0 errors / 6 hints**，与本机一致；构建
 
 - [x] ~~阶段五剩余 2 类跨版本迁移（Tailwind 4 / Satori 0.63）~~ **2026-11-03 站长裁定：移交独立工作流，不在依赖升级会话内推进。**
       **KaTeX 已于第五批（本地提交 `c5b622f`）、Mermaid 已于第六批（本地提交 `a9f4913`）完成验收并随 `1073945` 推送上线**，见 [KaTeX 专项](2026-11-03-katex-upgrade.md)、[Mermaid 专项](2026-11-03-mermaid-upgrade.md)。
-      **Tailwind 4 与 Satori 0.63 已登记到 `README.md` TODO 区的「进行中」分组（第 499 行起，Tailwind 与 Satori 条目均已标注「移交独立工作流」）**，理由是复杂度已超出「接在依赖升级后面顺手做」的范围：Tailwind 属接入方式重写且会推翻既有的 `@layer` 文档结论；Satori 跨 33 个 minor、上游无 CHANGELOG。两项适合专门跑一次 `/grill-spec-tickets-implement` 工作流。本计划的 Task 11-16 原文降级为**后续工作流的调研输入**，不再是执行清单。
+      **Tailwind 4 与 Satori 0.63 已登记到 [README 的「进行中」分组](../../README.md#进行中)（Tailwind 与 Satori 条目均已标注「移交独立工作流」）**，理由是复杂度已超出「接在依赖升级后面顺手做」的范围：Tailwind 属接入方式重写且会推翻既有的 `@layer` 文档结论；Satori 跨 33 个 minor、上游无 CHANGELOG。两项适合专门跑一次 `/grill-spec-tickets-implement` 工作流。本计划的 Task 11-16 原文降级为**后续工作流的调研输入**，不再是执行清单。
 - [ ] Prettier 卡在 3.9.8，上游 issue #20199 仍 OPEN、npm latest 3.9.10 即有问题版本，**无可用修复版本**。
 
 - [ ] 用户明确授权发布后，落死发布 SHA 与待发布固定提交范围；再次直接查询远端，核对是否有他人变更，保留无关工作。

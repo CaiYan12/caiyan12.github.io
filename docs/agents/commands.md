@@ -16,6 +16,12 @@
 
 Pagefind 当前固定 1.6.0；`pnpm exec pagefind --site dist` 需要在 Astro 构建之后运行，并完整发布该次 `dist/pagefind/` 的脚本、WASM 与分片。升级比较应使用完整 API 结果，本站 UI 的 12 条上限不能代替命中总量；31 组查询、桌面/移动 UI 与分片失败重试的 A/B 方法见 [Pagefind 专项验收](../plans/2026-11-02-pagefind-upgrade.md)。
 
+**KaTeX 类名判据已接进 `pnpm build`（2026-11-03 立）**：`scripts/verify-katex-classes.mjs`（`pnpm test:katex-classes`）扫 `dist/**/*.html`，要求旧类名 `base`/`strut` 为 **0**、新类名 `katex-base`/`katex-strut` **非零**；两侧全零也判失败（否则 Markdown 管线坏掉时会空转通过）。它排在 `astro build` 之后、`inject-buddha-banner` 之前，因此 **`pnpm build` 与 CI 的 `Build and Check`、`Deploy to GitHub Pages` 两条路径都会执行**，不需要单独改 workflow。判据为什么必须存在见 [构建链文档](build-and-deploy.md) 的 KaTeX 条目：版本错配下渲染成功数、字体族、`.katex` 盒子宽高**三项常规判据全部照绿**，只有类名与几何尺寸能看出来。类名匹配必须按 **class 属性逐 token 精确切分**，不能用 `\bbase\b` 之类的词边界——`katex-base`、`skills-donut-segment-base`、`text-base` 都会命中制造假阳性（2026-11-03 实测全站 230 个 HTML 里精确计数为 0）。
+
+**线上验收脚本已入库（2026-11-03 立）**：`pnpm verify:live [baseUrl]`（29 条判据：部署身份、微言、KaTeX、Mermaid、移动端）与 `pnpm verify:live:swup [baseUrl]`（文档级 Swup 接管证明）。两者可用参数改指 preview 或本地站，内部约定 base URL 不带结尾斜杠。**来源**：它们原先是 gitignore 的 `output/live-verify*.mjs`，与产物一起在下次会话蒸发；判据值钱、脚本不该跟着删。移植时把写死的 `D:/pages/myblog` 改成 `createRequire(new URL("../package.json", import.meta.url))` 锚到仓库根，因此换机器、换检出目录都能跑。
+
+**实机烟测为什么不进 CI——这是取舍，不是遗漏（2026-11-03 立）**：`smoke:ui`、`test:fancybox`、`smoke:console`、`test:console`、`smoke:series`、`smoke:skills`、`smoke:pelican`、`smoke:nice-books`、`qa:nice-books-geometry`、`qa:weather-mainland` 等约 250 条判据**都不在 CI 里，而且不应被当成待补的 backlog**。原因是结构性的，不是偷懒：① 它们共用 `scripts/lib/smoke-harness.mjs`，该模块 `import { chromium } from "playwright"` 并真的 `chromium.launch()`（脚本自身不写 `import playwright` 不代表不用浏览器，2026-11-03 实测在无 server 下跑 `smoke:console` 直接 `browser.newContext: Target page, context or browser has been closed`）；② 每条都要求**先 `pnpm build` 再起 preview**，因为断言落在真实页面的计算样式与 DOM 上；③ 接入意味着 CI 每次要装 Chromium、跑完整构建、起 server，单次数分钟起。**现有 CI 的分工是有意的**：`build.yml` 的 `Astro Build` 只在 PR 跑一次真实构建，`lint.yml` 只做格式与公式保护，纯 node 单元测试串在 `pnpm build` 里。要跑实机验证就在本地按上面各条的 env 形态手动跑，或对线上跑 `pnpm verify:live`。**不要因为「CI 三项全绿」就认为升级没有回归**——250 条实机判据一条都没跑。
+
 `pnpm check` 的检查器现固定为 `@astrojs/check` 0.9.12。使用 `pnpm exec astro check --watch --preserveWatchOutput` 时，新增文件需要重新运行单次检查或重启 watch：2026-11-02 在旧版 0.9.10 和新版 0.9.12 均复现当前监听诊断清单未纳入新文件；已有文件修改可检出错误并在修正后清零。该限制与本次升级的验证边界见 [检查器专项验收](../plans/2026-11-02-astro-check-upgrade.md)。
 
 ```bash

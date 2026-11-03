@@ -43,7 +43,10 @@ const staged = stagedRaw
 // 2) Scope: src/ + docs/ only, same as CI. Everything else exits fast — the
 //    Prettier requirement below only applies when there IS something to check.
 const inScope = staged.filter(
-	(f) => f.startsWith("src/") || f.startsWith("docs/"),
+	(f) =>
+		f.startsWith("src/") ||
+		f.startsWith("docs/") ||
+		/^[^/]+\.md$/.test(f),
 );
 if (inScope.length === 0) process.exit(0);
 

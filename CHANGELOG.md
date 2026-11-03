@@ -1,5 +1,24 @@
 # 更新日志
 
+## 2026-11-03：根目录 Markdown 纳入格式门禁，README 章节引用改为可校验锚点，emlog 大表加分区索引
+
+- **根目录四个 Markdown 此前不在任何格式检查范围内**。`lint.yml` 与 `format` 脚本的范围都是 `./src ./docs`，而 `README.md` / `CHANGELOG.md` / `AGENTS.md` / `GLOSSARY.md` 在仓库根，天然落在范围外，`.prettierignore` 里也没有它们——是**遗漏**而非有意豁免。实测只有 `AGENTS.md` 不达标（README / CHANGELOG / GLOSSARY 一直干净）。现已把 `./*.md` 加进 `lint.yml` 的 Prettier 步骤、`package.json` 的 `format` 脚本，以及 `.githooks/pre-commit.mjs` 的暂存范围（正则 `/^[^/]+\.md$/`，只认仓库根那层；已用 8 个边界用例验过 `README-amd`、`READMExmld` 不会误命中，带目录的 md 仍由原有 `src/` `docs/` 分支覆盖）。
+- **`AGENTS.md` 格式化不动只读区**。文件第 223 行有 `!IMPORTANT` 标记声明其上为只读固定上下文。实测 Prettier 的改动全部落在第 268 行之后：24 行是表格列宽填充、2 行是把分隔行 `| --- | --- |` 拉长成横线，**渲染结果不变**；第 1–222 行逐字节比对一致后才执行。这个前提必须先验：若哪天 Prettier 开始往只读区里塞填充，格式化就变成违规操作。
+- **README 章节引用从散文改成锚点链接（5 处）**。原先写作 `` `README.md` TODO 区的「进行中」分组（第 499 行起）``，有两种失效方式：(a) 标题被改名或合并时引用悄然落空（本次会话早前就发生过，`b36d841` 才修好 5 处）；(b) 硬编码行号必然漂移。改为指向 `#进行中` 的锚点链接（`docs/` 下的文件按自身深度写相对路径，如 `../../README.md#进行中`），行号一并删除。**这是可校验与不可校验的分界**：散文引用任何链接检查器都看不见，锚点引用能被扫出来。用锚点校验脚本扫全仓 87 个 md，6 条锚点链接（含本批新增 5 条）**0 处失效**。
+- **`docs/agents/emlog-mapping.md` 加「怎么读这份」分区索引**。该文件 124 KB 却只有 28 行：19 行超过 2 000 字符、最长单行约 8 KB，而 `AGENTS.md` 的指针把任何「主题行为」问题都导向它，整份读进来等于塞满上下文。现在文件头有 17 行索引表（功能名 + 关键词），按功能名直达。**索引刻意不写行号**：本次会话里行号被改坏两次（插入整段索引后整体 +26、Prettier 删一个空行后整体 -1，17 条全部偏移）。实测 17 个功能名在正文里**全部唯一**，按名字搜即可定位，行号纯属负担。正文 18 个长行与改动前**逐字节一致**，本次只做插入。
+- **踩坑记录（写下来防重犯）**：识别正文表格行时，先用「列数 ≥ 5」当判据——错。该表是 **4 列**（只有含 `\|` 的鹈鹕骑车行是 6 列），判据只命中 1 行，还把文件第一行标题覆盖成了乱码。教训：**先看清文件真实结构，再写判据**，不能拿猜出来的判据去断言文件。修复走 `git show HEAD:<path>` 取回原始 blob 重建，未使用 `git checkout --`（被安全策略拦下后未绕过）。
+- 验证：`pnpm exec prettier --check ./src ./docs ./*.md`（与 CI 同一条命令）全绿；`pnpm test:prettier-math` 38/38；`pnpm check` 0 errors / 0 warnings / 6 hints；锚点校验 6/6；`pnpm test:katex-classes` 通过。
+
+## 2026-11-03：KaTeX 类名判据接入构建链，线上验收脚本入库
+
+- **KaTeX 版本错配从「文档里一句话」变成可执行判据**。新增 `scripts/verify-katex-classes.mjs`（`pnpm test:katex-classes`），扫 `dist/**/*.html`，要求旧类名 `base`/`strut` 为 **0**、新类名 `katex-base`/`katex-strut` **非零**；**两侧全零也判失败**，避免 Markdown 管线坏掉时空转通过。它插在 `package.json` 的 `build` 链 `astro build` 之后、`inject-buddha-banner` 之前，因此 `pnpm build` 与 CI 的 `Build and Check`、`Deploy to GitHub Pages` 两条路径自动执行，**没有新增 workflow 步骤**。
+- **为什么必须有这条判据**：0.19.1 那批升级里，`rehype-katex@7.0.1` 的 `katex: ^0.16.0` 会把旧版 katex 嵌成构建期实际使用的那一份，产物输出旧类名而运行期 CSS 选新类名。**三项常规判据在这种错配下全部照绿**——公式渲染成功数、字体族齐全、`.katex` 盒子宽高 > 0 都正常，只有几何尺寸与像素比对能看出来（实测 40 个样本 20 个尺寸改变、页面 2139→2269px、5.02% 像素不同）。当时靠手工 grep 拦下，没有任何自动化兜底。
+- **匹配方式必须是 class 属性逐 token 精确切分**，不能用 `\bbase\b` 词边界：`katex-base`、`skills-donut-segment-base`、`text-base` 都会命中制造假阳性（2026-11-03 实测全站 230 个 HTML 里精确计数为 0，模糊匹配则非零）。
+- **实测证据（2026-11-03，本机 Node 24.18.0 / Windows 11）**：四条路径逐一验过——真实 `astro build` 产物 **230 个 HTML，旧类名 0、新类名 1338**（`katex-base` 669 + `katex-strut` 669）→ exit 0；把整份 dist 的类名替换回旧名 → **exit 1**，并指名 `pnpm.overrides`；无公式的空产物 → exit 1；`dist` 不存在 → exit 1。另验 `inject-buddha-banner` 在其后仍正常注入 230/230、注入后类名计数不受横幅影响。
+- **线上验收脚本从 gitignore 里收进仓库**：`pnpm verify:live [baseUrl]`（29 条判据，静态 `rec()` 调用点数与实测 29/29 一致）与 `pnpm verify:live:swup [baseUrl]`（document 级 Swup 接管证明）。原先它们是 `output/live-verify*.mjs`，而 `output/` 整体在 `.gitignore` 里，下次会话只能重写。移植时把写死的 `D:/pages/myblog` 改成 `createRequire(new URL("../package.json", import.meta.url))`，换机器、换检出目录都能跑；两个脚本都支持传 base URL 改指 preview 或本地站。**一次性对照器不移植**：`render-diagrams2.mjs`、`compare.mjs` 自述「一次性工具，不入库」，`config-diff.mjs`、`extract-formulas.mjs` 同理，仍留在 `output/`。
+- **纠正一条会主动误导人的指令**：`docs/agents/build-and-deploy.md` 原写「本地安装须带项目内 store `pnpm add --store-dir .pnpm-store`」，而其括号里又称 storeDir 是 `<repo>/.pnpm-store/v10`。实测 `node_modules/.modules.yaml` 与 `pnpm store path` 都是 **`D:\.pnpm-store\v10`**，store 不在仓库内；仓库根那个 `.pnpm-store/`（921 MB）是历史残留副本。照旧文档执行会拿到 `ERR_PNPM_UNEXPECTED_STORE`（本轮实际踩到），裸跑 `pnpm add` 才对。已改为明确「不要传 `--store-dir`」并附真实路径。
+- 验证命令：`pnpm test:katex-classes` / `pnpm exec prettier --check ./src ./docs` / `pnpm check`（0 errors / 0 warnings / 6 hints）。细节点评见 `docs/agents/commands.md` 的三条新条目。
+
 ## 2026-11-03：KaTeX 与 Mermaid 两批升级发布上线，线上 38 项验证通过
 
 - 站长明确授权后推送 `fb6c888..1073945`（4 个提交：KaTeX 0.19.1、Mermaid 12.2.0、README TODO 整理 + Tailwind/Satori 移交、微言时间戳补零），远端 `main` 现为 `1073945`。三个 workflow 全部 success：Lint `41614751792`、Build and Check `41614751694`、Deploy to GitHub Pages `41614751862`，headSha 均为 `1073945`。Linux CI 上 `Astro Check` 0 errors / 6 hints，与本机一致；构建日志确认装的正是 **`katex 0.19.1` 与 `mermaid 12.2.0`**，证明锁文件与 `pnpm.overrides` 在 Linux 同样生效。
