@@ -1,5 +1,13 @@
 # 更新日志
 
+## 2026-11-03：KaTeX 与 Mermaid 两批升级发布上线，线上 38 项验证通过
+
+- 站长明确授权后推送 `fb6c888..1073945`（4 个提交：KaTeX 0.19.1、Mermaid 12.2.0、README TODO 整理 + Tailwind/Satori 移交、微言时间戳补零），远端 `main` 现为 `1073945`。三个 workflow 全部 success：Lint `41614751792`、Build and Check `41614751694`、Deploy to GitHub Pages `41614751862`，headSha 均为 `1073945`。Linux CI 上 `Astro Check` 0 errors / 6 hints，与本机一致；构建日志确认装的正是 **`katex 0.19.1` 与 `mermaid 12.2.0`**，证明锁文件与 `pnpm.overrides` 在 Linux 同样生效。
+- **线上实测 38 项全部通过**（真实 Chromium 打 `https://caiyan12.github.io`）：KaTeX 298 公式、**旧类 `.base`/`.strut` 计数均为 0 而新类 652**（CSS 与 HTML 同源、无版本错配的直接证据）、零 `katex-error`、零溢出、零 pageerror；Mermaid **14/14 图表渲染**、节点标签 72、**图表区总高 5136px**（与本地恢复值完全一致，证明 `wrappingWidth: 200` / `minNodeWidth: 0` 钉值在线上同样生效）；微言新条目在 `/diary/` 与首页侧栏均出现且排首位、日期 `11月3日`/`15:35`；搜索「看板娘」2 条、「Astro」12 条；Swup 确证接管（document 实例存活、`visit:start` 触发 1 次、未整页刷新）；移动端 390×900 同样 298 公式零溢出。
+- **部署身份仍用平台无关证据**：`Last-Modified: 09:56:19 GMT` 晚于部署完成时间，CSS 资源名 `katex.qjoI73Dg.css` 与本地构建完全相同。**不要改用 JS chunk 哈希或 Pagefind 索引哈希判定**——两者平台相关，Windows 与 Linux 必然不同。
+- **本轮踩到的探针缺陷（都是探针错、不是站点错，写下来防重犯）**：① 搜索选择器 `a[href*="/posts/"]` 会命中导航与侧栏，两次查询都返回 48 条相同结果，**看起来像搜索坏了**，真实结果在 `.search-panel ul li`；② 搜索面板是独立页 `/search/`（`client:only="svelte"`），不在首页；③ 搜索**不由输入触发**，组件只在 `form` 提交或 URL `?keyword=` 时检索，单纯改 `input` 值不会触发、界面会一直停在「没有找到」，走 URL 参数才稳定；④ Swup 探针必须在 `window.swup.navigate` 可用**之后**再埋，否则首次加载会把它换掉、表现为 `alive=null` 的假失败；`framenavigated +1` 是 Playwright 对 `history.pushState` 的判定伪影，改用 document 级标记（整页刷新必换 `document` 实例）才能定论；⑤ 本地 `dist/pagefind/` 为空**不代表线上索引缺失**，那只是本地未跑 `pagefind` 的状态，线上以 CI 日志与 `pagefind-entry.json`（`zh-cn` 28 页）为准。
+- 文档同步：`docs/plans/2026-11-03-dependency-upgrade-roadmap.md` 阶段一状态表把第三至第六批从「仅本地」改为「已发布」并写死 SHA；阶段六新增「第二轮发布」节记录本次 run 与线上判据；两份专项报告的「未推送 / 未跑远端 CI」陈述已改为已发布事实。提升后的 TODO 区整理见上一条。
+
 ## 2026-11-03：Mermaid 升至 12.2.0，99 个图表逐图恢复原有尺寸
 
 - `package.json` / `pnpm-lock.yaml` 将 `mermaid` 从 `^11.17.2` 升至**精确 12.2.0**，直接依赖仅此一行变化。`pnpm add --save-exact` 实测写入 `^12.2.0`，已手工改回并重新 `pnpm install` 同步锁文件 specifier。

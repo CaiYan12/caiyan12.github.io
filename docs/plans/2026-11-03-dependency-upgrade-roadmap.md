@@ -31,16 +31,16 @@
 
 ## 阶段一：已经完成的工作
 
-| 状态       | 批次                                     | 固定提交 / 详细证据                                                                                                                                                                                                                                                                                                                                                            |
-| ---------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [x] 已发布 | AI News 收尾、Astro 7 六包联动及回归修复 | `a42a170c5b1f60fcee870c67aa50a3505d4ef780`；[初轮](2026-11-02-astro7-upgrade.md)、[收口](2026-11-02-astro7-followup.md)、[迁移收尾](2026-11-02-ai-news-closeout.md)                                                                                                                                                                                                            |
-| [x] 已发布 | Prettier 3.9.8 与公式保护门禁            | `93b90e7b1cac2ab0518da55612fda6a61dce0883`；[专项报告](2026-11-02-prettier-upgrade.md)；发布证据 `output/prettier-release/final.json`                                                                                                                                                                                                                                          |
-| [x] 仅本地 | 第一批 `@astrojs/check` 0.9.10→0.9.12    | `7bcea01474549f76ee4df45e084a7772ddd63388`；[专项报告](2026-11-02-astro-check-upgrade.md)                                                                                                                                                                                                                                                                                      |
-| [x] 仅本地 | 第二批 Pagefind 1.5.2→1.6.0              | `23a924ddfe82ac53b4801ac7d76300cb842ed330`；[专项报告](2026-11-02-pagefind-upgrade.md)                                                                                                                                                                                                                                                                                         |
-| [x] 仅本地 | 第三批 Svelte 5.56.8→5.57.3              | [专项报告](2026-11-03-svelte-upgrade.md)；本批是 `main` 上紧跟 `23a924d`（第二批 Pagefind）之后的独立本地提交，未推送；需要现值就 `git log --oneline -2`                                                                                                                                                                                                                       |
-| [x] 仅本地 | 第四批 Autoprefixer 10.5.4→10.6.2        | [专项报告](2026-11-03-autoprefixer-upgrade.md)；本批是 `main` 上紧跟第三批之后的独立本地提交，未推送；需要现值就 `git log --oneline -3`                                                                                                                                                                                                                                        |
-| [x] 仅本地 | 第五批 KaTeX 0.16.47→0.19.1              | [专项报告](2026-11-03-katex-upgrade.md)；紧跟第四批之后的独立本地提交，未推送；**本批新增 `pnpm.overrides: { katex: "0.19.1" }`**（`rehype-katex@7.0.1` 只声明 `^0.16.0`，不加会让构建期 HTML 与运行期 CSS 的类名错配）；需要现值就 `git log --oneline -2`                                                                                                                     |
-| [x] 仅本地 | 第六批 Mermaid 11.17.2→12.2.0            | [专项报告](2026-11-03-mermaid-upgrade.md)；紧跟第五批之后的独立本地提交，未推送；**本批在 `src/utils/runtime/mermaid.ts` 加了四组钉值**（`layout: "dagre"` / `theme: "base"`+`look: "classic"` / `flowchart`+`state` 的 `wrappingWidth: 200, minNodeWidth: 0`），缺任何一个都会静默改变全站 99 个图表外观；站长已裁定接受 Safari 17.4+ 下限；需要现值就 `git log --oneline -1` |
+| 状态       | 批次                                     | 固定提交 / 详细证据                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [x] 已发布 | AI News 收尾、Astro 7 六包联动及回归修复 | `a42a170c5b1f60fcee870c67aa50a3505d4ef780`；[初轮](2026-11-02-astro7-upgrade.md)、[收口](2026-11-02-astro7-followup.md)、[迁移收尾](2026-11-02-ai-news-closeout.md)                                                                                                                                                                                                                           |
+| [x] 已发布 | Prettier 3.9.8 与公式保护门禁            | `93b90e7b1cac2ab0518da55612fda6a61dce0883`；[专项报告](2026-11-02-prettier-upgrade.md)；发布证据 `output/prettier-release/final.json`                                                                                                                                                                                                                                                         |
+| [x] 仅本地 | 第一批 `@astrojs/check` 0.9.10→0.9.12    | `7bcea01474549f76ee4df45e084a7772ddd63388`；[专项报告](2026-11-02-astro-check-upgrade.md)                                                                                                                                                                                                                                                                                                     |
+| [x] 仅本地 | 第二批 Pagefind 1.5.2→1.6.0              | `23a924ddfe82ac53b4801ac7d76300cb842ed330`；[专项报告](2026-11-02-pagefind-upgrade.md)                                                                                                                                                                                                                                                                                                        |
+| [x] 已发布 | 第三批 Svelte 5.56.8→5.57.3              | [专项报告](2026-11-03-svelte-upgrade.md)；随 `1073945` 一并推送（`deploy.yml` 的 push 触发即生产部署），发布证据见阶段六                                                                                                                                                                                                                                                                      |
+| [x] 已发布 | 第四批 Autoprefixer 10.5.4→10.6.2        | [专项报告](2026-11-03-autoprefixer-upgrade.md)；随 `1073945` 一并推送，发布证据见阶段六                                                                                                                                                                                                                                                                                                       |
+| [x] 已发布 | 第五批 KaTeX 0.16.47→0.19.1              | [专项报告](2026-11-03-katex-upgrade.md)；本地提交 `c5b622f`，随 `1073945` 一并推送。**本批新增 `pnpm.overrides: { katex: "0.19.1" }`**（`rehype-katex@7.0.1` 只声明 `^0.16.0`，不加会让构建期 HTML 与运行期 CSS 的类名错配）。线上验证：298 公式、旧类 `.base`/`.strut` 均为 0、新类 652                                                                                                      |
+| [x] 已发布 | 第六批 Mermaid 11.17.2→12.2.0            | [专项报告](2026-11-03-mermaid-upgrade.md)；本地提交 `a9f4913`，随 `1073945` 一并推送。**本批在 `src/utils/runtime/mermaid.ts` 加了四组钉值**（`layout: "dagre"` / `theme: "base"`+`look: "classic"` / `flowchart`+`state` 的 `wrappingWidth: 200, minNodeWidth: 0`），缺任何一个都会静默改变全站 99 个图表外观；站长已裁定接受 Safari 17.4+ 下限。线上验证：14/14 图表渲染、图表区总高 5136px |
 
 2026-11-03 13:01（Asia/Shanghai）交接核对：`git status --short` 为空，以上 Pagefind 提交为本地 HEAD；`git ls-remote --heads origin main` 直接查询仍返回 `93b90e7b1cac2ab0518da55612fda6a61dce0883`。这是查询时点事实，不是对未来远端的保证。本轮后续新增的文档修改另看工作区 diff。
 
@@ -193,10 +193,38 @@ Linux CI 上 `Astro Check` 报 **0 errors / 6 hints**，与本机一致；构建
 
 **已知边界**：线上导航用 `waitUntil:"load"` 会超时（第三方播放器拖住 load 事件），改用 `domcontentloaded` 后正常——这是既有环境问题，与本次升级无关。第三方播放器与视频站资源在测试中被主动 abort，不计入本站失败判据。
 
+### 第二轮发布（2026-11-03 18:4x Asia/Shanghai）：KaTeX + Mermaid
+
+**站长授权后执行**：`git push origin main` 推送 `fb6c888..1073945`（4 个本地提交），远端 `main` 现为 `10739459b7e98ab440b180f45e5c97ba8463c423`。
+
+| Workflow               | Run ID        | 结论    | headSha   |
+| ---------------------- | ------------- | ------- | --------- |
+| Lint                   | `41614751792` | success | `1073945` |
+| Build and Check        | `41614751694` | success | `1073945` |
+| Deploy to GitHub Pages | `41614751862` | success | `1073945` |
+
+Linux CI 上 `Astro Check` 报 **0 errors / 6 hints**，与本机一致；构建日志确认安装的是 **`katex 0.19.1`、`mermaid 12.2.0`**（证明锁文件与 `pnpm.overrides` 在 Linux 上同样生效），Pagefind `Indexed 28 pages / 47583 words`。部署后响应头 `Last-Modified: Tue, 03 Nov 2026 09:56:19 GMT`，晚于部署完成时间；CSS 资源名 `katex.qjoI73Dg.css` 与本地构建**完全相同**（仍是平台无关证据）。
+
+**线上实测 38 项全部通过**（真实 Chromium 打 `https://caiyan12.github.io`）：
+
+- **KaTeX（第五批）**：文章页 **298 个公式**、零尺寸公式 0、原生 MathML 298、**`.katex-base`/`.katex-strut` 各 652 而旧类 `.base`/`.strut` 均为 0**（这是 CSS 与 HTML 同源、无版本错配的直接证据）、`katex-error` 0、横向溢出 0、`pageerror` 0；移动端 390×900 同样 298 公式、零溢出。
+- **Mermaid（第六批）**：`/posts/20261002081331/` **14/14 图表渲染成功**、节点标签 72、`foreignObject` 131、**图表区总高 5136px**（与本地恢复后的值完全一致，证明 `wrappingWidth: 200` / `minNodeWidth: 0` 钉值在 Linux/线上同样生效）、零溢出、零 pageerror。
+- **微言**：新条目在 `/diary/` 与首页侧栏均出现，且**排在旧条目之前**（`diary.map` 按数组顺序渲染，无排序代码，头位是必要条件）；日期渲染 `11月3日` / `15:35`；补零修正的两条外观未变（`10月2日` / `08:13`）。
+- **搜索**：`/search/` 页「看板娘」2 条、「Astro」12 条、两次结果不同、空态正常。
+- **Swup**：document 实例标记存活、window 状态未清空、`visit:start` 钩子触发 1 次 —— 确证客户端接管、未整页刷新。
+
+**本轮验证踩到的探针缺陷（全部是探针错，不是站点错，记下来防重犯）**：
+
+1. 搜索选择器写成 `a[href*="/posts/"]`，会命中文档导航与侧栏，两次查询都返回 48 条相同结果，**看起来像搜索坏了**。真实结果在 `.search-panel ul li`。
+2. 搜索面板是**独立页 `/search/`**（`client:only="svelte"`），不在首页；在首页等 `.search-panel` 必然超时。
+3. 搜索**不由输入触发**——组件只在 `form` 提交或 URL `?keyword=` 时检索（见 `src/components/Scout` 相关源码 `submit` / `onMount`）。单纯改 `input` 值（含 `input.type()`）不会触发，界面会一直停在「没有找到」。走 URL 参数是组件原生支持的稳定路径。
+4. Swup 判定：在 Swup 初始化**之前**写 `window` 探针，首次加载会把它换掉，表现为 `alive=null` 的假失败。必须先等 `window.swup.navigate` 可用再埋点。另 `framenavigated +1` 是 Playwright 对 `history.pushState` 的判定伪影，改用 document 级标记（整页刷新必然替换 `document` 实例）才能准确定论。
+5. 本地 `dist/pagefind/` 为空**不代表线上索引缺失**——那是本地只跑了 `astro build` 未跑 `pagefind` 的状态；线上索引以 CI 日志与 `/pagefind/pagefind-entry.json`（`zh-cn`、28 页）为准。
+
 ### 待办（未完成，需站长决定）
 
 - [x] ~~阶段五剩余 2 类跨版本迁移（Tailwind 4 / Satori 0.63）~~ **2026-11-03 站长裁定：移交独立工作流，不在依赖升级会话内推进。**
-      **KaTeX 已于第五批（本地提交 `c5b622f`）、Mermaid 已于第六批（本地提交 `a9f4913`）完成本地验收，均未推送**，见 [KaTeX 专项](2026-11-03-katex-upgrade.md)、[Mermaid 专项](2026-11-03-mermaid-upgrade.md)。
+      **KaTeX 已于第五批（本地提交 `c5b622f`）、Mermaid 已于第六批（本地提交 `a9f4913`）完成验收并随 `1073945` 推送上线**，见 [KaTeX 专项](2026-11-03-katex-upgrade.md)、[Mermaid 专项](2026-11-03-mermaid-upgrade.md)。
       **Tailwind 4 与 Satori 0.63 已登记到 `README.md` 的「待办（依赖跨版本迁移，需独立工作流排期）」**，理由是复杂度已超出「接在依赖升级后面顺手做」的范围：Tailwind 属接入方式重写且会推翻既有的 `@layer` 文档结论；Satori 跨 33 个 minor、上游无 CHANGELOG。两项适合专门跑一次 `/grill-spec-tickets-implement` 工作流。本计划的 Task 11-16 原文降级为**后续工作流的调研输入**，不再是执行清单。
 - [ ] Prettier 卡在 3.9.8，上游 issue #20199 仍 OPEN、npm latest 3.9.10 即有问题版本，**无可用修复版本**。
 
