@@ -11,6 +11,9 @@
 - **先测噪声底线再判 A/B**。同版本连做两次构建，本仓库的非 HTML 产物应逐字节 0 差异，HTML 差异全部集中在侧栏「文章推荐」随机块（2026-11-03 实测 146/230 个 HTML 有差异、剥除后 0 差异）。不先量这条底线，就无法区分「升级造成的差异」与「构建自身的随机噪声」。
 - **归一化 `_astro` 资源名要覆盖两种分隔形式**：Rollup 默认产物是 `<name>-<HASH>.ext`，而 Astro/Vite 的 island chunk 是 `<name>.<HASH>.ext`。只处理前者会把 156 个 HTML 全部误报成差异（2026-11-03 实际踩过），补上点分形式后降到 0。
 
+- **样式指纹 A/B 两侧必须用同一个 `localhost:<端口>`**：`scripts/upgrade-style-audit.mjs` 第 307 行的归一化正则只匹配 `localhost:\d+`，**不匹配 `127.0.0.1:\d+`**。用两个不同端口采集再 `diff`，会把 `cursor: url(...)`、`background-image: url(...)` 里的端口号判成整页差异（2026-11-03 一次得到 15820 条假差异）。另外 `capture` 全量 23 页约需 5–8 分钟，属长任务，按纪律放后台跑。
+- **判「随机噪声」还是「真回归」：对同一份构建连采两次**。`crypto.getRandomValues` 会让 `/albums/`、`/timeline/` 的语录块（`figure:5` 内 `span.quote-band__char` 逐字符宽度）每次不同。若「升级前后 A/B」的差异页集合与「同一构建两次」的差异页集合**完全一致**，即为随机噪声；不一致才需要继续查。
+
 Pagefind 当前固定 1.6.0；`pnpm exec pagefind --site dist` 需要在 Astro 构建之后运行，并完整发布该次 `dist/pagefind/` 的脚本、WASM 与分片。升级比较应使用完整 API 结果，本站 UI 的 12 条上限不能代替命中总量；31 组查询、桌面/移动 UI 与分片失败重试的 A/B 方法见 [Pagefind 专项验收](../plans/2026-11-02-pagefind-upgrade.md)。
 
 `pnpm check` 的检查器现固定为 `@astrojs/check` 0.9.12。使用 `pnpm exec astro check --watch --preserveWatchOutput` 时，新增文件需要重新运行单次检查或重启 watch：2026-11-02 在旧版 0.9.10 和新版 0.9.12 均复现当前监听诊断清单未纳入新文件；已有文件修改可检出错误并在修正后清零。该限制与本次升级的验证边界见 [检查器专项验收](../plans/2026-11-02-astro-check-upgrade.md)。

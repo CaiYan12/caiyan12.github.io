@@ -38,6 +38,7 @@
 | [x] 仅本地 | 第一批 `@astrojs/check` 0.9.10→0.9.12    | `7bcea01474549f76ee4df45e084a7772ddd63388`；[专项报告](2026-11-02-astro-check-upgrade.md)                                                                           |
 | [x] 仅本地 | 第二批 Pagefind 1.5.2→1.6.0              | `23a924ddfe82ac53b4801ac7d76300cb842ed330`；[专项报告](2026-11-02-pagefind-upgrade.md)                                                                              |
 | [x] 仅本地 | 第三批 Svelte 5.56.8→5.57.3              | [专项报告](2026-11-03-svelte-upgrade.md)；本批是 `main` 上紧跟 `23a924d`（第二批 Pagefind）之后的独立本地提交，未推送；需要现值就 `git log --oneline -2`            |
+| [x] 仅本地 | 第四批 Autoprefixer 10.5.4→10.6.2        | [专项报告](2026-11-03-autoprefixer-upgrade.md)；本批是 `main` 上紧跟第三批之后的独立本地提交，未推送；需要现值就 `git log --oneline -3`                             |
 
 2026-11-03 13:01（Asia/Shanghai）交接核对：`git status --short` 为空，以上 Pagefind 提交为本地 HEAD；`git ls-remote --heads origin main` 直接查询仍返回 `93b90e7b1cac2ab0518da55612fda6a61dce0883`。这是查询时点事实，不是对未来远端的保证。本轮后续新增的文档修改另看工作区 diff。
 
@@ -104,18 +105,22 @@ git diff --check
 
 验收标准：只有该直接包升级；已有行为与视觉无未解释回归；必要编译差异有清单；每个异常说明是否旧版已存在。Svelte 5 官方仍支持旧 `on:event` 语法；生命周期清理返回值和挂载时机以[生命周期文档](https://svelte.dev/docs/svelte/lifecycle-hooks)、[迁移指南](https://svelte.dev/docs/svelte/v5-migration-guide)、[命令式 API](https://svelte.dev/docs/svelte/svelte#mount)为参考。本次交接用 Context7 `/sveltejs/svelte` 复核这些约定，不表示已验证目标版本。
 
-## 阶段四：第四批 Autoprefixer
+## 阶段四：第四批 Autoprefixer（已完成，仅本地）
+
+**状态：** [x] 2026-11-03 完成本地验收并本地提交（未推送）。专项报告与完整证据见 [Autoprefixer 专项验收](2026-11-03-autoprefixer-upgrade.md)。
+
+**结果摘要：** `autoprefixer` 由 `^10.5.4` 改为**精确 10.6.2**。升级**必然**联动 `browserslist 4.28.7→4.29.5`、`caniuse-lite 1.0.30001806→1.0.30001820`，目标集由 31 项变 36 项。**但 15 份产物 CSS 逐字节零变化**，前缀普查 152 处逐文件 0 差异——本站用到的前缀属性在旧新目标集的最低版本上都需要同样前缀。变量隔离实验（postcss 直处理同一 CSS，旧代码+旧数据 vs 新代码+新数据）输出逐字节相同并有自检。全产物 1176 项逐字节相同、0 增删；样式指纹 21/23 页完全相同，余下 2 页差异经「同构建两次」自检证明是语录 `crypto.getRandomValues` 随机噪声。Check 0/0/6，公式 38/38，浏览器 32/32。
 
 **范围 / 文件：** `package.json`、`pnpm-lock.yaml`；本批专项计划、CHANGELOG、本文及构建/样式/命令文档。默认保留 `postcss.config.mjs`、`tailwind.config.cjs`、`src/styles/global.css` 和 `src/nice-books/styles/books.css`。
 
 **输入 / 输出：** 输入为上一批已验收构建，当前安装 Autoprefixer 10.5.4；2026-11-02 查得目标 10.6.2。输出为仅升级该包及必要传递依赖的 CSS 差异与浏览器报告。
 
-- [ ] 核对目标发布说明、PostCSS peer、项目实际 browserslist 解析；保存解析结果及旧 CSS，不猜测默认浏览器集合。
-- [ ] 按共用流程精确升级；记录 browserslist / caniuse 数据是否随锁变化，保留 `[tailwindcss/nesting, tailwindcss, autoprefixer]` 顺序，不连带迁 Tailwind 4。
-- [ ] 同输入构建，逐项解释前缀、规则删除/新增、压缩或排序变化；若 CSS 无差异也如实记录，不强造变化。
-- [ ] 用样式审计脚本和真实浏览器核对主站与 Nice Books：正文/代码/公式、导航/侧栏、搜索、图片与布局；视口与窄屏状态沿用既有契约。
-- [ ] 根据实际目标浏览器与变化规则确定是否需 Firefox/WebKit 等补验；缺少环境则明确未验证边界，不将 Chromium 通过写成全浏览器通过。
-- [ ] 检查、截图与相关烟测通过后同步文档，独立本地提交。
+- [x] 核对目标发布说明、PostCSS peer、项目实际 browserslist 解析；保存解析结果及旧 CSS，不猜测默认浏览器集合。
+- [x] 按共用流程精确升级；记录 browserslist / caniuse 数据是否随锁变化，保留 `[tailwindcss/nesting, tailwindcss, autoprefixer]` 顺序，不连带迁 Tailwind 4。
+- [x] 同输入构建，逐项解释前缀、规则删除/新增、压缩或排序变化；若 CSS 无差异也如实记录，不强造变化。
+- [x] 用样式审计脚本和真实浏览器核对主站与 Nice Books：正文/代码/公式、导航/侧栏、搜索、图片与布局；视口与窄屏状态沿用既有契约。
+- [x] 根据实际目标浏览器与变化规则确定是否需 Firefox/WebKit 等补验；缺少环境则明确未验证边界，不将 Chromium 通过写成全浏览器通过。
+- [x] 检查、截图与相关烟测通过后同步文档，独立本地提交。
 
 ## 阶段五：其余依赖盘点与独立迁移
 

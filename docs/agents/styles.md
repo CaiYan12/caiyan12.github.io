@@ -6,6 +6,15 @@
 
 （本文由 `AGENTS.md` 的「样式约定」一节迁出；内容逐字保留。）
 
+## 前缀与 Autoprefixer（2026-11-03 实测）
+
+- 前端构建链是 `postcss.config.mjs` 的 `[postcssNesting(), tailwindcss(), autoprefixer()]`，顺序是承重契约，别改。**Autoprefixer 现固定 10.6.2**。
+- **本项目没有显式 browserslist 配置**（`package.json` 无 `browserslist` 键、无 `.browserslistrc`），Autoprefixer 走 `defaults`。2026-11-03 实测：`browserslist@4.28.7` 解析 **31 项**，升级到 `4.29.5` 后解析 **36 项**。
+- **该次数据更新对本站产物 CSS 零影响**：15 份产物 CSS 逐字节相同，152 处前缀（`-webkit-` 86 / `-o-` 33 / `-moz-` 32 / `-ms-` 1）逐文件 0 差异。原因不是数据没生效，而是本站用到的前缀属性在旧、新目标集的**最低版本上都需要同样前缀**（`object-fit`、`user-select`、`text-size-adjust`、`appearance`、`line-clamp`、`column-gap`、`tab-size`、`mask-image`、`tap-highlight-color`、`print-color-adjust`）。
+- **别把这条结论当永久保证**：新增使用某个处在前缀分界线附近的属性、或将来把 `defaults` 换成显式保守目标集，都会让「零影响」失效。改动 CSS 后若想确认前缀，直接看 `dist/_astro/*.css` 而不是推演。
+- `public/` 下 7 份 CSS（`domain/css/*`、`giscus-theme.css`、`pio/static/pio.css`、`pagefind/*.css`）**不经过 Autoprefixer**，它们有前缀变化属异常，应查来源而不是改构建配置。
+- 验证样式没漂移用 `scripts/upgrade-style-audit.mjs`；两个坑见 `docs/agents/commands.md`（两侧必须同端口 `localhost`；语录块随机需同构建两次自检）。
+
 ## 样式
 
 - **AI 日报样式已迁出（2026-11-02 收尾）**：根 `tailwind.config.cjs` 不再保留日报的 `--t-*` 色板、字体与圆角映射；Nice Books 继续使用既有 `--nb-*` / `nb.` 命名空间。主站样式与独立日报项目分别维护，历史评估中的日报 token 不构成本站配置要求。

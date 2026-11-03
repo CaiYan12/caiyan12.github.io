@@ -1,5 +1,17 @@
 # 更新日志
 
+## 2026-11-03：Autoprefixer 升至 10.6.2，caniuse 数据更新但 CSS 零变化
+
+- `package.json` / `pnpm-lock.yaml` 将 `autoprefixer` 从 `^10.5.4` 升至**精确 10.6.2**，其他直接依赖安装版本不变（`src/` 与 `postcss.config.mjs` 零改动，`[tailwindcss/nesting, tailwindcss, autoprefixer]` 顺序保持，未连带迁 Tailwind 4）。
+- **本批不是「只改一行版本号」**：10.6.x 抬高了数据依赖下限，升级必然联动 `browserslist 4.28.7→4.29.5`、`caniuse-lite 1.0.30001806→1.0.30001820`。本项目**没有显式 browserslist 配置**（走 `defaults`），解析出的目标集因此从 **31 项变成 36 项**（`chrome 150→156`、`safari 26.5→27`、`firefox 152→159` 等，19 项移出、24 项移入）。
+- **但产物 CSS 逐字节零变化**：15 份 CSS 全部 SHA-256 一致（含 8 份走构建管线的 `_astro/*.css` 与 7 份 `public/` 直拷贝），厂商前缀普查也完全一致——152 处（`-webkit-` 86 / `-o-` 33 / `-moz-` 32 / `-ms-` 1），逐文件 0 差异。原因是本站用到的前缀属性（`object-fit`、`user-select`、`text-size-adjust`、`appearance`、`line-clamp`、`column-gap`、`tab-size`、`mask-image` 等）在旧、新目标集的**最低版本上都需要同样前缀**，前后都跨不过那条分界线。不是数据没生效，是这些属性恰好落在稳定区间。
+- **变量隔离实验**排除了「构建缓存导致假相同」：用 `postcss` 直接处理同一份产物 CSS，A 组（旧代码+旧数据，31 目标）与 B 组（新代码+新数据，36 目标）输出**逐字节相同**，并含「同版本重复跑必须一致」的自检。一次失败尝试备查：把旧目标集喂给新 caniuse 数据会报 `Unknown version 156 of android`——目标集版本号必须与对应数据匹配，跨版本混搭技术上不成立。
+- 同输入构建 A/B：两侧均 229 页 / 230 HTML / 28 篇索引；全产物 **1176 项逐字节相同、0 增 0 删**，146 个 HTML 差异全部来自侧栏随机推荐，剥除后 **0 差异**。
+- **样式指纹 A/B**（`scripts/upgrade-style-audit.mjs`，23 页逐元素计算样式）：**21/23 页完全相同**（含三页 Nice Books 与文章页、404）；仅 `/albums/`、`/timeline/` 两页有 208 条差异，且**全部落在同一个 `figure:5` 语录块内**（`span.quote-band__char` 逐字符宽度）。对**同一份构建**再采一次自检，差异页集合与 A/B **完全相同**，证明这是 `crypto.getRandomValues` 的语录随机噪声，与升级无关。
+- **踩坑记录**：`upgrade-style-audit.mjs` 的 URL 归一化只匹配 `localhost:<port>`，**不匹配 `127.0.0.1:<port>`**；首次用两个不同端口采集时 diff 出 15820 条假差异（全是 `cursor`/`background-image` 里的端口号），统一端口重采后归零。
+- `pnpm check` 0 errors / 0 warnings / 6 hints，公式保护 38/38，格式门禁通过，`test:lib` 16/16、`test:utils` 261/261；浏览器验收沿用 32 条判据打本批产物 **32/32**（两视口 pageerror、本站 requestfailed、非资源类 console.error 均为 0）。
+- 只验证 Chromium（前缀集合零变化，跨浏览器风险与升级前等同）；未跑远端 CI 或部署。方法与证据见 `docs/plans/2026-11-03-autoprefixer-upgrade.md`。
+
 ## 2026-11-03：Svelte 升至 5.57.3，浏览器判据升级前后逐条一致
 
 - `package.json` / `pnpm-lock.yaml` 将 `svelte` 从安装版 5.56.8 升至**精确 5.57.3**（跨 minor），其他直接依赖安装版本不变。锁文件 36 增 36 删，范围为 svelte 自身、其平台无关传递依赖（`@sveltejs/acorn-typescript`、`acorn`、`devalue`、`esrap`、`@jridgewell/sourcemap-codec`）与四处 peer 重绑定；未联动 Astro、`@astrojs/svelte`、Prettier 插件本体或 Pagefind。

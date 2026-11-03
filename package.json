@@ -62,7 +62,7 @@
 		"@tailwindcss/typography": "^0.5.19",
 		"astro": "7.4.4",
 		"astro-expressive-code": "0.44.3",
-		"autoprefixer": "^10.5.4",
+		"autoprefixer": "10.6.2",
 		"dayjs": "^1.11.23",
 		"gsap": "3.15.0",
 		"hastscript": "^9.0.1",

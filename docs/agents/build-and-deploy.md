@@ -6,9 +6,13 @@
 
 ## 升级路线与交接（2026-11-03）
 
-完整分批顺序、已发布/仅本地提交的区别、剩余阻塞与解除条件、同输入构建 A/B 及最终发布门禁统一见[升级总计划](../plans/2026-11-03-dependency-upgrade-roadmap.md)。第三批 Svelte 已完成本地验收（详见下方「Svelte 独立升级」条），下一批为 Autoprefixer；重大版本迁移先讨论，不直接全量更新。各专项报告保留原阶段的历史结果，发布状态以总计划中的固定提交与发布证据为准。
+完整分批顺序、已发布/仅本地提交的区别、剩余阻塞与解除条件、同输入构建 A/B 及最终发布门禁统一见[升级总计划](../plans/2026-11-03-dependency-upgrade-roadmap.md)。第三批 Svelte 与第四批 Autoprefixer 均已完成本地验收（详见下方对应条目），阶段四结束；重大版本迁移先讨论，不直接全量更新。各专项报告保留原阶段的历史结果，发布状态以总计划中的固定提交与发布证据为准。
 
 ## 构建链与依赖约束（2026-11-02 起 Astro 7）
+
+- **Autoprefixer 独立升级（2026-11-03）**：`autoprefixer` 精确固定 **10.6.2**（原 `^10.5.4`）。10.6.x 抬高了数据依赖下限，升级**必然**联动 `browserslist 4.28.7→4.29.5`、`caniuse-lite 1.0.30001806→1.0.30001820`；本项目**没有显式 browserslist 配置**（无 `browserslist` 键、无 `.browserslistrc`），走 `defaults`，目标集因此由 **31 项变 36 项**。**实测 15 份产物 CSS 逐字节零变化、152 处前缀逐文件 0 差异**——本站用到的那些前缀属性在旧新目标集的最低版本上都需要同样前缀，前后都跨不过分界线。变量隔离实验（postcss 直处理同一份产物 CSS，旧代码+旧数据 vs 新代码+新数据）输出逐字节相同并含自检，排除了构建缓存造成的假相同。**不要把这个结论外推**：一旦本站新增使用某个处于前缀分界线附近的属性，或将来把 `defaults` 换成更保守的显式目标集，这次「数据更新零影响」就不再成立，必须重测。证据见 [Autoprefixer 专项验收](../plans/2026-11-03-autoprefixer-upgrade.md)。
+- **样式指纹 A/B 的端口陷阱（2026-11-03 实测）**：`scripts/upgrade-style-audit.mjs` 的 URL 归一化正则只匹配 `localhost:<port>`，**不匹配 `127.0.0.1:<port>`**。用两个不同端口分别 `capture` 再 `diff`，会把 `cursor: url(...)` 与 `background-image: url(...)` 里的端口号全判成差异（2026-11-03 一次性得到 15820 条假差异）。**两侧必须用同一个 `localhost:<port>`**；换端口就等于换了输入。
+- **`crypto.getRandomValues` 让语录页无法零差异判定**：`/albums/` 与 `/timeline/` 的语录块（`figure:5` 内的 `span.quote-band__char`）每次加载随机选句、逐字符宽度不同，`Math.random` 种子化也压不住。判断它是不是真噪声的方法：**对同一份构建连采两次**，若差异页集合与 A/B 的完全相同，即可归因为随机而非回归（2026-11-03 按此法把 208 条差异归零）。
 
 - **Svelte 独立升级（2026-11-03）**：`svelte` 精确固定 **5.57.3**（原 `^5.45.5` / 安装 5.56.8），跨 minor。`@astrojs/svelte` 9.1.2、`@sveltejs/vite-plugin-svelte` 7.3.1、`svelte2tsx` 0.7.63、`prettier-plugin-svelte` 4.1.1 本体均未动，只做了 peer 重绑定。**本站 Svelte 语法面很窄**：全仓 `.svelte` 文件里没有任何 `on:` 指令，`Search.svelte` 用属性式 `onsubmit={submit}`、`Pio.svelte` 无 DOM 事件绑定，因此「legacy 事件指令兼容性」这类风险对本站不适用；两个组件都用 `onMount` 与 `bind:`。同输入 A/B 中非 HTML 且非 Svelte chunk 的产物逐字节 0 差异，156 个 HTML 归一化资源哈希后 0 差异；两版编译器实际 SSR `render()` 出的 HTML 逐字节相同。**这次升级不带来安全收益**（OSV 最高 fixed 版本 5.55.7 < 5.56.8），别把它写成安全修复。证据见 [Svelte 专项验收](../plans/2026-11-03-svelte-upgrade.md)。
 - **依赖升级必须是精确版本**：本仓库对逐个升级的包一律写成不带 `^` 的固定版本（`astro: "7.4.4"`、`pagefind: "1.6.0"`、`prettier: "3.9.8"`、`@astrojs/check: "0.9.12"`、`svelte: "5.57.3"`）。注意 `pnpm add --save-exact <pkg>@<ver>` 之外还要复核写进去的 specifier——2026-11-03 实测 `pnpm add --save-exact svelte@5.57.3` 写入的是 `^5.57.3`，需手工改回并重新 `pnpm install` 让锁文件 specifier 跟着变；只改 `package.json` 不改锁会让 `--frozen-lockfile` 直接失败。
