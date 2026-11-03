@@ -156,7 +156,45 @@ git diff --check
 
 历史查询中 typography 0.5.20、dayjs 1.11.23、@types/qrcode 1.5.6，以及 RSS 4.0.19、sitemap 3.7.4、Swup 1.8.0、sharp 0.35.5 无需升级（`@swup/astro` 的声明已于 2026-11-03 从 `^1.7.0` 对齐到 `^1.8.0`，安装版本未变）；这不构成 2026-11-03 对 `latest` 的新查询。完整旧发布快照见[原复核报告](2026-11-02-build-system-upgrade-recheck.md)与 `output/build-upgrade-registry.json`。旧报告把 Svelte 跨 minor 写成“补丁”，本文已纠正，旧文件作为历史研究保留。
 
-## 阶段六：经授权后的发布与总验收
+## 阶段六：经授权后的发布与总验收（已发布）
+
+**2026-11-03 已发布。** 站长明确授权推送后执行：`git push origin main` 推送 `93b90e7..8f19b98`（5 个本地提交），远端 `main` 现为 `8f19b980085e24534659d966d67007a866a5c205`。
+
+### 发布证据（查询时点 2026-11-03 14:5x Asia/Shanghai）
+
+| Workflow               | Run ID        | 结论    | headSha   |
+| ---------------------- | ------------- | ------- | --------- |
+| Lint                   | `41592304534` | success | `8f19b98` |
+| Build and Check        | `41592304545` | success | `8f19b98` |
+| Deploy to GitHub Pages | `41592304550` | success | `8f19b98` |
+
+Linux CI 上 `Astro Check` 报 **0 errors / 6 hints**，与本机一致；构建日志确认安装的是 `svelte 5.57.3`、`autoprefixer 10.6.2`、`pagefind 1.6.0`，Pagefind 索引 28 页 / 47574 词，与本机逐项相同。
+
+### 线上验证
+
+**部署身份（关键方法论修正）**：最初想用「JS chunk 哈希是否等于本地」判部署身份，结果三个 chunk 全部对不上（本地 `Pio.sk4GzkC6.js`，线上 `Pio.CS2Sx7XP.js`）。**这不是部署没生效，而是判据选错了**——JS chunk 的内容寻址哈希与 Pagefind 索引哈希都是**平台相关**的，Windows 与 Linux 构建必然不同。改用平台无关证据后全部对上：
+
+- **CSS 资源名两侧完全一致**：`Layout.BkMsQfIt.css`、`MainGridLayout.CKaYaVTj.css`、`katex.BPpMaF0t.css`、`noto-sans-sc.WH83ST03.css`。
+- **页面可见文本逐字节一致**：6 个代表页中 5 页文本 + CSS 全 match。
+- **唯一差异是 6/6 的 `/about/`**：线上 GitHub 贡献日历 1912 次 / 连续 17 天，本地 1881 次 / 连续 16 天。这是 CI 构建链里的 `fetch-github-contributions.mjs` 实时抓取造成的，**恰好是「线上是本次新构建」的正面证据**，不是回归。
+- **Svelte 运行时特征字符串计数两侧完全一致**：`svelte` 19 次、`state_unsafe_mutation` 1 次、`each_key_duplicate` 1 次 —— 同一 Svelte 版本。
+- **CSS 作用域 hash 一致**：线上 Pio 容器类是 `svelte-a15wih`，与本地编译产物相同。
+
+**线上功能实测 9/9 通过**（真实 Chromium 打 `https://caiyan12.github.io`）：
+
+- 搜索：Svelte 岛完成水合（`astro-island` 无 `ssr` 属性）、中文「看板娘」2 条、英文「Astro」12 条。
+- Swup：点搜索结果切页**未整页刷新**（`window` 标记存活），后退后关键词与结果恢复。
+- 公式：文章页 **298 个 KaTeX**，首个公式盒 734×20 且含原生 MathML；截图确认 `p(Q) = a − bQ, a > 0, b > 0` 排版正确。
+- 看板娘：`window.Paul_Pio` 存在、1 个 `.pio-container`、1 个 `#pio` canvas。
+- 移动端 390×900：搜索 12 条、零横向溢出。
+- 两视口 `pageerror` 与本站 `requestfailed` **均为 0**。
+
+**已知边界**：线上导航用 `waitUntil:"load"` 会超时（第三方播放器拖住 load 事件），改用 `domcontentloaded` 后正常——这是既有环境问题，与本次升级无关。第三方播放器与视频站资源在测试中被主动 abort，不计入本站失败判据。
+
+### 待办（未完成，需站长决定）
+
+- [ ] 阶段五剩余 4 类跨版本迁移（Tailwind 4 / Mermaid 12 / Satori 0.63 / KaTeX 0.19）——站长已定「逐个做、每次单独授权」。
+- [ ] Prettier 卡在 3.9.8，上游 issue #20199 仍 OPEN、npm latest 3.9.10 即有问题版本，**无可用修复版本**。
 
 - [ ] 用户明确授权发布后，落死发布 SHA 与待发布固定提交范围；再次直接查询远端，核对是否有他人变更，保留无关工作。
 - [ ] 按实际改动运行相关项目测试、完整 `pnpm build` 联网链、check、公式、格式与主站 AI News 边界；审阅联网生成数据变化，不把它混进此前 A/B 结论。

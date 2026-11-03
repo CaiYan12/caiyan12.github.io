@@ -1,5 +1,14 @@
 # 更新日志
 
+## 2026-11-03：四批依赖升级发布上线，线上功能验证 9/9
+
+- 推送 `93b90e7..8f19b98`（5 个提交：Astro 检查器 0.9.12、Pagefind 1.6.0、Svelte 5.57.3、Autoprefixer 10.6.2、`@swup/astro` 声明对齐），远端 `main` 现为 `8f19b98`。三个 workflow 全部 success：Lint `41592304534`、Build and Check `41592304545`、Deploy to GitHub Pages `41592304550`，headSha 均为 `8f19b98`。Linux CI 上 `Astro Check` 0 errors / 6 hints，与本机一致。
+- **部署身份判定踩了一个方法论坑**：最初用「线上 JS chunk 哈希是否等于本地」判定，三个 chunk 全部对不上（本地 `Pio.sk4GzkC6.js`、线上 `Pio.CS2Sx7XP.js`），差点误判成部署没生效。**真因是 JS chunk 的内容寻址哈希与 Pagefind 索引哈希都平台相关**，Windows 与 Linux 构建必然不同，这类判据不可用于跨平台部署验证。改用平台无关证据后全部对上：CSS 资源名两侧完全一致（`Layout.BkMsQfIt.css` / `MainGridLayout.CKaYaVTj.css` / `katex.BPpMaF0t.css` / `noto-sans-sc.WH83ST03.css`）、6 个代表页中 5 页可见文本逐字节一致、Svelte 运行时特征字符串计数一致（`svelte` 19 次 / `state_unsafe_mutation` 1 次 / `each_key_duplicate` 1 次）、CSS 作用域 hash 一致（`svelte-a15wih`）。
+- 唯一文本差异是 `/about/` 的 GitHub 贡献日历：线上 1912 次 / 连续 17 天，本地 1881 次 / 连续 16 天。这是 CI 构建链 `fetch-github-contributions.mjs` 实时抓取所致，**反而是「线上确为本次新构建」的正面证据**。
+- **线上功能实测 9/9**（真实 Chromium 打 `https://caiyan12.github.io`）：搜索岛完成水合（无 `ssr` 属性），中文「看板娘」2 条、英文「Astro」12 条；Swup 切页未整页刷新且后退恢复关键词与结果；文章页 298 个 KaTeX、首个公式盒 734×20 且含原生 MathML，截图确认公式排版正确；看板娘 `window.Paul_Pio` 存在且容器/canvas 各 1；移动端 390×900 搜索 12 条、零横向溢出；两视口 pageerror 与本站 requestfailed 均为 0。
+- **已知边界**：线上导航用 `waitUntil:"load"` 会因第三方播放器拖住 load 事件而超时，改 `domcontentloaded` 后正常，属既有环境问题，与本次升级无关。
+- 阶段五剩余 4 类跨版本迁移（Tailwind 4 / Mermaid 12 / Satori 0.63 / KaTeX 0.19）与 Prettier 上游阻塞仍未处理，站长已定「逐个做、每次单独授权」。完整发布证据见 `docs/plans/2026-11-03-dependency-upgrade-roadmap.md` 阶段六。
+
 ## 2026-11-03：修正 @swup/astro 的声明偏差，触发一次 postcss 去重
 
 - `package.json` 的 `@swup/astro` 由 `^1.7.0` 改为 `^1.8.0`，与实际安装版本对齐（构建文档长期记录该偏差：lockfile 存 specifier，改 `package.json` 不改 lock 会让 CI 的 `--frozen-lockfile` 失败，因此必须连 lock 一起改并实测）。已核实 **1.8.0 就是当前 latest**，这次修改不带动任何版本解析前进。

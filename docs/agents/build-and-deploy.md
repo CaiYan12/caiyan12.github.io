@@ -66,4 +66,18 @@
 
 **线上验证部署是否生效**：Fastly 边缘缓存 HTML `max-age=600`，且缓存键不含查询串（加 `?cb=` 无效）；看响应头 `Last-Modified` 是否晚于部署完成时间，或下载 Actions run 的 `github-pages` artifact 直接查 HTML（确定性验证）。
 
+**跨平台部署验证不能用 JS chunk 哈希或 Pagefind 索引哈希当身份证据（2026-11-03 实测）**：同一次提交，本地 Windows 构建出 `Pio.sk4GzkC6.js`，CI Linux 构建出 `Pio.CS2Sx7XP.js`，Pagefind 索引哈希也不同（`zh-cn_8c3aa7783188c` vs `zh-cn_c626e8a99f542`）。**这不是部署没生效**，而是内容寻址哈希与索引字节受平台影响。当时差点据此误判发布失败。
+
+可用的平台无关证据，按可靠性排序：
+
+1. **CSS 资源名**——实测两侧完全一致（`Layout.BkMsQfIt.css`、`MainGridLayout.CKaYaVTj.css`、`katex.BPpMaF0t.css`、`noto-sans-sc.WH83ST03.css`）。
+2. **页面可见文本**——剥掉 `data-tab-widget` 块（客户端脚本渲染，抓取时机不同会读到占位态或渲染态）、脚本、样式与空白后逐字节比。实测 6 个代表页 5 页全等。
+3. **Svelte 运行时特征字符串计数**——不随压缩改变的内部错误码，如 `svelte` 19 次、`state_unsafe_mutation` 1 次、`each_key_duplicate` 1 次。
+4. **CSS 作用域 hash**——如 Pio 容器的 `svelte-a15wih`，两侧一致即同一份源码编译。
+5. **真实浏览器功能**——搜索水合、Swup 切页、KaTeX 渲染、看板娘实例数，最终判据。
+
+**注意 `/about/` 的贡献日历两侧必然不同**：构建链里的 `fetch-github-contributions.mjs` 会实时抓 GitHub 数据，CI 抓到的比本地新（实测线上 1912 次 / 本地 1881 次）。这是「线上确为新构建」的正面证据，不要当回归。
+
+**线上导航不要用 `waitUntil:"load"`**：第三方播放器会拖住 `load` 事件导致 30s 超时，改用 `domcontentloaded`。
+
 - 日报 `/ai-news/` 由独立项目发布，主站 sitemap 使用 `customPages` 保留地址；#41 私有文章检查仍从 sitemap 获取页面清单。恢复主站清理前版本时，先从主站历史定位 `remove main AI news implementation` 清理提交，在主站 `main` 对该提交执行普通 `git revert <清理提交SHA>`，解决可能的后续冲突并验证构建，然后按正常主站流程推送部署；新项目取消发布本身不能恢复已删除的主站文件。以上为恢复步骤，未声称本次演练过清理后的回退。恢复时需核对部署与边缘缓存、浏览器缓存及两项目实际资源身份。
