@@ -1,5 +1,17 @@
 # 更新日志
 
+## 2026-11-03：Svelte 升至 5.57.3，浏览器判据升级前后逐条一致
+
+- `package.json` / `pnpm-lock.yaml` 将 `svelte` 从安装版 5.56.8 升至**精确 5.57.3**（跨 minor），其他直接依赖安装版本不变。锁文件 36 增 36 删，范围为 svelte 自身、其平台无关传递依赖（`@sveltejs/acorn-typescript`、`acorn`、`devalue`、`esrap`、`@jridgewell/sourcemap-codec`）与四处 peer 重绑定；未联动 Astro、`@astrojs/svelte`、Prettier 插件本体或 Pagefind。
+- **跨 minor 逐条核对而非假定安全**：区间 5.56.9→5.57.3 共 116 条变更（4 条 `feat` + 112 条 patch）。唯一具破坏性的是 #18900（`{:else}` 后接 `{:else}`/`{:else if}` 改为编译期报错），本站用合法 `{:else if}` 串联、两版编译器实测均无 warning。**本站 Svelte 语法面比预想更窄**：全仓 `.svelte` 无任何 `on:` 指令（`Search.svelte` 用属性式 `onsubmit`），所以「legacy `on:` 指令是否仍支持」这条对本站不适用。
+- **本次升级不带来安全收益**：OSV 全量查询 14 条 advisory 中最高的 fixed 版本为 5.55.7，低于区间下界。5.56.8 已含全部已知修复，安全不能作为升级理由。
+- 同输入构建 A/B（`astro build` + 横幅注入 + Pagefind，不跑联网快照链）：两侧均 229 页 / 230 个 HTML / 28 篇索引 / 47574 词。**先测噪声底线**——同版本连做两次构建，非 HTML 产物逐字节 0 差异、HTML 差异全来自侧栏随机推荐；在此基础上，升级前后**非 HTML 且非 Svelte chunk 的产物逐字节 0 差异**，156 个 HTML 在归一化 `_astro` 两种哈希命名后 **0 差异**。只有 5 个 chunk 因编译产物改名：`client.*` +727 B、`Search.*` −5 B，其余三个字节数不变（`legacy.*` 的版本标记仍是 `add("5")`）。
+- **编译级证据**：把两版 Svelte 编译器同时指向本站真实组件源码——`Pio.svelte` 的 client/server 两路输出逐字节相同；`Search.svelte` 的差异精确对应上游两条 perf（`$.child()+$.reset()`→`$.only_child()` #18717；SSR 分支标记并入首次 `push` #18712）。真正的 ground truth 是用两版编译器 + 两版 `svelte/server` 运行时实际 `render()`，**SSR HTML 逐字节相同**（Search 608 B、Pio 171 B）。公开 API 零移除。
+- **实机 A/B 用同一份探针、同一套 32 条判据分别打升级前后产物**：升级前 32/32、升级后 32/32，**同一断言名逐条 `ok` 与读数完全一致、0 处差异**（含 CSS 作用域 hash `svelte-a15wih`）。覆盖搜索水合/URL 预填/中英查询/空查询静默/无结果/忙碌重复提交防护/Swup 切页与后退恢复/零横向溢出，以及看板娘默认折叠·召唤·收起·Swup 往返后实例唯一·重载后仍可用，两视口 pageerror、本站 requestfailed、非资源类 console.error 均为 0。
+- **清了两条容易误判的口径**：① `pioConfig.hiddenOnMobile` 的断点是 `(max-width: 1280px)`，所以 1280×900 下 Pio 按设计不初始化、页面里没有 `.pio-show`——桌面验证必须用 >1280 的视口；② Pagefind 1.6.0 对随机字母串会返回弱相关部分匹配（如 `zzzqqqxxxnotfound` 得 5 条），「无结果」用例必须用前批已记录的 `zzz没有这条内容987654321`（实测 0 命中）。另：Swup 会重建 script 节点，切页后 `script[src*='pio.js']` 计数归 0 属既有行为，升级前后一致。
+- dev HMR 实测：改 `Search.svelte` 的 placeholder 热更新生效、改回即还原、`window.__hmrSentinel` 存活证明非整页刷新；源码 SHA-256 与原始文件逐字节相同。`pnpm check` 0 errors / 0 warnings / 6 hints，公式保护 38/38，`prettier --check ./src ./docs` 通过，`test:lib` 16/16、`test:utils` 261/261。
+- 仅验证 Chromium，未跑 Firefox/WebKit（本次不动 CSS 前缀与层叠）；未运行远端 CI 或部署。方法与完整证据见 `docs/plans/2026-11-03-svelte-upgrade.md`。
+
 ## 2026-11-02：Pagefind 升至 1.6.0，完成中文检索 A/B
 
 - Pagefind 1.5.2→精确 1.6.0，锁文件只联动其平台包；保留 Svelte、`Search.svelte`、收录规则和权重。Extended 改用 ICU4X 分词，部署需完整包含同轮生成的脚本、WASM 与索引。

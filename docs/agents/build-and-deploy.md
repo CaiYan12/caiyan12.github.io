@@ -4,7 +4,14 @@
 
 （本文由 `AGENTS.md` 的「构建链、依赖与部署约定」一节迁出，随实际升级维护；带日期的历史证据保留。）
 
+## 升级路线与交接（2026-11-03）
+
+完整分批顺序、已发布/仅本地提交的区别、剩余阻塞与解除条件、同输入构建 A/B 及最终发布门禁统一见[升级总计划](../plans/2026-11-03-dependency-upgrade-roadmap.md)。第三批 Svelte 已完成本地验收（详见下方「Svelte 独立升级」条），下一批为 Autoprefixer；重大版本迁移先讨论，不直接全量更新。各专项报告保留原阶段的历史结果，发布状态以总计划中的固定提交与发布证据为准。
+
 ## 构建链与依赖约束（2026-11-02 起 Astro 7）
+
+- **Svelte 独立升级（2026-11-03）**：`svelte` 精确固定 **5.57.3**（原 `^5.45.5` / 安装 5.56.8），跨 minor。`@astrojs/svelte` 9.1.2、`@sveltejs/vite-plugin-svelte` 7.3.1、`svelte2tsx` 0.7.63、`prettier-plugin-svelte` 4.1.1 本体均未动，只做了 peer 重绑定。**本站 Svelte 语法面很窄**：全仓 `.svelte` 文件里没有任何 `on:` 指令，`Search.svelte` 用属性式 `onsubmit={submit}`、`Pio.svelte` 无 DOM 事件绑定，因此「legacy 事件指令兼容性」这类风险对本站不适用；两个组件都用 `onMount` 与 `bind:`。同输入 A/B 中非 HTML 且非 Svelte chunk 的产物逐字节 0 差异，156 个 HTML 归一化资源哈希后 0 差异；两版编译器实际 SSR `render()` 出的 HTML 逐字节相同。**这次升级不带来安全收益**（OSV 最高 fixed 版本 5.55.7 < 5.56.8），别把它写成安全修复。证据见 [Svelte 专项验收](../plans/2026-11-03-svelte-upgrade.md)。
+- **依赖升级必须是精确版本**：本仓库对逐个升级的包一律写成不带 `^` 的固定版本（`astro: "7.4.4"`、`pagefind: "1.6.0"`、`prettier: "3.9.8"`、`@astrojs/check: "0.9.12"`、`svelte: "5.57.3"`）。注意 `pnpm add --save-exact <pkg>@<ver>` 之外还要复核写进去的 specifier——2026-11-03 实测 `pnpm add --save-exact svelte@5.57.3` 写入的是 `^5.57.3`，需手工改回并重新 `pnpm install` 让锁文件 specifier 跟着变；只改 `package.json` 不改锁会让 `--frozen-lockfile` 直接失败。
 
 - **Pagefind 独立升级（2026-11-02）**：精确固定 1.6.0，Extended 构建使用 ICU4X 分词；部署应包含同一轮生成的整个 `dist/pagefind/`，含 JS、WASM 与索引分片。保留自定义 `Search.svelte`、Svelte 版本、收录规则与默认权重。本地 A/B 收录文档集合与标题相同；查询候选集、排名、摘要和索引大小有变化，既有单字误匹配减少，也出现新的弱相关部分匹配，不能统称检索质量提升。分片失败后再次提交在新版可恢复，但首轮仍表现为“没有找到”；主模块加载失败才走现有通用错误提示。具体变化、故障对照和验收边界见 [Pagefind 专项验收](../plans/2026-11-02-pagefind-upgrade.md)。
 
