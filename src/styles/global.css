@@ -44,17 +44,11 @@ body {
   cursor: var(--cursor-default);
 }
 
-/* 可点元素一律用本站手型光标。这条规则在 v3 里就住在 @layer base 内，
-   移出层时必须放回 base：层外会压过 @layer utilities 里的
-   `.disabled\:cursor-not-allowed`，实测让搜索表单提交按钮在禁用态仍显示手型光标
-   （v3 = not-allowed，v4 = link.cur）。见下方同一条规则的完整选择器组。 */
-@layer base {
-  a,
-  button,
-  input[type="submit"] {
-    cursor: var(--cursor-link);
-  }
-}
+/* 注：可点元素的手型光标在文件后段另有一条**超集**规则（含 .backtop / .tab_nav /
+   .tools / .carousel-indicators li 的完整选择器组）。此处不再重复声明 ——
+   两条并存曾在 2026-11-04 造成一次误判：只把其中一条放回 @layer base，产物里
+   另一条仍在层外继续压过 `.disabled\:cursor-not-allowed`，实测禁用态光标仍是手型。
+   要改这条契约请只改那一处。 */
 
 ::selection {
   background: var(--primary);
@@ -1654,12 +1648,14 @@ html.is-leaving .transition-swup-fade {
 }
 .prose li {
   margin: 0.3em 0;
-  /* Tailwind v4 迁移（2026-11-03）：v3 里列表项的左缩进来自 typography 插件的
-     `.prose :where(ul > li){padding-inline-start:.375em}` —— em 相对值，随字号缩放
-     （正文 13px 下实测计算值 4.875px）。v4 的 Preflight 把表单/列表的 padding 归零，
-     而 typography 那条 .375em 落在 utilities 层、被层外的站点重置压过，缩进消失。
-     这里复刻同一个 em 相对值（而不是写死像素）：字号变了缩进仍按比例跟着走，
-     与 v3 的行为完全一致。 */
+  /* Tailwind v4 迁移（2026-11-04 实测复核）：v3 里列表项的左缩进来自 typography
+     插件的 `.prose :where(ul > li){padding-inline-start:.375em}` —— em 相对值，
+     随字号缩放（正文 13px 下实测计算值 4.875px）。
+     v4 下那条插件规则**不会自己生效**：它落在 @layer utilities，而本文档末尾的
+     重置（现已移入 @layer base）与其它站点规则把列表 padding 归零，实测删掉本条
+     后 11 个正文 li 的 padding-left 从 4.875px 全部变成 0px。
+     所以这条补偿是**必需**的，不是冗余：复刻同一个 em 相对值（而非写死像素），
+     字号变了缩进仍按比例跟着走，与 v3 行为完全一致。 */
   padding-inline-start: 0.375em;
 }
 .prose blockquote {
@@ -1918,10 +1914,17 @@ body {
    .error-404 .search-box input）自身没有背景声明，会在浅灰页面底上露出灰色。
    这里显式补回白底；自带背景的控件（.pagenavi-jump input 的
    --content-surface-nested、.font-size-pop input[type=range] 的 transparent）
-   由各自的规则覆盖，不受影响。 */
-input,
-textarea {
-  background-color: #fff;
+   由各自的规则覆盖，不受影响。
+
+   **必须留在 @layer base 里**：`background-color` 是 Tailwind 也会声明的属性，
+   站内 `src/components/control/Search.svelte` 的输入框正用 `bg-white`。留层外会
+   恒胜该工具类 —— 当前两处同值（都是白）掩盖了冲突，一旦工具类改成别的底色
+   就会静默失效。放 base 后工具类照常赢，本规则只在控件没有自己的底色时兜底。 */
+@layer base {
+  input,
+  textarea {
+    background-color: #fff;
+  }
 }
 
 a {
@@ -2162,8 +2165,9 @@ img:hover {
   outline-offset: -1px;
   border-radius: 5px;
   /* 必须显式清掉自身背景：玻璃搬到 ::before 后，本元素若有背景就会成为
-     ::before 的 backdrop 被采样 —— @layer components 里那条 legacy
-     `.head-nav{background-color:#fff}` 会在此处接管成不透明白，
+     ::before 的 backdrop 被采样 —— 本站那条 legacy `.head-nav{background-color:#fff}`
+     （Tailwind v3 时在 `@layer components` 内，v4 迁移后已随解包成为层外规则，
+     但这条注释说的覆盖关系不变）会在此处接管成不透明白，
      折射与透底全丢（实测元素背景 rgb(255,255,255)）。id 特异性压过 class */
   background: none;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);

@@ -55,10 +55,19 @@
   background: rgba(168, 67, 60, 0.22);
 }
 
-:focus-visible {
-  outline: 2px solid var(--nb-blue);
-  outline-offset: 2px;
-  border-radius: 2px;
+/* 焦点环。这条规则**必须留在 @layer base 里**，与 global.css 里那几条同理：
+   它声明了 Tailwind 也会声明的属性（`outline` 与 `border-radius`），留层外会
+   压过 @layer utilities 的同属性工具类。实测（2026-11-04）：
+   · 焦点态下带 `.rounded-[3px]` 的按钮圆角从 3px 变 2px；
+   · `#nb-search-input` 的 `outline-none` 工具类失效（计算值仍是 solid 2px）。
+   放回 base 后：base 在 utilities 之前，工具类照常赢；没有工具类竞争的元素
+   仍拿到这条统一的焦点环。 */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--nb-blue);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
 }
 
 /* 点阵方格纸质感，极低对比，不干扰阅读 */
