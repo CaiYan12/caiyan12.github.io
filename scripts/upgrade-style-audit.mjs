@@ -113,6 +113,46 @@ const PSEUDO_PROPS = [
 	"transform",
 	"inset",
 ];
+// 状态采样：Tailwind v4 迁移里，:focus-visible 与 :hover 下的样式从未进过指纹，
+// books.css 的焦点环回归（层归属变化压过 rounded/outline-none 工具类）是人眼看出来的，
+// 本工具全程没报警。这里补上两类状态采样。
+//
+// 强制状态用 CDP 的 CSS.forcePseudoState，不用 page.hover()/.focus()：
+//   ① hover() 会先 scrollIntoViewIfNeeded()，在 overflow 容器里会改动 scrollLeft，
+//      制造「测试自己造成的位移」（docs/agents/commands.md 记过这条）；
+//   ② .focus() 是否命中 :focus-visible 取决于触发方式（键盘 vs 鼠标），不可靠；
+//      CSS.forcePseudoState 直接强制伪类，已实测对 :focus-visible 有效。
+// 采样集合有界：只对可交互元素，且每页上限 STATE_MAX。
+const STATE_SELECTORS = [
+	"a[href]",
+	"button",
+	"input:not([type=hidden])",
+	"select",
+	"textarea",
+	"[tabindex]",
+	'[role="button"]',
+	'[role="link"]',
+].join(",");
+// 只采这些属性：状态变化主要体现在描边、颜色、光标与盒模型
+const STATE_PROPS = [
+	"color",
+	"background-color",
+	"outline-style",
+	"outline-width",
+	"outline-color",
+	"outline-offset",
+	"border-top-width",
+	"border-top-style",
+	"border-top-color",
+	"border-radius",
+	"box-shadow",
+	"text-decoration-line",
+	"cursor",
+	"opacity",
+];
+// 每页最多强制多少个元素的伪类。整站可交互元素上千，全量强制既慢又无意义；
+// 取前 N 个足以覆盖导航、按钮、分页、表单等主要交互面。
+const STATE_MAX = 60;
 // 播放器 / 看板娘 / 轮播 / 微言轮播：布局与时序相关，纳入会产生假阳性
 // giscus 的 iframe 由远端 postMessage 改 class 与高度，同一份代码两次采集也会不一致
 // 轮播真实类名是 .carousel（Slideshow.astro:23），原先写的 .slideshow 全站零命中、从未真的排除过；
@@ -293,6 +333,114 @@ async function capture() {
 			},
 			[PROPS, PSEUDO_PROPS, WIDGET_ROOTS],
 		);
+		// ---- 状态采样：:hover / :focus-visible ----
+		// CDP 的 CSS.forcePseudoState 直接强制伪类，不走 page.hover()/.focus()，
+		// 原因见 STATE_SELECTORS 上方注释。失败即降级，不影响既有指纹。
+		const stateLines = [];
+		try {
+			const cdp = await page.context().newCDPSession(page);
+			await cdp.send("DOM.enable");
+			await cdp.send("CSS.enable");
+			const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
+			// 给可见可交互元素打临时标记，用标记做 CDP 定位。状态采样发生在静态
+			// 采集之后，标记不会污染已产出的指纹。
+			const targets = await page.evaluate(
+				([selectors, max, widgetRoots]) => {
+					const skip = new Set();
+					for (const w of document.querySelectorAll(widgetRoots)) {
+						skip.add(w);
+						for (const d of w.querySelectorAll("*")) skip.add(d);
+					}
+					const pathOf = (el) => {
+						const parts = [];
+						let n = el;
+						while (n && n.nodeType === 1 && n.tagName !== "HTML") {
+							let i = 1;
+							for (
+								let s = n.previousElementSibling;
+								s;
+								s = s.previousElementSibling
+							)
+								i++;
+							parts.unshift(`${n.tagName.toLowerCase()}:${i}`);
+							n = n.parentElement;
+						}
+						return parts.join(">");
+					};
+					const out = [];
+					for (const el of Array.from(
+						document.querySelectorAll(selectors),
+					)) {
+						if (skip.has(el)) continue;
+						const r = el.getBoundingClientRect();
+						if (r.width <= 0 || r.height <= 0) continue;
+						if (out.length >= max) break;
+						const idx = out.length;
+						const cls =
+							typeof el.className === "string"
+								? el.className.trim().replace(/\s+/g, ".")
+								: "";
+						const rid = el.id ? "#" + el.id : "";
+						el.setAttribute("data-fp-state", String(idx));
+						out.push({
+							marker: `[data-fp-state="${idx}"]`,
+							head:
+								el.tagName.toLowerCase() +
+								rid +
+								(cls ? "." + cls : ""),
+							path: pathOf(el),
+						});
+					}
+					return out;
+				},
+				[STATE_SELECTORS, STATE_MAX, WIDGET_ROOTS],
+			);
+			for (const t of targets) {
+				const { nodeId } = await cdp.send("DOM.querySelector", {
+					nodeId: root.nodeId,
+					selector: t.marker,
+				});
+				if (!nodeId) continue;
+				for (const pseudo of ["hover", "focus-visible"]) {
+					const forcedPseudoClasses =
+						pseudo === "focus-visible"
+							? ["focus", "focus-visible"]
+							: ["hover"];
+					await cdp.send("CSS.forcePseudoState", {
+						nodeId: nodeId,
+						forcedPseudoClasses: forcedPseudoClasses,
+					});
+					const vals = await page.evaluate(
+						([marker, propList]) => {
+							const el = document.querySelector(marker);
+							if (!el) return null;
+							const cs = getComputedStyle(el);
+							return propList
+								.map((p) => `${p}=${cs.getPropertyValue(p)}`)
+								.join(";");
+						},
+						[t.marker, STATE_PROPS],
+					);
+					await cdp.send("CSS.forcePseudoState", {
+						nodeId: nodeId,
+						forcedPseudoClasses: [],
+					});
+					if (vals) {
+						stateLines.push(
+							`:${pseudo} ${t.head} | ${t.path} | ${vals}`,
+						);
+					}
+				}
+			}
+			await page.evaluate(() => {
+				for (const el of document.querySelectorAll("[data-fp-state]"))
+					el.removeAttribute("data-fp-state");
+			});
+			await cdp.detach();
+		} catch {
+			// 状态采样是增量；CDP 不可用时降级为「没有状态行」，既有指纹照常产出。
+		}
+		lines.push(...stateLines);
 		const body = lines.join("\n");
 		const sha = createHash("sha256")
 			.update(body)

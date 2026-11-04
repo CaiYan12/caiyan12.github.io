@@ -62,6 +62,12 @@ Your agent and bash are running on:
 - **交付纪律（门禁级）**：未经允许**不 commit、不 push**，改完停在本地；只做点名的那几条，做完即停；选项选中后先讲清含义与后果再等指令。**push 到 `main` 等于生产部署**（`deploy.yml` 在 `push: branches [main]` 上触发），不是「备份一下」。 提交流程与 push 前核对见 [`docs/agents/commands.md`](docs/agents/commands.md)。
 - **写交接文档、台账或报告里的 git 状态与提交区间时**（远端状态分哪几档、历史区间怎么落死）→ `docs/agents/commands.md` 的「git 远端状态与提交区间的表述纪律」节（2026-10-30 立）。
 - **脚本输出编码、heredoc 吃掉转义等「跑命令」类坑**（Windows GBK 控制台、`print` 带 emoji 崩溃、正则转义被 shell 吃掉）→ [`docs/agents/commands.md`](docs/agents/commands.md) 的「脚本输出编码」节。本文件不再复述细节。
+- **命令被 CC Safety Net 拦下时**（`BLOCKED by CC Safety Net` 文本错误，不是退出码）→ [`docs/agents/commands.md`](docs/agents/commands.md) 的「CC Safety Net 的实测拦截型态与被拦后的处置」节。要点：**被拦不绕过**（不换 shell / 不拼字符串 / 不改走别的 CLI）；`git.push-delete`、`git.stash-drop` 无安全等价物，须交回用户手动执行；恢复被构建改写的 `src/constants/*.json` 用 `git show HEAD:<path>` 写回，不用 `git restore`。
+- **一次性探针脚本写在哪** → `output/<批次名>/`，不是系统临时目录。判据值钱的脚本另存进 `scripts/`。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「一次性探针脚本该放哪」节。
+- **用 CodeGraph 之前** → 先看 `codegraph_status` 的 `pendingChanges`；非零就 `codegraph_sync`（增量、秒级）。索引会静默失真（2026-11-04 实测列出 60 多个已迁出的文件）。**磁盘才是权威**。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「CodeGraph 索引会静默失真」节。
+- **查 CI / 部署状态** → `gh run list` / `gh run view --json`，**不需要代理**，也**不要**为它新写脚本或接 MCP。核对部署生效必须比对 `headSha` 与目标 commit，不是「最近一次成功」。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「查 CI / 部署状态」节。
+- **改 `scripts/upgrade-style-audit.mjs` 或新增样式判据** → 该工具现已在静态指纹之外采样 `:hover` / `:focus-visible` 两种状态（CDP 强制伪类）。改动它之后**必须做变异验证**：故意改坏产物 CSS，确认工具真的报差异，否则等于把判据削弱成永远绿。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「样式指纹的状态采样」节。
+- **决定这次改动要验到什么程度** → 分**承重档**（换构建工具 / 升大版本依赖 / 改级联层语义 / 动全站样式入口 / 换渲染管线）与**轻量档**（单组件微调 / 文案 / 单页 / 明确 bug）。承重走四道判据，轻量走两道；拿不准按承重。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「两档验证力度」节。
 
 ### Domain docs
 

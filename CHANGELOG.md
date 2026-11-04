@@ -1,5 +1,47 @@
 # 更新日志
 
+## 2026-11-04：样式指纹补上 `:hover` / `:focus-visible` 状态采样
+
+- **补的是上一轮真实漏掉的判据**。Tailwind v4 迁移里 `src/nice-books/styles/books.css` 的 `:focus-visible` 规则因级联层归属变化压过了 `rounded-[3px]` / `outline-none` 工具类，焦点环回归**是人眼看出来的**——`scripts/upgrade-style-audit.mjs` 全程没报警，因为它只读元素**默认态**的计算值。
+- **做法**：在静态指纹采完（`page.evaluate` 返回之后）追加一段状态采样，用 **CDP `CSS.forcePseudoState`** 强制 `:hover` 与 `:focus-visible`，读 14 个状态强相关属性（`outline-*` / `border-*` / `box-shadow` / `border-radius` / `cursor` / `text-decoration-line` 等），产出形如 `:focus-visible a.skip-link | body:2>a:1 | outline-style=solid;outline-color=rgb(0, 122, 0);...` 的行。采样范围有界：只对可见可交互元素（`a[href]` / `button` / `input` / `select` / `textarea` / `[tabindex]` / `[role=button]` / `[role=link]`），排除 `WIDGET_ROOTS` 子树，每页上限 60 个元素 × 2 状态。
+- **为什么用 CDP 强制伪类而不是 `page.hover()` / `.focus()`**：① `hover()` 会先 `scrollIntoViewIfNeeded()`，在 `overflow:hidden` 的超宽容器里会改动 `scrollLeft`，制造「测试自己造成的位移」；② `.focus()` 是否命中 `:focus-visible` 取决于触发方式（键盘 vs 鼠标），不可靠。强制 `:focus-visible` 时须**连 `:focus` 一起强制**。
+- **实测证据（2026-11-04，Node 24.18.0 / Windows 11，`pnpm exec astro build` 产出 229 页）**：23 页共 **2320 条状态行**，其中 14 页正好 120 条（60×2，上限生效）；**确定性**——同一份产物连采两次，23 页状态行**逐字符零差异**；**变异验证**——把 `--colorful-green-accessible` 从 `#007a00` 改到 `#ff00ff`，**19/23 页报出 43–86 条差异**，全部落在 `outline-color`（`rgb(0, 122, 0)` → `rgb(255, 0, 255)`）。余下 4 页未变是**正确行为**：`books*` 三页是 Nice Books 独立壳、不消费主站该变量（实测 `hasGreenOutline=false`），`/this-page-should-404/` 只有 3 个元素、无可交互元素。
+- **第一次变异选错目标，记下来防重犯**：我先改 `:focus-visible{outline:2px solid #fff}`，结果 **0/23 页报差异**。查证后发现实际生效的 outline 颜色来自 CSS 变量而非那条规则。**教训：变异验证本身也要先证明变异点真的作用到被采样元素**，否则验证的是空气——这和「改判据必须做变异验证」是同一条纪律的两半。
+- **已知不覆盖**：只采 `:hover` 与 `:focus-visible`；`:active`、`:disabled`（`disabled:` 变体）、`:checked`、`:visited` 未纳入。静态 `cursor` 在 `PROPS` 里，所以 `disabled:cursor-not-allowed` 类问题仍靠默认态读值兜底，**没有专门的 `:disabled` 强制态采样**。
+- **探针与证据位置**：本轮探针脚本、两次基准采集、变异前后采集都在 `output/retro-eng-discipline/`（2.8 MB），可复跑。这也是新立「一次性探针放 `output/<批次名>/`」规矩后的第一个正面实例。
+- **怎么验证的**：`node output/retro-eng-discipline/verify-state-sampling.mjs`（采集 + 计数）、`diff-state-determinism.mjs`（两次采集零差异）、`mutation-test-v2.mjs`（变异后 19/23 页报差异并自动还原产物 CSS）、`pnpm exec prettier --check ./src ./docs ./*.md` 全绿、`node --check scripts/upgrade-style-audit.mjs` 通过。
+
+---
+
+## 2026-11-04：两档验证力度，并关掉两张「查证后不值得做」的票
+
+- **两档验证力度（写进 `docs/agents/commands.md`）**。上一轮 Tailwind 3→4 用了「两次独立构建量噪声底线 + 23 页指纹 A/B + 桌面移动截图 + 真 DOM 交互对比」，结论「零可见差异」站得住；但同一套挪到「改一行 CSS」上就是浪费。现按**变更影响面**分档：**承重档**（换构建工具 / 升大版本依赖 / 改级联层语义 / 动全站样式入口 / 换渲染管线）走四道判据；**轻量档**（单组件微调、文案、单页布局、明确 bug）走两道——本地构建 + `pnpm check`，加上「改什么就看什么」的定向验证，上线后 `verify:live`。两档共用不可省的底线：Prettier 门禁、push 前核对（push 到 `main` 即生产部署）、部署后核对 `headSha`。
+- **关掉「用 GitHub MCP 接管 CI 查询 + 写 CI 状态脚本」这张票**。实测 `gh run list` **1.66 秒**返回、`gh run view --json` 一次拿全 `conclusion`/`status`/`headSha`/job 级结论，且**不需要代理**。既有能力已覆盖全部需求，再包一层只多一个要维护的失败点。改为在文档里落死「三条常用形态 + 核对部署的正确顺序」。
+- **关掉「封装沙盒 ACL 诊断」这张票**。宿主已随包提供 `diagnose-windows-sandbox-acl` 技能（一条命令检查路径及其全部祖先并修复被证明的 ACL 问题），本会话实测的 9 次拦截**全部是行为类规则**（破坏性 git / 递归删除 / 凭据路径），**没有一次是 ACL 问题**。造一个 `scripts/sandbox-diagnose.mjs` 属于纯重复。
+- **修正 05 的前提**：原计划想把 `codegraph` 接进 `prepare` 钩子自动建索引。核实后**该依赖不存在于本项目**——`package.json` 里搜不到，本机是全局 CLI（1.6.2）。接进 `prepare` 或 `pnpm build` 会让没装全局 CLI 的机器（含 CI 的 ubuntu runner）在一个跟索引无关的钩子里失败。文档已写明「索引是个人本地加速手段，不是构建的一部分」。
+- **怎么验证的**：`gh run list` / `gh run view --json` / `gh run list --commit` 三条命令逐条实跑；`grep -i codegraph package.json` 确认无依赖、`codegraph --version` 确认全局版本；`pnpm exec prettier --check ./src ./docs ./*.md` 全绿。
+
+---
+
+## 2026-11-04：工程纪律收敛（约束收敛在文档里，不新增任何脚本）
+
+> 这轮是 `/retro` 复盘后的一次**只改文档**的收敛。起因是 Tailwind 3→4 迁移本身做得住（线上零可见差异），但过程里暴露了几处「下一次会话会重复踩」的坑。**全程没有新增任何脚本**——几处原本计划要写的新工具，经实测后确认既有能力已经够用，写脚本反而是多一个失败点。
+
+**四处新增的规矩（都在 [`docs/agents/commands.md`](docs/agents/commands.md)）**
+
+- **CC Safety Net 被拦后怎么办**（「CC Safety Net 的实测拦截型态与被拦后的处置」节）。2026-11-04 本会话 9 次被拦，实测记下 **7 条真实规则名**：`secret.basename.npmrc`、`git.checkout-double-dash`、`git.restore-unstaged`、`rm.recursive-force-outside-cwd`、`git.push-delete`、`git.branch-force-delete`、`git.stash-drop`。**关键纠正**：被拦返回的是**文本错误**（`Error: BLOCKED by CC Safety Net`），**不是退出码**——原记录写成 `[exit code: 1]` 是错的。另有一条把方向走反的错误记录：计划里要写「自动选择的等价命令脚本」，实测 `gh pr` **没有** `delete` 子命令、`gh branch` **整个命令不存在**，且用别的 CLI 绕开本身就违反全局 `~/.dsh/docs/tools-code.md` §3.8 的「被拦不绕过」。**该脚本已删除，改为记录处置分工**：`git.push-delete`、`git.stash-drop` 无安全等价物，规则文本自己写着「Ask the user to run it manually」，必须交回用户。
+- **一次性探针脚本该写在哪**（「一次性探针脚本该放哪」节）。2026-11-04 那轮把 **41 个探针脚本、554 KB 分析代码**全写在 `C:/Users/<user>/AppData/Local/Temp/tw4-probe/`，收尾清理时**整目录蒸发**——「A/B 指纹怎么归一化」「浮动末位为什么随平台变」这些只存在于脚本里的判据实现，没随仓库留下。而仓库**早有** `output/<批次名>/` 这个约定（`.gitignore` 第 58 行；`astro7-upgrade` / `svelte-upgrade` / `autoprefixer-upgrade` / `mermaid-upgrade` / `phase5-baseline` 五个目录均实测存在）。**2026-11-04 那轮是唯一例外，且例外是错的。** 定下的规矩是「探针目录用来算，`scripts/` 用来留」，判据值钱的脚本要另存进 `scripts/`（既有先例：`verify:live` 就是从 `output/live-verify*.mjs` 抢救进 `scripts/` 的）。**刻意不新建 `.probe/`**：仓库已有 `output/`，再开一个会制造两套并存约定。
+- **CodeGraph 索引会静默失真**（「CodeGraph 索引会静默失真」节）。本仓库 `.codegraph/` 索引建于 **2026-10-14**，到 2026-11-04 已落后 21 天，`pendingChanges = {added: 80, modified: 36, removed: 43}`。**实测后果**：`codegraph_files` 返回的清单里仍列着 **60 多个 `src/ai-news/*.tsx`**，而这些文件在磁盘上早已迁出（索引语言列表里也还挂着 `tsx`）——按它判断影响面会得出完全不存在的结论，且无任何报错。已执行 `codegraph_sync`：**159 个文件 / 2,143 节点 / 2.5 秒**，同步后文件数 254→291、`tsx` 语言消失、`pendingChanges` 归零；用 `codegraph_query` 查 `AiNewsApp` 返回空数组，确证迁出已被正确反映。规矩：用之前先看 `pendingChanges`，非零先 `sync`；**磁盘才是权威**，索引不随仓库走（`.codegraph/.gitignore` 只留自身）。
+- **查 CI / 部署状态用 `gh run` 三件套**（「查 CI / 部署状态」节）。实测 `gh run list` **1.66 秒**返回、`gh run view --json` 一次拿全 `conclusion` / `status` / `headSha` / job 级结论，且**不需要代理**（与 `docs/agents/issue-tracker.md` 第 49 条 2026-10-14 的实测一致）。**原计划里的「用 GitHub MCP 接管 run 查询」与「新写 CI 状态脚本」均按实测废除**——图片路已够用，加一层只多一个失败点。文档里落死一条易错点：核对部署生效要**比对 `headSha` 与目标 commit**，不是「最近一次运行成功就等于我的提交上线」。
+
+**同步改动**：`AGENTS.md` 在「文档写作约定」下补 3 条导航指针（探针位置 / CodeGraph / CI 查询），与既有三条同级指针同区，**文首只读固定上下文（第 1–35 行）逐字节未动**（已用 diff 核过）。
+
+**怎么验证的**：7 条规则名与当日会话日志**交叉核对精确一致**（脚本比对两侧差集均为空）；`gh pr --help` / `gh branch` 实机确认无 `delete` 与无该命令；`git show HEAD:<path>` 恢复路径实跑成功；`codegraph_sync` 前后 `status` 对比；三条 `gh run` 命令逐条实跑；`prettier --check ./src ./docs ./*.md` 全绿。
+
+**未做 / 已知缺口**：① `scripts/upgrade-style-audit.mjs` 仍只采静态计算值，`:focus-visible` / `:hover` 未纳入指纹——这轮那个 `books.css` 焦点环回归就是人工看出来的，工具全程没报警；该项作为独立任务在推进中。② 2026-11-04 那轮已蒸发的 41 个探针脚本**无法重建**，本节只记录丢失事实，不伪造归档。
+
+---
+
 ## 2026-11-04：Tailwind 3.4.19 → 4.3.4 迁移（接入方式重写），站点规则移出所有 @layer
 
 - **这不是版本升级，是接入方式重写**。v4 不再是 PostCSS 插件（改由 `@tailwindcss/vite` 接管，配置从 `astro.config.mjs` 的 `vite.plugins` 首位注入）、配置不再自动加载（须显式 `@config`，两个入口的相对路径深度不同：`src/styles/global.css` 用 `"../../tailwind.config.cjs"`、`src/nice-books/styles/books.css` 用 `"../../../tailwind.config.cjs"`）、`@tailwind` 三指令作废（改 `@import "tailwindcss"`）、且**引入了真实 CSS 级联层**。实测 Astro 7.4.4 实际使用的 Vite 8.3.5（rolldown-vite 1.2.16）上构建 / dev / HMR / 源码扫描全部正常，229 页构建通过。
