@@ -508,7 +508,7 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
 - [ ] **限制壁纸池单张体积上限**（2026-11-02 登记，拉绳壁纸挂件 spec #127 收口时发现）：`src/config.ts` 的 `backgroundConfig.images` 四张实测 **876KB / 2.1MB / 3.1MB / 9.6MB**（原图未压缩）。换壁纸按「均匀随机 × 排除当前图 × 每候选最多试一次」选图并预载，最坏一次操作要串行等最多 3 个候选；**大尺寸图片还会让解码被判据拒绝**——Chromium 在并发或大尺寸下会对合法图片抛 `EncodingError`（见 Odoo PR #243133 与 Chromium issue 40261318，其修复正是把 `Promise.all` 改成 `allSettled`）。挂件侧已做兜底（decode 被拒时退化为「加载完成且具固有尺寸」再判定），但**上限本身应落在资源侧**。触发条件：访客反馈换图慢 / 内存占用高，或新增壁纸。实施建议：统一压到单张 ≤ 1.5MB（现有 4 张不动、只约定新图口径），同步更新 `public/images/bg/PEXELS-SOURCES.md` 的体积记录。
 
-- [x] **Tailwind 3.4.19 → 4.3.4（接入方式重写，不是升级）**（2026-11-03 登记 → 2026-11-04 迁完）
+- [x] **Tailwind 3.4.19 → 4.3.4（接入方式重写，不是升级）**（2026-11-03 登记 → 2026-11-04 迁完并**已上线**，合并提交 `7c37de4`、PR [#143](https://github.com/CaiYan12/caiyan12.github.io/pull/143)）
 
     方案与证据：[迁移设计](docs/plans/2026-11-04-tailwind4-migration-design.md)、[迁移 spec](docs/plans/2026-11-04-tailwind4-migration-spec.md) 与 [ADR 0011](docs/adr/0011-tailwind4-layer-strategy.md)。
 
@@ -525,6 +525,10 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
     **踩坑（写下来防重犯，五条）**：① 预览服务器会把所有路径返回首页（`serve -s` 的 SPA fallback、`astro preview`、Python `http.server` 三种都踩），指纹采集会得到「每页都是 851 个元素」的假象——须自写按 `trailingSlash: "always"` 映射到 `index.html` 且不做 fallback 的静态服务；② 截图对比必须先定噪声底线，且要区分两类随机源：背景壁纸是**运行时**随机（4 张候选，`Math.random` 选一张，覆盖整页，是最大噪声源），侧栏「手气不错」是**构建期**随机（`shuffleArray`）；③ 判断某条规则是否生效必须用**真实 DOM 结构**量——本轮曾用手写 fixture 测出「导航 padding v3=18px / v4=0px」的**假回归**，真实站点里 `#menu-index > li{padding:0}`（特异性 1-0-1）本就压着那条规则，v3 与 v4 实际完全一致；④ v4 把字号工具类的行高从绝对长度改成**比值**，继承到用 em 相对字号的子元素会按子元素字号重算（`/books/` 页因此差 1px），**不能用 `leading-[inherit]` 修**；⑤ 样式测试可能对 CSS 缩进有硬依赖，重排样式格式后要重跑。完整五条见 [`docs/agents/commands.md` 的「样式 A/B 的判据纪律」](docs/agents/commands.md#样式-ab-的五条判据纪律2026-11-04-立tailwind-v4-迁移实测得出)。
 
     → 评估原文：`docs/plans/2026-11-03-phase5-migration-assessment.md` 第三节；原实施骨架：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 11-15（Task 12-15 是占位结构，方案获批后才可补写成可执行步骤）。
+
+    **上线记录（2026-11-04）**：三条 CI 全绿（`Astro Check` 35s / `Prettier Check` 42s / `Astro Build` 1m21s，Linux 上真实构建通过），合并后 `Deploy to GitHub Pages` 2m23s success。线上 `Last-Modified: 08:38:55 GMT` 晚于推送；`pnpm verify:live` **连跑三次均 29/29**；`pnpm verify:live:swup` document 级接管证据通过。线上产物确为 v4：CSS 里有 `@layer` 声明（v3 产物层数为 0），字节数 **195,513** 与本地构建逐字节相同。
+
+    **推翻了「CSS 资源名平台无关」这条判定纪律（本次新发现，已改写 `docs/agents/build-and-deploy.md`）**：v3 时代本地与线上 CSS 资源名确实完全一致，所以这条纪律一直好用。**v4 起不再成立**——本次本地 `MainGridLayout.B_utt6QD.css`、线上 `MainGridLayout.TXd5OLZn.css`，**名字不同但字节数完全相同，逐字节只差 1 个字节**：`bg-primary/15` 编译出的 `oklab(69.9907% -.188933 .144998/.15)` 在 Linux 上是 `-.188934`，**色彩转换的浮点末位随平台变**，内容寻址哈希因此改变。该差异只出现在 `WidgetCalendar.astro` 的日历当前日期格底色上，1 个浮点末位不可见。判据已改为「同名即同源；不同名则下载比对字节数与逐字节差异，仅 `oklab()`/`color-mix()` 浮点末位不同即正常」。
 
 - [ ] **Satori 0.26.0 → 0.63.2（跨 33 个 minor，无书面依据）**（2026-11-03 登记，**移交独立工作流**）
 

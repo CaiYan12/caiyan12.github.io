@@ -91,7 +91,7 @@
 
 可用的平台无关证据，按可靠性排序：
 
-1. **CSS 资源名**——实测两侧完全一致（`Layout.BkMsQfIt.css`、`MainGridLayout.CKaYaVTj.css`、`katex.BPpMaF0t.css`、`noto-sans-sc.WH83ST03.css`）。
+1. **CSS 资源名**——**自 Tailwind v4 起不再绝对可靠，须同时比对内容**（2026-11-04 实测）。v3 时代两侧完全一致（`Layout.BkMsQfIt.css`、`MainGridLayout.CKaYaVTj.css`、`katex.BPpMaF0t.css`、`noto-sans-sc.WH83ST03.css`）；v4 首批上线时本地 `MainGridLayout.B_utt6QD.css` 与线上 `MainGridLayout.TXd5OLZn.css` **名字不同**，而两者**字节数完全相同（195,513 B）、仅差 1 个字节**——`bg-primary/15` 的 `oklab(69.9907% -.188933 .144998/.15)` 在 Linux 上是 `-.188934`，色彩转换的浮点末位随平台变，内容寻址哈希因此改变。判据改为**「同名即同源；不同名则下载比对字节数与逐字节差异」**，差异仅出现在 `oklab()`/`color-mix()` 的浮点末位即属正常，落在某个 utility 的色值上**不可见**。
 2. **页面可见文本**——剥掉 `data-tab-widget` 块（客户端脚本渲染，抓取时机不同会读到占位态或渲染态）、脚本、样式与空白后逐字节比。实测 6 个代表页 5 页全等。
 3. **Svelte 运行时特征字符串计数**——不随压缩改变的内部错误码，如 `svelte` 19 次、`state_unsafe_mutation` 1 次、`each_key_duplicate` 1 次。
 4. **CSS 作用域 hash**——如 Pio 容器的 `svelte-a15wih`，两侧一致即同一份源码编译。
