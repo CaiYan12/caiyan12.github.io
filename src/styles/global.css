@@ -1648,10 +1648,13 @@ html.is-leaving .transition-swup-fade {
 }
 .prose li {
   margin: 0.3em 0;
-  /* Tailwind v4 迁移（2026-11-03）：v3 里列表项的左缩进来自 UA 默认的
-     li{padding-inline-start}（实测计算值 5.25px）；v4 的 Preflight 把 padding 归零，
-     缩进消失。显式写死，锁定 v3 的观感。 */
-  padding-inline-start: 5.25px;
+  /* Tailwind v4 迁移（2026-11-03）：v3 里列表项的左缩进来自 typography 插件的
+     `.prose :where(ul > li){padding-inline-start:.375em}` —— em 相对值，随字号缩放
+     （正文 13px 下实测计算值 4.875px）。v4 的 Preflight 把表单/列表的 padding 归零，
+     而 typography 那条 .375em 落在 utilities 层、被层外的站点重置压过，缩进消失。
+     这里复刻同一个 em 相对值（而不是写死像素）：字号变了缩进仍按比例跟着走，
+     与 v3 的行为完全一致。 */
+  padding-inline-start: 0.375em;
 }
 .prose blockquote {
   margin: 1em 0;
@@ -1855,42 +1858,53 @@ body {
   cursor: var(--cursor-default);
 }
 
-body,
-div,
-dl,
-dt,
-dd,
-ul,
-li,
-ol,
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-form,
-pre,
-fieldset,
-legend,
-input,
-textarea,
-p,
-blockquote,
-th,
-td,
-hr,
-article,
-aside,
-figure,
-footer,
-header,
-nav,
-section {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-family: var(--font-body);
+/* 元素级重置：把默认 margin/padding 归零、列表标记去掉、统一字体。
+   这条规则**必须留在 @layer base 里**，不能像其它站点规则那样移到层外：
+   Tailwind v4 的工具类（px-3 / mt-4 之类）落在 @layer utilities 层，
+   而 CSS 级联规范规定**层外的普通声明排在所有层内普通声明之后**——
+   若这条重置移到层外，它会压过 utilities 层的工具类，
+   实测导致 /search/ 页搜索框的左右内边距从 12px 变成 0、
+   「正在搜索…」提示的上边距从 16px 变成 0。
+   放进 base 层后：base 在 utilities 之前，工具类照常赢（与 v3 的行为一致）；
+   而其它站点设计规则仍留在层外，继续压过 typography 插件的 utilities 层规则。 */
+@layer base {
+  body,
+  div,
+  dl,
+  dt,
+  dd,
+  ul,
+  li,
+  ol,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  form,
+  pre,
+  fieldset,
+  legend,
+  input,
+  textarea,
+  p,
+  blockquote,
+  th,
+  td,
+  hr,
+  article,
+  aside,
+  figure,
+  footer,
+  header,
+  nav,
+  section {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-body);
+  }
 }
 
 /* Tailwind v4 迁移（2026-11-03）：v3 的 Preflight 给表单控件设了 background-color:#fff，
