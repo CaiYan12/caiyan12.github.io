@@ -44,10 +44,16 @@ body {
   cursor: var(--cursor-default);
 }
 
-a,
-button,
-input[type="submit"] {
-  cursor: var(--cursor-link);
+/* 可点元素一律用本站手型光标。这条规则在 v3 里就住在 @layer base 内，
+   移出层时必须放回 base：层外会压过 @layer utilities 里的
+   `.disabled\:cursor-not-allowed`，实测让搜索表单提交按钮在禁用态仍显示手型光标
+   （v3 = not-allowed，v4 = link.cur）。见下方同一条规则的完整选择器组。 */
+@layer base {
+  a,
+  button,
+  input[type="submit"] {
+    cursor: var(--cursor-link);
+  }
 }
 
 ::selection {
@@ -1927,14 +1933,22 @@ a:hover {
   color: var(--colorful-green);
 }
 
-a,
-button,
-input[type="submit"],
-.backtop,
-.tab_nav,
-.tools,
-.carousel-indicators li {
-  cursor: var(--cursor-link);
+/* 可点元素一律用本站手型光标（站长点名的视觉契约，冒烟有 1652 个可点元素的负扫判据守着）。
+   这条规则**必须留在 @layer base 里**，理由与上面的元素级重置相同：
+   它若留在层外，会压过 @layer utilities 里的 `.disabled\:cursor-not-allowed`，
+   实测导致搜索表单提交按钮在忙碌/禁用态仍显示手型光标而不是 not-allowed
+   （v3 = not-allowed，v4 = link.cur）。放进 base 层后：base 在 utilities 之前，
+   工具类照常赢；而普通可点元素没有工具类竞争，仍是本站手型光标。 */
+@layer base {
+  a,
+  button,
+  input[type="submit"],
+  .backtop,
+  .tab_nav,
+  .tools,
+  .carousel-indicators li {
+    cursor: var(--cursor-link);
+  }
 }
 
 img:hover {
