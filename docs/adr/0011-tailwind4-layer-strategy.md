@@ -1,4 +1,4 @@
-# 0011：Tailwind v4 迁移走「保留 JS 配置 + 站点规则移出所有层」
+# 0011：Tailwind v4 迁移走「保留 JS 配置 + 站点设计规则移出所有层」
 
 2026-11-04。`tailwindcss` 3.4.19 → 4.3.4 不是版本升级，是接入方式重写：v4 不再是 PostCSS 插件（改由 `@tailwindcss/vite` 接管）、配置不再自动加载（须显式 `@config`）、`@tailwind` 三指令作废（改 `@import "tailwindcss"`）、并且**引入了真实 CSS 级联层**。本 ADR 记的是两条不易回退、且有真实取舍的决定。
 
@@ -17,7 +17,7 @@
 
 **一、保留 `tailwind.config.cjs`，用 `@config` 显式加载，不迁到 CSS-first `@theme`。**
 
-**二、把站点的 `@layer base` / `@layer components` 包裹去掉，让站点规则以 unlayered 身份参与级联。**
+**二、把站点的 `@layer base` / `@layer components` 包裹去掉，让站点的**设计规则**以 unlayered 身份参与级联；**声明 Tailwind 也会声明的属性的三条约规则**（元素级重置、两份手型光标）留在 `@layer base`。**
 
 ## 被否掉的方案及理由
 
