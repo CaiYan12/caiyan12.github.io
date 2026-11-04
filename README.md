@@ -508,17 +508,23 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
 - [ ] **限制壁纸池单张体积上限**（2026-11-02 登记，拉绳壁纸挂件 spec #127 收口时发现）：`src/config.ts` 的 `backgroundConfig.images` 四张实测 **876KB / 2.1MB / 3.1MB / 9.6MB**（原图未压缩）。换壁纸按「均匀随机 × 排除当前图 × 每候选最多试一次」选图并预载，最坏一次操作要串行等最多 3 个候选；**大尺寸图片还会让解码被判据拒绝**——Chromium 在并发或大尺寸下会对合法图片抛 `EncodingError`（见 Odoo PR #243133 与 Chromium issue 40261318，其修复正是把 `Promise.all` 改成 `allSettled`）。挂件侧已做兜底（decode 被拒时退化为「加载完成且具固有尺寸」再判定），但**上限本身应落在资源侧**。触发条件：访客反馈换图慢 / 内存占用高，或新增壁纸。实施建议：统一压到单张 ≤ 1.5MB（现有 4 张不动、只约定新图口径），同步更新 `public/images/bg/PEXELS-SOURCES.md` 的体积记录。
 
-- [ ] **Tailwind 3.4.19 → 4.3.4（接入方式重写，不是升级）**（2026-11-03 登记，**移交独立工作流**）
+- [x] **Tailwind 3.4.19 → 4.3.4（接入方式重写，不是升级）**（2026-11-03 登记 → 2026-11-04 迁完）
 
-    为什么必须单独排期：v4 不再是 PostCSS 插件（改用 `@tailwindcss/postcss` 或 Vite 插件）；配置从 `tailwind.config.cjs` 迁到 CSS-first 的 `@theme` 块；`@tailwind base/components/utilities` 三指令作废，**两套样式入口都要改**（`src/styles/global.css` 与 `src/nice-books/styles/books.css`）；Preflight 行为变化影响全站既有外观；**并且会推翻一条已固化的文档结论**——`docs/agents/build-and-deploy.md` 记录「v3 的 `@layer` 是构建期指令，产物里根本不存在 `@layer`，冲突按特异性→源顺序判定」，而 v4 引入真实 CSS 级联层。
+    方案与证据：[迁移设计](docs/plans/2026-11-04-tailwind4-migration-design.md)、[迁移 spec](docs/plans/2026-11-04-tailwind4-migration-spec.md) 与 [ADR 0011](docs/adr/0011-tailwind4-layer-strategy.md)。
 
-    方案必须先获批，要回答七个问题：接入方式选型（PostCSS 还是 Vite 插件，v4 是否还需要 `postcssNesting`）、`theme.extend` 的颜色/字体/阴影/圆角如何映射到 `@theme`、两套样式入口各怎么写、`@layer` 语义变化影响哪些既有规则、Preflight 具体影响哪些元素、怎么退回 3.4.19、验收标准。
+    **接入方式**：改由 `@tailwindcss/vite` 接管（`astro.config.mjs` 的 `vite.plugins` 首位），`postcss.config.mjs` 只剩 `[postcss-nesting, autoprefixer]`——`postcss-nesting` 是**必需项**（`global.css` 有 8 处无 `&` 符号的隐式嵌套），且来源变了：v3 时是 `tailwindcss` 包内附带的 `tailwindcss/nesting/index.js`，v4 的包不再导出该子路径，故改为显式依赖 `postcss-nesting@13.0.2`。两套样式入口（`src/styles/global.css` 与 `src/nice-books/styles/books.css`）各自独立写 `@import "tailwindcss"` + `@config` + `@source`，**`@config` 的相对路径深度不同**，改配置路径时两处都要改。
 
-    验收不能只跑构建：需 23 页计算样式指纹（复用 `scripts/upgrade-style-audit.mjs`）+ 桌面/移动截图 + 关键交互。
+    **配置**：保留 `tailwind.config.cjs` 走 `@config`，**不迁 CSS-first `@theme`**——实测纯 `@theme` 会丢失全部自定义色板 utility（`.text-nb-muted` / `.font-nb-serif` / `.bg-primary` / `.rounded-box` 等）。**`@source` 必须含 `.ts`/`.js`/`.mjs`**：Nice Books 在 TS 模板字符串里拼工具类，漏掉 `.ts` 会静默丢失 5 个 utility（产物小 4.3KB，零报错零警告）。
 
-    → 评估原文：`docs/plans/2026-11-03-phase5-migration-assessment.md` 第三节；实施骨架：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 11-15（**Task 12-15 是占位结构，方案获批后才可补写成可执行步骤**）。
+    **关键机制（本次最硬的发现）**：v4 引入真实 CSS 级联层，**站点规则必须移出所有 `@layer`**。CSS Cascade 5 规定 unlayered 规则排在所有 layered 之后 → 站点规则恒胜，精确还原 v3 靠「特异性 + 源顺序」得到的结果。**两条看起来很合理的替代方案都试过、都无效**：① 只改层序声明不够（站点那条层外的 `body,div,...,h1{margin:0}` 依然优先）；② 提高特异性也无效（层序压过特异性，实测四种方案全部 14px）。代价是**站点规则恒胜会压过 Tailwind utility**（与 v3 语义相反），全站已核无「站点类名与 utility 撞名」，但这是要持续守住的边界。
 
-    适合 `/grill-spec-tickets-implement` 工作流。
+    **推翻了 `docs/agents/build-and-deploy.md` 的一条承重结论**（已同批改写）：「v3 的 `@layer` 是构建期指令、产物里不存在 `@layer`」只对 v3 成立；v4 产物里有 `@layer theme, base, components, utilities;`。
+
+    **验收**：229 页构建零错误零警告；`pnpm check` 0 errors / 0 warnings / 6 hints；计算样式指纹 A/B（页数取自 `scripts/lib/smoke-pages.mjs` 的 `AUDIT_PAGES`，别在别处抄一份数字）——**差异属性只有 `border-*-color` 两类**，且量了 6 个页面所有 border-width>0 的元素（每个页面 219–556 个），**边框颜色 0 处不同**；其余差异全落在 border-width=0 的元素上，颜色不渲染，故**可见差异为零**。真实 DOM 的关键交互与盒模型 7/7 项完全一致。
+
+    **踩坑（写下来防重犯，五条）**：① 预览服务器会把所有路径返回首页（`serve -s` 的 SPA fallback、`astro preview`、Python `http.server` 三种都踩），指纹采集会得到「每页都是 851 个元素」的假象——须自写按 `trailingSlash: "always"` 映射到 `index.html` 且不做 fallback 的静态服务；② 截图对比必须先定噪声底线，且要区分两类随机源：背景壁纸是**运行时**随机（4 张候选，`Math.random` 选一张，覆盖整页，是最大噪声源），侧栏「手气不错」是**构建期**随机（`shuffleArray`）；③ 判断某条规则是否生效必须用**真实 DOM 结构**量——本轮曾用手写 fixture 测出「导航 padding v3=18px / v4=0px」的**假回归**，真实站点里 `#menu-index > li{padding:0}`（特异性 1-0-1）本就压着那条规则，v3 与 v4 实际完全一致；④ v4 把字号工具类的行高从绝对长度改成**比值**，继承到用 em 相对字号的子元素会按子元素字号重算（`/books/` 页因此差 1px），**不能用 `leading-[inherit]` 修**；⑤ 样式测试可能对 CSS 缩进有硬依赖，重排样式格式后要重跑。完整五条见 [`docs/agents/commands.md` 的「样式 A/B 的判据纪律」](docs/agents/commands.md#样式-ab-的五条判据纪律2026-11-04-立tailwind-v4-迁移实测得出)。
+
+    → 评估原文：`docs/plans/2026-11-03-phase5-migration-assessment.md` 第三节；原实施骨架：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 11-15（Task 12-15 是占位结构，方案获批后才可补写成可执行步骤）。
 
 - [ ] **Satori 0.26.0 → 0.63.2（跨 33 个 minor，无书面依据）**（2026-11-03 登记，**移交独立工作流**）
 
