@@ -47,9 +47,6 @@ importers:
       '@tailwindcss/typography':
         specifier: ^0.5.19
         version: 0.5.20(tailwindcss@4.3.4)
-      '@tailwindcss/vite':
-        specifier: 4.3.4
-        version: 4.3.4(vite@8.3.5(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.49.0)(yaml@2.9.1))
       astro:
         specifier: 7.4.4
         version: 7.4.4(@astrojs/markdown-remark@7.3.5)(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.49.0)(yaml@2.9.1)
@@ -129,6 +126,9 @@ importers:
       '@astrojs/ts-plugin':
         specifier: ^1.10.12
         version: 1.10.12
+      '@tailwindcss/vite':
+        specifier: 4.3.4
+        version: 4.3.4(vite@8.3.5(@types/node@24.13.3)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.49.0)(yaml@2.9.1))
       '@types/node':
         specifier: ^24.0.0
         version: 24.13.3
