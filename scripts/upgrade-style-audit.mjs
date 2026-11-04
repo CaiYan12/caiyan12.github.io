@@ -1,14 +1,27 @@
 // 样式指纹 v2：升级前后的逐元素计算样式比对（一次性迁移审计用）
-//   node output/style-fp.mjs capture --base http://localhost:4399 --out output/fp-before
-//   node output/style-fp.mjs diff --a output/fp-before --b output/fp-after
+//   node scripts/upgrade-style-audit.mjs capture --base http://localhost:4399 --out output/fp-before
+//   node scripts/upgrade-style-audit.mjs diff --a output/fp-before --b output/fp-after
 // 稳定性措施：种子化 Math.random（稿纸逐字符抖动）、DOM 静默等待（异步件）、
 // 剪掉 head 与播放器/看板娘子树（布局随时程浮动）。
+//
+// diff 的输出按「可见性」分三类，因为原始差异条目数不等于访客看得见的变化：
+//   · 可见（影响渲染）—— 访客真的能看出来的变化，这一类必须逐条看清楚；
+//   · 等价色 —— 字面量变了但换算后像素在肉眼不可辨范围内（如 v3 的 #374151 与
+//     v4 的 oklch(37.3% .034 259.733) 只差 1 个色阶）；
+//   · 不可见 —— 计算样式变了但渲染结果不变（典型：边框宽度为零时的边框颜色变化）。
+// 分三类**叠加**在原有明细之上，明细一条不少 —— 分类是为了让人不必自己判断，
+// 不是为了把明细替换掉。
 import { chromium } from "playwright";
 import { createHash } from "node:crypto";
 import { gzipSync, gunzipSync } from "node:zlib";
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { AUDIT_PAGES } from "./lib/smoke-pages.mjs";
+import {
+	diffElementLines,
+	judgePropertyDiff,
+} from "./lib/style-diff-visibility.mjs";
+import { compareColors } from "./lib/style-color-equivalence.mjs";
 
 const PROPS = [
 	"font-family",
@@ -65,6 +78,18 @@ const PROPS = [
 	"object-fit",
 	"opacity",
 	"transform",
+	// Tailwind v4 把 translate / rotate / scale 拆成了三个独立属性，
+	// 而 rotate-[10deg]、-translate-y-[7px] 用的正是它们。只采 transform 会读成 "none"，
+	// 看起来像「变换没了」，实际渲染一模一样（2026-11-04 实测：v3 的
+	// matrix(0.984808,...) 与 v4 的 rotate:10deg 渲染矩形逐位相同）。
+	// 不采这三个属性就合成不出「有效变换矩阵」，只能把真相同误报成可见回归。
+	"translate",
+	"rotate",
+	"scale",
+	// 视觉隐藏：v3 的 sr-only 用 clip，v4 用 clip-path: inset(50%)。
+	// 不采这两个就看不出「两版都隐藏、只是隐藏手法不同」。
+	"clip",
+	"clip-path",
 	"filter",
 	"overflow-x",
 	"overflow-y",
@@ -302,9 +327,21 @@ function load(out) {
 	// 指纹里的 url() 带绝对地址（含端口与域名），换宿主预览会造成全量假阳性；比对时归一化掉。
 	// swup 在切换瞬间给 html/body 挂的类名同理（采集时机不同就会出现"local-only/body.transition-swup-*"）。
 	// 明月浩空播放器是远端第三方件，其提示/歌词底色与歌单高度随远端响应变化，不属本站样式，剔除。
+	// 主机地址必须把「回环地址的各写法」都认掉：同一台机器上 v3 与 v4 用不同端口起服务时，
+	// 产物里每条带绝对地址的声明（本站手型光标、背景图）都会变成一条假差异。
+	// 只认 localhost:\d+ 时，127.0.0.1:\d+ 形式的采集结果会整片变成假阳性
+	// （2026-11-04 实测：一次得到 17028 条元素级差异，其中上万条只是端口号不同）。
+	// 主机名与端口**一并**抹掉而不是只抹端口：判据是「同一份产物换端口采集仍逐项一致」，
+	// 而两侧分别用 localhost 与 127.0.0.1 时，只抹端口仍会因主机名不同而判成差异。
+	// 覆盖范围只限回环地址与本站线上域名——第三方 host（myhkw.cn 等）必须原样保留，
+	// 它们的变化不属于「同一份产物的采集差异」。
 	const strip = (l) =>
 		l
-			.replace(/https?:\/\/(localhost:\d+|caiyan12\.github\.io)\//g, "/")
+			.replace(
+				/https?:\/\/(?:localhost|127\.0\.0\.1|0\.0\.0\.0)(?::\d+)?\//g,
+				"/",
+			)
+			.replace(/https?:\/\/caiyan12\.github\.io\//g, "/")
 			.replace(/\bhtml\.swup-enabled\b/g, "html")
 			.replace(/body\.transition-swup-[a-z-]+/g, "body")
 			.replace(/\s?(is-changing|to-page-load|removing|leaving)/g, "");
@@ -336,6 +373,20 @@ function diff() {
 	let pagesDiff = 0;
 	const orderOnly = [];
 	const verbose = process.argv.includes("--verbose");
+	// 可见性分类的累计计数。属性级差异是「最小可比单位」：一个元素可能在
+	// 颜色、边框颜色、间距上同时有差异，逐元素计数会掩盖「哪一类属性在变」。
+	const classes = {
+		visible: 0,
+		equivalent: 0,
+		invisible: 0,
+	};
+	// 按属性名归类，便于回答「不可见差异都是哪些属性带来的」
+	const byProp = new Map();
+	const bumpProp = (prop, kind) => {
+		if (!byProp.has(prop))
+			byProp.set(prop, { visible: 0, equivalent: 0, invisible: 0 });
+		byProp.get(prop)[kind]++;
+	};
 	for (const pa of a.pages) {
 		const pb = mapB.get(pa.path);
 		if (!pb) {
@@ -377,7 +428,10 @@ function diff() {
 			continue;
 		}
 		pagesDiff++;
-		const key = (l) => l.split(" | ")[1] || l;
+		// 键就是元素的位置路径。不能用 `|| l` 兜底：html 元素的位置路径是空串
+		// （pathOf 停在 HTML 之前），兜底会把整行当键，于是 html 的样式一变就被
+		// 记成「REMOVED + ADDED」两条而不是一条 CHANGED——凭空多出两条差异。
+		const key = (l) => l.split(" | ")[1];
 		const setA = new Map(),
 			setB = new Map();
 		for (const l of pa.lines) setA.set(key(l), l);
@@ -390,8 +444,83 @@ function diff() {
 		}
 		for (const [k, v] of setB) if (!setA.has(k)) diffs.push(["ADDED", v]);
 		totalDiff += diffs.length;
+		// 逐条判可见性。REMOVED / ADDED 是元素级增删：元素要么在要么不在，
+		// 渲染上一定看得见（页面上多/少了一个节点），一律算可见差异。
+		const perPage = { visible: 0, equivalent: 0, invisible: 0 };
+		// 三段清单在判定时直接收集：判定结束后再调一次 diffElementLines 拿到的是
+		// 另一批对象，kind/reason 都没挂上去（会全部是 undefined）。
+		const visibleItems = [];
+		const equivalentItems = [];
+		const invisibleItems = [];
+		for (const d of diffs) {
+			if (d[0] === "CHANGED") {
+				const propDiffs = diffElementLines(d[1], d[2]);
+				// transform 族整体判一次：同一处语义变化会同时落在
+				// transform / translate / rotate / scale 上（v3 写 transform，
+				// v4 写独立属性），逐属性判会重复计数。
+				const family = propDiffs.filter((pd) =>
+					TRANSFORM_FAMILY.has(pd.prop),
+				);
+				let familyVerdict = null;
+				if (family.length) {
+					const verdict = judgePropertyDiff(
+						"transform",
+						family[0].from,
+						family[0].to,
+						family[0].propsA,
+						family[0].propsB,
+					);
+					familyVerdict = verdict;
+				}
+				let familyCounted = false;
+				for (const pd of propDiffs) {
+					let verdict;
+					if (TRANSFORM_FAMILY.has(pd.prop)) {
+						verdict = familyVerdict;
+					} else {
+						verdict = judgePropertyDiff(
+							pd.prop,
+							pd.from,
+							pd.to,
+							pd.propsA,
+							pd.propsB,
+						);
+					}
+					let kind = verdict.visible ? "visible" : "invisible";
+					// 等价色：字面量变了但换算后不可辨。它确实参与了渲染，
+					// 只是结果落在肉眼阈值内——单列一类，不与「不渲染」混同。
+					if (kind === "visible" && isColorProp(pd.prop)) {
+						const cmp = compareColors(pd.from, pd.to);
+						if (cmp.equivalent) kind = "equivalent";
+					}
+					// transform 族只计一次：同一处变化落在多个属性上时，
+					// 重复计数会让「可见差异条目数」虚高。
+					if (TRANSFORM_FAMILY.has(pd.prop)) {
+						if (familyCounted) {
+							pd.kind = kind;
+							pd.reason = verdict.reason;
+							continue;
+						}
+						familyCounted = true;
+					}
+					classes[kind]++;
+					perPage[kind]++;
+					bumpProp(pd.prop, kind);
+					pd.kind = kind;
+					pd.reason = verdict.reason;
+					if (kind === "invisible") invisibleItems.push(pd);
+					else if (kind === "equivalent") equivalentItems.push(pd);
+					else visibleItems.push(pd);
+				}
+			} else {
+				classes.visible++;
+				perPage.visible++;
+				bumpProp(`(元素增删 ${d[0]})`, "visible");
+			}
+		}
 		console.log(
-			`\nDIFF  ${pa.path}  ${pa.elements} -> ${pb.elements} elements, ${diffs.length} changed`,
+			`\nDIFF  ${pa.path}  ${pa.elements} -> ${pb.elements} elements, ${diffs.length} changed` +
+				`  [可见 ${perPage.visible} / 等价色 ${perPage.equivalent} / 不可见 ${perPage.invisible}]`,
 		);
 		for (const d of diffs.slice(0, verbose ? 40 : 8)) {
 			if (d[0] === "CHANGED") {
@@ -427,16 +556,106 @@ function diff() {
 		}
 		if (diffs.length > (verbose ? 40 : 8))
 			console.log(`   ... ${diffs.length - 8} more`);
+		// 可见性归类明细：把「不可见」的条目逐条列出来并给出理由，
+		// 读者不必自己判断每一条是否影响渲染。
+		// 「可见」的条目在上面已经逐条打过明细，这里只补一句计数与理由，
+		// 避免把原有明细冲淡。
+		if (visibleItems.length) {
+			console.log(`   --- 可见（影响渲染）${visibleItems.length} 条 ---`);
+			const shown = visibleItems.slice(0, verbose ? 40 : 8);
+			for (const pd of shown)
+				console.log(
+					`      ${pd.prop}: ${pd.from} -> ${pd.to}   [${pd.reason}]`,
+				);
+			if (visibleItems.length > shown.length)
+				console.log(
+					`      ... ${visibleItems.length - shown.length} more`,
+				);
+		}
+		if (invisibleItems.length) {
+			console.log(
+				`   --- 不可见（不渲染）${invisibleItems.length} 条 ---`,
+			);
+			const shown = invisibleItems.slice(0, verbose ? 40 : 6);
+			for (const pd of shown)
+				console.log(
+					`      ${pd.prop}: ${pd.from} -> ${pd.to}   [${pd.reason}]`,
+				);
+			if (invisibleItems.length > shown.length)
+				console.log(
+					`      ... ${invisibleItems.length - shown.length} more`,
+				);
+		}
+		if (equivalentItems.length) {
+			console.log(
+				`   --- 等价色（像素不可辨）${equivalentItems.length} 条 ---`,
+			);
+			const shown = equivalentItems.slice(0, verbose ? 40 : 4);
+			for (const pd of shown)
+				console.log(
+					`      ${pd.prop}: ${pd.from} -> ${pd.to}   [换算后色差在肉眼阈值内]`,
+				);
+			if (equivalentItems.length > shown.length)
+				console.log(
+					`      ... ${equivalentItems.length - shown.length} more`,
+				);
+		}
 	}
+	// 可见性分类的汇总。放在末尾是因为前面已经逐页打过明细，
+	// 这里给的是全量口径——读者最关心「访客看得见的变化到底有多少」。
+	console.log(
+		`\n=== 可见性分类 ===\n` +
+			`  影响渲染（可见）: ${classes.visible}\n` +
+			`  等价色（像素不可辨）: ${classes.equivalent}\n` +
+			`  不渲染（不可见）: ${classes.invisible}\n`,
+	);
+	console.log("=== 不可见差异按属性名归类 ===");
+	const invisibleProps = [...byProp.entries()]
+		.filter(([, c]) => c.invisible > 0)
+		.sort((x, y) => y[1].invisible - x[1].invisible);
+	if (!invisibleProps.length) console.log("  （无）");
+	for (const [prop, c] of invisibleProps)
+		console.log(
+			`  ${prop}: ${c.invisible}` +
+				(c.visible
+					? `  (另有 ${c.visible} 条同类属性差异是可见的)`
+					: "") +
+				(c.equivalent ? `  (另有 ${c.equivalent} 条是等价色)` : ""),
+		);
+	console.log("=== 可见差异按属性名归类 ===");
+	const visibleProps = [...byProp.entries()]
+		.filter(([, c]) => c.visible > 0)
+		.sort((x, y) => y[1].visible - x[1].visible);
+	if (!visibleProps.length) console.log("  （无）");
+	for (const [prop, c] of visibleProps)
+		console.log(
+			`  ${prop}: ${c.visible}` +
+				(c.invisible
+					? `  (另有 ${c.invisible} 条同类属性差异不渲染)`
+					: "") +
+				(c.equivalent ? `  (另有 ${c.equivalent} 条是等价色)` : ""),
+		);
 	console.log(
 		`\n=== pages differing: ${pagesDiff}/${a.pages.length}, element diffs: ${totalDiff} ===`,
 	);
 	process.exit(totalDiff === 0 && pagesDiff === 0 ? 0 : 1);
 }
 
+/** 哪些属性是「颜色」——只有它们的两种表示才可能换算成同一像素。 */
+function isColorProp(prop) {
+	return /(^|-)color$/.test(prop) || prop === "color";
+}
+
+// transform 族：CSS Transforms Level 2 把它们拆成四个属性，
+// 但对渲染而言它们是同一个「有效变换矩阵」。
+const TRANSFORM_FAMILY = new Set(["transform", "translate", "rotate", "scale"]);
+
 if (process.argv[2] === "capture") await capture();
 else if (process.argv[2] === "diff") diff();
 else
 	console.log(
-		"usage: style-fp.mjs capture|diff [--base url] [--out dir] [--a dir] [--b dir]",
+		"usage: node scripts/upgrade-style-audit.mjs capture|diff " +
+			"[--base url] [--out dir] [--a dir] [--b dir] [--verbose]\n" +
+			"  capture  逐页采集计算样式指纹到 --out 目录（--base 是站点根，不带结尾斜杠）\n" +
+			"  diff     比对两份采集结果，输出按可见性分类：可见 / 等价色 / 不可见",
 	);

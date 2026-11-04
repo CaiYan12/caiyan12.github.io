@@ -4,6 +4,7 @@ import svelte, { vitePreprocess } from "@astrojs/svelte";
 import { pluginCollapsibleSections } from "@expressive-code/plugin-collapsible-sections";
 import { pluginLineNumbers } from "@expressive-code/plugin-line-numbers";
 import swup from "@swup/astro";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "astro/config";
 import expressiveCode from "astro-expressive-code";
 import { siteConfig } from "./src/config.ts";
@@ -109,6 +110,10 @@ export default defineConfig({
 			},
 		},
 		plugins: [
+			// Tailwind v4 改用官方 Vite 插件（v4 不再是 PostCSS 插件）。
+			// 走 Vite 而非 @tailwindcss/postcss：官方推荐后者之外的这条路径，且 Astro 7 的
+			// Vite 8 是 rolldown 驱动 —— 已实测 @tailwindcss/vite 4.3.4 在其上构建/HMR 均正常。
+			tailwindcss(),
 			{
 				// `public/pelican-bike/index.html` 是 vendored 的自包含单文件游戏，不是 Astro 路由。
 				// astro dev 用 Vite 的 public 静态中间件按路径直出文件，不做目录索引重写，于是导航链接
