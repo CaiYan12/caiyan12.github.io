@@ -1,6 +1,6 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.cjs";
+@source "../../src/**/*.{astro,html,js,jsx,md,mdx,svelte,ts,tsx,vue,mjs}";
 
 /* ============================================================
    Colorful（明月浩空）主题视觉还原
