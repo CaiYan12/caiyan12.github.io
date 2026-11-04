@@ -1,7 +1,7 @@
 # Tailwind 3.4.19 → 4.3.4 迁移设计
 
-2026-11-04。工作目录 `D:\pages\myblog-wt-tailwind4`（分支 `chore/tailwind4-migration`，从 `7686e8a` 起）。
-主检出 `D:\pages\myblog` 全程只读，作为 v3 基准。
+2026-11-04。工作目录为当时新建的独立 worktree（分支 `chore/tailwind4-migration`，从 `7686e8a` 起；后改名为 `feat/tailwind4-migration` 并合入 `main`，**该 worktree 与分支已在合并后清理**，其状态全部并入 `main`）。
+主检出 `D:\\pages\\myblog` 在迁移期间保持只读，作为 v3 基准。
 
 ## 一句话结论
 

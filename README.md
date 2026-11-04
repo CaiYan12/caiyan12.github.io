@@ -355,7 +355,7 @@ AI 日报由独立仓库 [CaiYan12/ai-news](https://github.com/CaiYan12/ai-news)
 
 ### 技术栈
 
-Astro 7.4.4 + TypeScript + Svelte 5（搜索组件）；Tailwind CSS 3（经根 `postcss.config.mjs` 直连，**不要加回 `@astrojs/tailwind`**）；Swup.js 无刷新切页；Pagefind 构建期搜索；Giscus 评论；Fancybox 6 灯箱；Expressive Code + KaTeX。
+Astro 7.4.4 + TypeScript + Svelte 5（搜索组件）；Tailwind CSS 4（经 `@tailwindcss/vite` 接管，**不是 PostCSS 插件**；`postcss.config.mjs` 只剩 `postcss-nesting` + `autoprefixer`，**不要加回 `@astrojs/tailwind`**）；Swup.js 无刷新切页；Pagefind 构建期搜索；Giscus 评论；Fancybox 6 灯箱；Expressive Code + KaTeX。
 
 Astro 7 升级的范围、构建前后差异与本地验收边界见 [实施记录](docs/plans/2026-11-02-astro7-upgrade.md)。
 

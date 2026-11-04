@@ -6,7 +6,7 @@
 
 `docs/agents/build-and-deploy.md` 记着一条承重事实：**「Tailwind v3 的 `@layer` 是构建期指令，产物里根本不存在 `@layer`，冲突按『特异性 → 源顺序』判定」**。这条结论对 v3 成立（实测主检出的 v3 产物 `dist/_astro/MainGridLayout.CKaYaVTj.css` 的 `@layer` 计数为 0），但 v4 引入真实级联层后它不再成立，且**推翻它的不只是文档**——它直接改变本站的渲染结果。
 
-实测（worktree `D:/pages/myblog-wt-tailwind4`，分支 `feat/tailwind4-migration`，229 页构建通过）：
+实测（独立 worktree，分支 `feat/tailwind4-migration`，229 页构建通过；该 worktree 与分支在合并后已清理，其状态已全部并入 `main`）：
 
 - **站点规则被插件压倒**：typography 插件的 `.prose` 规则落在 `@layer utilities`，站点的 28 条 `.prose` 规则落在 `@layer components`。v4 层序 `theme < base < components < utilities` 让 utilities 层无条件胜出——尽管站点规则特异性更高（0-1-1 vs 0-1-0）。正文标题 24px→36px、段落 14px→16px、链接品牌绿 `rgb(0,170,0)` 变插件蓝 `rgb(68,136,187)` 且失去下划线、全部 margin 归零。
 - **提高特异性一律无效**：实测 `.prose p code`(0-1-2) / `.prose :where(code)` / `.prose :is(code)` / `.post-content .prose code`(0-2-1) 四种方案全部仍是 14px。层序压过特异性。
@@ -48,3 +48,11 @@
 - **判据纪律**：五条踩坑（预览服务器把路径返回首页、截图要先定噪声底线、要用真实 DOM 而不是手写 fixture、v4 的行高继承规则变化、样式测试对缩进的硬依赖）写在 [`docs/agents/commands.md`](../agents/commands.md#样式-ab-的五条判据纪律2026-11-04-立tailwind-v4-迁移实测得出)；样式覆盖关系的推导纪律写在 [`docs/agents/styles.md`](../agents/styles.md)。
 - **相关实测记录**：见 [`docs/plans/2026-11-04-tailwind4-migration-design.md`](../plans/2026-11-04-tailwind4-migration-design.md)（迁移设计）与 [`docs/plans/2026-11-04-tailwind4-migration-spec.md`](../plans/2026-11-04-tailwind4-migration-spec.md)（规格，GitHub Issue #136）；接入方式与层策略的条目在 [`docs/agents/build-and-deploy.md`](../agents/build-and-deploy.md#构建链与依赖约束2026-11-02-起-astro-7) 与 [`docs/agents/styles.md`](../agents/styles.md)。
 - **回退路径**：本次分三笔提交（① 15 条死类移出样式层、仍在 Tailwind v3 下；② Tailwind 4 接入方式重写；③ 站点设计规则移出所有 `@layer` + 五处显式补偿）。合并推送后线上只看最终态；单独回退第三笔会回到「站点规则在层内、被插件压倒」的中间态，不是可用状态。
+
+## 落地状态（2026-11-04）
+
+**已上线。** 合并提交 `7c37de4`（PR [#143](https://github.com/CaiYan12/caiyan12.github.io/pull/143)），收尾文档提交 `937824d`。CI 三项全绿（含 Linux 上真实完整构建），部署 run `41800839319` success；线上 `pnpm verify:live` 连跑三次均 **29/29**。
+
+本 ADR 记的两条决定在线上均已生效：保留 `tailwind.config.cjs` 走 `@config`（自定义色板 utility 正常）、站点设计规则移出所有 `@layer`（三处按属性正面清单留在 `@layer base`）。线上 CSS 字节数 **195,513**，与本地构建逐字节相同。
+
+**上线后追加的一条修正**：本 ADR 所依赖的「CSS 资源名平台无关」这条部署验证纪律，在 v4 下**已失效**（`oklab()` 浮点末位随平台变）。详见 [`docs/agents/build-and-deploy.md`](../agents/build-and-deploy.md) 的「平台无关证据」清单。
