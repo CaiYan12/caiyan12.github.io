@@ -131,7 +131,9 @@ test("腰封荐语保留两行且不再移动封面文字避让", () => {
 test("共享书架卡片样式收窄硬壳阴影，hover 恢复正常阴影并保留书本轻抬与印章红反馈", () => {
 	const finePointerBlock =
 		css.match(
-			/@media \(hover: hover\) and \(pointer: fine\) \{[\s\S]*?\n  \}/,
+			// 块尾是 0 缩进的 `}`；早先用 `\n  }` 会在 Tailwind v4 迁移把站点规则移出 @layer、
+			// Prettier 把块内规则缩进从 4 空格变成 2 空格之后，匹配到块内某条规则的收尾而非块尾。
+			/@media \(hover: hover\) and \(pointer: fine\) \{[\s\S]*?\n\}/,
 		)?.[0] ?? "";
 	assert.match(
 		finePointerBlock,
