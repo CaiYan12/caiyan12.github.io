@@ -147,6 +147,18 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 - 发现**文档与代码矛盾但你无法证明哪边对**——把两边的证据摆出来问，不要猜。
 - 想删/归档既有文档——先问。
 
+## 工作流与阶段授权（门禁级 · 2026-11-05 站长明确声明）
+
+本仓库每一轮任务按 Matt Pocock Skill Driven Workflow 推进。**完整口径**（各阶段前置与禁止项、分支判定、意外变动处理、与 `/ask-matt` 官方默认的覆盖关系）在用户级 `MEMORY.md` 的「阶段授权纪律」节；本节是每轮注入的执行清单。`/xxx` 均为 Matt Pocock 技能，调用形式以当前会话注入的技能清单为准。
+
+- **授权边界**：每一阶段不跳步、不越级，**无明确指令不做下一步**；指令点名哪个阶段就停在哪个阶段，「按推荐」「确认」「继续」只表示采纳当前阶段结论，不构成进入下一阶段的授权。一个会话回合内**决不允许连续超过两个阶段**；即便一条指令明确授权多阶段，本回合最多执行 2 个，其余停下汇报再等指令。
+- **前置**：仓库未用 `/setup-matt-pocock-skills` 初始化时才跑；提示词提到 Matt Pocock 或相关 skills 只表示启用本工作流。
+- **阶段序列**：第 1 步信息收集 → 第 2 步 GRILLING（`/grill-with-docs` / `/grill-me`）→ 分支「第 2.1 步 `/implement` + `/code-review`」或「第 3 步 `/to-spec` → 第 4 步 `/to-tickets`」→ 第 5 步 `/implement-spec`（独立分支 + worktree + 子代理；子代理不可用即上报暂停，**不在主会话写任何代码**；完成后双轴 `/code-review`，汇报并待站长点头）→ 第 6 步清理（`/pr` 起草 PR → 合并分支 → 清残留分支与 worktree，被安全政策拦**不绕过**，给路径交站长手删）→ 第 7 步 `/retro`（仅报告，由站长选方向）。
+- **GRILLING 分支判定**：frontier 清空后跑一次 `/ask-matt` 评判直接 `/implement` 还是建议 `/to-spec`，**由站长决定方向**；`/ask-matt` 为 `disable-model-invocation: true`，须站长显式发起，代理不得自行触发。
+- **子代理**：子代理上下文未必包含用户级 `MEMORY.md`，派发 `/implement-spec` 子代理时由 lead 把本节授权边界随任务一并传入；子代理只做被点名的那一票。
+- **意外变动**：先评估风险；小且一轮可修的可先处理再回主线，影响较大、较复杂的列入 `README.md` 的 TODO 之后单独推进；以任务主线为重。
+- **口径冲突**：`ask-matt/SKILL.md` 建议 steps 1–3 连续推进，其 `PHASE-BOUNDARIES.md` 的 "phase" 指上下文管理决策点，与本节 7 个授权阶段**同名不同义**。本节口径优先，不得引用官方默认合理化跳步。
+
 ## 常用命令
 
 命令名与参数以 `package.json` 的 scripts 为准（**唯一真源**）。每条命令的用途、前置条件、env 变量形态与已知坑见 `docs/agents/commands.md` —— 要跑烟测/单测/构建期取数/票册自检时先读那一份。

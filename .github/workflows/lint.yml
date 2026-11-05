@@ -40,3 +40,9 @@ jobs:
 
       - name: Preserve Markdown math
         run: pnpm test:prettier-math
+
+      - name: Guardrail checks (hardcoded counts / doc versions / EOL)
+        run: |
+          node scripts/verify-no-hardcoded-counts.mjs
+          node scripts/verify-doc-versions.mjs
+          node scripts/verify-eol.mjs

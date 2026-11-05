@@ -10,24 +10,15 @@
 
 ## 构建链与依赖约束（2026-11-02 起 Astro 7）
 
-### 当前构建链版本（2026-11-05 实测）
+### 当前构建链版本（现测，不在文档里存快照）
 
-下表是**核对用的现值**，权威源永远是 `package.json` + `pnpm-lock.yaml`。升级任何一个直接依赖后，回来更新对应行，并同步 [README 头部徽章](../../README.md) 与 `CHANGELOG.md`；不要只在其中一处改。
+权威源只有 `package.json` + `pnpm-lock.yaml`。要现值直接读，不在这里维护第二份：
 
-| 组件                                              | 现版本          | 声明形态 / 备注                                                                                                                         |
-| ------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| `astro`                                           | **7.4.4**       | `dependencies` 精确固定；包自身 `engines.node >=22.23.4`（本机托管的 22.22.2 跑不了，构建须用系统 Node 24.18.0）                        |
-| `vite`                                            | **8.3.5**       | 由 `astro` 的 `vite ^8.3.5` 引入，**不是直接依赖**，顶层不要装一份                                                                      |
-| `@astrojs/svelte` / `svelte`                      | 9.1.2 / 5.57.3  | 精确固定，搜索岛用                                                                                                                      |
-| `@astrojs/check`                                  | 0.9.12          | 精确固定；`pnpm check` 用它                                                                                                             |
-| `@astrojs/markdown-remark` / `@astrojs/ts-plugin` | 7.3.5 / 1.10.12 | 前者精确、后者 caret                                                                                                                    |
-| `astro-expressive-code`                           | 0.44.3          | 精确固定                                                                                                                                |
-| `tailwindcss` / `@tailwindcss/vite`               | 4.3.4 / 4.3.4   | v4 经 `vite.plugins` 注入；`postcss.config.mjs` 只剩 `postcss-nesting` 13.0.2 与 `autoprefixer` 10.6.2                                  |
-| `typescript`                                      | 5.9.3           | caret 声明                                                                                                                              |
-| `satori` / `sharp`                                | 0.63.2 / 0.35.5 | OG 分享卡渲染与 PNG 编码                                                                                                                |
-| `pagefind`                                        | 1.6.0           | 构建期索引                                                                                                                              |
-| `prettier`                                        | 3.9.8           | 精确固定（公式保护，见下）                                                                                                              |
-| `pnpm` / CI Node                                  | 10.26.2 / 24    | `packageManager` 固定；`build.yml` 与 `deploy.yml` 用 Node 24，`lint.yml` 用 Node 22（只跑 Prettier 检查与公式测试，不执行 Astro 构建） |
+```bash
+node -e "const p=require('./package.json'); console.log(JSON.stringify({astro:p.dependencies.astro,satori:p.dependencies.satori,tailwindcss:p.dependencies.tailwindcss,vite:require('./node_modules/vite/package.json').version},null,2))"
+```
+
+`lint.yml` 的 `node scripts/verify-doc-versions.mjs` 会核对 README 头部徽章与上述真源；徽章值允许写完整版本（`7.4.4`）或主次版本（`4.3`）。**改依赖要同步徽章与 `CHANGELOG.md`**，本文件不再列版本表。带日期的历史版本记录保留在上文各批次的实施验收里；`README.md` 的 2026-09～11 历史条目按原文保留，不回写。
 
 - **Mermaid 独立升级（2026-11-03）**：`mermaid` 精确固定 **12.2.0**（原 `^11.17.2`），直接依赖仅此一行变化。**`src/utils/runtime/mermaid.ts` 的 `initialize` 里有四组「保住原外观」的钉值，删任何一个都会让全站图表变形**：
     - `layout: "dagre"` —— 12.0.0（[#8155](https://github.com/mermaid-js/mermaid/pull/8155)）把 ELK 设为默认布局引擎，未声明 layout 的 flowchart / state / class / ER / requirement / use-case / agentflow 会用 ELK。本站 86 个 flowchart 都没声明布局。**实测 dagre 与 elk 输出显著不同（12/12 样本，如某图 viewBox 宽 1346 vs 1296）**，所以这条是真在起作用，不是摆设。

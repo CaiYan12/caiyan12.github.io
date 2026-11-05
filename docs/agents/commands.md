@@ -73,7 +73,13 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - **建产物只跑 `pnpm exec astro build` 就够了**，不要为了预览跑整条 `pnpm build`——后者还串了 `fetch-github-*` / `fetch-friend-icons` / `generate-lqips` 等联网脚本，慢且易被网络拖垮。
 - **`NODE_USE_ENV_PROXY=1` 不是稳定性开关，两条路都走代理**（2026-11-05 定论）。机制已验证：Node 内置 fetch 默认不读 `HTTP(S)_PROXY`，设了该变量才会读——用坏代理（`127.0.0.1:9`）对照，不设变量请求成功、设了立刻 `ECONNREFUSED`。但**本机没有真直连**：Clash Verge 的 Mihomo TUN（网卡 `Mihomo` / `Meta Tunnel`）以 fake-ip 接管 DNS 与流量，`dns.lookup("fonts.googleapis.com")` 返回 `198.18.0.108`，不设变量的那条路照样经代理，只是走 TUN 而非 `HTTP_PROXY`。两条路依赖同一份订阅节点，节点抖动时都会超时（2026-11-05 在 T3 上撞到 10 s 超时，一度误判成「规则反转」；同日不设变量 534 ms 成功，不过是节点当时健康）。**判据：构建报 `No fonts are loaded` 时先换节点或重试，不要改构建代码、也不要把「设不设变量」当判据。** 2026-11-02 那次 A/B 对照本身是失效的（实验 shell 里 `HTTPS_PROXY` 本来就是未设置状态），别拿它当依据。
 
-注意：Windows 上 pnpm build 失败时尾部可能看不到完整错误（esbuild 崩溃断言），务必看完整输出而非 tail。
+**构建命令的默认形态：不要只 `tail`。** Windows 上 `pnpm build` 失败时尾部可能看不到完整错误（esbuild 崩溃断言），`| tail` 还会把真实退出码吞掉——2026-11-05 就因此把「产物完整、只少一步清理」写成结论，实测是 `astro build` 退出码 1、`astro:build:done` 根本没执行、`sitemap-*` 与 `pagefind/` 都没生成。要留日志又要看尾部时，用一条保住退出码的命令：
+
+```bash
+set -o pipefail; pnpm build 2>&1 | tee output/<批次名>/build.log | tail -n 40; echo "PIPESTATUS=${PIPESTATUS[*]}"
+```
+
+`PIPESTATUS[0]` 才是 `pnpm build` 的退出码；`&&` 链里任何一段失败也以它为准。不要拿 `tail` 的输出判构建成功。
 
 ### 本机所有外网访问共用一组不稳定节点（2026-11-05 复核）
 
@@ -95,6 +101,15 @@ Clash Verge 的 Mihomo TUN 是**透明接管**，所以「关掉代理变量」�
 - **超时先重试 1–2 次，再考虑换节点**；仍失败才去查代码或配置。不要把「这次超时」写进任何判据（2026-11-05 的 T3 字体超时、以及几次 `gh run watch` 卡住，都属于这一类）。
 - **不要用一次成功或一次失败去推翻一条网络结论**。当天同一小时内既有 10 s 超时也有 500 ms 成功，单点样本没有结论力——要么多次重复，要么做对照实验（如坏代理对照）。
 - 长任务（`pnpm build`、`gh run watch`）尽量在后台跑并留日志，抖动导致的中断可以用日志判断是网络还是代码。
+
+**可执行采集口径**（把「不拿单点样本下结论」变成可复核的读数）：
+
+```bash
+node -e "const d=require('node:dns'); for(let i=0;i<3;i++) d.lookup('fonts.googleapis.com',(e,a)=>console.log(i,e?e.code:a));"
+curl -sS -o /dev/null -w "HTTP %{http_code} | %{time_total}s\n" --max-time 20 "https://fonts.googleapis.com/css2?family=Noto+Sans+SC"
+```
+
+DNS 那条至少 3 次，`curl` 那条至少 3 次，再配 PowerShell 的 `Get-NetAdapter -Name Mihomo | Select-Object Name,Status` 看 TUN 网卡。判读：DNS 落在 `198.18.0.x` 说明 fake-ip 在接管；3 次里有成功也有超时就归到节点抖动，先重试再换节点，不改构建代码，也不把「设不设 `NODE_USE_ENV_PROXY`」当成解释变量。
 
 ### CC Safety Net 的实测拦截型态与被拦后的处置（2026-11-04 立）
 
@@ -408,6 +423,15 @@ gh run list --commit <sha> --json databaseId,name,conclusion,headSha
 > U-2 核验时发现 `output/` 在 2026-10-27 与 10-30 之间发生过无记录变更，`fp-t3-*` 等历史证据产物消失且成因不可追溯——本节防复发。
 
 清理（删除、清空、迁移）`output/` 等证据目录时记录四件事：操作**时间**、**范围**（文件清单——条目数不能替代清单）、**归档位置**（如有）、**结果**（完成 / 部分 / 失败）。有工作日志则记录于日志；存在相关交接时同步必要信息，不要求为每次清理新建交接文件。条目数也不能据此推断未知历史。不新增快照脚本，不追补猜测性的旧记录。
+
+## 长会话交接与日志格式（2026-11-05 立）
+
+> 起因：`/retro` 想复盘整轮时，原始会话记录 `~/.workbuddy/projects/<project>/<id>.jsonl` 被权限策略拒绝读取，只能靠系统压缩摘要 + 项目日志 + 仓库现状还原。transcript 能否读由宿主决定，仓库内补不上；能补的是让 handoff 与日志本身够当主源。
+
+- **每轮长会话开头固定产出一份 handoff**（Markdown，放系统临时目录或 `output/<批次名>/`），至少写：起点与目标、已完成/未完成、当前分支与 worktree、**授权到哪个阶段**、待决策项、关键 commit SHA 与证据路径。换 harness、换目录、fork 支线时按 `/handoff` 的口径另写一份。
+- **工作日志按条目结构写**，每条至少含：时间段与阶段名、站长授权了什么、决策与理由、实测读数（日期 + 环境）、环境坑、被回滚的动作与原因、未收口项。数字必须能指回来源；推论标「推论」，别写成事实。
+- **阶段授权单独记一行**：「本轮授权到第 N 步」以及「越级动作已回滚」。否则后来者只能从行间推断，这正是 2026-11-05 越权事件的复盘难点。
+- **`/retro` 的主源顺序**：handoff → 项目日志 `.workbuddy/memory/YYYY-MM-DD.md` → 仓库现状与门禁配置 → 系统提供的会话摘要；transcript 可读时再补逐 turn 归因。报告里写明本次用了哪些源、哪些不可得，**不能把「没读到」写成「没有发生」**。
 
 ## 脚本输出编码：Windows 控制台是 GBK（2026-11-03 立）
 

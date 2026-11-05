@@ -357,7 +357,7 @@ AI 日报由独立仓库 [CaiYan12/ai-news](https://github.com/CaiYan12/ai-news)
 
 Astro 7.4.4 + TypeScript + Svelte 5（搜索组件）；Tailwind CSS 4（经 `@tailwindcss/vite` 接管，**不是 PostCSS 插件**；`postcss.config.mjs` 只剩 `postcss-nesting` + `autoprefixer`，**不要加回 `@astrojs/tailwind`**）；Swup.js 无刷新切页；Pagefind 构建期搜索；Giscus 评论；Fancybox 6 灯箱；Expressive Code + KaTeX。
 
-构建链各组件的现版本以 [`docs/agents/build-and-deploy.md`](docs/agents/build-and-deploy.md) 的「当前构建链版本」表为准，最终真源是 `package.json` + `pnpm-lock.yaml`；改依赖时两处一起核，别只改徽章。Astro 7 升级的范围、构建前后差异与本地验收边界见 [实施记录](docs/plans/2026-11-02-astro7-upgrade.md)。
+构建链各组件的现版本直接从 `package.json` + `pnpm-lock.yaml` 读，现测命令见 [`docs/agents/build-and-deploy.md`](docs/agents/build-and-deploy.md) 的「当前构建链版本」节；`lint.yml` 会核对头部徽章与真源是否一致。改依赖时同步徽章与 `CHANGELOG.md`，别只改一处。Astro 7 升级的范围、构建前后差异与本地验收边界见 [实施记录](docs/plans/2026-11-02-astro7-upgrade.md)。
 
 OG 图由 Satori 接收普通元素对象生成；`@types/react` 供其 `ReactNode` 类型使用，不代表本站包含 React 页面或 React 运行时依赖。
 

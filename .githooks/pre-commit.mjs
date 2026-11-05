@@ -5,8 +5,10 @@
 // working tree, and every version-controlled file stay untouched.
 // Bypass a single commit with `git commit --no-verify`.
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { hasMixedEol } from "../scripts/lib/eol.mjs";
 
 const TAG = "[pre-commit]";
 
@@ -103,6 +105,19 @@ const unformatted = [];
 const errors = [];
 for (const f of inScope) {
 	const abs = path.join(repo, ...f.split("/"));
+	// 行尾混合只在原文件里看得见：core.autocrlf=true 会把 CRLF 规范化成 LF 存进
+	// index。这里读工作区副本，只读、不改动任何文件（与 Prettier 那段看 index 不同）。
+	try {
+		if (hasMixedEol(readFileSync(abs, "utf8"))) {
+			errors.push([
+				f,
+				"mixed CRLF/LF in worktree file; keep one EOL style per file",
+			]);
+			continue;
+		}
+	} catch {
+		// 工作区副本读不到时，交给下面的 index 读取与 Prettier 判定
+	}
 	let info;
 	try {
 		info = await prettier.getFileInfo(abs, { ignorePath });

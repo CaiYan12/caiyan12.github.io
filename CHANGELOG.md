@@ -1,5 +1,24 @@
 # 更新日志
 
+## 2026-11-05：把 retro 的六项环境改进接进门禁
+
+**为什么**：Tailwind v4 + Satori 两轮收口后的 `/retro` 报告列出 9 项候选，站长授权推进 S2 / S3 / S4 / S5 / S6 / S9，均按推荐方案。六项都是「机械错误该用确定性检查拦住」，不再往文档里加文字纪律。
+
+**同批落地的还有 S1**：站长在 `/retro` 后单独授权把 Matt Pocock Skill Driven Workflow 的 7 阶段授权边界写成纪律——用户级 `MEMORY.md` 是跨项目主源，根 `AGENTS.md` 新增「工作流与阶段授权」节作为每轮注入的项目门禁，并显式写明它优先于 `/ask-matt` 官方「steps 1–3 连续推进」的默认。该轮改动与本条一起提交。
+
+**改了什么**：
+
+- **S2 依赖假绿**：新增 `scripts/verify-deps.mjs`，构建前比对 `node_modules/{astro,satori,tailwindcss}/package.json` 的实装版本与 `package.json` 声明（精确版本严格相等，caret 只查存在）；接 `package.json` 的 `build` 链首。`scripts/verify-og-images.mjs` 的成功日志补 `satori <version>`，供事后追溯那批 OG 是哪版渲染的。起因是 2026-11-05 集成 worktree 里声明 0.63.2、实装 0.26.0、`dist` 是旧产物，而 OG 断言 33/33 全绿。
+- **S3 硬编码计数**：新增 `scripts/verify-no-hardcoded-counts.mjs`，扫 `scripts/verify-*.mjs` 里的 `EXPECTED_* = <数字>`；接 `lint.yml`。`AGENTS.md` 早有「不写会漂的计数」的文字规则，但 `EXPECTED_COUNT = 33` 仍被写进判据且 `/code-review` 没拦住。
+- **S4 版本号漂移**：新增 `scripts/verify-doc-versions.mjs` 核对 README 的 Astro / Tailwind CSS / TypeScript 徽章与真源；接 `lint.yml`。`docs/agents/build-and-deploy.md` 的「当前构建链版本」全量表降级为现测命令 + 真源指针，`README.md` 第 360 行的指向同步改写（前一条 CHANGELOG 里提到的「表」是当时的写法，历史原文不改）。
+- **S5 行尾与退出码**：新增 `scripts/lib/eol.mjs`（单一真源）、`scripts/verify-eol.mjs` 与 pre-commit 钩子里的混合行尾断言；接 `lint.yml`。**机制按实测修正**：`core.autocrlf=true` 下 Git blob 统一 LF，工作区 293 个文本文件里 124 个本就是纯 LF、0 个混合，强制全仓 CRLF 会误报 124 个文件，故判据改为「同一文件内不许混用 CRLF 与裸 LF」；`commands.md` 补 `set -o pipefail` + `tee` + `PIPESTATUS` 的默认构建命令形态。
+- **S6 交接与日志**：`commands.md` 新增「长会话交接与日志格式」节，规定 handoff 必备字段、日志条目结构、阶段授权单独记一行，以及 transcript 不可读时 `/retro` 的主源顺序。
+- **S9 网络判据**：`commands.md` 外网节点节补可执行采集口径（DNS ×3、TUN 网卡状态、目标域名 ≥3 次取样），把「不拿单点样本推翻结论」从文字纪律变成可复核的读数。
+
+**怎么验证的**：4 组新增 `node --test`（`eol` / `verify-deps` / `verify-no-hardcoded-counts` / `verify-doc-versions`）共 29 条全绿，含不一致、缺包、徽章过期、版本表过期、注释反例等故障注入；`pnpm test:lib` 43/43；四个新脚本在当前仓库直接执行全绿；`prettier --check` 通过；pre-commit 钩子用构造的混合行尾文件验证会拦下；`git diff --check` 通过。完整 `pnpm build` 未在本机重跑（构建期联网脚本受订阅节点影响），新门禁由 `lint.yml` 常驻执行、push 后由 CI 实跑确认。
+
+**有意不做（2026-11-05 裁定）**：S7（子代理派发前的存活探针 + 失败降级）与 S8（`AGENTS.md` 指针收敛 / 文档 prune）经站长裁定**不做**，已在 `docs/history/history.md` 未完成表登记以防重复评估，后续 `/retro` 不再作为候选提出；S1 见上；`.prettierrc.cjs` 的 `endOfLine: "auto"` 不改，避免全仓格式化翻面。
+
 ## 2026-11-05：把构建系统现版本同步到文档，并补记 Astro 7 升级的上线闭环
 
 **发现**：README 头部 Astro 徽章自 2026-11-02 升级后一直写着 `6.4.8`，而 `README.md` 技术栈段与 `docs/agents/build-and-deploy.md` 早已写 `7.4.4`——同一份文件里两处自相矛盾。`docs/agents/build-and-deploy.md` 开头还写着「阶段五只剩 Tailwind 4 与 Satori 0.63，已移交独立工作流」，实际上两项分别在 2026-11-04、2026-11-05 已上线。

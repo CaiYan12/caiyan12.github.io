@@ -167,8 +167,23 @@ if (isCli) {
 		process.exit(1);
 	}
 
+	// 把实际渲染器版本写进构建日志，供事后追溯「这批图到底是哪版 satori 画的」。
+	// 只影响日志，不影响判据；读不到就写 unknown，不让它把构建拖红。
+	let satoriVersion = "unknown";
+	try {
+		satoriVersion = JSON.parse(
+			readFileSync(
+				new URL("../node_modules/satori/package.json", import.meta.url),
+				"utf8",
+			),
+		).version;
+	} catch {
+		// 版本缺失由 build 链首的 verify-deps.mjs 负责报错
+	}
+
 	console.log(
 		`[og] ${result.count}/${result.expectedCount} 张通过：尺寸 ${WIDTH}x${HEIGHT}，` +
-			`最小非白像素占比 ${(result.minInkRatio * 100).toFixed(3)}%`,
+			`最小非白像素占比 ${(result.minInkRatio * 100).toFixed(3)}%，` +
+			`satori ${satoriVersion}`,
 	);
 }
