@@ -118,7 +118,7 @@ git show 4a35268:docs/plans/2026-10-14-article-toc-spec.md > /tmp/toc-spec.md
 | OG 分享卡的 A/B 基线快照                    | 已随 `output/` 清理删除        | 复核「33 张里 29 张与线上逐字节相同」需临时装回 `satori@0.26.0` 重建基线；探针要复跑得先给 `output/satori-upgrade/probe` 重装依赖并重下字体（字体不入库）                     |
 | 样式指纹审计接 CI                           | 明确不接                       | `scripts/upgrade-style-audit.mjs` 单次全量采集约 6 分钟，还需静态服务与 Chromium，成本高于收益；判据留在手工，改该脚本后必须做变异验证（见 `docs/agents/commands.md`）        |
 | 本机 `pnpm smoke:ui` 的 #41 / #47           | 固定红，属环境而非缺陷         | 宿主管卫让 `astro:build:done` 不执行，`sitemap-*` 与 `pagefind/` 不生成；这两条以 CI（Linux）产物为准，本地补跑 `pnpm exec pagefind --site dist` 可消掉「忙碌期二次提交」那条 |
-| 历史文档里 40 条失效的 `output/` 指针       | 已收口                         | 2026-11-05 清理证据目录所致，集中在 `docs/plans/2026-11-03-*` 与 `docs/agents/` 的执行记录；属当时快照，已于 2026-11-05 单独裁决并收口，处置口径见 `CHANGELOG.md` 顶部条目    |
+| 历史文档里 40 条失效的 `output/` 指针       | 已收口，落地提交 `44b7979`     | 2026-11-05 清理证据目录所致，集中在 `docs/plans/2026-11-03-*` 与 `docs/agents/` 的执行记录；属当时快照，已于 2026-11-05 单独裁决并收口，处置口径见 `CHANGELOG.md` 顶部条目    |
 | retro S7：子代理存活探针 + 失败降级         | 裁定不做（2026-11-05）         | 站长裁定不做，未展开理由；本行用于防重复评估，后续复盘不再作为候选提出                                                                                                        |
 | retro S8：`AGENTS.md` 指针收敛 / 文档 prune | 裁定不做（2026-11-05）         | 同上                                                                                                                                                                          |
 
