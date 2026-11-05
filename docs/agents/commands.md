@@ -75,6 +75,27 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 
 注意：Windows 上 pnpm build 失败时尾部可能看不到完整错误（esbuild 崩溃断言），务必看完整输出而非 tail。
 
+### 本机所有外网访问共用一组不稳定节点（2026-11-05 复核）
+
+Clash Verge 的 Mihomo TUN 是**透明接管**，所以「关掉代理变量」并不等于绕开代理：
+
+| 检查                                                      | 2026-11-05 13:45 实测                                                  |
+| --------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `dns.lookup("fonts.googleapis.com")` ×5                   | 5/5 → `198.18.0.108`（fake-ip 段）                                     |
+| 网卡 `Mihomo`（`Meta Tunnel`）                            | `Up`，进程 `clash-verge` / `clash-verge-service` / `verge-mihomo` 在跑 |
+| 不设 `NODE_USE_ENV_PROXY`（走 TUN），各 3 次              | fonts 511–524 ms、GitHub API 417–429 ms，全部 200                      |
+| 设 `NODE_USE_ENV_PROXY=1`（走 `127.0.0.1:7897`），各 3 次 | fonts 485–521 ms、GitHub API 422–428 ms，全部 200                      |
+
+两条路速度与成功率没有区别——**差别在节点当时健不健康，不在走哪条路**。
+
+因此下面这些操作都是一个命运共同体：`gh` / GitHub API、`fonts.googleapis.com` 字体拉取、npm/pnpm registry、CDN（jsDelivr、FontsAPI）、`fetch-github-*` 与 `fetch-friend-icons` 这类构建期联网脚本。节点抖动时它们会一起超时。
+
+处置纪律：
+
+- **超时先重试 1–2 次，再考虑换节点**；仍失败才去查代码或配置。不要把「这次超时」写进任何判据（2026-11-05 的 T3 字体超时、以及几次 `gh run watch` 卡住，都属于这一类）。
+- **不要用一次成功或一次失败去推翻一条网络结论**。当天同一小时内既有 10 s 超时也有 500 ms 成功，单点样本没有结论力——要么多次重复，要么做对照实验（如坏代理对照）。
+- 长任务（`pnpm build`、`gh run watch`）尽量在后台跑并留日志，抖动导致的中断可以用日志判断是网络还是代码。
+
 ### CC Safety Net 的实测拦截型态与被拦后的处置（2026-11-04 立）
 
 **先说结论：本仓库不提供任何「自动绕过」的脚本，也不要写。** 全局纪律（`~/.dsh/docs/tools-code.md` §3.8）是**被拦不绕过**——不换 shell、不拼字符串、不加 `--no-verify`、不改走别的工具。下面这份表只用于「读完 Rule 字段后知道该怎么做」，不是绕过清单。
@@ -129,6 +150,8 @@ Do not retry this operation or attempt any workaround
 
 1. `rm -rf output/<批次名>/{fp-a,fp-b,fp-mut}` —— 采集目录每份约 24 个文件，三个就超阈值。
 2. `pnpm exec astro build` 收尾清理 `dist/.prerender`（79 个条目）——**HTML 与 CSS 产物是完整的，但构建本身失败了**（**2026-11-05 校正**：原文写「产物本身是完整的，只是清理步骤没做成」，低估了后果）。实测两次复现：异常从 `buildApp` 的 `removeViteManifestDirectories` 抛出后，`astro:build:done` 钩子不再执行——`@astrojs/sitemap` 正是在该钩子里写 `sitemap-index.xml` / `sitemap-0.xml`，于是**两份 sitemap 都不生成**；`astro build` 的**真实退出码是 1**（加 `| tail` 才看不见），`pnpm build` 的 `&&` 链因此断在 `astro build`，后面的 `pagefind --site dist` 不跑，`dist/pagefind/` 也缺失。判断依据：`find dist -name "*.html" | wc -l` 数量对得上、目标规则能在 `dist/_astro/*.css` 里 `grep` 到——但这**只能证明页面与样式完整，不能证明构建成功**。**下游影响**：本机跑 `pnpm smoke:ui` 时会固定红三条，全部是前提检查、不是样式回归——`#41`（sitemap 文章页数）、`#47`（sitemap 页面 id 唯一性），以及「忙碌期的第二次提交被忽略」（缺 `pagefind` 索引时搜索结果数为 0，判据必然不成立）。**2026-11-05 实测**：手动补跑 `pnpm exec pagefind --site dist`（0.6s，28 页 / 47,583 词）后，该条立刻 PASS，完整的 142 项只剩 `#41` / `#47` 两条 sitemap 红。**当时把这条当成「既有 flake」是误判**——它的红与 sitemap 同源。sitemap 无法用单条命令补回（由 `@astrojs/sitemap` 在 `astro:build:done` 里写），需要这两条判据时以 CI（Linux，无此守卫）的产物为准。
+
+**注意：守卫不是「凡超过 50 项必拦」的稳定规则（2026-11-05 13:47 复测）**。同一天对 `dist/.prerender`（81 个文件）执行 `rm -rf` **直接成功删除**，输出里没有 `SAFE_DELETE` 字样，且该次命令被提示 `Sandbox bypassed (escalation-approved)`——这说明 shim 并非在所有执行路径上都注入。可靠的判据只有一条：**看输出里有没有 `SAFE_DELETE_BULK_CONFIRM_REQUIRED`**，有就按「那一步没发生」处理；没有就不能假设「一定拦住了」。构建进程内（node shim）的拦截已有日志实证：`{"count":128,"threshold":50,"scope":"turn","targets":[…"node_modules\\.astro\\vite-sync\\deps"]}`，紧随其后进程以 libuv 断言退出。
 
 **处置**（沿用「被拦不绕过」）：
 
