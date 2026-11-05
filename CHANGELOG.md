@@ -1,5 +1,14 @@
 # 更新日志
 
+## 2026-11-05：Tailwind v4 收口核对——判定通过，并校正文档里七处与代码/产物不符或自相矛盾的记述
+
+- **判定：可以收口。** 五处补偿逐条在 `astro preview` 上量计算值，全部生效：正文链接 `text-decoration-line: underline`；正文列表 `padding-inline-start: 4.875px`（13px 正文下即 `0.375em`）；404 页 `.search-box input` 底 `rgb(255, 255, 255)`；`.text-nb-seal` 装饰符号 `line-height: 20px`；`/books/` 简介段落 375px 视口 `line-height: 24px`（修复前是 35.2px）、桌面 38.5px。产物层结构为 `properties` / `theme` / `base` / `components` / `utilities` 五个块。
+- **线上与本地一致**：样式同为 **195,571 B**，逐字节差 1 字节（`.bg-primary\/15` 的 `oklab()` 浮点末位，Linux 与 Windows 的色值转换末位不同）。补 `nb.note-border` 键之前是 195,513 B，差值 58 B 即那条工具类。
+- **校正的五处事实偏差**（`bc7a13a`）：① README 徽章仍写 `Tailwind_CSS-3.4`；②「三处例外」实为**四个** `@layer base` 块（`global.css` 的元素级重置、`input,textarea` 白底、手型光标，加 `books.css` 的 `:focus-visible` 焦点环）；③ 产物里并不存在 `@layer theme, base, components, utilities;` 这句合并声明，层序按首次出现建立；④ 第五处补偿的实现是 `max-[540px]:leading-[1.5rem]`，不是文档记的 `max-[540px]:[--tw-leading:1.5rem]`（实测等效，375px 下行高 24px）；⑤ `commands.md` 把宿主管卫拦截写成「产物本身完整、只少一步清理」，低估了后果。
+- **顺带修掉的两处自相矛盾**：`styles.md` 记「②③ 两份光标」——重复的那份 2026-11-04 已删，现只有一份；ADR 0011 与 README 的「与本地构建逐字节相同」与同一节的「逐字节只差 1 字节」冲突，统一为「字节数相同、逐字节差 1 字节」。
+- **更正一条错误归因**（`9119e5b`）：`smoke:ui` 的「忙碌期的第二次提交被忽略」不是既有 flake。本机构建在 `astro:build:done` 之前被宿主管卫打断，`pagefind` 索引未生成，该判据因搜索结果数为 0 恒红；手动 `pnpm exec pagefind --site dist` 后立刻 PASS，完整 142 项只剩 `#41` / `#47` 两条 sitemap 前提红。**sitemap 无法用单条命令补回**（由 `@astrojs/sitemap` 在 `build:done` 写），需要这两条判据时以 CI 的 Linux 产物为准。
+- **验证**：`prettier --check` 覆盖了本轮改动过的全部 Markdown，全绿；推送后 `Lint` / `Build and Check` / `Deploy to GitHub Pages` 三项 `headSha` 均为 `9119e5b`，线上样式资源名与字节数未变（文档改动未进入产物）。
+
 ## 2026-11-05：状态采样扩到四态，并修掉三处会让它「采了等于没采」的缺陷
 
 - **`nb.note-border` 补上色板键（配置缺陷）**。`src/nice-books/lib/render.ts` 的荐语便签用了 `border-nb-note-border`，而 `tailwind.config.cjs` 的 `nb` 色板只有 `border` / `border-strong`——该工具类**静默不生成**，`--nb-note-border: #e3d3a2` 定义了没人消费，便签边框退回 `currentColor`（深色描边）。补键后产物出现 `.border-nb-note-border{border-color:var(--nb-note-border)}`，`/books/01/` 实测计算值 `rgb(227, 211, 162)`。这是**视觉变更**，不是纯配置整理。

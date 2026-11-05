@@ -526,7 +526,9 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     → 评估原文：`docs/plans/2026-11-03-phase5-migration-assessment.md` 第三节；原实施骨架：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 11-15（Task 12-15 是占位结构，方案获批后才可补写成可执行步骤）。
 
-    **上线记录（2026-11-04）**：三条 CI 全绿（`Astro Check` 35s / `Prettier Check` 42s / `Astro Build` 1m21s，Linux 上真实构建通过），合并后 `Deploy to GitHub Pages` 2m23s success。线上 `Last-Modified: 08:38:55 GMT` 晚于推送；`pnpm verify:live` **连跑三次均 29/29**；`pnpm verify:live:swup` document 级接管证据通过。线上产物确为 v4：CSS 里有 `@layer` 声明（v3 产物层数为 0），字节数 **195,513** 与本地构建逐字节相同。
+    **上线记录（2026-11-04）**：三条 CI 全绿（`Astro Check` 35s / `Prettier Check` 42s / `Astro Build` 1m21s，Linux 上真实构建通过），合并后 `Deploy to GitHub Pages` 2m23s success。线上 `Last-Modified: 08:38:55 GMT` 晚于推送；`pnpm verify:live` **连跑三次均 29/29**；`pnpm verify:live:swup` document 级接管证据通过。线上产物确为 v4：CSS 里有 `@layer` 声明（v3 产物层数为 0），字节数 **195,513** 与本地构建**字节数相同**（逐字节差 1 字节，见下条）。
+
+    **收口核对（2026-11-05）**：五处补偿逐条在 `astro preview` 上量计算值，全部生效——正文链接 `text-decoration-line: underline`；正文列表 `padding-inline-start: 4.875px`（13px 正文下即 `0.375em`）；404 页 `.search-box input` 底 `rgb(255, 255, 255)`；`.text-nb-seal` 那处装饰符号 `line-height: 20px`；`/books/` 简介段落在 375px 视口 `line-height: 24px`（不是修复前的 35.2px），桌面 38.5px。层结构在产物里可验证（`properties` / `theme` / `base` / `components` / `utilities` 五个块）。当日线上样式与本地同为 **195,571 B**（补 `nb.note-border` 后），逐字节差 1 字节——仍是 `oklab()` 浮点末位。同日校正了本文档、ADR 0011、票册与命令文档里五处与代码或产物不符的记述，见提交 `bc7a13a` / `9119e5b`。
 
     **推翻了「CSS 资源名平台无关」这条判定纪律（本次新发现，已改写 `docs/agents/build-and-deploy.md`）**：v3 时代本地与线上 CSS 资源名确实完全一致，所以这条纪律一直好用。**v4 起不再成立**——本次本地 `MainGridLayout.B_utt6QD.css`、线上 `MainGridLayout.TXd5OLZn.css`，**名字不同但字节数完全相同，逐字节只差 1 个字节**：`bg-primary/15` 编译出的 `oklab(69.9907% -.188933 .144998/.15)` 在 Linux 上是 `-.188934`，**色彩转换的浮点末位随平台变**，内容寻址哈希因此改变。该差异只出现在 `WidgetCalendar.astro` 的日历当前日期格底色上，1 个浮点末位不可见。判据已改为「同名即同源；不同名则下载比对字节数与逐字节差异，仅 `oklab()`/`color-mix()` 浮点末位不同即正常」。
 
