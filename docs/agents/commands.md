@@ -361,6 +361,15 @@ gh run list --commit <sha> --json databaseId,name,conclusion,headSha
 
 ---
 
+## worktree 里的依赖与产物都不共享（2026-11-05 立，当天踩了两次）
+
+`git worktree add` 给的是**独立工作目录**，不是同一份工作区的另一个入口。`node_modules`、`dist`、`.astro` 缓存全部各建一份。由此有两个必踩的坑：
+
+1. **合并了 `package.json` 不等于装上了新依赖。** 在 worktree 里 `git merge` 进一个改了依赖的分支后，`node_modules` 仍是旧版本，`astro build` 照常成功、退出码照常是那个被守卫改写的 1——但构建用的是旧依赖。2026-11-05 在集成 worktree 上第一次验证 satori 升级时就是这样：`package.json` 已写 `0.63.2`，`require("satori/package.json").version` 仍是 `0.26.0`，差点把「旧版构建通过」当成「新版构建通过」。**构建前先打印实际安装版本**，两者不一致就 `pnpm install --store-dir "D:/pages/myblog/.pnpm-store"`。
+2. **worktree 的 `dist` 不会因为你换了依赖而自动重建。** 它只是上一次构建的残留。拿它当 A/B 的基线，等于把「旧依赖的产物」当成「当前产物」——同日线上复核因此误报 31 张不一致，而部署其实完全成功，错的是对照基准。判据：比对前确认候选 `dist` 的生成时间晚于最后一次依赖变更（`ls -l dist/og | head -1` 与 `git log -1 --format=%ci` 对一下）。
+
+清理 worktree 时 `node_modules` 会一起消失；`git worktree remove` 对含未跟踪文件的目录会拒绝，删之前先确认没有要留的证据（见上一节）。
+
 ## 证据目录清理的记录约定（2026-10-30 立）
 
 > U-2 核验时发现 `output/` 在 2026-10-27 与 10-30 之间发生过无记录变更，`fp-t3-*` 等历史证据产物消失且成因不可追溯——本节防复发。

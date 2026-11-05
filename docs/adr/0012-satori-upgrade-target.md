@@ -50,7 +50,7 @@ README TODO「进行中」第三条挂着 Satori 0.26.0 → 0.63.2：跨 37 个 
 
 ## 落地状态（2026-11-05）
 
-**已落地。** spec [#144](https://github.com/CaiYan12/caiyan12.github.io/issues/144)，三张票 #145 / #146 / #147 全部合并到集成分支 `d2c3f9f`，PR [#150](https://github.com/CaiYan12/caiyan12.github.io/pull/150)。
+**已落地。** spec [#144](https://github.com/CaiYan12/caiyan12.github.io/issues/144)，三张票 #145 / #146 / #147 与文档票 #148 全部合并到集成分支 `d2c3f9f`，PR [#150](https://github.com/CaiYan12/caiyan12.github.io/pull/150)；2026-11-05 合并为 `b3f8a1c` 并部署，线上 33 张复核 29 张逐字节相同、4 张差 0.017%–0.028%。
 
 三笔提交，回滚单元与本 ADR 决定四一致：
 
