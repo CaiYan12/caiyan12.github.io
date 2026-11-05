@@ -1,12 +1,12 @@
-// 只测公开接口：verifyOgImages({ dir, expectedCount }) 返回 { ok, errors }。
+// 只测公开接口：verifyOgImages({ dir, expectedCount }) 与 countPublishedPosts(dir)。
 // 不 mock sharp、不断言内部实现——判据的价值就在于「真的读到了那张图」。
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import sharp from "sharp";
-import { verifyOgImages } from "./verify-og-images.mjs";
+import { countPublishedPosts, verifyOgImages } from "./verify-og-images.mjs";
 
 const WIDTH = 1200;
 const HEIGHT = 630;
@@ -109,4 +109,71 @@ test("目录不存在时失败而不是抛出", async () => {
 	});
 	assert.equal(result.ok, false);
 	assert.ok(result.errors.length > 0);
+});
+
+test("没有传期望数量时失败，而不是静默放过数量判据", async () => {
+	const dir = await makeDir({ "a.png": await cardPng() });
+	const result = await verifyOgImages({ dir });
+	assert.equal(result.ok, false);
+	assert.ok(
+		result.errors.some((e) => e.includes("期望数量无效")),
+		`未拒绝缺失的期望数量：${result.errors.join("; ")}`,
+	);
+	rmSync(dir, { recursive: true, force: true });
+});
+
+// 期望数量必须跟着内容走：写死常量会在下一篇非草稿文章提交时让 build 变红。
+test("期望数量按非草稿文章派生，草稿不计入", () => {
+	const dir = mkdtempSync(join(tmpdir(), "og-content-"));
+	const post = (slug, frontmatter) => {
+		mkdirSync(join(dir, slug), { recursive: true });
+		writeFileSync(
+			join(dir, slug, "index.md"),
+			`---\n${frontmatter}\n---\n\n正文\n`,
+		);
+	};
+	post("20260101000000", "title: 甲\npublished: 2026-01-01 00:00:00");
+	post("20260102000000", "title: 乙\npublished: 2026-01-02 00:00:00");
+	post(
+		"20260103000000",
+		"title: 丙\npublished: 2026-01-03 00:00:00\ndraft: true",
+	);
+	// 正文里出现 draft: true 不算草稿——只认 frontmatter
+	mkdirSync(join(dir, "20260104000000"), { recursive: true });
+	writeFileSync(
+		join(dir, "20260104000000", "index.md"),
+		"---\ntitle: 丁\npublished: 2026-01-04 00:00:00\n---\n\ndraft: true 只是正文里的一行\n",
+	);
+
+	assert.equal(countPublishedPosts(dir), 3);
+	rmSync(dir, { recursive: true, force: true });
+});
+
+test("新增一篇非草稿文章后，期望数量自动加一而无需改脚本常量", async () => {
+	const contentDir = mkdtempSync(join(tmpdir(), "og-content-"));
+	const write = (slug, draft) => {
+		mkdirSync(join(contentDir, slug), { recursive: true });
+		writeFileSync(
+			join(contentDir, slug, "index.md"),
+			`---\ntitle: ${slug}\npublished: 2026-01-01 00:00:00\n${draft ? "draft: true\n" : ""}---\n\n正文\n`,
+		);
+	};
+	write("20260101000000", false);
+	write("20260102000000", false);
+
+	const before = countPublishedPosts(contentDir);
+	write("20260103000000", false);
+	const after = countPublishedPosts(contentDir);
+	assert.equal(before, 2);
+	assert.equal(after, 3);
+
+	// 真实产物同步多一张时，判据仍然通过——这正是写死 33 会误报的场景
+	const ogDir = mkdtempSync(join(tmpdir(), "og-"));
+	for (let i = 0; i < 3; i++)
+		writeFileSync(join(ogDir, `${i}.png`), await cardPng());
+	const result = await verifyOgImages({ dir: ogDir, expectedCount: after });
+	assert.equal(result.ok, true, result.errors.join("; "));
+
+	rmSync(contentDir, { recursive: true, force: true });
+	rmSync(ogDir, { recursive: true, force: true });
 });
