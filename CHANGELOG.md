@@ -1,5 +1,19 @@
 # 更新日志
 
+## 2026-11-05：清理历史文档里失效的 output/ 指针
+
+**改了什么**：给 `docs/plans/2026-11-03-phase5-migration-implementation-plan.md`、`docs/plans/2026-11-03-katex-upgrade.md`、`docs/plans/2026-11-03-mermaid-upgrade.md`、`docs/plans/2026-11-02-ai-news-closeout.md` 各加一处 H1 下方的「历史快照说明」注记，逐字相同；`docs/agents/commands.md` 的「探针与证据留在哪」句与「变异验证」脚本位置句去掉无条件「可复跑」，改注当前不可复跑及前提；同文件「一次性探针脚本该放哪」节的「别把它清成空目录」改为分级保留口径。历史文档正文里的 `output/` 路径、读数与命令一字未动。
+
+**为什么这么定**：工作集按分类后的口径，不按任何一套登记计数。A 类（历史执行记录里的命令与路径）保留原文事实、只加文件级一处注记，避免逐条编辑把执行快照改得面目全非；B 类（声称「证据在此、可复跑」的活口径）逐句改；C 类（规范占位符 `output/<批次名>/` 与仍存在的路径）和 D 类（会话转录、被截断的路径片段、通配符、既有根相对链接）不算死链，不改。术语口径：指向已删证据目录、只作当时记录的称「历史指针」，声称证据仍在或可复跑的称「活口径」，两者处置不同。
+
+**刻意不做的几处**：`README.md` 已收口的 Tailwind v4 / Satori 条目、`docs/adr/`、qweather 转录正文、`history.md` 未完成表末尾 retro S7 / S8 两行，均按硬边界不动；这些位置的历史表述仅作当时记录，不改写为当前做法。`output/` 在 `.gitignore` 里整目录忽略、从未入库，被删的 A/B 快照、逐张图与字体不可从 Git 取回；`docs/history/history.md`「归档清单（第四批）」的恢复命令取回的是归档的 Markdown 文档结论，不是证据产物，重建前提见该文件「未完成或未实施的事项」表——两者分工写明，不把「取回文档」当成「取回证据」。
+
+**纪律冲突的裁决**：`docs/agents/commands.md`「一次性探针脚本该放哪」节原写「别把它清成空目录，历次批次证据要留着」，与 2026-11-05 清理证据目录的既成事实相抵。站长裁定**修订该条纪律**而非登记例外，改为分级保留：判据值钱的脚本、文本类证据与文档点名引用的文件保留，可重建的大体积产物允许清理，清理前后按四件事记录。
+
+**实测证据（2026-11-05，本机只读复核）**：用窄 ASCII 正则逐 token `existsSync` 重建清单，tracked Markdown 的失效指针集中在上述 plans 文件；`docs/history/qweather-settingup-history-sessions.md` 的失效项全是会话转录里的 `Ran` / `Wrote` 行，另核出既有根相对链接指向的目标实际存在。`git ls-files 'output/*'` 与 `git log --all -- output/` 均为空，确认被删证据不可从 Git 取回。`output/satori-upgrade/probe/node_modules` 与 `probe/fonts` 的实况和清理日志「已删」记述不一致（前者仍有文件、后者只剩 `google-fonts.css`），只登记差异，不改写日志、不重建证据。
+
+**怎么验证的**：`git diff` 逐行自查、`git diff --check`；`prettier --check ./src ./docs ./*.md`；`scripts/verify-no-hardcoded-counts.mjs` / `verify-doc-versions.mjs` / `verify-eol.mjs` / `verify-deps.mjs` 直接跑；全仓库 Markdown 死链复扫按基线比对，判据为「A 类各有一处注记且正文逐字未变、B 类不再有无条件可复跑断言、受保护位置与 C/D 类逐字未变、无新增死链（占位符与截断片段列明为已知）、旧计数只留在历史登记处」，不按「零死链」验收；逐文件复核行尾形态保持原有 CRLF / LF，无混合。纯文档改动走轻量档，未跑 `pnpm build`；按站长裁定豁免 `/tdd`，`/code-review` 保留。**同时登记一处缺口**：`docs/agents/commands.md`「证据目录清理的记录约定」节要求记录时间、范围（文件清单——条目数不能替代清单）、归档位置、结果四件事，而 2026-11-05 那次清理的日志只给了条目数与保留/删除类别，**没有逐文件清单**，范围一项不满足该节要求；按同节「不追补猜测性的旧记录」，不补造清单，只在此登记缺口，规范正文不改。
+
 ## 2026-11-05：把 retro 的六项环境改进接进门禁
 
 **为什么**：Tailwind v4 + Satori 两轮收口后的 `/retro` 报告列出 9 项候选，站长授权推进 S2 / S3 / S4 / S5 / S6 / S9，均按推荐方案。六项都是「机械错误该用确定性检查拦住」，不再往文档里加文字纪律。

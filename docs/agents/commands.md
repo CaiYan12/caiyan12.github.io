@@ -286,7 +286,7 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 
 - 23 页共 **21,761 行**：静态 17,121、四态各 1,160（`STATE_MAX` 生效，部分页面可交互元素不足 60 个）。每个键唯一，**0 页存在键冲突**。
 - **确定性**：同一份产物连采两次（`fp2-a` / `fp2-b`），`diff` 报 `pages differing: 0/23, element diffs: 0`。注意这是**整份指纹**的确定性，不是只比状态行——2026-11-04 那条「零差异」用的是 `onlyState` 过滤，只覆盖状态行，别把两者当同一判据。
-- **变异验证（三处，各自只作用于一种状态，且不触碰任何静态行）**：`disabled:cursor-wait` 的 `cursor:wait → help`、`active:translate-y-0` 的 `--tw-translate-y:0px → 7px`、`hover:-translate-y-px` 的 `-1px → -9px`。结果 **2/23 页、10 条差异**，按状态归属为 `:hover` 4 条 / `:active` 4 条 / `:disabled` 2 条，**静态行 0 条**。这同时证明了「新状态真的被采到」与「差异不会串到别的状态」。脚本：`output/eng-discipline-2/mutation-test-v3.mjs`（自带备份与还原，跑完会逐条核对变异确实落进产物）。
+- **变异验证（三处，各自只作用于一种状态，且不触碰任何静态行）**：`disabled:cursor-wait` 的 `cursor:wait → help`、`active:translate-y-0` 的 `--tw-translate-y:0px → 7px`、`hover:-translate-y-px` 的 `-1px → -9px`。结果 **2/23 页、10 条差异**，按状态归属为 `:hover` 4 条 / `:active` 4 条 / `:disabled` 2 条，**静态行 0 条**。这同时证明了「新状态真的被采到」与「差异不会串到别的状态」。脚本：`output/eng-discipline-2/mutation-test-v3.mjs`（自带备份与还原，跑完会逐条核对变异确实落进产物）；该脚本仍在本地，但证据目录已于 2026-11-05 清理，复跑前提见下文「探针与证据留在哪」。
 - **上一轮 `REMOVED` 假阳性的真因**：同一脚本首轮出现过 1 条 `REMOVED ul`，追到 `div#myhkLrc`（远端播放器容器，采集时 `ERR_TIMED_OUT`），补 `[id^='myhk']` 后消失。
 
 **实测证据（2026-11-04，两态时期的记录，数字保留原样）**：
@@ -296,7 +296,7 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 - **变异验证（关键）**：改 `--colorful-green-accessible` 从 `#007a00` 到 `#ff00ff`，**19/23 页报出 43–86 条差异**，差异全部落在 `outline-color`，形如 `- outline-color=rgb(0, 122, 0)` / `+ outline-color=rgb(255, 0, 255)`。剩下 4 页未变是**正确行为**，不是漏报：`books*` 三页是 Nice Books 独立壳、自有一套样式，实测 `hasGreenOutline=false`（不消费该变量）；`/this-page-should-404/` 只有 3 个元素、无可交互元素。
 - **第一次变异选错了目标**（记下来防重犯）：我先改 `:focus-visible{outline:2px solid #fff}`，结果 **0/23 页报差异**。查证后发现实际生效的 outline 颜色来自 CSS 变量而非这条规则——**改判据后要做变异验证，而变异点本身也要先证明它真的作用到被采样元素**，否则验证的是空气。
 
-**探针与证据留在哪**：2026-11-04 那轮在 `output/retro-eng-discipline/`（2.8 MB）；2026-11-05 这轮在 `output/eng-discipline-2/`（三次采集 + 四处探针 + 变异脚本 + 备份的产物 CSS）。都按本文件「一次性探针脚本该放哪」的规矩存放，可复跑。
+**探针与证据留在哪**：2026-11-04 那轮在 `output/retro-eng-discipline/`（2.8 MB）；2026-11-05 这轮在 `output/eng-discipline-2/`（三次采集 + 四处探针 + 变异脚本 + 备份的产物 CSS）。都按本文件「一次性探针脚本该放哪」的规矩存放。**当前不可复跑**：2026-11-05 清理证据目录后，脚本与文本证据仍在，但被删的大体积产物未入库、不可从 Git 取回，复跑前须重建产物与依赖；归档文档的结论与取回命令见 `docs/history/history.md`「归档清单（第四批）」，重建前提见该文件「未完成或未实施的事项」表。
 
 **不覆盖的部分（如实披露）**：`:checked` 未纳入（全站零消费方，见上表）；`:visited` 永久排除（强制无效）；`range` 输入的 thumb 伪元素规则（`:active::-webkit-slider-thumb`）采不到，因为读的是元素自身的 computed style，不含伪元素；`STATE_MAX = 60` 且按 DOM 顺序取，长页面上排在 60 名之后的可交互元素不被采样。
 
@@ -343,7 +343,7 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 - 一次性探针（`.mjs` / `.py` / 临时 CSS 副本 / 抓取的基线产物）一律写到 `output/<批次名>/`，批次名用升级主题，如 `output/tailwind4-migration/`。
 - **判据值钱的脚本要另存进 `scripts/`**，不要只留探针副本。既有先例：`verify:live` 与 `verify:live:swup` 原先是 `output/live-verify*.mjs`，差点随下次会话蒸发，2026-11-03 已移植进 `scripts/`——见上文「线上验收脚本已入库」条。**探针目录用来算，`scripts/` 用来留。**
 - 系统临时目录（`AppData/Local/Temp`）只适合**确实一次性、丢了也无所谓**的东西。凡是「以后还想再跑一遍」的，它就不合格。
-- 清理 `output/<批次名>/` 时按上节四件事记录；但**别把它清成空目录**——历次批次的证据要留着，方便后来者对照当时怎么量的。
+- 清理 `output/<批次名>/` 时按上节四件事记录。**分级保留**：判据值钱的脚本、文本类证据与文档点名引用的文件保留；可重建的大体积产物（dist 快照、逐张对比图、字体、`node_modules`）允许清理。清理前须有逐文件清单，清理后在日志写明删了哪一类。2026-11-05 那次证据目录清理按分级保留执行，被删内容未入库、不可从 Git 取回。
 
 **为什么不是新建一个 `.probe/`**：仓库已有 `output/` 承担这个职责，再开一个同级目录会制造两套并存的约定，下一个人不知道该往哪写。**复用既有约定，不加新机制。**
 

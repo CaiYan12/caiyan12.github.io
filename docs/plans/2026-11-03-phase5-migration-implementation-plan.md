@@ -1,5 +1,7 @@
 # 阶段五四项跨版本迁移实施计划
 
+> **历史快照说明（2026-11-05 补记）**：本文是当时的执行快照。正文中的 `output/` 路径仅作历史记录，不代表证据当前仍在。2026-11-05 已清理本地证据目录，被删内容未入库、不可从 Git 取回；结论与归档索引见 `docs/history/history.md`。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use subagent-driven-development (recommended) or executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 按风险从低到高，把 KaTeX（0.16.47→0.19.1）、Mermaid（11.17.2→12.2.0）、Tailwind（3.4.19→4.3.4）、Satori（0.26.0→0.63.2）四项跨版本迁移逐个落地，每项独立验收、独立本地提交。
