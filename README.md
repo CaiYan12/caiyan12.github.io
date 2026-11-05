@@ -532,15 +532,17 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     **推翻了「CSS 资源名平台无关」这条判定纪律（本次新发现，已改写 `docs/agents/build-and-deploy.md`）**：v3 时代本地与线上 CSS 资源名确实完全一致，所以这条纪律一直好用。**v4 起不再成立**——本次本地 `MainGridLayout.B_utt6QD.css`、线上 `MainGridLayout.TXd5OLZn.css`，**名字不同但字节数完全相同，逐字节只差 1 个字节**：`bg-primary/15` 编译出的 `oklab(69.9907% -.188933 .144998/.15)` 在 Linux 上是 `-.188934`，**色彩转换的浮点末位随平台变**，内容寻址哈希因此改变。该差异只出现在 `WidgetCalendar.astro` 的日历当前日期格底色上，1 个浮点末位不可见。判据已改为「同名即同源；不同名则下载比对字节数与逐字节差异，仅 `oklab()`/`color-mix()` 浮点末位不同即正常」。
 
-- [ ] **Satori 0.26.0 → 0.63.2（跨 33 个 minor，无书面依据）**（2026-11-03 登记，**移交独立工作流**）
+- [ ] **Satori 0.26.0 → 0.63.2（跨 37 个 minor，无书面依据）**（2026-11-03 登记，**移交独立工作流**；2026-11-05 完成隔离探针，见下）
 
-    为什么必须单独排期：上游**没有 CHANGELOG**，60 条 release 无一条标注 BREAKING——不是「兼容」，是**没有书面依据**。依赖栈从 `opentype.js` 换到 `harfbuzzjs`，字体排版可能整体换过，而本站 33 张 OG 图全靠它渲染。
+    为什么必须单独排期：上游**没有 CHANGELOG**，74 条 release 无一条标注 BREAKING——不是「兼容」，是**没有书面依据**。依赖栈从 `opentype.js` 换到 `harfbuzzjs`，**布局引擎也从 `yoga-layout` 换成了包内自带的 `layout.wasm`**，字体排版可能整体换过，而本站 33 张 OG 图全靠它渲染。
 
-    正确的第一步是**隔离试装 + 跑一次真实 OG 渲染**（项目目录外或 `output/` 下，主项目 `package.json` 全程不动），产出探针报告，回答三件事：能否装上、能否渲染 33 张 OG、差异性质（尺寸/换行/字体/截断）。据此三选一：值得排期 / 需先改模板 / 保留 0.26.0 并记录冻结理由。
+    **探针结论（2026-11-05，`output/satori-upgrade/probe/`）**：装得上（npm 12 秒 / 22 包 / 无原生编译）、33/33 全部渲染成功，但**默认写法下每张都错版**——根容器盒模型从 border-box 变 content-box，1200×630 变 1320×750，底部作者行整行掉出画布；绿色竖条被 flex 收缩压成 3px。两处一行改动（根容器 `boxSizing: "border-box"`、竖条 `flexShrink: 0`）可复原几何，且这两处在 0.26.0 上是**逐字节无操作**，可先落地再升版本。复原后仍有**16/33 张标题换行点改变**（文本度量漂移 ±0.9%，方向不定）与 **1 张整体下移 10px**（唯一无描述那篇，空串子节点不再占 `gap`），截断与省略号未退化且更规范。完整证据：`docs/plans/2026-11-05-satori-upgrade-research.md`。
 
-    已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori，本机 Node 的 fetch 不读 `HTTP_PROXY`，构建前须设 `$env:NODE_USE_ENV_PROXY='1'`（详见 `docs/agents/build-and-deploy.md`）。
+    正确的第一步是**隔离试装 + 跑一次真实 OG 渲染**（项目目录外或 `output/` 下，主项目 `package.json` 全程不动），产出探针报告，回答三件事：能否装上、能否渲染 33 张 OG、差异性质（尺寸/换行/字体/截断）。据此三选一：值得排期 / 需先改模板 / 保留 0.26.0 并记录冻结理由。（**三问已于 2026-11-05 答完，剩下的「值得排期与否」是产品判断**。）
 
-    → 探测步骤：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 16。
+    已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori，本机 Node 的 fetch 不读 `HTTP_PROXY`，构建前须设 `$env:NODE_USE_ENV_PROXY='1'`（详见 `docs/agents/build-and-deploy.md`）。另：在 `output/` 子目录里 `pnpm install` 会被父工作区吞掉（报 Done 但不生成 `node_modules`），探针须用 `npm install`。
+
+    → 探测步骤：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 16；实测结论与偏差见 `docs/plans/2026-11-05-satori-upgrade-research.md`。
 
     适合 `/grill-spec-tickets-implement` 工作流。
 
