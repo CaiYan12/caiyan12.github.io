@@ -1,6 +1,6 @@
 # WindowsIt's Music Club
 
-[![Astro](https://img.shields.io/badge/Astro-6.4.8-BC52EE?logo=astro&logoColor=white)](https://astro.build/)
+[![Astro](https://img.shields.io/badge/Astro-7.4.4-BC52EE?logo=astro&logoColor=white)](https://astro.build/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![GitHub Pages](https://img.shields.io/badge/Deploy-GitHub_Pages-222?logo=github&logoColor=white)](https://caiyan12.github.io/)
@@ -357,7 +357,7 @@ AI 日报由独立仓库 [CaiYan12/ai-news](https://github.com/CaiYan12/ai-news)
 
 Astro 7.4.4 + TypeScript + Svelte 5（搜索组件）；Tailwind CSS 4（经 `@tailwindcss/vite` 接管，**不是 PostCSS 插件**；`postcss.config.mjs` 只剩 `postcss-nesting` + `autoprefixer`，**不要加回 `@astrojs/tailwind`**）；Swup.js 无刷新切页；Pagefind 构建期搜索；Giscus 评论；Fancybox 6 灯箱；Expressive Code + KaTeX。
 
-Astro 7 升级的范围、构建前后差异与本地验收边界见 [实施记录](docs/plans/2026-11-02-astro7-upgrade.md)。
+构建链各组件的现版本以 [`docs/agents/build-and-deploy.md`](docs/agents/build-and-deploy.md) 的「当前构建链版本」表为准，最终真源是 `package.json` + `pnpm-lock.yaml`；改依赖时两处一起核，别只改徽章。Astro 7 升级的范围、构建前后差异与本地验收边界见 [实施记录](docs/plans/2026-11-02-astro7-upgrade.md)。
 
 OG 图由 Satori 接收普通元素对象生成；`@types/react` 供其 `ReactNode` 类型使用，不代表本站包含 React 页面或 React 运行时依赖。
 

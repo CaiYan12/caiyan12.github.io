@@ -6,9 +6,28 @@
 
 ## 升级路线与交接（2026-11-03）
 
-完整分批顺序、已发布/仅本地提交的区别、剩余阻塞与解除条件、同输入构建 A/B 及最终发布门禁统一见[升级总计划](../plans/2026-11-03-dependency-upgrade-roadmap.md)。第三批 Svelte、第四批 Autoprefixer、第五批 KaTeX 与第六批 Mermaid **均已完成验收并随 `1073945` 推送上线**（详见下方对应条目）；**阶段五只剩 Tailwind 4 与 Satori 0.63，已移交独立工作流**（登记在 [README 的「进行中」分组](../../README.md#进行中)，适合 `/grill-spec-tickets-implement` 流程）；重大版本迁移先讨论，不直接全量更新。各专项报告保留原阶段的历史结果，发布状态以总计划中的固定提交与发布证据为准。
+完整分批顺序、已发布/仅本地提交的区别、同输入构建 A/B 与最终发布门禁统一见[升级总计划](../plans/2026-11-03-dependency-upgrade-roadmap.md)（该计划保留当时的分期与历史结果，**最终发布状态以 `CHANGELOG.md` 为准**）。第三批 Svelte、第四批 Autoprefixer、第五批 KaTeX 与第六批 Mermaid 均已完成验收并上线；**阶段五的 Tailwind 4（2026-11-04，PR #143）与 Satori 0.63（2026-11-05，PR #150）也已完成并上线**，README 的对应条目已销项，不存在「进行中」的迁移批次。重大版本迁移先讨论，不直接全量更新。各专项报告保留原阶段的历史结果。
 
 ## 构建链与依赖约束（2026-11-02 起 Astro 7）
+
+### 当前构建链版本（2026-11-05 实测）
+
+下表是**核对用的现值**，权威源永远是 `package.json` + `pnpm-lock.yaml`。升级任何一个直接依赖后，回来更新对应行，并同步 [README 头部徽章](../../README.md) 与 `CHANGELOG.md`；不要只在其中一处改。
+
+| 组件                                              | 现版本          | 声明形态 / 备注                                                                                                                         |
+| ------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `astro`                                           | **7.4.4**       | `dependencies` 精确固定；包自身 `engines.node >=22.23.4`（本机托管的 22.22.2 跑不了，构建须用系统 Node 24.18.0）                        |
+| `vite`                                            | **8.3.5**       | 由 `astro` 的 `vite ^8.3.5` 引入，**不是直接依赖**，顶层不要装一份                                                                      |
+| `@astrojs/svelte` / `svelte`                      | 9.1.2 / 5.57.3  | 精确固定，搜索岛用                                                                                                                      |
+| `@astrojs/check`                                  | 0.9.12          | 精确固定；`pnpm check` 用它                                                                                                             |
+| `@astrojs/markdown-remark` / `@astrojs/ts-plugin` | 7.3.5 / 1.10.12 | 前者精确、后者 caret                                                                                                                    |
+| `astro-expressive-code`                           | 0.44.3          | 精确固定                                                                                                                                |
+| `tailwindcss` / `@tailwindcss/vite`               | 4.3.4 / 4.3.4   | v4 经 `vite.plugins` 注入；`postcss.config.mjs` 只剩 `postcss-nesting` 13.0.2 与 `autoprefixer` 10.6.2                                  |
+| `typescript`                                      | 5.9.3           | caret 声明                                                                                                                              |
+| `satori` / `sharp`                                | 0.63.2 / 0.35.5 | OG 分享卡渲染与 PNG 编码                                                                                                                |
+| `pagefind`                                        | 1.6.0           | 构建期索引                                                                                                                              |
+| `prettier`                                        | 3.9.8           | 精确固定（公式保护，见下）                                                                                                              |
+| `pnpm` / CI Node                                  | 10.26.2 / 24    | `packageManager` 固定；`build.yml` 与 `deploy.yml` 用 Node 24，`lint.yml` 用 Node 22（只跑 Prettier 检查与公式测试，不执行 Astro 构建） |
 
 - **Mermaid 独立升级（2026-11-03）**：`mermaid` 精确固定 **12.2.0**（原 `^11.17.2`），直接依赖仅此一行变化。**`src/utils/runtime/mermaid.ts` 的 `initialize` 里有四组「保住原外观」的钉值，删任何一个都会让全站图表变形**：
     - `layout: "dagre"` —— 12.0.0（[#8155](https://github.com/mermaid-js/mermaid/pull/8155)）把 ELK 设为默认布局引擎，未声明 layout 的 flowchart / state / class / ER / requirement / use-case / agentflow 会用 ELK。本站 86 个 flowchart 都没声明布局。**实测 dagre 与 elk 输出显著不同（12/12 样本，如某图 viewBox 宽 1346 vs 1296）**，所以这条是真在起作用，不是摆设。
@@ -34,7 +53,7 @@
 
 - **检查器独立升级（2026-11-02）**：`@astrojs/check` 精确固定 0.9.12；语言服务更新至 2.17.3，检查链新增 `@astrojs/astro2tsx` 0.1.3 及其 WASM 依赖，文件监听使用 chokidar 5。TypeScript 仍为 5.9.3，其他直接依赖不联动。旧新版本地单次检查均为 0 errors / 0 warnings / 6 hints；已有 `.ts` / `.astro` 文件的错误修改、修正及单次检查失败码均已验证。**watch 的既有限制**：0.9.10 与 0.9.12 均复现新增文件未进入当前诊断清单；不能把“Watching for changes”或零错误视为新文件已检查，新增文件后应重新运行单次检查或重启 watch。没有为此修改依赖源码或放宽诊断级别。对照方法和构建/浏览器证据见 [检查器专项验收](../plans/2026-11-02-astro-check-upgrade.md)。
 
-- **Astro 7 实施（2026-11-02）**：已安装 Astro 7.4.4 / Svelte 集成 9.1.2 / Markdown 7.3.5 / Expressive Code 与两插件 0.44.3。升级信息的原始快照见 [复核报告](../plans/2026-11-02-build-system-upgrade-recheck.md)，实际构建与 A/B、浏览器结果及剩余边界见 [实施验收](../plans/2026-11-02-astro7-upgrade.md)。该批保持 Tailwind 3.4.19、TypeScript 5.9.3、Prettier 3.9.6、pnpm 10.26.2；随后 Prettier 单独升至精确版本 3.9.8，见下条。
+- **Astro 7 实施（2026-11-02）**：已安装 Astro 7.4.4 / Svelte 集成 9.1.2 / Markdown 7.3.5 / Expressive Code 与两插件 0.44.3。升级信息的原始快照见 [复核报告](../plans/2026-11-02-build-system-upgrade-recheck.md)，实际构建与 A/B、浏览器结果及剩余边界见 [实施验收](../plans/2026-11-02-astro7-upgrade.md)。该批当时保持 Tailwind 3.4.19、TypeScript 5.9.3、Prettier 3.9.6、pnpm 10.26.2；随后 Prettier 单独升至精确版本 3.9.8，见下条。
 - **Prettier 公式保护（2026-11-02）**：当前精确固定 `prettier: "3.9.8"`，不放宽为 caret；保留 Astro/Svelte 插件及现有格式化覆盖范围。3.9.9 / 3.9.10 的 Markdown 解析器内部关闭单美元公式识别，会把公式星号识别为 emphasis；这是 [PR #20140](https://github.com/prettier/prettier/pull/20140) 与未关闭的 [issue #20199](https://github.com/prettier/prettier/issues/20199) 所记录的问题，不是本站 KaTeX 渲染器故障。`pnpm test:prettier-math` 以本站 remark-math 提取格式化前后的公式，比较公式内容与 KaTeX 渲染结果；已接入 `lint.yml`。它不依赖 Prettier 内部 AST，不忽略文章、不改美元分隔符、不切 MDX、不打私有补丁。实施证据与验证边界见 [专项验收](../plans/2026-11-02-prettier-upgrade.md)。
 - **AI 日报迁移已完成（2026-11-02 收尾）**：本仓库不再包含日报源码、快照或 React 页面集成；`tailwind.config.cjs` 的日报 `--t-*` 映射与 `tsconfig.json` 的 JSX 设置已清理，`react` 运行时依赖已移除。OG 图 `src/pages/og/[...slug].png.ts` 给 Satori 传普通元素对象，仍使用 `ReactNode` 类型，因此保留 `@types/react`。主站仅维护导航/sitemap 与边界验证；`pnpm test:ai-news-ownership` 在构建后检查源目录及日报产物目录缺席。独立项目的配置、应用测试与发布均在 `CaiYan12/ai-news` 维护，历史回退说明不代表主站仍持有其实现。
 - 版本：astro 7.4.4 / @astrojs/svelte 9.1.2 / astro-expressive-code 0.44.3（六包联动组精确固定）/ @swup/astro 1.8.0（**声明已于 2026-11-03 从 `^1.7.0` 改为 `^1.8.0`，与安装版本对齐**；改 specifier 必须连 lock 一起改，否则 CI 的 `pnpm install --frozen-lockfile` 会直接失败） / **tailwindcss 4.3.4（2026-11-04 迁完）**。**Tailwind 不再经 @astrojs/tailwind**——该集成 peer 只到 Astro 5，是当初升级的硬阻碍。**v4 起改由 `@tailwindcss/vite` 接管**（在 `astro.config.mjs` 的 `vite.plugins` 首位），**不再是 PostCSS 插件**；`postcss.config.mjs` 现在只剩 `[postcss-nesting, autoprefixer]`：`postcss-nesting` 是**必需项**（`src/styles/global.css` 有 8 处**无 `&` 符号的隐式嵌套**——拉绳壁纸 SVG 的 `.wpull__cord` / `.wpull__art` 子规则，没有嵌套处理器时这些规则是非法 CSS 会被整条丢弃），且它的来源变了：v3 时是 `tailwindcss` 包内附带的 `tailwindcss/nesting/index.js`，v4 的包不再导出该子路径（`ERR_PACKAGE_PATH_NOT_EXPORTED`），故改为显式依赖 `postcss-nesting@13.0.2`。`autoprefixer` 仍为直接依赖、固定 10.6.2：v4 内置 Lightning CSS 也会 prefixing，但**两者目标集不同**（autoprefixer 读 browserslist，本仓库无该配置故用其默认集；v4 硬编码 Safari 16.4 / Chrome 111 / Firefox 128 且**不读 browserslist**）——实测本站自有规则在两条链下声明值零差异，但前缀集合不同，保留 autoprefixer 是为了维持既有产物的前缀行为不变。原配置文件里 import 的 `postcss-import` 既非声明依赖、全站 CSS 又零 `@import`，会让该文件在集成内静默加载失败，已移除；**不要再加回 @astrojs/tailwind**。

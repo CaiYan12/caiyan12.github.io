@@ -1,5 +1,21 @@
 # 更新日志
 
+## 2026-11-05：把构建系统现版本同步到文档，并补记 Astro 7 升级的上线闭环
+
+**发现**：README 头部 Astro 徽章自 2026-11-02 升级后一直写着 `6.4.8`，而 `README.md` 技术栈段与 `docs/agents/build-and-deploy.md` 早已写 `7.4.4`——同一份文件里两处自相矛盾。`docs/agents/build-and-deploy.md` 开头还写着「阶段五只剩 Tailwind 4 与 Satori 0.63，已移交独立工作流」，实际上两项分别在 2026-11-04、2026-11-05 已上线。
+
+**当前构建链现版本（2026-11-05 实测，权威源 `package.json` + `pnpm-lock.yaml`）**：`astro` **7.4.4**（精确固定，包自身 `engines.node >=22.23.4`）；`vite` **8.3.5**（由 astro 的 `vite ^8.3.5` 引入，**不是直接依赖**，顶层没有 `vite`）；`@astrojs/svelte` 9.1.2 / `svelte` 5.57.3；`@astrojs/check` 0.9.12；`@astrojs/markdown-remark` 7.3.5；`astro-expressive-code` 0.44.3；`tailwindcss` / `@tailwindcss/vite` 4.3.4 / 4.3.4；`typescript` 5.9.3；`satori` 0.63.2 / `sharp` 0.35.5；`pagefind` 1.6.0；`prettier` 3.9.8；`pnpm` 10.26.2。CI 的 `build.yml` / `deploy.yml` 用 Node 24，`lint.yml` 用 Node 22（只跑 Prettier 检查与公式测试，不执行 Astro 构建）；本机系统 Node 24.18.0，托管 Node 22.22.2 低于 engines 下限，跑不了构建。
+
+**改了什么**：
+
+- `README.md` 徽章 `Astro-6.4.8` → `Astro-7.4.4`；技术栈段补一句单一真源指引——完整现版本以 `docs/agents/build-and-deploy.md` 的「当前构建链版本」表为准，改依赖时徽章、维护文档、`CHANGELOG` 一起核。
+- `docs/agents/build-and-deploy.md` 新增「当前构建链版本（2026-11-05 实测）」表（上面那组数值 + 各包的声明形态），并明确它是**核对用现值、不是权威源**；开头路线图状态改为「阶段五两项均已上线、无进行中的迁移批次」；第 37 行「该批保持 Tailwind 3.4.19」加「当时」二字，避免读成当前事实。
+- **有意不改**：`README.md` 第 572/573/587 行的 `6.4.8` 与 `docs/plans/2026-11-02-build-system-upgrade-recheck.md` 的 `6.4.8` 都是 2026-09～11 的历史记录 / 实施前研究快照（后者文首已声明），不是当前状态；`AGENTS.md` 的 `Node.js: 24.18.0` 在 `!IMPORTANT` 声明的只读固定区，且与本机系统 Node 一致。
+
+**CHANGELOG 自身的核查结论**：Astro 6.4.8→7.4.4 的升级记录**有**，在 2026-11-02 的「构建系统升级复核（尚未升级）」「Astro 7 联动升级与同数据构建验收」「Astro 7 验收剩余项收口」三条里；但**缺上线闭环**——升级条目末尾停在「未运行线上 CI、未推送或部署」，后续 2026-11-03 的「四批依赖升级发布上线」只列了检查器 / Pagefind / Svelte / Autoprefixer / `@swup`，不含 Astro 7.4.4，导致按 `7.4.4` 检索全文找不到「已上线」的证据。已在该条目末尾按仓库规矩补记（标日期 + 证据来源），不改动历史原文。
+
+**怎么验证的**：`node -e "require('./node_modules/<pkg>/package.json').version"` 逐个读实装版本，与 `package.json` 声明逐项对；`pnpm -v` 与两个 Node 二进制各读一次；`git merge-base --is-ancestor a42a170 origin/main` 确认升级提交已在主干；`prettier --check ./src ./docs ./*.md` 全绿。
+
 ## 2026-11-05：归档 Tailwind v4 与 Satori 两轮的过程文档，ADR 保留
 
 **改了什么**：把这两轮产生的过程文档从 `docs/plans/` 移出并删除，索引进 [`docs/history/history.md`](docs/history/history.md) 的「归档清单（第四批）」。共 9 份 957 行——Tailwind 的迁移设计（153 行）与迁移 spec（223 行）、`tailwind4-tickets/T1–T6`（6 文件 260 行）、Satori 的隔离探针调研（321 行）。`docs/plans/tailwind4-tickets/` 目录随之消失。
@@ -290,6 +306,7 @@
 - **发现并处理**：dev 首次文件监听阻塞导致 Vite 模块通信超时、文章集合为空；CPU profile 的主要时间落在 `fs.watch` 注册。排除本地 `.pnpm-store` / `output` 后，默认 CLI 约 13 秒同步内容并启动；真实内容、CSS 与 Svelte 热更新及恢复通过。没有增加超时、外部化整包或修改依赖源码。
 - 本地 check 为 0 errors / 0 warnings / 6 hints，相关单测通过；UI 142/142、好书 72/72、灯箱 27/27、壁纸 47/47、AI News 主站边界通过。文集首次目录防抖判据失败、独立确认 88/88，首次失败仍保存；全页 console 门禁新旧均 REVIEW（技能页 32 个外部 Iconify 请求），不写成全绿。dev 相册另出现一条来源待核的 `Script error.`，调查结果在实施记录维护。
 - 范围、命令、逐项差异、失败日志与剩余边界见 `docs/plans/2026-11-02-astro7-upgrade.md`；当前为本地升级验收，未运行线上 CI、未推送或部署。
+- **补记（2026-11-05，证据：`git show a42a170 -- package.json` 与 `git merge-base --is-ancestor a42a170 origin/main`）**：上一行的「未推送或部署」是 2026-11-02 当日状态，不是最终状态。升级提交 `a42a170`（2026-11-02 20:47，`Upgrade Astro 7 after AI News extraction and fix upgrade regressions`）把 `astro` 从 `6.4.8` 改为 `7.4.4`、`@astrojs/svelte` 从 `8.1.2` 改为 `9.1.2`，且已是 `origin/main` 的祖先——该升级随后随主干部署上线。当时未回写这一条；后续 2026-11-03 的「四批依赖升级发布上线」条目也没提 Astro 7.4.4，所以按版本号检索 CHANGELOG 会漏掉上线证据。此处只补索引，历史原文保留不动。
 
 ## 2026-11-02：构建系统升级复核（尚未升级）
 
