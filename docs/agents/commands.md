@@ -128,7 +128,7 @@ Do not retry this operation or attempt any workaround
 **本仓库实测的两处触发点**：
 
 1. `rm -rf output/<批次名>/{fp-a,fp-b,fp-mut}` —— 采集目录每份约 24 个文件，三个就超阈值。
-2. `pnpm exec astro build` 收尾清理 `dist/.prerender`（79 个条目）——**产物本身是完整的**，只是尾部的清理步骤没做成。判断依据：`find dist -name "*.html" | wc -l` 数量对得上、目标规则能在 `dist/_astro/*.css` 里 `grep` 到。
+2. `pnpm exec astro build` 收尾清理 `dist/.prerender`（79 个条目）——**HTML 与 CSS 产物是完整的，但构建本身失败了**（**2026-11-05 校正**：原文写「产物本身是完整的，只是清理步骤没做成」，低估了后果）。实测两次复现：异常从 `buildApp` 的 `removeViteManifestDirectories` 抛出后，`astro:build:done` 钩子不再执行——`@astrojs/sitemap` 正是在该钩子里写 `sitemap-index.xml` / `sitemap-0.xml`，于是**两份 sitemap 都不生成**；`astro build` 的**真实退出码是 1**（加 `| tail` 才看不见），`pnpm build` 的 `&&` 链因此断在 `astro build`，后面的 `pagefind --site dist` 不跑，`dist/pagefind/` 也缺失。判断依据：`find dist -name "*.html" | wc -l` 数量对得上、目标规则能在 `dist/_astro/*.css` 里 `grep` 到——但这**只能证明页面与样式完整，不能证明构建成功**。**下游影响**：本机跑 `pnpm smoke:ui` 时 `#41`（sitemap 文章页数）与 `#47`（sitemap 页面 id 唯一性）会固定红，属前提检查失败而非样式回归；需要这两条判据时以 CI（Linux，无此守卫）的产物为准。
 
 **处置**（沿用「被拦不绕过」）：
 

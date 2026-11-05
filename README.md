@@ -2,7 +2,7 @@
 
 [![Astro](https://img.shields.io/badge/Astro-6.4.8-BC52EE?logo=astro&logoColor=white)](https://astro.build/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.3-06B6D4?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![GitHub Pages](https://img.shields.io/badge/Deploy-GitHub_Pages-222?logo=github&logoColor=white)](https://caiyan12.github.io/)
 
 由 Emlog Colorful（明月浩空）主题迁移而来的**纯静态**个人博客。没有后台、没有数据库——**所有内容都是这个仓库里的文件**：改完 `git push`，GitHub Actions 自动构建上线。
@@ -518,7 +518,7 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     **关键机制（本次最硬的发现）**：v4 引入真实 CSS 级联层，**站点规则必须移出所有 `@layer`**。CSS Cascade 5 规定 unlayered 规则排在所有 layered 之后 → 站点规则恒胜，精确还原 v3 靠「特异性 + 源顺序」得到的结果。**两条看起来很合理的替代方案都试过、都无效**：① 只改层序声明不够（站点那条层外的 `body,div,...,h1{margin:0}` 依然优先）；② 提高特异性也无效（层序压过特异性，实测四种方案全部 14px）。代价是**站点规则恒胜会压过 Tailwind utility**（与 v3 语义相反），全站已核无「站点类名与 utility 撞名」，但这是要持续守住的边界。
 
-    **推翻了 `docs/agents/build-and-deploy.md` 的一条承重结论**（已同批改写）：「v3 的 `@layer` 是构建期指令、产物里不存在 `@layer`」只对 v3 成立；v4 产物里有 `@layer theme, base, components, utilities;`。
+    **推翻了 `docs/agents/build-and-deploy.md` 的一条承重结论**（已同批改写）：「v3 的 `@layer` 是构建期指令、产物里不存在 `@layer`」只对 v3 成立；v4 产物里出现 `properties` / `theme` / `base` / `components` / `utilities` 五个真实级联层块，层序按首次出现建立（**补记 2026-11-05**：原文此处引作一句 `@layer theme, base, components, utilities;`，实测产物里并不存在该合并声明）。
 
     **验收**：229 页构建零错误零警告；`pnpm check` 0 errors / 0 warnings / 6 hints；计算样式指纹 A/B（页数取自 `scripts/lib/smoke-pages.mjs` 的 `AUDIT_PAGES`，别在别处抄一份数字）——**差异属性只有 `border-*-color` 两类**，且量了 6 个页面所有 border-width>0 的元素（每个页面 219–556 个），**边框颜色 0 处不同**；其余差异全落在 border-width=0 的元素上，颜色不渲染，故**可见差异为零**。真实 DOM 的关键交互与盒模型 7/7 项完全一致。
 
