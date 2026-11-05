@@ -110,7 +110,15 @@ const PSEUDO_PROPS = [
 	"border-top-style",
 	"border-top-color",
 	"border-radius",
+	// transform 族必须四个都采：Tailwind v4 的 `translate-y-*` / `rotate-*` / `scale-*`
+	// 落的是三个独立属性，计算后的 `transform` 恒为 `none`。只采 transform 时，
+	// `hover:-translate-y-px` 这类位移在指纹里完全不可见（2026-11-04 实测 /books/ 的
+	// nb-shuffle：hover 态 translate 从 none 变 `0px -1px`，而 transform 始终是 none）。
+	// diff 侧已把四者当同一「有效变换矩阵」判定（TRANSFORM_FAMILY），不会重复计数。
 	"transform",
+	"translate",
+	"rotate",
+	"scale",
 	"inset",
 ];
 // 状态采样：Tailwind v4 迁移里，:focus-visible 与 :hover 下的样式从未进过指纹，
@@ -134,6 +142,12 @@ const STATE_SELECTORS = [
 	'[role="link"]',
 ].join(",");
 // 只采这些属性：状态变化主要体现在描边、颜色、光标与盒模型
+// transform 族四个都必须在：Tailwind v4 把位移/旋转/缩放拆成独立属性，
+// 计算后的 `transform` 恒为 `none`（实测：nb-shuffle 的 hover:-translate-y-px 体现在
+// `translate: 0px -1px`，transform 不动）。站内所有 :active 规则改的正是这些
+// （`.gift-fab-btn:active` 的 scale(0.94)、`.nb-archive-action:active` 的
+// translateY(1px) scale(0.98)、`open-nav:active` 的 scale(0.94)），
+// Tailwind 的 `active:translate-y-0` / `disabled:translate-y-0` 同理。
 const STATE_PROPS = [
 	"color",
 	"background-color",
@@ -146,6 +160,10 @@ const STATE_PROPS = [
 	"border-top-color",
 	"border-radius",
 	"box-shadow",
+	"transform",
+	"translate",
+	"rotate",
+	"scale",
 	"text-decoration-line",
 	"cursor",
 	"opacity",
@@ -153,19 +171,53 @@ const STATE_PROPS = [
 // 每页最多强制多少个元素的伪类。整站可交互元素上千，全量强制既慢又无意义；
 // 取前 N 个足以覆盖导航、按钮、分页、表单等主要交互面。
 const STATE_MAX = 60;
+// 伪类 → 交给 CSS.forcePseudoState 的状态列表（顺序即采样顺序，决定状态行在文件里的先后）。
+// :focus-visible 必须连 :focus 一起强制：浏览器只在「键盘触发」时匹配前者，单独强制不生效。
+//
+// 纳不纳入的判断依据（2026-11-04 实测，探针 output/eng-discipline-2/probe-force-states.mjs）：
+//   · :active   —— 强制有效（实测色值改变），且站内有真实规则（gift-fab / open-nav /
+//                  site-modal__close / nb-archive-action），纳入。
+//   · :disabled —— 强制有效（实测在「已启用」按钮上强制后 cursor=not-allowed、opacity=0.5），
+//                  且站内有真实消费（src/pages/books/index.astro:22 的 nb-shuffle 按钮带
+//                  disabled:translate-y-0 / disabled:cursor-wait / disabled:opacity-60），纳入。
+//                  这类 utility 静默失效过（v4 迁移时 disabled: 变体不出 CSS），是具体补这个缺口的原因。
+//   · :checked  —— 强制有效，但全站零 `:checked` 规则、零 checkbox/radio 元素（只有 range 输入，
+//                  其 thumb 伪元素的规则靠元素自身 computed style 采不到），纳入只产出与默认态
+//                  逐字节相同的噪声行，故不纳入。日后加勾选控件再补。
+//   · :visited  —— 强制无效（实测颜色未变）。Chrome 的 visited 样式受隐私限制，只在真实历史命中时
+//                  生效，强制出来永远等于默认态 —— 那是假阴性，不是覆盖。永久排除。
+const STATE_PSEUDOS = {
+	hover: ["hover"],
+	"focus-visible": ["focus", "focus-visible"],
+	active: ["active"],
+	disabled: ["disabled"],
+};
 // 播放器 / 看板娘 / 轮播 / 微言轮播：布局与时序相关，纳入会产生假阳性
 // giscus 的 iframe 由远端 postMessage 改 class 与高度，同一份代码两次采集也会不一致
 // 轮播真实类名是 .carousel（Slideshow.astro:23），原先写的 .slideshow 全站零命中、从未真的排除过；
 // 它会自动换帧（两次采集间隔内当前帧就会不同），不排就会每次比对多出十来条帧差异。
 // 指示点几何改由 ui 冒烟断言，不靠这里
+//
+// 明月浩空播放器必须按 **id** 排，不能只按 class：它的容器是 `#myhk`、`#myhkplayer`、
+// `#myhkTips`、`#myhkKsc`、`#myhkLrc`、`#myhkaudio`（直接挂在 body 下），**没有 class**，
+// 只有内部 `li` 才带 `myhkLrc0` 这类类名。只用 `[class*='myhk']` 时容器本身留在指纹里，
+// 而它们的存在与内容取决于远端服务：2026-11-05 变异采集那次该页出现 `ERR_TIMED_OUT`，
+// `div#myhkLrc` 整个没生成（元素数 1318 → 1316），凭空多出一条 REMOVED 假阳性。
 const WIDGET_ROOTS =
 	"[class*='myhk'], [class*='music'], [class*='pio'], .pio, #pio, .carousel, " +
-	"#header .text, .bg-image, [id^='live2'], .hide, .tag3d-stage svg, .toast, .toast *, " +
-	"iframe.giscus-frame";
+	"[id^='myhk'], #header .text, .bg-image, [id^='live2'], .hide, .tag3d-stage svg, " +
+	".toast, .toast *, iframe.giscus-frame";
 const FREEZE =
 	"*, *::before, *::after { transition: none !important; animation: none !important; " +
 	"caret-color: transparent !important; scroll-behavior: auto !important; }";
-// 种子 PRNG：让 initPaperHandwriting 的逐字符随机变换在每次采集时完全一致
+// 种子 PRNG：让随机件在每次采集时完全一致。
+// 两处随机源都必须盖住，缺一个就不确定：
+//   ① Math.random —— initPaperHandwriting 的逐字符随机变换；
+//   ② crypto.getRandomValues —— quote-band 的选句（src/utils/runtime/quote-band.ts 的
+//      randomIndex；作者用 CSPRNG 是为了消掉安全扫描对 Math.random 的误报）。
+// 2026-11-05 实测：只种子化 Math.random 时，/albums/ 连开三次拿到三句不同引言
+// （逐字节点 28 / 20 / 51），两次采集的整份指纹因此对不上；把 getRandomValues 也固定后
+// 三次完全一致。见 output/eng-discipline-2/probe-quote-band-determinism.mjs。
 const SEED = `(() => {
 	let s = 0x2f6e2b1;
 	Math.random = () => {
@@ -173,6 +225,14 @@ const SEED = `(() => {
 		let t = Math.imul(s ^ (s >>> 15), 1 | s);
 		t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
 		return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+	};
+	let c = 0x9e3779b9;
+	crypto.getRandomValues = (arr) => {
+		for (let i = 0; i < arr.length; i++) {
+			c = (Math.imul(c, 1664525) + 1013904223) >>> 0;
+			arr[i] = c;
+		}
+		return arr;
 	};
 })();`;
 
@@ -401,11 +461,9 @@ async function capture() {
 					selector: t.marker,
 				});
 				if (!nodeId) continue;
-				for (const pseudo of ["hover", "focus-visible"]) {
-					const forcedPseudoClasses =
-						pseudo === "focus-visible"
-							? ["focus", "focus-visible"]
-							: ["hover"];
+				for (const [pseudo, forcedPseudoClasses] of Object.entries(
+					STATE_PSEUDOS,
+				)) {
 					await cdp.send("CSS.forcePseudoState", {
 						nodeId: nodeId,
 						forcedPseudoClasses: forcedPseudoClasses,
@@ -576,10 +634,20 @@ function diff() {
 			continue;
 		}
 		pagesDiff++;
-		// 键就是元素的位置路径。不能用 `|| l` 兜底：html 元素的位置路径是空串
+		// 键 = 状态前缀 + 元素位置路径。不能用 `|| l` 兜底：html 元素的位置路径是空串
 		// （pathOf 停在 HTML 之前），兜底会把整行当键，于是 html 的样式一变就被
 		// 记成「REMOVED + ADDED」两条而不是一条 CHANGED——凭空多出两条差异。
-		const key = (l) => l.split(" | ")[1];
+		//
+		// 状态前缀是必需的，不是修饰：状态行的格式是 `:hover <标识> | <位置路径> | <属性…>`，
+		// 位置路径与静态行完全相同。只用路径做键时同元素的多行会互相覆盖（Map 后写覆盖前写）
+		// ——2026-11-04 用真实采集实测：首页 971 行按路径去重只剩 851 条，120 条状态行全部丢失，
+		// 同时 60 条静态行被替换成该元素最后一条状态行。所以加状态之前必须先修这里，
+		// 否则新增的状态只是把「覆盖」做得更彻底，采了等于没采。
+		const key = (l) => {
+			const s = l.split(" | ");
+			const st = /^(:[a-z-]+)\s/.exec(s[0]);
+			return (st ? st[1] : "-") + "|" + (s[1] ?? "");
+		};
 		const setA = new Map(),
 			setB = new Map();
 		for (const l of pa.lines) setA.set(key(l), l);

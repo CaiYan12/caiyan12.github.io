@@ -1,5 +1,21 @@
 # 更新日志
 
+## 2026-11-05：状态采样扩到四态，并修掉三处会让它「采了等于没采」的缺陷
+
+- **`nb.note-border` 补上色板键（配置缺陷）**。`src/nice-books/lib/render.ts` 的荐语便签用了 `border-nb-note-border`，而 `tailwind.config.cjs` 的 `nb` 色板只有 `border` / `border-strong`——该工具类**静默不生成**，`--nb-note-border: #e3d3a2` 定义了没人消费，便签边框退回 `currentColor`（深色描边）。补键后产物出现 `.border-nb-note-border{border-color:var(--nb-note-border)}`，`/books/01/` 实测计算值 `rgb(227, 211, 162)`。这是**视觉变更**，不是纯配置整理。
+- **状态采样从两态扩到四态**：新增 `:active` 与 `:disabled`。两者都先经探针证实 `CSS.forcePseudoState` 有效，且都有真实消费方——`disabled:` 那三个 utility 就在 `src/pages/books/index.astro` 的 `nb-shuffle` 按钮上（`disabled:cursor-wait` / `disabled:opacity-60` / `disabled:translate-y-0`），正是 v4 迁移时静默失效过的那一类。实测采到 `cursor=wait`、`opacity=0.6`。
+- **不纳入 `:checked`、永久排除 `:visited`**，都有实测依据：`:checked` 强制有效但全站零 `:checked` 规则、零 checkbox/radio（只有 range 输入），加进来只产出与默认态相同的噪声行；`:visited` 强制**无效**（Chrome 的 visited 样式受隐私限制，只在真实历史命中时生效），强制结果恒等于默认态，是假阴性不是覆盖。
+- **transform 族补齐四个属性**（`transform` / `translate` / `rotate` / `scale`，静态 `PROPS` 与 `STATE_PROPS` 都补）。v4 把位移/旋转/缩放拆成独立属性，计算后的 `transform` 恒为 `none`：实测 `nb-shuffle` 的 `hover:-translate-y-px` 只体现在 `translate: 0px -1px`。只采 `transform` 时，站内所有 `:active` 规则（`scale(0.94)` / `translateY(1px) scale(0.98)`）与 `active:` / `disabled:translate-y-0` 这类工具类全都采不到——扩状态而不补属性，等于白扩。
+- **修复指纹的行键冲突（最隐蔽的一处）**。状态行格式 `:hover <标识> | <路径> | <属性…>` 的路径与静态行完全相同，原实现用路径做键，同元素多行在 `Map.set` 时互相覆盖。用真实采集量：首页 971 行按路径去重只剩 851 条——**120 条状态行全部丢失**，60 条静态行被替换成最后一条状态行。键改为「状态前缀 + 路径」。**不加这两个状态也会踩到**，只是丢的是既有两态的行。
+- **SEED 补上 `crypto.getRandomValues`**。原 SEED 只覆盖 `Math.random`（稿纸逐字抖动），但引言条选句走 `src/utils/runtime/quote-band.ts` 的 `randomIndex`，用的是 CSPRNG（作者为消掉安全扫描对 `Math.random` 的误报）。实测只种子化 `Math.random` 时 `/albums/` 连开三次拿到三句不同引言（逐字节点 28 / 20 / 51）。这也顺带纠正了 2026-11-04 那条「确定性」的适用范围：它用 `onlyState` 只比状态行，**从未验证整份指纹**。
+- **`WIDGET_ROOTS` 补 `[id^='myhk']`**。明月浩空的容器 `#myhk` / `#myhkplayer` / `#myhkTips` / `#myhkKsc` / `#myhkLrc` / `#myhkaudio` 直接挂 `body` 下且没有 class，原规则 `[class*='myhk']` 一个都排不到。一次采集赶上 `ERR_TIMED_OUT`，`div#myhkLrc` 没生成，凭空多一条 `REMOVED ul` 假阳性。
+- **怎么验证的（2026-11-05，Node 24.18.0 / Windows 11，`pnpm exec astro build` 产出 230 个 HTML）**：23 页 **21,761 行**（静态 17,121 + 四态各 1,160），**0 页键冲突**；同一产物连采两次 `diff` 报 `pages differing: 0/23, element diffs: 0`；三处**各自只作用于一个状态**的变异（`disabled` 的 `cursor:wait→help`、`active` 的 `translate 0px→7px`、`hover` 的 `-1px→-9px`）→ **2/23 页、10 条差异**，按状态归属 `:hover` 4 / `:active` 4 / `:disabled` 2，**静态行 0 条**；`prettier --check ./src ./docs ./*.md` 全绿、`node --check` 通过。
+- **为什么这轮没按「只做点名的那几条」停手**：题面只要求补状态采样，但验证过程先后撞上三处仪器缺陷（键覆盖、随机源未固定、第三方容器未按 id 排除），不修则新增状态无法被证明有效、A/B 也仍会出假阳性。三处都只是修正既有判据，未扩大采样面（`:checked` 明确没加）。
+- **证据位置**：`output/eng-discipline-2/`（三次采集 `fp2-a` / `fp2-b` / `fp2-mut`、四处探针、变异脚本与产物 CSS 备份）。探针均为一次性脚本，按「探针放 `output/<批次名>/`」存放。
+- **指纹格式已变**：2026-11-05 之前的采集基线**不能**与新采集互比（新增状态与属性会被读成整页差异）。要比就重采两侧。
+
+---
+
 ## 2026-11-04：样式指纹补上 `:hover` / `:focus-visible` 状态采样
 
 - **补的是上一轮真实漏掉的判据**。Tailwind v4 迁移里 `src/nice-books/styles/books.css` 的 `:focus-visible` 规则因级联层归属变化压过了 `rounded-[3px]` / `outline-none` 工具类，焦点环回归**是人眼看出来的**——`scripts/upgrade-style-audit.mjs` 全程没报警，因为它只读元素**默认态**的计算值。

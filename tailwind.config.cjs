@@ -18,6 +18,7 @@ module.exports = {
 					paper: "var(--nb-paper)",
 					surface: "var(--nb-surface)",
 					note: "var(--nb-note)",
+					"note-border": "var(--nb-note-border)",
 					ink: "var(--nb-ink)",
 					"ink-soft": "var(--nb-ink-soft)",
 					muted: "var(--nb-muted)",

@@ -66,7 +66,7 @@ Your agent and bash are running on:
 - **一次性探针脚本写在哪** → `output/<批次名>/`，不是系统临时目录。判据值钱的脚本另存进 `scripts/`。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「一次性探针脚本该放哪」节。
 - **用 CodeGraph 之前** → 先看 `codegraph_status` 的 `pendingChanges`；非零就 `codegraph_sync`（增量、秒级）。索引会静默失真（2026-11-04 实测列出 60 多个已迁出的文件）。**磁盘才是权威**。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「CodeGraph 索引会静默失真」节。
 - **查 CI / 部署状态** → `gh run list` / `gh run view --json`，**不需要代理**，也**不要**为它新写脚本或接 MCP。核对部署生效必须比对 `headSha` 与目标 commit，不是「最近一次成功」。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「查 CI / 部署状态」节。
-- **改 `scripts/upgrade-style-audit.mjs` 或新增样式判据** → 该工具现已在静态指纹之外采样 `:hover` / `:focus-visible` 两种状态（CDP 强制伪类）。改动它之后**必须做变异验证**：故意改坏产物 CSS，确认工具真的报差异，否则等于把判据削弱成永远绿。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「样式指纹的状态采样」节。
+- **改 `scripts/upgrade-style-audit.mjs` 或新增样式判据** → 该工具现已在静态指纹之外采样 `:hover` / `:focus-visible` / `:active` / `:disabled` 四种状态（CDP 强制伪类），且**指纹格式随状态数变化，旧采集结果不可与新采集互比**。改动它之后**必须做变异验证**：故意改坏产物 CSS，确认工具真的报差异，否则等于把判据削弱成永远绿。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「样式指纹的状态采样」节。
 - **决定这次改动要验到什么程度** → 分**承重档**（换构建工具 / 升大版本依赖 / 改级联层语义 / 动全站样式入口 / 换渲染管线）与**轻量档**（单组件微调 / 文案 / 单页 / 明确 bug）。承重走四道判据，轻量走两道；拿不准按承重。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「两档验证力度」节。
 
 ### Domain docs

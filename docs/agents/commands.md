@@ -187,11 +187,11 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 
 ---
 
-## 样式指纹的状态采样：:focus-visible / :hover（2026-11-04 补强）
+## 样式指纹的状态采样：:hover / :focus-visible / :active / :disabled（2026-11-05 扩到四态）
 
-> 补的是上一轮真实漏掉的判据。Tailwind v4 迁移里 `books.css` 的 `:focus-visible` 规则因级联层归属变化压过了 `rounded-[3px]` / `outline-none` 工具类，焦点环回归**是人眼看出来的**，`scripts/upgrade-style-audit.mjs` 全程没报警——因为它只读元素默认态的计算值。
+> 补的是 2026-11-04 那轮真实漏掉的判据。Tailwind v4 迁移里 `books.css` 的 `:focus-visible` 规则因级联层归属变化压过了 `rounded-[3px]` / `outline-none` 工具类，焦点环回归**是人眼看出来的**，`scripts/upgrade-style-audit.mjs` 全程没报警——因为它只读元素默认态的计算值。2026-11-05 从两态扩到四态，并修掉三处「采了等于没采」的仪器缺陷，逐条记在下面。
 
-**做法**：capture 时在静态指纹采完之后，追加一段状态采样，用 CDP 的 `CSS.forcePseudoState` 强制 `:hover` 与 `:focus-visible`，读 14 个与状态强相关的属性（`outline-*`、`border-*`、`box-shadow`、`border-radius`、`cursor` 等），产出形如 `:focus-visible a.skip-link | body:2>a:1 | outline-style=solid;...` 的行。
+**做法**：capture 时在静态指纹采完之后，追加一段状态采样，用 CDP 的 `CSS.forcePseudoState` 强制 `:hover` / `:focus-visible` / `:active` / `:disabled` 四种状态，读 18 个与状态强相关的属性（`outline-*`、`border-*`、`box-shadow`、`border-radius`、`transform` 族、`cursor`、`opacity` 等），产出形如 `:focus-visible a.skip-link | body:2>a:1 | outline-style=solid;...` 的行。
 
 **为什么用 CDP 强制伪类，而不是 `page.hover()` / `.focus()`**（两条都是本仓库记过的坑）：
 
@@ -199,18 +199,47 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 - `.focus()` 是否命中 `:focus-visible` **取决于触发方式**（键盘 vs 鼠标），不可靠。`CSS.forcePseudoState` 直接强制伪类，实测对 `:focus-visible` 有效。
 - 强制 `:focus-visible` 时要**连 `:focus` 一起强制**，否则只强制前者时浏览器行为不一致。
 
-**采样范围有界**：只对可见的可交互元素（`a[href]` / `button` / `input` / `select` / `textarea` / `[tabindex]` / `[role=button]` / `[role=link]`），排除 `WIDGET_ROOTS` 命中的子树，每页上限 `STATE_MAX = 60` 个元素 × 2 状态。
+**采样范围有界**：只对可见的可交互元素（`a[href]` / `button` / `input` / `select` / `textarea` / `[tabindex]` / `[role=button]` / `[role=link]`），排除 `WIDGET_ROOTS` 命中的子树，每页上限 `STATE_MAX = 60` 个元素 × 4 状态。
 
-**实测证据（2026-11-04，本机 Node 24.18.0 / Windows 11，dist 由 `pnpm exec astro build` 产出 229 页）**：
+**哪种状态该加、怎么造（每条都有实测，别按直觉扩）**：
+
+| 状态                        | `forcePseudoState` | 站内消费方                                                                                          | 结论                           |
+| --------------------------- | ------------------ | --------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `:hover` / `:focus-visible` | 有效               | 导航、卡片、焦点环                                                                                  | 已在用                         |
+| `:active`                   | 有效               | `.gift-fab-btn:active`、`open-nav:active`、`.site-modal__close:active`、`.nb-archive-action:active` | 2026-11-05 纳入                |
+| `:disabled`                 | 有效               | `src/pages/books/index.astro` 的 `nb-shuffle` 按钮（`disabled:cursor-wait` 等三个）                 | 2026-11-05 纳入                |
+| `:checked`                  | 有效               | **全站零 `:checked` 规则、零 checkbox/radio**（只有 range 输入）                                    | 不纳入：只产出噪声             |
+| `:visited`                  | **无效**           | —                                                                                                   | 永久排除：强制结果恒等于默认态 |
+
+`:visited` 无效不是配置问题：Chrome 对 visited 样式有隐私限制，只在真实历史命中时生效，强制出来永远是默认态——那是**假阴性**，不是覆盖。
+
+**transform 族必须四个属性都采**：Tailwind v4 把位移/旋转/缩放拆成独立的 `translate` / `rotate` / `scale`，计算后的 `transform` 恒为 `none`。实测 `nb-shuffle` 的 `hover:-translate-y-px` 只体现在 `translate: 0px -1px`（`transform` 不动）。只采 `transform` 时，站内所有 `:active` 规则与 `active:` / `disabled:translate-y-0` 这类工具类**全都采不到**。静态 `PROPS` 同样补齐了这三个——静态层也有 `-translate-y` / `rotate-45` 的真实用法。diff 侧已把四者当同一「有效变换矩阵」判定（`TRANSFORM_FAMILY`），不会重复计数。
+
+**指纹的行键必须带状态前缀**（2026-11-05 修，这条最隐蔽）：状态行的格式是 `:hover <标识> | <位置路径> | <属性…>`，**位置路径与静态行完全相同**；原实现 `key = l.split(" | ")[1]` 拿路径当键，同元素的多行在 `Map.set` 时互相覆盖。用真实采集量：首页 971 行按路径去重只剩 851 条——120 条状态行**全部丢失**，同时 60 条静态行被替换成该元素最后一条状态行。修法是键取「状态前缀 + 路径」。**加状态前必须先修这个，否则新增的状态只是把覆盖做得更彻底。** 判据：任一页 `new Set(lines.map(key)).size === lines.length`。
+
+**随机源必须两个都固定**（2026-11-05 修）：SEED 原先只覆盖 `Math.random`（稿纸逐字抖动），但引言条选句走 `crypto.getRandomValues`——`src/utils/runtime/quote-band.ts` 的 `randomIndex` 为消掉安全扫描对 `Math.random` 的误报改用了 CSPRNG。实测只种子化 `Math.random` 时，`/albums/` 连开三次拿到三句不同引言（逐字节点 28 / 20 / 51），整份指纹对不上。两个都固定后三次完全一致。
+
+**第三方件要按 id 排，别只按 class**（2026-11-05 修）：明月浩空的容器是 `#myhk` / `#myhkplayer` / `#myhkTips` / `#myhkKsc` / `#myhkLrc` / `#myhkaudio`，直接挂在 `body` 下且**没有 class**（只有内部 `li` 带 `myhkLrc0` 这类类名）。原 `WIDGET_ROOTS` 只有 `[class*='myhk']`，容器本身留在指纹里；一次采集赶上 `ERR_TIMED_OUT`，`div#myhkLrc` 没生成，凭空多出一条 REMOVED 假阳性。现补 `[id^='myhk']`。
+
+**实测证据（2026-11-05，四态，本机 Node 24.18.0 / Windows 11，`pnpm exec astro build` 产出 230 个 HTML / 23 个审计页）**：
+
+- 23 页共 **21,761 行**：静态 17,121、四态各 1,160（`STATE_MAX` 生效，部分页面可交互元素不足 60 个）。每个键唯一，**0 页存在键冲突**。
+- **确定性**：同一份产物连采两次（`fp2-a` / `fp2-b`），`diff` 报 `pages differing: 0/23, element diffs: 0`。注意这是**整份指纹**的确定性，不是只比状态行——2026-11-04 那条「零差异」用的是 `onlyState` 过滤，只覆盖状态行，别把两者当同一判据。
+- **变异验证（三处，各自只作用于一种状态，且不触碰任何静态行）**：`disabled:cursor-wait` 的 `cursor:wait → help`、`active:translate-y-0` 的 `--tw-translate-y:0px → 7px`、`hover:-translate-y-px` 的 `-1px → -9px`。结果 **2/23 页、10 条差异**，按状态归属为 `:hover` 4 条 / `:active` 4 条 / `:disabled` 2 条，**静态行 0 条**。这同时证明了「新状态真的被采到」与「差异不会串到别的状态」。脚本：`output/eng-discipline-2/mutation-test-v3.mjs`（自带备份与还原，跑完会逐条核对变异确实落进产物）。
+- **上一轮 `REMOVED` 假阳性的真因**：同一脚本首轮出现过 1 条 `REMOVED ul`，追到 `div#myhkLrc`（远端播放器容器，采集时 `ERR_TIMED_OUT`），补 `[id^='myhk']` 后消失。
+
+**实测证据（2026-11-04，两态时期的记录，数字保留原样）**：
 
 - 23 页共 **2320 条状态行**；其中 14 页正好 120 条（60×2），证明上限生效。
 - **确定性**：同一份产物连采两次，23 页状态行**逐字符零差异**。
 - **变异验证（关键）**：改 `--colorful-green-accessible` 从 `#007a00` 到 `#ff00ff`，**19/23 页报出 43–86 条差异**，差异全部落在 `outline-color`，形如 `- outline-color=rgb(0, 122, 0)` / `+ outline-color=rgb(255, 0, 255)`。剩下 4 页未变是**正确行为**，不是漏报：`books*` 三页是 Nice Books 独立壳、自有一套样式，实测 `hasGreenOutline=false`（不消费该变量）；`/this-page-should-404/` 只有 3 个元素、无可交互元素。
 - **第一次变异选错了目标**（记下来防重犯）：我先改 `:focus-visible{outline:2px solid #fff}`，结果 **0/23 页报差异**。查证后发现实际生效的 outline 颜色来自 CSS 变量而非这条规则——**改判据后要做变异验证，而变异点本身也要先证明它真的作用到被采样元素**，否则验证的是空气。
 
-**探针与证据留在哪**：这一轮的探针脚本、两次基准采集、变异前后采集全部在 `output/retro-eng-discipline/`（2.8 MB），按本文件「一次性探针脚本该放哪」的规矩存放，可复跑。
+**探针与证据留在哪**：2026-11-04 那轮在 `output/retro-eng-discipline/`（2.8 MB）；2026-11-05 这轮在 `output/eng-discipline-2/`（三次采集 + 四处探针 + 变异脚本 + 备份的产物 CSS）。都按本文件「一次性探针脚本该放哪」的规矩存放，可复跑。
 
-**不覆盖的部分（如实披露）**：只采 `:hover` 与 `:focus-visible` 两种状态；`:active`、`:disabled`（`disabled:` 变体）、`:checked`、`:visited` 未纳入。`disabled:cursor-not-allowed` 那种在 v4 下静默失效的情形，靠的是静态态 `cursor` 属性（已在 PROPS 里），但**没有专门的 `:disabled` 强制态采样**。
+**不覆盖的部分（如实披露）**：`:checked` 未纳入（全站零消费方，见上表）；`:visited` 永久排除（强制无效）；`range` 输入的 thumb 伪元素规则（`:active::-webkit-slider-thumb`）采不到，因为读的是元素自身的 computed style，不含伪元素；`STATE_MAX = 60` 且按 DOM 顺序取，长页面上排在 60 名之后的可交互元素不被采样。
+
+**指纹格式已变更**：状态数由 2 变 4、属性表新增 `translate` / `rotate` / `scale`，**2026-11-05 之前采集的基线不能与新采集互比**（会把新增属性读成整页差异）。要比就重采两侧。
 
 ---
 

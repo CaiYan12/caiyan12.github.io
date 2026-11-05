@@ -19,7 +19,8 @@
 - **该次数据更新对本站产物 CSS 零影响**：15 份产物 CSS 逐字节相同，152 处前缀（`-webkit-` 86 / `-o-` 33 / `-moz-` 32 / `-ms-` 1）逐文件 0 差异。原因不是数据没生效，而是本站用到的前缀属性在旧、新目标集的**最低版本上都需要同样前缀**（`object-fit`、`user-select`、`text-size-adjust`、`appearance`、`line-clamp`、`column-gap`、`tab-size`、`mask-image`、`tap-highlight-color`、`print-color-adjust`）。
 - **别把这条结论当永久保证**：新增使用某个处在前缀分界线附近的属性、或将来把 `defaults` 换成显式保守目标集，都会让「零影响」失效。改动 CSS 后若想确认前缀，直接看 `dist/_astro/*.css` 而不是推演。
 - `public/` 下 7 份 CSS（`domain/css/*`、`giscus-theme.css`、`pio/static/pio.css`、`pagefind/*.css`）**不经过 Autoprefixer**，它们有前缀变化属异常，应查来源而不是改构建配置。
-- 验证样式没漂移用 `scripts/upgrade-style-audit.mjs`；两个坑见 `docs/agents/commands.md`（两侧必须同端口 `localhost`；语录块随机需同构建两次自检）。
+- 验证样式没漂移用 `scripts/upgrade-style-audit.mjs`；两个坑见 `docs/agents/commands.md`（两侧必须同端口 `localhost`；语录块随机已由 SEED 固定 `crypto.getRandomValues`，不再是「只能靠两次自检碰运气」的问题）。
+- **`tailwind.config.cjs` 的 `nb` 色板必须逐个列出 `--nb-*` 颜色变量**（2026-11-05 修）：`nb.` 下缺哪个键，对应工具类就**静默不生成**，无任何警告。既有案例：`src/nice-books/lib/render.ts` 的荐语便签用了 `border-nb-note-border`，色板里却只有 `border` / `border-strong`——`--nb-note-border: #e3d3a2` 定义了没人消费，便签边框退回 `currentColor`（深色描边）。补键后产物出现 `.border-nb-note-border{border-color:var(--nb-note-border)}`，`/books/01/` 实测计算值 `rgb(227, 211, 162)`。**新增 nb token 时先确认色板有对应键**；`--nb-kraft` 目前仍无导出键且全站零消费方，属死 token 不是缺陷。
 
 ## 样式
 
