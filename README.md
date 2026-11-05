@@ -526,21 +526,31 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     → 评估原文：`docs/plans/2026-11-03-phase5-migration-assessment.md` 第三节；原实施骨架：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 11-15（Task 12-15 是占位结构，方案获批后才可补写成可执行步骤）。
 
-    **上线记录（2026-11-04）**：三条 CI 全绿（`Astro Check` 35s / `Prettier Check` 42s / `Astro Build` 1m21s，Linux 上真实构建通过），合并后 `Deploy to GitHub Pages` 2m23s success。线上 `Last-Modified: 08:38:55 GMT` 晚于推送；`pnpm verify:live` **连跑三次均 29/29**；`pnpm verify:live:swup` document 级接管证据通过。线上产物确为 v4：CSS 里有 `@layer` 声明（v3 产物层数为 0），字节数 **195,513** 与本地构建逐字节相同。
+    **上线记录（2026-11-04）**：三条 CI 全绿（`Astro Check` 35s / `Prettier Check` 42s / `Astro Build` 1m21s，Linux 上真实构建通过），合并后 `Deploy to GitHub Pages` 2m23s success。线上 `Last-Modified: 08:38:55 GMT` 晚于推送；`pnpm verify:live` **连跑三次均 29/29**；`pnpm verify:live:swup` document 级接管证据通过。线上产物确为 v4：CSS 里有 `@layer` 声明（v3 产物层数为 0），字节数 **195,513** 与本地构建**字节数相同**（逐字节差 1 字节，见下条）。
+
+    **收口核对（2026-11-05）**：五处补偿逐条在 `astro preview` 上量计算值，全部生效——正文链接 `text-decoration-line: underline`；正文列表 `padding-inline-start: 4.875px`（13px 正文下即 `0.375em`）；404 页 `.search-box input` 底 `rgb(255, 255, 255)`；`.text-nb-seal` 那处装饰符号 `line-height: 20px`；`/books/` 简介段落在 375px 视口 `line-height: 24px`（不是修复前的 35.2px），桌面 38.5px。层结构在产物里可验证（`properties` / `theme` / `base` / `components` / `utilities` 五个块）。当日线上样式与本地同为 **195,571 B**（补 `nb.note-border` 后），逐字节差 1 字节——仍是 `oklab()` 浮点末位。同日校正了本文档、ADR 0011、票册与命令文档里五处与代码或产物不符的记述，见提交 `bc7a13a` / `9119e5b`。
 
     **推翻了「CSS 资源名平台无关」这条判定纪律（本次新发现，已改写 `docs/agents/build-and-deploy.md`）**：v3 时代本地与线上 CSS 资源名确实完全一致，所以这条纪律一直好用。**v4 起不再成立**——本次本地 `MainGridLayout.B_utt6QD.css`、线上 `MainGridLayout.TXd5OLZn.css`，**名字不同但字节数完全相同，逐字节只差 1 个字节**：`bg-primary/15` 编译出的 `oklab(69.9907% -.188933 .144998/.15)` 在 Linux 上是 `-.188934`，**色彩转换的浮点末位随平台变**，内容寻址哈希因此改变。该差异只出现在 `WidgetCalendar.astro` 的日历当前日期格底色上，1 个浮点末位不可见。判据已改为「同名即同源；不同名则下载比对字节数与逐字节差异，仅 `oklab()`/`color-mix()` 浮点末位不同即正常」。
 
-- [ ] **Satori 0.26.0 → 0.63.2（跨 33 个 minor，无书面依据）**（2026-11-03 登记，**移交独立工作流**）
+- [x] **Satori 0.26.0 → 0.63.2（跨 37 个 minor，无书面依据）**（2026-11-03 登记，**移交独立工作流**；2026-11-05 完成隔离探针，2026-11-05 **收口**：已合入集成分支 `d2c3f9f`，PR #150 待合，见下）
 
-    为什么必须单独排期：上游**没有 CHANGELOG**，60 条 release 无一条标注 BREAKING——不是「兼容」，是**没有书面依据**。依赖栈从 `opentype.js` 换到 `harfbuzzjs`，字体排版可能整体换过，而本站 33 张 OG 图全靠它渲染。
+    为什么必须单独排期：上游**没有 CHANGELOG**，74 条 release 无一条标注 BREAKING——不是「兼容」，是**没有书面依据**。依赖栈从 `opentype.js` 换到 `harfbuzzjs`，**布局引擎也从 `yoga-layout` 换成了包内自带的 `layout.wasm`**，字体排版可能整体换过，而本站 33 张 OG 图全靠它渲染。
 
-    正确的第一步是**隔离试装 + 跑一次真实 OG 渲染**（项目目录外或 `output/` 下，主项目 `package.json` 全程不动），产出探针报告，回答三件事：能否装上、能否渲染 33 张 OG、差异性质（尺寸/换行/字体/截断）。据此三选一：值得排期 / 需先改模板 / 保留 0.26.0 并记录冻结理由。
+    **探针结论（2026-11-05，`output/satori-upgrade/probe/`）**：装得上（npm 12 秒 / 22 包 / 无原生编译）、33/33 全部渲染成功，但**默认写法下每张都错版**——根容器盒模型从 border-box 变 content-box，1200×630 变 1320×750，底部作者行整行掉出画布；绿色竖条被 flex 收缩压成 3px。两处一行改动（根容器 `boxSizing: "border-box"`、竖条 `flexShrink: 0`）可复原几何，且这两处在 0.26.0 上是**逐字节无操作**，可先落地再升版本。复原后仍有**16/33 张标题换行点改变**（文本度量漂移 ±0.9%，方向不定）与 **1 张整体下移 10px**（唯一无描述那篇，空串子节点不再占 `gap`），截断与省略号未退化且更规范。完整证据：`docs/plans/2026-11-05-satori-upgrade-research.md`。
 
-    已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori，本机 Node 的 fetch 不读 `HTTP_PROXY`，构建前须设 `$env:NODE_USE_ENV_PROXY='1'`（详见 `docs/agents/build-and-deploy.md`）。
+    正确的第一步是**隔离试装 + 跑一次真实 OG 渲染**（项目目录外或 `output/` 下，主项目 `package.json` 全程不动），产出探针报告，回答三件事：能否装上、能否渲染 33 张 OG、差异性质（尺寸/换行/字体/截断）。据此三选一：值得排期 / 需先改模板 / 保留 0.26.0 并记录冻结理由。（**三问已于 2026-11-05 答完，剩下的「值得排期与否」是产品判断**。）
 
-    → 探测步骤：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 16。
+    已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori，本机 Node 的 fetch 不读 `HTTP_PROXY`，构建前须设 `$env:NODE_USE_ENV_PROXY='1'`（详见 `docs/agents/build-and-deploy.md`）。另：在 `output/` 子目录里 `pnpm install` 会被父工作区吞掉（报 Done 但不生成 `node_modules`），探针须用 `npm install`。
 
-    适合 `/grill-spec-tickets-implement` 工作流。
+    → 探测步骤：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 16；实测结论与偏差见 `docs/plans/2026-11-05-satori-upgrade-research.md`。
+
+    **收口记录（2026-11-05，spec #144 / 三票 #145 #146 #147）**：依赖写成精确 `"0.63.2"`（无 caret），锁文件 +17/−11 全部落在 satori 自己的子树（+`fflate@0.7.3`、+`harfbuzzjs@0.10.0`、−`yoga-layout@3.2.1`），`sharp` 与其余包零变动、头像仍走原 sharp 转码。三笔提交：`bcdfa3c`（模板两处声明）、`6d80662`（OG 产物断言 `scripts/verify-og-images.mjs`）、`999d3f8`（依赖升级），集成分支 `d2c3f9f`，PR #150。包体 satori 解压后 5.4 MB → 26 MB（布局引擎换成包内 `layout.wasm`）。
+
+    **实测：OG 33/33 张全部超过 0.2% 像素阈值，最小 0.71%、最大 9.95%。** 这不是「17 张变了」，也不是测量噪声——0.26 重构建与基线 33 张 PNG 逐字节相同，同一时刻 0.26 与 0.63.2 两份构建互比的数字与基线比对完全一致。**口径更正**：0.2% 的用途是排除环境噪声（跨环境上限 0.028%），区分不了「视觉上是否有意义」——HarfBuzz 的字形漂移本身就有 0.71%–2.8%。按性质分是 **17 张结构性变化**（16 张标题换行点改变 + 1 张无描述文章 `20260320000000` 整体下移 10px）+ **16 张仅字形亚像素漂移**（版式与断行一致，差异图上只有文字轮廓）。「17」指结构性变化数，不是超阈值数。
+
+    **页面零回归的判据**：整站构建非确定（同状态两次构建差 146–156 个 HTML，构建期随机文章列表）。用三份同状态 0.26 构建求稳定集：抖动集 |D|=156、稳定集 |S|=787、升级后差异 |U|=156 全部落在 D 内、**稳定集内的升级差异为 0**。脚本 `output/satori-upgrade/non-og-verdict.mjs`。只拿一对同状态构建做差集会低估抖动集（146 < 156），造出 10 个假回归。
+
+    **构建链全绿**：230 个 HTML、33 张 OG；`verify-og-images` 33/33（最小非白像素 4.199%）；KaTeX 类名校验旧类名 0 / 新类名 1338；`prettier --check` 通过。逐张三联图（旧｜新｜差异×8）在 `output/satori-upgrade/t3-shots/`。
 
 > **两项迁移的共同前提**：不得全量 `update --latest`，不得跳过 A/B。本仓库已确立「每批只动一个直接依赖、同输入构建 A/B、真实浏览器验收、文档与代码同批」的流程，四批依赖升级（Svelte / Autoprefixer / KaTeX / Mermaid）都照此执行，证据格式参考 `docs/plans/2026-11-03-katex-upgrade.md` 与 `docs/plans/2026-11-03-mermaid-upgrade.md`。
 

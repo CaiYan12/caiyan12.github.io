@@ -1,5 +1,26 @@
 # 更新日志
 
+## 2026-11-05：Satori 0.26.0 → 0.63.2 收口——只换渲染引擎，17 张分享卡结构性重排
+
+- **升级范围只有一个直接依赖**：`satori` 写成精确 `"0.63.2"`（无 caret）。锁文件 +17/−11，全部落在 satori 自己的依赖子树——新增 `fflate@0.7.3`、`harfbuzzjs@0.10.0`，移除 `yoga-layout@3.2.1`；`sharp` 与其余包零变动，头像仍走原来的 sharp 转 PNG data URL 路径。包体解压后 5.4 MB → 26 MB（布局引擎从外部 `yoga-layout` 换成包内 `layout.wasm`）。
+- **三笔提交，回滚单元与风险源对齐**：`bcdfa3c`（`src/pages/og/[...slug].png.ts` 补 `boxSizing: "border-box"` 与 `flexShrink: 0`，在 0.26 上逐字节无操作）、`6d80662`（新增 `scripts/verify-og-images.mjs`，把「33 张、1200×630、非空白」变成构建后断言）、`999d3f8`（依赖升级）。集成分支 `d2c3f9f`，PR #150。
+- **OG 实测：33/33 张全部超过 0.2% 像素阈值，最小 0.71%、最大 9.95%。** 可复现、非噪声：0.26 重构建与基线 33 张 PNG 逐字节相同，同一时刻 0.26 与 0.63.2 两份构建互比的逐张数字与基线比对完全一致。
+- **更正了阈值口径（本轮最重要的一条）**。0.2% 原本被当成「有变化 / 没变化」的分界线，实测不成立：它的正确用途是**排除环境噪声**（跨环境上限 0.028%，阈值是其 7 倍），但 HarfBuzz 的字形漂移本身就产生 0.71%–2.8% 的像素差，全部高于阈值，逐张都判成「变了」。按性质分类才有意义：**17 张结构性变化**（16 张标题换行点改变，多数是放下更多字、少截断；1 张无描述文章 `20260320000000` 整体下移 10px，空串子节点在 0.63.2 不再占 `gap`）+ **16 张仅字形亚像素漂移**（版式与断行完全一致，差异图上只有文字轮廓）。「17」是结构性变化数，不是超阈值数。
+- **页面零回归的判据是「稳定集内零差异」，不是「零差异」**。整站构建非确定：同状态连续两次构建就有 146–156 个 HTML 不同（构建期随机文章列表）。用三份同状态 0.26 构建求稳定集——两两差异 146 / 156 / 156，抖动集 |D| = 156、稳定集 |S| = 787，升级后差异 |U| = 156 全部落在 D 内，**稳定集内的升级差异为 0**。注意单次两两比较会低估抖动集（146 < 156），拿 146 当分母会造出 10 个假回归（about / albums / friends 等含随机文章列表的页面）。脚本 `output/satori-upgrade/non-og-verdict.mjs`。
+- **构建链全绿**：`astro build` 产出 230 个 HTML、33 张 OG；`node scripts/verify-og-images.mjs` 33/33 通过（最小非白像素占比 4.199%）；KaTeX 类名校验通过（旧类名 0、新类名 1338）；`prettier --check` 通过。逐张「旧｜新｜差异×8」三联图与 A/B 快照在 `output/satori-upgrade/`（git-ignored）。
+- **为什么模板先落地、升版本后落地**：两处盒模型声明在 0.26.0 上逐字节无操作（33 张 PNG md5 全等），单独回滚依赖时不牵连模板。ADR 见 [`docs/adr/0012-satori-upgrade-target.md`](docs/adr/0012-satori-upgrade-target.md)。
+
+---
+
+## 2026-11-05：Tailwind v4 收口核对——判定通过，并校正文档里七处与代码/产物不符或自相矛盾的记述
+
+- **判定：可以收口。** 五处补偿逐条在 `astro preview` 上量计算值，全部生效：正文链接 `text-decoration-line: underline`；正文列表 `padding-inline-start: 4.875px`（13px 正文下即 `0.375em`）；404 页 `.search-box input` 底 `rgb(255, 255, 255)`；`.text-nb-seal` 装饰符号 `line-height: 20px`；`/books/` 简介段落 375px 视口 `line-height: 24px`（修复前是 35.2px）、桌面 38.5px。产物层结构为 `properties` / `theme` / `base` / `components` / `utilities` 五个块。
+- **线上与本地一致**：样式同为 **195,571 B**，逐字节差 1 字节（`.bg-primary\/15` 的 `oklab()` 浮点末位，Linux 与 Windows 的色值转换末位不同）。补 `nb.note-border` 键之前是 195,513 B，差值 58 B 即那条工具类。
+- **校正的五处事实偏差**（`bc7a13a`）：① README 徽章仍写 `Tailwind_CSS-3.4`；②「三处例外」实为**四个** `@layer base` 块（`global.css` 的元素级重置、`input,textarea` 白底、手型光标，加 `books.css` 的 `:focus-visible` 焦点环）；③ 产物里并不存在 `@layer theme, base, components, utilities;` 这句合并声明，层序按首次出现建立；④ 第五处补偿的实现是 `max-[540px]:leading-[1.5rem]`，不是文档记的 `max-[540px]:[--tw-leading:1.5rem]`（实测等效，375px 下行高 24px）；⑤ `commands.md` 把宿主管卫拦截写成「产物本身完整、只少一步清理」，低估了后果。
+- **顺带修掉的两处自相矛盾**：`styles.md` 记「②③ 两份光标」——重复的那份 2026-11-04 已删，现只有一份；ADR 0011 与 README 的「与本地构建逐字节相同」与同一节的「逐字节只差 1 字节」冲突，统一为「字节数相同、逐字节差 1 字节」。
+- **更正一条错误归因**（`9119e5b`）：`smoke:ui` 的「忙碌期的第二次提交被忽略」不是既有 flake。本机构建在 `astro:build:done` 之前被宿主管卫打断，`pagefind` 索引未生成，该判据因搜索结果数为 0 恒红；手动 `pnpm exec pagefind --site dist` 后立刻 PASS，完整 142 项只剩 `#41` / `#47` 两条 sitemap 前提红。**sitemap 无法用单条命令补回**（由 `@astrojs/sitemap` 在 `build:done` 写），需要这两条判据时以 CI 的 Linux 产物为准。
+- **验证**：`prettier --check` 覆盖了本轮改动过的全部 Markdown，全绿；推送后 `Lint` / `Build and Check` / `Deploy to GitHub Pages` 三项 `headSha` 均为 `9119e5b`，线上样式资源名与字节数未变（文档改动未进入产物）。
+
 ## 2026-11-05：状态采样扩到四态，并修掉三处会让它「采了等于没采」的缺陷
 
 - **`nb.note-border` 补上色板键（配置缺陷）**。`src/nice-books/lib/render.ts` 的荐语便签用了 `border-nb-note-border`，而 `tailwind.config.cjs` 的 `nb` 色板只有 `border` / `border-strong`——该工具类**静默不生成**，`--nb-note-border: #e3d3a2` 定义了没人消费，便签边框退回 `currentColor`（深色描边）。补键后产物出现 `.border-nb-note-border{border-color:var(--nb-note-border)}`，`/books/01/` 实测计算值 `rgb(227, 211, 162)`。这是**视觉变更**，不是纯配置整理。
