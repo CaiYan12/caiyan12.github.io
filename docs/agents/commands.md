@@ -71,7 +71,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - **`pnpm dev` / `start.bat`（= `pnpm start --open`）就是 `astro dev`**，两者同一个命令；日常改样式、验交互、验 Pio 用它即可，热更新、无需构建。
 - **`pnpm preview` 只是给「构建产物」用的**：验 `dist/` 相关的东西（`public/` 下不经构建管线的文件、`pio.css` 改动、pagefind 索引、需要在产物里才成立的行为）才需要它。preview **默认也用 4321**，与 dev 撞端口时显式 `--port 4322`。
 - **建产物只跑 `pnpm exec astro build` 就够了**，不要为了预览跑整条 `pnpm build`——后者还串了 `fetch-github-*` / `fetch-friend-icons` / `generate-lqips` 等联网脚本，慢且易被网络拖垮。
-- **本机构建只需设 `NODE_USE_ENV_PROXY=1`**（与 AGENTS.md 的既有口径一致）。2026-11-02 实测纠正过一条错记：当时记录「必须同时设 `HTTPS_PROXY`、缺一即红」，但该次 A/B 对照**本身失效**——实验 shell 里 `HTTPS_PROXY` 本来就是未设置状态（`env -u` 清了个空），两组跑的其实是同一条件；两组都 exit 0、都没有 `No fonts are loaded`。结论回到既有口径：设 `NODE_USE_ENV_PROXY=1` 即可；仅当该变量开启后仍报字体错误时才考虑补 `HTTPS_PROXY`。
+- **`NODE_USE_ENV_PROXY=1` 只在「直连不通」时才需要**（2026-11-05 复核口径）。机制已验证：Node 内置 fetch 默认不读 `HTTP(S)_PROXY`，设了该变量才会读——用坏代理（`127.0.0.1:9`）做对照，不设变量直连成功、设了立刻 `ECONNREFUSED`。但**「必须设」这个说法过强**：本机同日实测直连 `fonts.googleapis.com` 534 ms 成功，不设变量构建也能过；设了反而多绕一层本地代理，代理抖动时会 10 s 超时（2026-11-05 在 T3 上撞到过一次，误判成「规则反转」）。判据：构建报 `No fonts are loaded` 且直连也不通，才补这个变量。2026-11-02 那次 A/B 对照本身是失效的（实验 shell 里 `HTTPS_PROXY` 本来就是未设置状态），别拿它当依据。
 
 注意：Windows 上 pnpm build 失败时尾部可能看不到完整错误（esbuild 崩溃断言），务必看完整输出而非 tail。
 
@@ -361,12 +361,22 @@ gh run list --commit <sha> --json databaseId,name,conclusion,headSha
 
 ---
 
-## worktree 里的依赖与产物都不共享（2026-11-05 立，当天踩了两次）
+## 依赖变更后的首次构建会被缓存守卫打断，留下上一次的产物（2026-11-05 立，当晚查清成因）
 
-`git worktree add` 给的是**独立工作目录**，不是同一份工作区的另一个入口。`node_modules`、`dist`、`.astro` 缓存全部各建一份。由此有两个必踩的坑：
+`git worktree add` 给的是**独立工作目录**，不是同一份工作区的另一个入口：`node_modules`、`dist`、`.astro` 缓存全部各建一份。这条本身不是坑，坑由下面两环串起来。
 
-1. **合并了 `package.json` 不等于装上了新依赖。** 在 worktree 里 `git merge` 进一个改了依赖的分支后，`node_modules` 仍是旧版本，`astro build` 照常成功、退出码照常是那个被守卫改写的 1——但构建用的是旧依赖。2026-11-05 在集成 worktree 上第一次验证 satori 升级时就是这样：`package.json` 已写 `0.63.2`，`require("satori/package.json").version` 仍是 `0.26.0`，差点把「旧版构建通过」当成「新版构建通过」。**构建前先打印实际安装版本**，两者不一致就 `pnpm install --store-dir "D:/pages/myblog/.pnpm-store"`。
-2. **worktree 的 `dist` 不会因为你换了依赖而自动重建。** 它只是上一次构建的残留。拿它当 A/B 的基线，等于把「旧依赖的产物」当成「当前产物」——同日线上复核因此误报 31 张不一致，而部署其实完全成功，错的是对照基准。判据：比对前确认候选 `dist` 的生成时间晚于最后一次依赖变更（`ls -l dist/og | head -1` 与 `git log -1 --format=%ci` 对一下）。
+1. **合并了 `package.json` 不等于装上了新依赖。** 在 worktree 里 `git merge` 进一个改了依赖的分支后，`node_modules` 仍是旧版本，`astro build` 照常写产物——但用的是旧依赖。2026-11-05 在集成 worktree 上验证 satori 升级时就是这样：`package.json` 已写 `0.63.2`，`require("satori/package.json").version` 仍是 `0.26.0`。**构建前先打印实际安装版本**，与声明不一致就跑 `pnpm install --frozen-lockfile`。
+
+2. **锁文件一变，vite 要重建依赖缓存，而宿主的批量删除守卫会拦下它，构建在写产物之前就死了。** 2026-11-05 在 `main` 上完整复现了这条链：
+
+    - `pnpm install --frozen-lockfile` 之后 `satori` 确已是 `0.63.2`；
+    - 直接 `astro build`，日志第一行 `[vite] Re-optimizing dependencies because lockfile has changed`，紧接着 `[safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED] {"count":128,"threshold":50,…"node_modules\\.astro\\vite-sync\\deps"}`，进程以 libuv 断言结束、退出码 127；
+    - **`dist` 原封不动**。于是 `ls dist/og | wc -l` 仍是 33、`verify-og-images` 仍全绿、页面看着也没坏——但那是上一次构建用旧依赖产出的图。同日 satori 升级后的「产物还是旧版」就是这么来的。
+    - 处置：把 `node_modules/.astro` **移出去**（`mv` 不是批量删除，守卫不拦），再构建。重建后那 33 张里 29 张与线上逐字节相同、4 张差 ≤0.028%（跨环境浮点末位），即确实是新依赖的产物。
+
+判据：**构建日志里出现 `Re-optimizing dependencies` 就预期这次会被拦**；被拦时不要看 `dist` 的时间戳（那是上一次构建的时间），改看实际安装版本与日志。拿被拦后残留的 `dist` 当 A/B 基准，等于把「旧引擎的输出」当成「新引擎的输出」——2026-11-05 线上复核误报 31 张不一致，原因就在这里。
+
+> 本节 2026-11-05 早期的写法把原因记成「worktree 的 `dist` 不会自动重建」，那是现象不是成因；当天晚上在 `main` 上复现后改成上面的链条。
 
 清理 worktree 时 `node_modules` 会一起消失；`git worktree remove` 对含未跟踪文件的目录会拒绝，删之前先确认没有要留的证据（见上一节）。
 

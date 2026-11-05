@@ -540,11 +540,11 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     正确的第一步是**隔离试装 + 跑一次真实 OG 渲染**（项目目录外或 `output/` 下，主项目 `package.json` 全程不动），产出探针报告，回答三件事：能否装上、能否渲染 33 张 OG、差异性质（尺寸/换行/字体/截断）。据此三选一：值得排期 / 需先改模板 / 保留 0.26.0 并记录冻结理由。（**三问已于 2026-11-05 答完，剩下的「值得排期与否」是产品判断**。）
 
-    已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori，本机 Node 的 fetch 不读 `HTTP_PROXY`，构建前须设 `$env:NODE_USE_ENV_PROXY='1'`（详见 `docs/agents/build-and-deploy.md`）。另：在 `output/` 子目录里 `pnpm install` 会被父工作区吞掉（报 Done 但不生成 `node_modules`），探针须用 `npm install`。
+    已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori。Node 内置 `fetch` **默认不读 `HTTP(S)_PROXY`**，只有 `NODE_USE_ENV_PROXY=1`（Node ≥24）才会读——2026-11-05 用坏代理（`127.0.0.1:9`）实测确认：不设变量时直连成功，设了就 `ECONNREFUSED`。所以「必须设」只在**只能经代理出网**的机器上成立；本机可直连该域名（同日实测 534 ms），不设也能构建，设了反而多绕一层本地代理（曾有一次 10 s 超时）。详见 `docs/agents/build-and-deploy.md`。另：在 `output/` 子目录里 `pnpm install` 会被父工作区吞掉（报 Done 但不生成 `node_modules`），探针须用 `npm install`。
 
     → 探测步骤：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 16；实测结论与偏差见 `docs/plans/2026-11-05-satori-upgrade-research.md`。
 
-    **收口记录（2026-11-05，spec #144 / 三票 #145 #146 #147）**：依赖写成精确 `"0.63.2"`（无 caret），锁文件 +17/−11 全部落在 satori 自己的子树（+`fflate@0.7.3`、+`harfbuzzjs@0.10.0`、−`yoga-layout@3.2.1`），`sharp` 与其余包零变动、头像仍走原 sharp 转码。三笔提交：`bcdfa3c`（模板两处声明）、`6d80662`（OG 产物断言 `scripts/verify-og-images.mjs`）、`999d3f8`（依赖升级），集成分支 `d2c3f9f`，PR #150 已合并为 `b3f8a1c`（部署 run `41962881752`，headSha 匹配）。线上复核 33 张：29 张逐字节相同、4 张差 0.017%–0.028%、无异常。包体 satori 解压后 5.4 MB → 26 MB（布局引擎换成包内 `layout.wasm`）。
+    **收口记录（2026-11-05，spec #144 / 五票 #145–#149）**：依赖写成精确 `"0.63.2"`（无 caret），锁文件 +17/−11 全部落在 satori 自己的子树（+`fflate@0.7.3`、+`harfbuzzjs@0.10.0`、−`yoga-layout@3.2.1`），`sharp` 与其余包零变动、头像仍走原 sharp 转码。三笔代码提交：`bcdfa3c`（模板两处声明）、`6d80662`（OG 产物断言 `scripts/verify-og-images.mjs`）、`999d3f8`（依赖升级），另有 `9beb8ae`（文档收口 #148）、`b3f8a1c`（合并 PR #150）；集成分支 `d2c3f9f`。部署 run `41962881752` 的 headSha 与合并提交相同；线上复核 33 张：29 张逐字节相同、4 张差 0.017%–0.028%、无异常。包体 satori 解压后 5.4 MB → 26 MB（布局引擎换成包内 `layout.wasm`）。
 
     **实测：OG 33/33 张全部超过 0.2% 像素阈值，最小 0.71%、最大 9.95%。** 这不是「17 张变了」，也不是测量噪声——0.26 重构建与基线 33 张 PNG 逐字节相同，同一时刻 0.26 与 0.63.2 两份构建互比的数字与基线比对完全一致。**口径更正**：0.2% 的用途是排除环境噪声（跨环境上限 0.028%），区分不了「视觉上是否有意义」——HarfBuzz 的字形漂移本身就有 0.71%–2.8%。按性质分是 **17 张结构性变化**（16 张标题换行点改变 + 1 张无描述文章 `20260320000000` 整体下移 10px）+ **16 张仅字形亚像素漂移**（版式与断行一致，差异图上只有文字轮廓）。「17」指结构性变化数，不是超阈值数。
 

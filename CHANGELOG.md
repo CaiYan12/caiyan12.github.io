@@ -1,5 +1,14 @@
 # 更新日志
 
+## 2026-11-05：收掉三笔账——README 票据计数、代理变量口径、依赖变更后构建被缓存守卫打断
+
+- **README 收口记录的票据计数**：写的是「三票 #145 #146 #147」，实际五票 `#145–#149`；同时补上漏记的 `9beb8ae`（文档收口）与合并提交 `b3f8a1c`。
+- **`NODE_USE_ENV_PROXY` 的口径改为有条件的**。用坏代理（`127.0.0.1:9`）做对照实验：不设该变量时 Node 的 `fetch` 直连成功，设了立刻 `ECONNREFUSED`——**机制成立**（内置 fetch 默认不读 `HTTP(S)_PROXY`）。但「构建前必须设」过强：本机同日实测直连 `fonts.googleapis.com` 534 ms 成功，不设也能构建；设了反而多绕一层本地代理，代理抖动时会 10 s 超时（T3 那次超时即此，当时被我误判成「规则反转」）。只有直接连不通的机器才需要设。README、`AGENTS.md`、`docs/agents/commands.md` 三处同步改写。
+- **「升级后产物还是旧版」的成因查清**（此前只记成「worktree 的 `dist` 是残留」，是现象不是原因）。真实链条：`pnpm install` 装上 0.63.2 后，`astro build` 第一行是 `[vite] Re-optimizing dependencies because lockfile has changed`，随后 vite 要删 `node_modules/.astro/vite-sync/deps`（128 项 > 阈值 50），被宿主的批量删除守卫拦下，进程以 libuv 断言 + 退出码 127 结束——**构建在写任何产物之前就死了，`dist` 原封不动**。所以数量仍是 33、OG 断言仍全绿，但那是旧依赖产出的图。处置：`mv` 走 `node_modules/.astro`（不是删除，守卫不拦）后重建；33 张里 29 张与线上逐字节相同、4 张差 ≤0.028%，即确认是新引擎的产物。`docs/agents/commands.md` 该节按此重写，并保留一行「早期写法错在哪」。
+- **顺带纠正本机 `main` 的依赖状态**：`package.json` 早已是 `"0.63.2"`，但 `node_modules` 仍是 0.26.0（`git pull` 不会触发安装），当天的两次构建因此都在用旧引擎。已 `pnpm install --frozen-lockfile` 对齐。
+
+---
+
 ## 2026-11-05：OG 产物断言的数量改为派生——修掉写死的 33 会误伤正常发文
 
 - **缺陷**：`scripts/verify-og-images.mjs` 把期望数量写死成常量 33。`/og/[slug].png` 对每篇非草稿文章产一张（`getStaticPaths` 里 `filter(!post.data.draft)`），所以**下一篇非草稿文章一提交，`pnpm build` 就会在断言处退出码 1、CI 变红**——红的原因不是产物坏了，是判据过期了。脚本注释与五份文档都没有提醒要同步这个数字。

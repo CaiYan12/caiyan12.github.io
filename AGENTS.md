@@ -156,7 +156,7 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 两条不做就会白跑的事实：
 
 - **Windows 上 `pnpm build` 失败时，尾部可能看不到完整错误**（esbuild 崩溃断言）——看完整输出，不要只 tail。
-- **OG 图端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori**：本机 Node 的 fetch **不读 `HTTP_PROXY`**（直连 TUN 假 IP 会超时），构建前须设 `$env:NODE_USE_ENV_PROXY='1'`。**用 curl 或 PowerShell 探这个域名会返回 200，但那证明不了构建能过** —— 那条路走代理，Node 那条不走。
+- **OG 图端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori**：Node 内置 fetch **默认不读 `HTTP_PROXY`**，只有 `NODE_USE_ENV_PROXY=1` 才读——2026-11-05 用坏代理实测：不设变量时直连成功，设了就 `ECONNREFUSED`。因此**只有不能直连该域名的机器才需要设**；本机同日实测可直连（534 ms），不设也能构建，设了会多绕一层本地代理、代理抖动时反而失败。**用 curl 或 PowerShell 探这个域名返回 200 证明不了 Node 那条路能过**——两者走的不是同一条路。
 
 ## 环境区分（必须遵守）
 
