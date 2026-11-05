@@ -540,7 +540,7 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     正确的第一步是**隔离试装 + 跑一次真实 OG 渲染**（项目目录外或 `output/` 下，主项目 `package.json` 全程不动），产出探针报告，回答三件事：能否装上、能否渲染 33 张 OG、差异性质（尺寸/换行/字体/截断）。据此三选一：值得排期 / 需先改模板 / 保留 0.26.0 并记录冻结理由。（**三问已于 2026-11-05 答完，剩下的「值得排期与否」是产品判断**。）
 
-    已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori。Node 内置 `fetch` **默认不读 `HTTP(S)_PROXY`**，只有 `NODE_USE_ENV_PROXY=1`（Node ≥24）才会读——2026-11-05 用坏代理（`127.0.0.1:9`）实测确认：不设变量时直连成功，设了就 `ECONNREFUSED`。所以「必须设」只在**只能经代理出网**的机器上成立；本机可直连该域名（同日实测 534 ms），不设也能构建，设了反而多绕一层本地代理（曾有一次 10 s 超时）。详见 `docs/agents/build-and-deploy.md`。另：在 `output/` 子目录里 `pnpm install` 会被父工作区吞掉（报 Done 但不生成 `node_modules`），探针须用 `npm install`。
+    已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori。Node 内置 `fetch` **默认不读 `HTTP(S)_PROXY`**，只有 `NODE_USE_ENV_PROXY=1`（Node ≥24）才会读——2026-11-05 用坏代理（`127.0.0.1:9`）对照实测：不设变量请求成功，设了立刻 `ECONNREFUSED`。但**本机没有真正的直连**：Clash Verge 的 Mihomo TUN（网卡 `Mihomo` / `Meta Tunnel`）以 fake-ip 接管 DNS 与流量，`dns.lookup("fonts.googleapis.com")` 返回 `198.18.0.108`——不设变量的那条路照样经代理，只是走 TUN 而不是 `HTTP_PROXY`。两条路依赖**同一份订阅节点**，节点抖动时都会超时（曾有一次 10 s），所以「设不设变量」不是稳定性开关：报字体错误时先换节点或重试，不要改构建代码。详见 `docs/agents/commands.md` 的 `NODE_USE_ENV_PROXY` 条目。另：在 `output/` 子目录里 `pnpm install` 会被父工作区吞掉（报 Done 但不生成 `node_modules`），探针须用 `npm install`。
 
     → 探测步骤：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 16；实测结论与偏差见 `docs/plans/2026-11-05-satori-upgrade-research.md`。
 

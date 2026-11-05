@@ -71,7 +71,7 @@ pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 - **`pnpm dev` / `start.bat`（= `pnpm start --open`）就是 `astro dev`**，两者同一个命令；日常改样式、验交互、验 Pio 用它即可，热更新、无需构建。
 - **`pnpm preview` 只是给「构建产物」用的**：验 `dist/` 相关的东西（`public/` 下不经构建管线的文件、`pio.css` 改动、pagefind 索引、需要在产物里才成立的行为）才需要它。preview **默认也用 4321**，与 dev 撞端口时显式 `--port 4322`。
 - **建产物只跑 `pnpm exec astro build` 就够了**，不要为了预览跑整条 `pnpm build`——后者还串了 `fetch-github-*` / `fetch-friend-icons` / `generate-lqips` 等联网脚本，慢且易被网络拖垮。
-- **`NODE_USE_ENV_PROXY=1` 只在「直连不通」时才需要**（2026-11-05 复核口径）。机制已验证：Node 内置 fetch 默认不读 `HTTP(S)_PROXY`，设了该变量才会读——用坏代理（`127.0.0.1:9`）做对照，不设变量直连成功、设了立刻 `ECONNREFUSED`。但**「必须设」这个说法过强**：本机同日实测直连 `fonts.googleapis.com` 534 ms 成功，不设变量构建也能过；设了反而多绕一层本地代理，代理抖动时会 10 s 超时（2026-11-05 在 T3 上撞到过一次，误判成「规则反转」）。判据：构建报 `No fonts are loaded` 且直连也不通，才补这个变量。2026-11-02 那次 A/B 对照本身是失效的（实验 shell 里 `HTTPS_PROXY` 本来就是未设置状态），别拿它当依据。
+- **`NODE_USE_ENV_PROXY=1` 不是稳定性开关，两条路都走代理**（2026-11-05 定论）。机制已验证：Node 内置 fetch 默认不读 `HTTP(S)_PROXY`，设了该变量才会读——用坏代理（`127.0.0.1:9`）对照，不设变量请求成功、设了立刻 `ECONNREFUSED`。但**本机没有真直连**：Clash Verge 的 Mihomo TUN（网卡 `Mihomo` / `Meta Tunnel`）以 fake-ip 接管 DNS 与流量，`dns.lookup("fonts.googleapis.com")` 返回 `198.18.0.108`，不设变量的那条路照样经代理，只是走 TUN 而非 `HTTP_PROXY`。两条路依赖同一份订阅节点，节点抖动时都会超时（2026-11-05 在 T3 上撞到 10 s 超时，一度误判成「规则反转」；同日不设变量 534 ms 成功，不过是节点当时健康）。**判据：构建报 `No fonts are loaded` 时先换节点或重试，不要改构建代码、也不要把「设不设变量」当判据。** 2026-11-02 那次 A/B 对照本身是失效的（实验 shell 里 `HTTPS_PROXY` 本来就是未设置状态），别拿它当依据。
 
 注意：Windows 上 pnpm build 失败时尾部可能看不到完整错误（esbuild 崩溃断言），务必看完整输出而非 tail。
 

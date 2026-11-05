@@ -3,7 +3,7 @@
 ## 2026-11-05：收掉三笔账——README 票据计数、代理变量口径、依赖变更后构建被缓存守卫打断
 
 - **README 收口记录的票据计数**：写的是「三票 #145 #146 #147」，实际五票 `#145–#149`；同时补上漏记的 `9beb8ae`（文档收口）与合并提交 `b3f8a1c`。
-- **`NODE_USE_ENV_PROXY` 的口径改为有条件的**。用坏代理（`127.0.0.1:9`）做对照实验：不设该变量时 Node 的 `fetch` 直连成功，设了立刻 `ECONNREFUSED`——**机制成立**（内置 fetch 默认不读 `HTTP(S)_PROXY`）。但「构建前必须设」过强：本机同日实测直连 `fonts.googleapis.com` 534 ms 成功，不设也能构建；设了反而多绕一层本地代理，代理抖动时会 10 s 超时（T3 那次超时即此，当时被我误判成「规则反转」）。只有直接连不通的机器才需要设。README、`AGENTS.md`、`docs/agents/commands.md` 三处同步改写。
+- **`NODE_USE_ENV_PROXY` 的口径改准：它不是稳定性开关**。用坏代理（`127.0.0.1:9`）做对照实验：不设该变量时 Node 的 `fetch` 请求成功，设了立刻 `ECONNREFUSED`——机制成立（内置 fetch 默认不读 `HTTP(S)_PROXY`）。但「不设变量 ＝ 直连」是本机的一个错觉：Clash Verge 的 Mihomo TUN（网卡 `Mihomo` / `Meta Tunnel`，状态 Up）以 fake-ip 接管 DNS 与流量，`dns.lookup("fonts.googleapis.com")` 返回 `198.18.0.108`，那条路**照样经代理**，只是走 TUN 而非 `HTTP_PROXY`。两条路依赖同一份订阅节点，节点抖动时都会超时（T3 那次 10 s 超时即此，一度被我误判成「规则反转」；同日不设变量 534 ms 成功，只是节点当时健康）。结论：报 `No fonts are loaded` 时换节点或重试，别把「设不设变量」当判据。README、`AGENTS.md`、`docs/agents/commands.md` 三处同步改写。
 - **「升级后产物还是旧版」的成因查清**（此前只记成「worktree 的 `dist` 是残留」，是现象不是原因）。真实链条：`pnpm install` 装上 0.63.2 后，`astro build` 第一行是 `[vite] Re-optimizing dependencies because lockfile has changed`，随后 vite 要删 `node_modules/.astro/vite-sync/deps`（128 项 > 阈值 50），被宿主的批量删除守卫拦下，进程以 libuv 断言 + 退出码 127 结束——**构建在写任何产物之前就死了，`dist` 原封不动**。所以数量仍是 33、OG 断言仍全绿，但那是旧依赖产出的图。处置：`mv` 走 `node_modules/.astro`（不是删除，守卫不拦）后重建；33 张里 29 张与线上逐字节相同、4 张差 ≤0.028%，即确认是新引擎的产物。`docs/agents/commands.md` 该节按此重写，并保留一行「早期写法错在哪」。
 - **顺带纠正本机 `main` 的依赖状态**：`package.json` 早已是 `"0.63.2"`，但 `node_modules` 仍是 0.26.0（`git pull` 不会触发安装），当天的两次构建因此都在用旧引擎。已 `pnpm install --frozen-lockfile` 对齐。
 

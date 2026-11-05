@@ -156,7 +156,7 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 两条不做就会白跑的事实：
 
 - **Windows 上 `pnpm build` 失败时，尾部可能看不到完整错误**（esbuild 崩溃断言）——看完整输出，不要只 tail。
-- **OG 图端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori**：Node 内置 fetch **默认不读 `HTTP_PROXY`**，只有 `NODE_USE_ENV_PROXY=1` 才读——2026-11-05 用坏代理实测：不设变量时直连成功，设了就 `ECONNREFUSED`。因此**只有不能直连该域名的机器才需要设**；本机同日实测可直连（534 ms），不设也能构建，设了会多绕一层本地代理、代理抖动时反而失败。**用 curl 或 PowerShell 探这个域名返回 200 证明不了 Node 那条路能过**——两者走的不是同一条路。
+- **OG 图端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori**：Node 内置 fetch **默认不读 `HTTP_PROXY`**，只有 `NODE_USE_ENV_PROXY=1` 才读（坏代理对照实测：不设变量请求成功、设了 `ECONNREFUSED`）。但**本机没有真直连**：Clash Verge 的 Mihomo TUN 用 fake-ip 接管 DNS 与流量（`dns.lookup` 返回 `198.18.0.108`，网卡 `Mihomo` Up），不设变量的那条路照样经代理，只是走 TUN 而非 `HTTP_PROXY`。两条路依赖同一份订阅节点，节点抖动时都会超时——**报字体错误先换节点或重试，别改构建代码**。**用 curl 或 PowerShell 探这个域名返回 200 证明不了 Node 那条路能过**——两者走的不是同一条路。
 
 ## 环境区分（必须遵守）
 
