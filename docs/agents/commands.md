@@ -114,6 +114,29 @@ Do not retry this operation or attempt any workaround
 
 **另一条与本仓库直接相关的坑**：`pnpm build` 会从 GitHub 拉数据重写 `src/constants/*.json`，构建后工作区变脏。要恢复请用 `git show HEAD:<path>` 写回，**不要**用 `git restore` / `git checkout --`（两者都被 `git.restore-unstaged` / `git.checkout-double-dash` 拦下）。
 
+### 宿主的批量删除守卫：被拦时那一步**没执行**，而命令看起来是成功的（2026-11-05 立）
+
+拦截由宿主（WorkBuddy 的 safe-delete shim）发出，**不是 CC Safety Net，也不是本仓库的东西**——换一台没有该 shim 的机器不会遇到。形态：
+
+```
+[safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED]
+{"count":72,"threshold":50,"scope":"turn","targets":["D:/pages/myblog/output/eng-discipline-2/fp-a", ...],"targetCount":3}
+```
+
+**为什么危险**：它是**文本错误，不改退出码**。命令写成 `a && b && c` 时链在这里断开，后面的 `b`、`c` **一步都没跑**；而整条命令的退出码往往来自最后的 `| tail`，于是返回 0、终端一片正常。2026-11-05 实测踩中：`rm -rf` 三个采集目录被拦（72 个文件 > 阈值 50），后续两次 capture 与一次 diff 全部没执行，我却拿**上一轮残留的目录**当成了本轮结果，差点把「两边配置不同」误判成「确定性失效」。
+
+**本仓库实测的两处触发点**：
+
+1. `rm -rf output/<批次名>/{fp-a,fp-b,fp-mut}` —— 采集目录每份约 24 个文件，三个就超阈值。
+2. `pnpm exec astro build` 收尾清理 `dist/.prerender`（79 个条目）——**产物本身是完整的**，只是尾部的清理步骤没做成。判断依据：`find dist -name "*.html" | wc -l` 数量对得上、目标规则能在 `dist/_astro/*.css` 里 `grep` 到。
+
+**处置**（沿用「被拦不绕过」）：
+
+- **不要**为重试而加 `-f`、换 shell、拼命令字符串，也不要为此新写「安全删除」脚本。
+- 探针与采集**换新目录名**（`fp2-a` / `fp2-b`），旧目录留着——不删就不触发。
+- 真要清理证据目录，按本文件「证据目录清理的记录约定」节交人工执行。
+- **判据**：只要输出里出现 `SAFE_DELETE_BULK_CONFIRM_REQUIRED`，就当那一步**没发生**，接着核对它的下游是否被 `&&` 静默跳过；不要用退出码判断成功。
+
 ---
 
 ## A-8 全页非预期错误门禁
