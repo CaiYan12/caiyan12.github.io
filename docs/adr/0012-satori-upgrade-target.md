@@ -4,7 +4,7 @@
 
 README TODO「进行中」第三条挂着 Satori 0.26.0 → 0.63.2：跨 37 个 minor、74 条 release，上游既没有 CHANGELOG，也没有一条 release 标注 BREAKING。站点的 33 张 OG 分享卡全部由 `src/pages/og/[...slug].png.ts` 调用它渲染，而这条路由只产出 PNG，不写任何 HTML、CSS、JS。
 
-隔离探针（[调研报告](../plans/2026-11-05-satori-upgrade-research.md)）把三个前置问题答完了：装得上、33/33 能渲染、**默认写法下每一张都错版**。本 ADR 记录据此做的取舍。
+隔离探针（[调研报告已归档](../history/history.md)，索引见「归档清单（第四批）」）把三个前置问题答完了：装得上、33/33 能渲染、**默认写法下每一张都错版**。本 ADR 记录据此做的取舍。
 
 ## 决定
 

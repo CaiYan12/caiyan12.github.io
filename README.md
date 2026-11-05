@@ -510,7 +510,7 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
 - [x] **Tailwind 3.4.19 → 4.3.4（接入方式重写，不是升级）**（2026-11-03 登记 → 2026-11-04 迁完并**已上线**，合并提交 `7c37de4`、PR [#143](https://github.com/CaiYan12/caiyan12.github.io/pull/143)）
 
-    方案与证据：[迁移设计](docs/plans/2026-11-04-tailwind4-migration-design.md)、[迁移 spec](docs/plans/2026-11-04-tailwind4-migration-spec.md) 与 [ADR 0011](docs/adr/0011-tailwind4-layer-strategy.md)。
+    方案与证据：[ADR 0011](docs/adr/0011-tailwind4-layer-strategy.md)（决策与被否方案）；迁移设计与迁移 spec 已归档，摘要与取回命令见 [历史索引的第四批](docs/history/history.md)。
 
     **接入方式**：改由 `@tailwindcss/vite` 接管（`astro.config.mjs` 的 `vite.plugins` 首位），`postcss.config.mjs` 只剩 `[postcss-nesting, autoprefixer]`——`postcss-nesting` 是**必需项**（`global.css` 有 8 处无 `&` 符号的隐式嵌套），且来源变了：v3 时是 `tailwindcss` 包内附带的 `tailwindcss/nesting/index.js`，v4 的包不再导出该子路径，故改为显式依赖 `postcss-nesting@13.0.2`。两套样式入口（`src/styles/global.css` 与 `src/nice-books/styles/books.css`）各自独立写 `@import "tailwindcss"` + `@config` + `@source`，**`@config` 的相对路径深度不同**，改配置路径时两处都要改。
 
@@ -536,13 +536,13 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     为什么必须单独排期：上游**没有 CHANGELOG**，74 条 release 无一条标注 BREAKING——不是「兼容」，是**没有书面依据**。依赖栈从 `opentype.js` 换到 `harfbuzzjs`，**布局引擎也从 `yoga-layout` 换成了包内自带的 `layout.wasm`**，字体排版可能整体换过，而本站 33 张 OG 图全靠它渲染。
 
-    **探针结论（2026-11-05，`output/satori-upgrade/probe/`）**：装得上（npm 12 秒 / 22 包 / 无原生编译）、33/33 全部渲染成功，但**默认写法下每张都错版**——根容器盒模型从 border-box 变 content-box，1200×630 变 1320×750，底部作者行整行掉出画布；绿色竖条被 flex 收缩压成 3px。两处一行改动（根容器 `boxSizing: "border-box"`、竖条 `flexShrink: 0`）可复原几何，且这两处在 0.26.0 上是**逐字节无操作**，可先落地再升版本。复原后仍有**16/33 张标题换行点改变**（文本度量漂移 ±0.9%，方向不定）与 **1 张整体下移 10px**（唯一无描述那篇，空串子节点不再占 `gap`），截断与省略号未退化且更规范。完整证据：`docs/plans/2026-11-05-satori-upgrade-research.md`。
+    **探针结论（2026-11-05，`output/satori-upgrade/probe/`）**：装得上（npm 12 秒 / 22 包 / 无原生编译）、33/33 全部渲染成功，但**默认写法下每张都错版**——根容器盒模型从 border-box 变 content-box，1200×630 变 1320×750，底部作者行整行掉出画布；绿色竖条被 flex 收缩压成 3px。两处一行改动（根容器 `boxSizing: "border-box"`、竖条 `flexShrink: 0`）可复原几何，且这两处在 0.26.0 上是**逐字节无操作**，可先落地再升版本。复原后仍有**16/33 张标题换行点改变**（文本度量漂移 ±0.9%，方向不定）与 **1 张整体下移 10px**（唯一无描述那篇，空串子节点不再占 `gap`），截断与省略号未退化且更规范。完整证据：调研报告已归档（索引与取回命令见 `docs/history/history.md` 的「归档清单（第四批）」）。
 
     正确的第一步是**隔离试装 + 跑一次真实 OG 渲染**（项目目录外或 `output/` 下，主项目 `package.json` 全程不动），产出探针报告，回答三件事：能否装上、能否渲染 33 张 OG、差异性质（尺寸/换行/字体/截断）。据此三选一：值得排期 / 需先改模板 / 保留 0.26.0 并记录冻结理由。（**三问已于 2026-11-05 答完，剩下的「值得排期与否」是产品判断**。）
 
     已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori。Node 内置 `fetch` **默认不读 `HTTP(S)_PROXY`**，只有 `NODE_USE_ENV_PROXY=1`（Node ≥24）才会读——2026-11-05 用坏代理（`127.0.0.1:9`）对照实测：不设变量请求成功，设了立刻 `ECONNREFUSED`。但**本机没有真正的直连**：Clash Verge 的 Mihomo TUN（网卡 `Mihomo` / `Meta Tunnel`）以 fake-ip 接管 DNS 与流量，`dns.lookup("fonts.googleapis.com")` 返回 `198.18.0.108`——不设变量的那条路照样经代理，只是走 TUN 而不是 `HTTP_PROXY`。两条路依赖**同一份订阅节点**，节点抖动时都会超时（曾有一次 10 s），所以「设不设变量」不是稳定性开关：报字体错误时先换节点或重试，不要改构建代码。详见 `docs/agents/commands.md` 的 `NODE_USE_ENV_PROXY` 条目。另：在 `output/` 子目录里 `pnpm install` 会被父工作区吞掉（报 Done 但不生成 `node_modules`），探针须用 `npm install`。
 
-    → 探测步骤：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 16；实测结论与偏差见 `docs/plans/2026-11-05-satori-upgrade-research.md`。
+    → 探测步骤：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 16；实测结论与偏差见已归档的调研报告（`docs/history/history.md` 第四批）。
 
     **收口记录（2026-11-05，spec #144 / 五票 #145–#149）**：依赖写成精确 `"0.63.2"`（无 caret），锁文件 +17/−11 全部落在 satori 自己的子树（+`fflate@0.7.3`、+`harfbuzzjs@0.10.0`、−`yoga-layout@3.2.1`），`sharp` 与其余包零变动、头像仍走原 sharp 转码。三笔代码提交：`bcdfa3c`（模板两处声明）、`6d80662`（OG 产物断言 `scripts/verify-og-images.mjs`）、`999d3f8`（依赖升级），另有 `9beb8ae`（文档收口 #148）、`b3f8a1c`（合并 PR #150）；集成分支 `d2c3f9f`。部署 run `41962881752` 的 headSha 与合并提交相同；线上复核 33 张：29 张逐字节相同、4 张差 0.017%–0.028%、无异常。包体 satori 解压后 5.4 MB → 26 MB（布局引擎换成包内 `layout.wasm`）。
 
@@ -550,7 +550,7 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     **页面零回归的判据**：整站构建非确定（同状态两次构建差 146–156 个 HTML，构建期随机文章列表）。用三份同状态 0.26 构建求稳定集：抖动集 |D|=156、稳定集 |S|=787、升级后差异 |U|=156 全部落在 D 内、**稳定集内的升级差异为 0**。脚本 `output/satori-upgrade/non-og-verdict.mjs`。只拿一对同状态构建做差集会低估抖动集（146 < 156），造出 10 个假回归。
 
-    **构建链全绿**：230 个 HTML、33 张 OG；`verify-og-images` 33/33（最小非白像素 4.199%）；KaTeX 类名校验旧类名 0 / 新类名 1338；`prettier --check` 通过。逐张三联图（旧｜新｜差异×8）在 `output/satori-upgrade/t3-shots/`。
+    **构建链全绿**：230 个 HTML、33 张 OG；`verify-og-images` 33/33（最小非白像素 4.199%）；KaTeX 类名校验旧类名 0 / 新类名 1338；`prettier --check` 通过。逐张三联图（旧｜新｜差异×8）原存于 `output/satori-upgrade/t3-shots/`，已随 2026-11-05 证据目录清理删除；结论与取回方式见 `docs/history/history.md` 第四批。
 
 > **两项迁移的共同前提**：不得全量 `update --latest`，不得跳过 A/B。本仓库已确立「每批只动一个直接依赖、同输入构建 A/B、真实浏览器验收、文档与代码同批」的流程，四批依赖升级（Svelte / Autoprefixer / KaTeX / Mermaid）都照此执行，证据格式参考 `docs/plans/2026-11-03-katex-upgrade.md` 与 `docs/plans/2026-11-03-mermaid-upgrade.md`。
 

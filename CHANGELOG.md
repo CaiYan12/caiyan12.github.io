@@ -1,5 +1,21 @@
 # 更新日志
 
+## 2026-11-05：归档 Tailwind v4 与 Satori 两轮的过程文档，ADR 保留
+
+**改了什么**：把这两轮产生的过程文档从 `docs/plans/` 移出并删除，索引进 [`docs/history/history.md`](docs/history/history.md) 的「归档清单（第四批）」。共 9 份 957 行——Tailwind 的迁移设计（153 行）与迁移 spec（223 行）、`tailwind4-tickets/T1–T6`（6 文件 260 行）、Satori 的隔离探针调研（321 行）。`docs/plans/tailwind4-tickets/` 目录随之消失。
+
+**为什么不全删**：**ADR 0011 与 0012 留在原地**。它们不是过程记录而是仍在生效的决策——`docs/agents/styles.md` 三处、`docs/agents/build-and-deploy.md`、`README.md`、`CHANGELOG.md` 都拿它们当权威源引用，`docs/history/history.md` 自己「相关文档」一节也把 `docs/adr/` 列为活树。此前十份 ADR 无一份被归档，这次没有开先例。
+
+**为什么可以删过程文档**：它们的结论早已沉淀到别处——层策略的取舍在 ADR 0011，接入方式与四处 `@layer base` 例外在 `docs/agents/styles.md` 与 `build-and-deploy.md`，两处盒模型语义与被否方案在 ADR 0012，验收数字在下面几条 CHANGELOG 条目里。原文件的作用只剩「当时怎么一步步想出来的」，那是 `git show` 该干的事。
+
+**同步改掉的 6 处引用**（否则全是死链）：`README.md` 三处（Tailwind 的方案与证据、Satori 的探针结论与偏差指向）、`CHANGELOG.md` 一处（v4 条目末尾的「实施细节见…」）、`docs/adr/0011` 与 `docs/adr/0012` 各一处（相关实测记录 / 调研报告）。改后全仓库对这四个路径的引用为 0 处（只剩 `.workbuddy/memory/` 的追加型工作日志，那是历史记录，不改）。
+
+**怎么验证的**：① 恢复命令逐条实跑——`git show 0262fad:…design.md`、`git show 2156834:…research.md` 均取回原文，`git archive bc7a13a docs/plans/tailwind4-tickets | tar -t` 列出 6 个文件；② `grep` 全仓库扫描四个路径，0 处残留引用；③ `prettier --check` 通过（`docs/history/history.md` 保持全 LF，其余改动文件保持 CRLF）。
+
+**顺带发现**：上一轮清理 `output/` 后，全仓库 Markdown 里还有 41 条指向已删证据目录的路径。本轮只修了 README 这一条（属本次 Satori 收口记录）；其余 40 条集中在 `docs/plans/2026-11-03-*` 与 `docs/agents/` 的历史快照里，属当时的执行记录，不按本次改动回写，已在 `docs/history/history.md` 的「未完成或未实施的事项」登记。
+
+**顺带补的纪律**：`AGENTS.md` 的「改什么 → 必须同步哪一份」表原本没有「归档文档」这一行——这是留下死链的缺口，现已补上；「深入文档」表也加了一行指向 `docs/history/history.md`。
+
 ## 2026-11-05：复测今日写下的几条结论，并补一节「外网访问共用一组不稳定节点」
 
 按要求把当天落进文档的结论重跑一遍，逐条对账：
@@ -129,7 +145,7 @@
 - **保留了 `books.css` 的 `[hidden]{display:none !important}` 补偿规则**（不删）。v4 的 Preflight 给 `[hidden]` 加了 `!important`，该规则在 v4 下变冗余；但 Nice Books 计划移植为独立项目，届时它会脱离主站 Tailwind 预检，这条规则正是那时的护栏。
 - **浏览器下限**：v4 要求 Safari 16.4+ / Chrome 111+ / Firefox 128+，且**硬编码不读 browserslist**（`@tailwindcss/node` 内写死 targets）。本站已在用 `color-mix()` 14 处且全是无 fallback 写法（老浏览器里整条声明失效而非仅功能缺失）。与 Mermaid 批次的 Safari 17.4+ 裁定同向（v4 的下限更低）。
 - **验收判据是「可见差异为零」，不是「差异条目为零」**：一次实测的 462 条差异条目里，308 条是边框颜色变化（元素边框宽度为零，颜色不渲染）、152 条是产物里绝对地址带了不同端口号（归一化后完全相同）、2 条是采集时刻图片尚未加载完成导致的瞬时高度差（重测即归零）；**真正可见的差异为零**。
-- **怎么验证的**：229 页构建零错误零警告；`pnpm check` 0 errors / 0 warnings / 6 hints；同输入两版产物（v3 185,413 B vs v4 195,004 B）；导航与 `.prose` 关键元素的计算值逐项对比；计算样式指纹 A/B（`scripts/upgrade-style-audit.mjs` 同输入两版产物对采，页数取自 `scripts/lib/smoke-pages.mjs` 的 `AUDIT_PAGES`，别在别处抄一份数字）+ 桌面/移动截图 + 关键交互。**本轮踩出的五条判据纪律**（预览服务器把路径返回首页、截图要先定噪声底线且区分运行时/构建期两类随机源、要用真实 DOM 而不是手写 fixture、v4 的行高继承规则变化、样式测试对 CSS 缩进的硬依赖）已写进 [`docs/agents/commands.md`](docs/agents/commands.md#样式-ab-的五条判据纪律2026-11-04-立tailwind-v4-迁移实测得出)。实施细节与七个必答问题的完整答案见 [迁移设计](docs/plans/2026-11-04-tailwind4-migration-design.md)，规格见 [迁移 spec](docs/plans/2026-11-04-tailwind4-migration-spec.md)。
+- **怎么验证的**：229 页构建零错误零警告；`pnpm check` 0 errors / 0 warnings / 6 hints；同输入两版产物（v3 185,413 B vs v4 195,004 B）；导航与 `.prose` 关键元素的计算值逐项对比；计算样式指纹 A/B（`scripts/upgrade-style-audit.mjs` 同输入两版产物对采，页数取自 `scripts/lib/smoke-pages.mjs` 的 `AUDIT_PAGES`，别在别处抄一份数字）+ 桌面/移动截图 + 关键交互。**本轮踩出的五条判据纪律**（预览服务器把路径返回首页、截图要先定噪声底线且区分运行时/构建期两类随机源、要用真实 DOM 而不是手写 fixture、v4 的行高继承规则变化、样式测试对 CSS 缩进的硬依赖）已写进 [`docs/agents/commands.md`](docs/agents/commands.md#样式-ab-的五条判据纪律2026-11-04-立tailwind-v4-迁移实测得出)。实施细节与七个必答问题的完整答案在迁移设计与迁移 spec 里（两份已于 2026-11-05 归档，索引与取回命令见 [`docs/history/history.md`](docs/history/history.md) 的「归档清单（第四批）」）。
 - **发布记录（补记 2026-11-04，证据来源：本次 CI run 与线上实测）**：PR [#143](https://github.com/CaiYan12/caiyan12.github.io/pull/143) 合并为 `7c37de4`，`main` 已推送。三条 CI 全绿——`Astro Check` 35s、`Prettier Check` 42s、`Astro Build` **1m21s（Linux 上真实完整构建通过，说明锁文件与 `@tailwindcss/vite` 在 Linux 同样生效）**；合并后 `Deploy to GitHub Pages`（run `41800839319`）2m23s success，`headSha=7c37de4`。线上 `Last-Modified: Wed, 04 Nov 2026 08:38:55 GMT` 晚于推送且 `Age: 0`；`pnpm verify:live` **连跑三次均 29/29**（含 KaTeX 298 公式、Mermaid 14 图、移动端 390×900）；`pnpm verify:live:swup` 的 document 级接管证据通过（document 未被替换、`visit:start` 触发 1 次）。线上产物确为 v4：CSS 内含 `@layer` 声明（v3 产物层数为 0），字节数 **195,513** 与本地构建逐字节相同。
 - **推翻一条既有的部署验证纪律（补记 2026-11-04，本次上线实测发现）**：「CSS 资源名平台无关」这条从 2026-11-03 起沿用的判据，**v4 起不再成立**。本次本地 `MainGridLayout.B_utt6QD.css`、线上 `MainGridLayout.TXd5OLZn.css`——**名字不同，字节数却完全相同（195,513 B），逐字节只差 1 个字节**：`bg-primary/15` 的 `oklab(69.9907% -.188933 .144998/.15)` 在 Linux 上是 `-.188934`。原因是 **v4 把半透明色编译成 `oklab()` 高精度表示，其浮点末位随平台变，内容寻址哈希因此改变**；v3 时代同类色走 `rgb()`/整数 `rgba()`，不受影响，所以旧纪律一直好用。该差异的唯一使用点是 `src/components/widget/WidgetCalendar.astro` 的日历当前日期格底色，1 个浮点末位不可见。判据已改写为「**同名即同源；不同名则下载比对字节数与逐字节差异，差异仅落在 `oklab()`/`color-mix()` 浮点末位即属正常**」，并同步更新 [`docs/agents/build-and-deploy.md`](docs/agents/build-and-deploy.md) 的「平台无关证据」清单。**教训：旧的「实测一致」不等于「结构上必然一致」——底层编译产物变了，判据的成立前提要重新验。**
 - **两条已知差异，如实披露且未修**：① `/books/` 荐语便签的 1px 边框色在 v3 回退成 gray-200、v4 回退成 `currentColor`——`border-nb-note-border` 这个工具类在两版产物里都不存在（`tailwind.config.cjs` 的 nb 色板缺 `note-border` 键，而 `--nb-note-border: #e3d3a2` 定义了没人用），是**既有配置缺陷被迁移显形**，修它属于设计决定，未在本批动。② `smoke:ui` 的忙碌态第二条判据在 v4 上红，但在 **v3 基线上同样红**（`忙碌期的第二次提交被忽略`），是既有 flake，不是本次引入。

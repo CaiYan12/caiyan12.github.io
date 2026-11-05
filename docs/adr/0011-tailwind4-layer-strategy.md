@@ -46,7 +46,7 @@
         3. **真回归**：以上两类之外的一切，必须修掉。本轮靠这一条抓出并修掉了 **5 处**真实回归（元素重置与手型光标压过工具类、`.prose li` 缩进基准错、书库页移动端行高），全部有「v3 与 v4 计算值不同且都在渲染」的直接证据。
     - **为什么接受这次扩容**：ΔE < 2 在 8bit 显示上不可分辨，且 930 条「等价色」的**两端色值都能指回同一套设计 token**（v3 的 hex 与 v4 的 oklch 是同一个 `theme.extend.colors` 条目的两种序列化）。若坚持「字面量不同即失败」，等于要求 v4 不得把调色板换成 oklch —— 那不是本次迁移的可选项。**代价**：这类差异从此不再触发失败，日后真有「色板被改错」的情况需要靠视觉复核而非指纹发现。
 - **判据纪律**：五条踩坑（预览服务器把路径返回首页、截图要先定噪声底线、要用真实 DOM 而不是手写 fixture、v4 的行高继承规则变化、样式测试对缩进的硬依赖）写在 [`docs/agents/commands.md`](../agents/commands.md#样式-ab-的五条判据纪律2026-11-04-立tailwind-v4-迁移实测得出)；样式覆盖关系的推导纪律写在 [`docs/agents/styles.md`](../agents/styles.md)。
-- **相关实测记录**：见 [`docs/plans/2026-11-04-tailwind4-migration-design.md`](../plans/2026-11-04-tailwind4-migration-design.md)（迁移设计）与 [`docs/plans/2026-11-04-tailwind4-migration-spec.md`](../plans/2026-11-04-tailwind4-migration-spec.md)（规格，GitHub Issue #136）；接入方式与层策略的条目在 [`docs/agents/build-and-deploy.md`](../agents/build-and-deploy.md#构建链与依赖约束2026-11-02-起-astro-7) 与 [`docs/agents/styles.md`](../agents/styles.md)。
+- **相关实测记录**：迁移设计与迁移规格（GitHub Issue #136）已于 2026-11-05 归档，索引与取回命令见 [`docs/history/history.md`](../history/history.md) 的「归档清单（第四批）」；接入方式与层策略的条目在 [`docs/agents/build-and-deploy.md`](../agents/build-and-deploy.md#构建链与依赖约束2026-11-02-起-astro-7) 与 [`docs/agents/styles.md`](../agents/styles.md)。
 - **回退路径**：本次分三笔提交（① 15 条死类移出样式层、仍在 Tailwind v3 下；② Tailwind 4 接入方式重写；③ 站点设计规则移出所有 `@layer` + 五处显式补偿）。合并推送后线上只看最终态；单独回退第三笔会回到「站点规则在层内、被插件压倒」的中间态，不是可用状态。
 
 ## 落地状态（2026-11-04）

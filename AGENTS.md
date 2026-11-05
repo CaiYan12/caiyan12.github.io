@@ -95,6 +95,7 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 | 写文章、把外部 Markdown 导进来、生成头图                                                             | `docs/agents/post-authoring.md`                                                                     |
 | 跑烟测 / 单测 / 构建期取数 / 票册自检（每条命令的 env 形态与坑）                                     | `docs/agents/commands.md`（含冒烟台子 `makeHarness` / base URL 结尾斜杠 / `norm` 聚合三条承重契约） |
 | 领域术语与 ADR                                                                                       | `GLOSSARY.md`、`docs/adr/`                                                                          |
+| 想知道某一轮做过什么，或取回已归档的规格 / 票册原文                                                  | `docs/history/history.md`（已归档文档的索引：结果、落地提交、`git show` 恢复命令）                  |
 | issue 规范、标签                                                                                     | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md`                                      |
 
 ## 文档同步（门禁级 · 每一轮变更都要做）
@@ -111,19 +112,20 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 
 ### 2. 改什么 → 必须同步哪一份
 
-| 这轮改了什么                                     | 必须同步                                                                                                                 |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| 任何用户可见的行为 / 视觉 / 交互                 | `CHANGELOG.md`（新条目，日期在最新一条之上）+ 相关 `docs/agents/*.md`                                                    |
-| 样式、token、类名、层叠值、光标                  | `docs/agents/styles.md`（层叠关系表是契约，改值前先核对）                                                                |
-| 客户端脚本、Swup 生命周期、layout 级组件         | `docs/agents/components.md`（含"新增客户端代码必须遵守"的协议条）                                                        |
-| 构建链、依赖、部署、remark/rehype 插件           | `docs/agents/build-and-deploy.md`                                                                                        |
-| 命令 / env 形态 / 烟测判据条数 / 已知坑          | `docs/agents/commands.md`                                                                                                |
-| 领域术语、称呼、"它是什么不是什么"               | `GLOSSARY.md`（`_Avoid_` 行也要跟着改）                                                                                  |
-| 难以回退、有真实取舍、令人意外的决定             | 新建 `docs/adr/NNNN-*.md`（按序编号，不记份数）；**改了某个 ADR 的决定**就写新 ADR 并在开头写明替代谁，旧 ADR 保留为历史 |
-| 天气判据 / 取数                                  | `docs/agents/weather-capsule.md`                                                                                         |
-| 文章写法、外部 Markdown 导入、头图               | `docs/agents/post-authoring.md`                                                                                          |
-| issue / 标签规范                                 | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md`                                                           |
-| 本文件里的事实（工具名、命令、路径、协议、约束） | **本文件**；只改「项目背景」以下的可编辑区，上面的固定上下文一个字都不许动（见文首 `!IMPORTANT`）                        |
+| 这轮改了什么                                     | 必须同步                                                                                                                   |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| 任何用户可见的行为 / 视觉 / 交互                 | `CHANGELOG.md`（新条目，日期在最新一条之上）+ 相关 `docs/agents/*.md`                                                      |
+| 样式、token、类名、层叠值、光标                  | `docs/agents/styles.md`（层叠关系表是契约，改值前先核对）                                                                  |
+| 客户端脚本、Swup 生命周期、layout 级组件         | `docs/agents/components.md`（含"新增客户端代码必须遵守"的协议条）                                                          |
+| 构建链、依赖、部署、remark/rehype 插件           | `docs/agents/build-and-deploy.md`                                                                                          |
+| 命令 / env 形态 / 烟测判据条数 / 已知坑          | `docs/agents/commands.md`                                                                                                  |
+| 领域术语、称呼、"它是什么不是什么"               | `GLOSSARY.md`（`_Avoid_` 行也要跟着改）                                                                                    |
+| 难以回退、有真实取舍、令人意外的决定             | 新建 `docs/adr/NNNN-*.md`（按序编号，不记份数）；**改了某个 ADR 的决定**就写新 ADR 并在开头写明替代谁，旧 ADR 保留为历史   |
+| 天气判据 / 取数                                  | `docs/agents/weather-capsule.md`                                                                                           |
+| 文章写法、外部 Markdown 导入、头图               | `docs/agents/post-authoring.md`                                                                                            |
+| issue / 标签规范                                 | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md`                                                             |
+| 归档 / 删除既有的计划、规格、票册                | `docs/history/history.md`（新增索引行：结果 + 落地提交 + `git show` 恢复命令）**并且**全仓库改掉指向旧路径的引用，别留死链 |
+| 本文件里的事实（工具名、命令、路径、协议、约束） | **本文件**；只改「项目背景」以下的可编辑区，上面的固定上下文一个字都不许动（见文首 `!IMPORTANT`）                          |
 
 ### 3. `CHANGELOG.md` 的写法
 
