@@ -127,6 +127,11 @@ export async function GET({
 				fontFamily:
 					'"Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 				padding: "60px",
+				// 盒模型必须显式声明。satori 0.26 对 content-box 的处理等价于 border-box，
+				// 0.63 起是标准 content-box：width/height 100% 叠加 60px 内边距会把 1200×630
+				// 的根容器撑成 1320×750，底部「作者 | 日期」整行掉出画布。
+				// 删掉不会当场报错，只会让 33 张分享卡一起错版。
+				boxSizing: "border-box",
 			},
 			children: [
 				// 顶部：站点标志 + 站点名
@@ -193,6 +198,10 @@ export async function GET({
 														primaryColor,
 													borderRadius: "6px",
 													marginTop: "14px",
+													// 竖条必须不参与 flex 收缩。标题行的自然宽度会超出可用宽度约 7px：
+													// 0.26 让标题吸收这 7px，0.63 改成让竖条吸收——竖条被压到 3–4px，
+													// 视觉上从绿柱变细线，同时标题多出同等宽度并重新断行。
+													flexShrink: 0,
 												},
 											},
 										},
