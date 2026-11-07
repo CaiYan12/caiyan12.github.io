@@ -1,0 +1,22 @@
+fix(series): 文集目录当前章的分割线不再变绿（站长目视反馈）
+
+票 06 给 `#sidebar .series-toc li.current` 加了
+`border-bottom-color: var(--colorful-green)`，于是当前章下方的虚线分割线
+跟着文字一起变绿。站长目视指出分割线不应进入激活态。
+
+删掉这一条声明即可：
+
+- 边框回落到 `.widget li` 的默认 `1px dashed #ccc`（灰虚线，与其它 widget 一致）
+- 文字高亮保留：`li.current` 的 `font-weight: 700` 与 `a` 的绿色不变
+- 末章行为随之一致：`.widget li:last-child { border-bottom: none }` 本来就
+  不给末项画边框，此前「非末章绿线、末章无线」前后不一
+
+验证（真实浏览器，Playwright 读计算值，三个当前章非末项的页面）：
+
+- /posts/20260919135000/、/posts/20261002071103/、/posts/20261002093931/
+  → `borderBottom: 1px dashed rgb(204, 204, 204)`、`fontWeight: 700`、
+    `linkColor: rgb(0, 122, 0)`
+- 冒烟不断言该边框（32/35 条判据不含颜色），`EXPECTED_CHECKS` 不变
+
+票 06 证据行已补记（该绿边框是本票加的，末章因 `.widget li:last-child`
+本就不显示，前后行为不一致）。

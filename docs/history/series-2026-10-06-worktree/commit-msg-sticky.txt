@@ -1,0 +1,37 @@
+feat(series): 侧栏文集目录移至末位并粘性跟随
+
+站长 2026-10-06 目视后调整，两部分：
+
+1. 侧栏顺序：config.ts 的 widgets 数组把 "series" 从 hotlog 之后移到
+   twitter 之后（末位）。
+
+2. 粘性跟随（纯 CSS，零客户端脚本）：#sidebar .widget.widget-series
+   加 position: sticky; top: 10px（站点无固定顶栏）。为此把两栏布局
+   机制由浮体改为 grid：
+
+   - .main-grid：display: block → grid，列 minmax(0,1fr) 255px +
+     column-gap 20px + align-items: stretch（#sidebar 拉伸成粘性容器）；
+     margin: 0 保留
+   - #content：删 float: left，width calc(100% - 275px) → auto
+   - .main-grid-full：补 grid-template-columns: minmax(0,1fr)
+   - #sidebar：删 float: right，overflow: hidden → clip（保持裁切
+     语义，解除 sticky 被祖先滚动容器阻断）
+   - ≤768px：在 4899 行起的 768px 块（基础定义之后）补 .main-grid
+     单列，侧栏隐藏后不留空的 255px 列；1632 行起的早置块压不过基础
+     定义（同特异性源顺序），故不放那里
+
+   几何等价：1440/1100/980/860/769 五宽度真实浏览器对比，#content/
+   #sidebar/首卡/天气卡 x 与 width 改前改后 0 差异（±1px 内）。
+
+3. WidgetLayout.astro 加可选 class prop（class:list），WidgetSeries
+   传 class="widget-series"；其余 widget 不传零影响。
+
+4. 冒烟 series-smoke.mjs：EXPECTED_CHECKS 32 → 35，新增三条真实滚动
+   粘性判据（滚过自然位置贴顶 10px±2 / 页底被 #content 底顶住且离开
+   贴顶位 / 回顶归位）。「被顶住」一条用 360 高专用视口：默认 720 高
+   下页尾残留（约 229px）大于 widget 高（约 190px），钳位区间物理不
+   可达；sticky 钳位对齐外边距盒（.widget margin-bottom 10px），判据
+   按外边距盒换算。35/0 全绿。
+
+门禁：test:utils 29/29；astro check 0 errors；astro build 220 页
+exit 0；prettier --check 通过；smoke:series 35/0。

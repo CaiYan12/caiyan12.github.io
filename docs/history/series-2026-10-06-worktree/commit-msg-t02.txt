@@ -1,0 +1,53 @@
+feat(series): 文集目录页与本书回填（票 02）
+
+新增 /series/<slug>/ 目录页：按 seriesOrder 升序列出文集全部成员、可翻页；并把《看懂 AI 写的
+网站》四章归入 webapp-vibe-coding 文集，取代原先的「看懂AI写的网站」标签（文集是与标签、分类
+并列的独立轴）。
+
+改动清单：
+
+- src/data/series.ts 新建：按 src/data/projects.ts / timeline.ts 的 TS 模块体例导出 seriesList，
+  两笔——webapp-vibe-coding（name 看懂 AI 写的网站，unit 章）与 matt-pocock（name Matt Pocock
+  技能选讲，unit 篇），description 照 spec 草案逐字。本票两笔都不写 cover（封面属票 07，届时
+  统一走回退）。
+- src/utils/content-utils.ts 增 resolveSeriesMeta(slug)：从 seriesList 取元数据，未登记时回退
+  { slug, name: slug, unit: "篇", description: "" }；并把票 01 留在 getSeriesNeighbors 里的
+  name / unit 占位改为调用它（连同删掉那条 TODO 注释）。
+- src/components/layout/SeriesListing.astro 新建：只引用 ListingHeader / PostCard / Pagination
+  三个既有组件，**不碰** TaxonomyListing 与 TagPillCloud；页头 ListingHeader 的 icon 取 fa-book
+  （语义贴合「书」，FA4 实测存在、src/ 零占用；fa-list-ol 留给票 06 侧栏部件），面包屑为
+  首页 » 文章文集 » 文集名；计数行沿用 post-context，按 unit 写作「共 4 章」/「共 2 篇」。
+- src/pages/series/[slug].astro 与 src/pages/series/[slug]/page/[page].astro 新建，照
+  tag/[tag].astro 与 tag/[tag]/page/[page].astro 的真实写法；成员序列取自 getSortedPosts 的
+  公开文章再按 seriesOrder 升序；分页沿用 siteConfig.postsPerPage；两路由都不带 data-no-swup、
+  都不传 searchIndex。
+- src/utils/content-utils.test.ts 增两条 resolveSeriesMeta 用例：登记过的 slug 取到 name / unit
+  （webapp-vibe-coding → 看懂 AI 写的网站 / 章）；未登记的 slug 回退为 name = slug、unit = "篇"、
+  description = ""。
+- 四章 frontmatter（20261002071103 / 20261002081331 / 20261002093931 / 20261002204249）：tags
+  去掉「看懂AI写的网站」（其余标签顺序照旧），加 series: "webapp-vibe-coding" 与
+  seriesOrder: 0 / 1 / 2 / 3。title / published / image / private / draft 等其余字段逐字未动。
+
+验证：
+
+- 红证据一：临时摘掉第〇章的 series 字段后重建，dist/series/webapp-vibe-coding/index.html 的
+  统计行由「共 4 章」翻成 `<p>共 3 章</p>`、成员卡由 4 张掉到 3 张；还原后重建回「共 4 章」/ 4 张。
+- 红证据二：把 resolveSeriesMeta 的未登记回退 name 从 slug 改成空串（等价变异），pnpm test:utils
+  真翻红（not ok 8，deepStrictEqual 报 name: '' vs 'not-registered'，# fail 1）；还原后回绿。
+- pnpm check → Result (167 files): 0 errors, 0 warnings, 2 hints（两条 hint 是既有 home.ts 与
+  theme-script.ts 的旧读数，与本票无关）。
+- pnpm build → exit 0；[build] 219 page(s) built；Pagefind「Indexed 23 pages / Finished in
+  0.814 seconds」；链上 test:projects / test:nice-books / test:site-stats / test:utils（# tests 22
+  / # pass 22 / # fail 0）/ test:contributions / test:friend-icons / test:lib 全过。
+- pnpm exec prettier --check ./src ./docs → All matched files use Prettier code style!。
+- git grep -n 看懂AI写的网站 → 只命中 docs/ 下既有 spec 与票册；src/content/posts/** 的
+  frontmatter 零残留（series.ts 的 name 用的是带空格的「看懂 AI 写的网站」，不属该串）。
+- ls dist/tag/ | grep 看懂 → 无匹配（退出码 1），/tag/看懂AI写的网站/ 不再生成。
+
+未动：
+
+- 不碰 TaxonomyListing.astro 与 TagPillCloud.astro；不建 /series/ 总览页（票 04）、不做封面
+  （票 07）、不做文章页两行提示（票 05）与侧栏目录（票 06）。
+- 票册状态行与判据勾选留给收口期统一回填。
+- 构建重生成的 src/constants/github-{contributions,projects,repos}.json 与 lqips / image-manifest
+  属构建期数据刷新（generatedAt 与当日贡献数），与本票无关，不纳入本提交。

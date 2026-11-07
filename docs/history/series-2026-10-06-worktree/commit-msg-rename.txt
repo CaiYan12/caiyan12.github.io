@@ -1,0 +1,22 @@
+feat(series): 导航项「文章文集」改为「文集精选」（站长目视后指令）
+
+站长目视票 10 清单后改文案。同名入口共 5 处一并改——只改 tab 会让导航写
+「文集精选」而页面标题与面包屑仍是「文章文集」，同一入口两套叫法是肉眼可见的
+不一致：
+
+- src/config.ts navBarConfig.archiveSite 的 tab（导航）
+- src/pages/series/index.astro MainGridLayout 的 title（og:title / 文档标题）
+- src/pages/series/index.astro ListingHeader 的 title 与 crumbs
+- src/components/layout/SeriesListing.astro 目录页面包屑
+
+验证：
+
+- grep -rn "文章文集" src/ → 零残留
+- dev 热更新实测：首页导航、/series/（8 处）、/series/webapp-vibe-coding/（4 处）
+  均渲染「文集精选」，无旧文案
+- pnpm exec astro build → 220 页 exit 0
+- pnpm smoke:series → 合计 32 项，失败 0 项（该文案不在 32 条判据内，不受影响）
+- prettier --check 三文件全绿
+
+未动：spec / tickets 等规划文档里的历史表述（它们记录的是当时的票面文案）；
+票 04 证据行已补记这次改名。

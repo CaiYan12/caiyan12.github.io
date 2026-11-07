@@ -1,0 +1,16 @@
+fix(series): 文集目录标题栏入口补 hover 过渡（与「换一批」一致）
+
+站长目视反馈：其它侧栏元件的标题栏动作有过渡时间，「查看目录」没有——
+hover 从次要灰变品牌绿是瞬变。
+
+原因：对齐基准 `.newcomment-refresh` 自带 `transition: color 180ms ease-out`
+（global.css:3458），上一次对齐时漏抄了这一条；站点也没有可继承的共享
+`#sidebar a` 过渡规则。
+
+补 `transition: color 180ms ease-out;`（同属性/时值/缓动）。该元素此前无任何
+transition 声明，不存在 quote-band 那类「transition 整体覆盖」冲突。
+
+验证（真实浏览器读计算值）：
+- `#sidebar h2 a.series-toc-link` → transitionProperty "color"、
+  transitionDuration "0.18s"、transitionTimingFunction "ease-out"
+- 静息色 rgb(102,102,102)、cursor 含 /style/link.cur（未回归）

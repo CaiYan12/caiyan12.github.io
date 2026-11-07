@@ -1,0 +1,30 @@
+feat(series): 整批评审修复（抽 getSeriesMembers、去冗余查表、注释纠偏）
+
+评审修复批（S1/S2/S3/S4/S7），按评审分档一次改完：
+
+- S1：在 content-utils.ts 抽出 getSeriesMembers(posts, slug)（getSortedPosts
+  过滤后按同 series 值分组、seriesOrder 升序），替换 6 处重复的
+  「filter(series) + sort(seriesOrder)」：resolveSeriesCover 内部、
+  getSeriesNeighbors 内部、series/[slug].astro、series/[slug]/page/[page].astro、
+  WidgetSeries.astro、series/index.astro（总览卡原先只过滤不排序，换 helper
+  多一次排序，无害且与目录页口径一致）。`?? 0` 的防御注释随实现收敛进 helper
+  一处：schema 保证 series 非空、series-integrity 规则 3 保证「带 series 必带
+  seriesOrder」，合法构建下不可达。
+- S2：series/[slug].astro 与分页变体在遍历 seriesList 时不再调
+  resolveSeriesMeta(series.slug)（必然命中），直接用被遍历元素；unit 缺省
+  `series.unit ?? "篇"` 与原回退一致，渲染产物逐字节等价。
+- S3：SeriesListing 头注释「三个既有组件」补上票 07 已引入的 ResponsiveImage，
+  改为四个，与实际 import 一致。
+- S4：PostCard 归属徽章不再对单元素数组跑 getSeriesNeighbors（算出的
+  index/total 与真实组不符，纯误导），改为 isSeriesMember + resolveSeriesMeta
+  直查文集名；注释标明列表页只喂公开文章、与 getSeriesNeighbors().series 口径
+  一致，私密成员上两者会分叉（见 WidgetSeries 注释）。
+- S7：series-smoke.mjs 注释「紧邻本书五章」更正为「四章（第〇–第三章）」，
+  纯注释修改，判据与 EXPECTED_CHECKS 不动。
+
+明确不做（评审分档「记录不修」）：不拆 series-utils.ts、不给冒烟加更强护栏、
+不改末章 .current 底边框、不改总览页 og:image 取首卡、不动 WidgetSeries 每页
+getCollection、不改任何文档。
+
+验证：pnpm test:utils 29/29；prettier --check 通过；astro check 0 errors；
+astro build 220 页 Complete!；series-smoke 32 项失败 0 项（零漂移）。

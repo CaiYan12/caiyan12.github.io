@@ -6,6 +6,8 @@ public/skill-icons/**/*.svg
 docs/history/qweather-settingup-history-sessions.md
 # Original Colorful theme stylesheet kept as a reference snapshot
 docs/reference/colorful-original.css
+# 2026-11-07 第六批归档：文集 worktree 过程文档逐字保留，不参与格式化（含内嵌代码片段）
+docs/history/series-2026-10-06-worktree/**
 # Literal source snippets in this plan must retain their exact formatting.
 # The file was archived on 2026-10-30 (see docs/history/history.md); this line is
 # kept so the protection applies again automatically if it is ever restored with

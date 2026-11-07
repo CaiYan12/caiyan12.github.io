@@ -1,0 +1,18 @@
+feat(series): 文集目录的「查看目录」移入标题栏 actions 槽
+
+站长 2026-10-06 目视反馈：底部链接与其它元件的标题栏动作族不齐。
+
+- WidgetSeries.astro：删除左下角 .series-toc-more 块，链接改放
+  WidgetLayout 的 actions 槽（<a> 导航，fa-book 图标 + 「查看目录」，
+  不带 »——那是底部 .goon 链接的惯例）；tooltip 用 series.name。
+- global.css：新增 #sidebar a.series-toc-link，盒子/字体/颜色/指针
+  逐项对齐「换一批」（.newcomment-refresh）；指针走 --cursor-link
+  token。带 #sidebar 前缀是为了压过 #sidebar a:hover（无障碍绿 +
+  下划线）——标题栏动作族 hover 是品牌绿无线，探针实测修正。
+- series-smoke.mjs：EXPECTED_CHECKS 35 → 36，新增标题栏入口判据
+  （在 h2 内、href 指向 /series/<slug>/、旧块已删），防回归。
+- 票 06 证据行补目视调整记录。
+
+验证：astro build 220 页 exit 0；冒烟合计 36 项失败 0 项；探针读数
+静息 rgb(102,102,102) / hover rgb(0,192,0) 无下划线 / cursor 含
+link.cur；prettier、check、test:utils 全绿。

@@ -1,0 +1,61 @@
+feat(series): 文集总览页与导航入口（票 04）
+
+导航栏「文章归档」下拉里多一项「文章文集」，进得去 /series/ 总览页；该页按
+src/data/series.ts 的数组顺序列出站内全部文集，每张卡的卡面语法照 PostCard 抄
+（.post-list / .post-thumbnail / .post-excerpt / .goon），封面左位由一条只作用于本页的
+modifier 承担。
+
+改动清单：
+
+- src/pages/series/index.astro 新建：页头用 ListingHeader（icon="fa-sitemap"、
+  title="文章文集"、crumbs 单项），计数行沿用 post-context 写「共 N 个文集」。卡片序列直接
+  map seriesList，**不**做 getTagList 那种并列名次兜底（作者意图本身是全序）。卡面照
+  PostCard 抄：根 article.post-list、右位 h2 标题链到 /series/<slug>/、计数「共 4 章 /
+  共 2 篇」放 .post-meta、.post-excerpt 放文集简介、底部 .goon 文案改「进入目录 »」。
+  不新造第四种卡面语法。
+- icon 取 fa-sitemap：它表达「多层级总览」，贴合「全部文集的入口页」；fa-book 已由票 02 的
+  单个文集目录页占用，fa-list-ol 留给票 06 侧栏部件；fa-sitemap 属 spec 实测可用且 src/
+  零占用的 FA4 图标集合。
+- 封面通路：卡片内用一个常量 cover = null 驱动左位，`cover && <div class="post-thumbnail
+  series-thumb">` —— 今天恒为 null，故左位不渲染、.post-excerpt 占满整行；代码注释写明
+  「票 07 把这一行换成 resolveSeriesCover(...) 的返回值」。**不**调 getCover()（已被明确
+  否决，其兜底是无关随机缩略图）。
+- src/config.ts 的 navBarConfig.archiveSite 在「文章分类」之后插入
+  { name: "文章文集", url: "/series/" }。Navbar.astro 与 MMenu.astro 都遍历同一数组，故只改
+  这一处；产物里桌面下拉与移动端全屏菜单同时出现该入口。
+- src/styles/global.css 追加 .post-thumbnail.series-thumb 与其 img 的 modifier（桌面
+  240×135、≤680px 150×84），**既有 .post-thumbnail 规则一位未改**；本页无封面时该元素不
+  渲染，文章卡外观不受影响。
+
+验证：
+
+- 红证据（两处变异同批，各自独立可观测）：① 临时删掉 config.ts 的「文章文集」导航项，
+  pnpm exec astro build 后 dist/index.html 的「文章文集」命中数 2 → 0、`href="/series/"`
+  2 → 0；② 同时把总览页卡片改成 seriesList.slice().reverse()，dist/series/index.html 的卡序
+  由「共 4 章 / 共 2 篇」翻成「共 2 篇 / 共 4 章」。两处还原后重建：命中数回 2、卡序回
+  「共 4 章 / 共 2 篇」。
+- 产物核对：dist/series/index.html 有两张 post-list 卡；因封面恒为 null，**无** post-thumbnail
+  元素（判据 4）；无 data-pagefind-body 属性，Pagefind 仍「Indexed 23 pages」（判据 6，与
+  票 02 同读数，未新增索引页）。
+- pnpm check → Result (168 files): 0 errors, 0 warnings, 2 hints（两条 hint 是既有 home.ts 与
+  theme-script.ts 的旧读数，与本票无关）。
+- pnpm build → exit 0；[build] 220 page(s) built in 27.88s（票 02 为 219，+1 即 /series/）；
+  链上 test:projects 6/6、test:nice-books 51/51、test:site-stats 19/19、test:utils 22/22、
+  test:contributions 11/11、test:friend-icons 32/32、test:lib 16/16，全 # fail 0。
+- pnpm exec prettier --check ./src ./docs → All matched files use Prettier code style!。
+
+如实记下与票册的前提偏差：
+
+- 票册判据与 spec 都写「把 150×90 放到 240×135」，但这基于「.post-thumbnail 是 150×90」这个
+  错误前提；实测生效版是 **160×120（外框 168×128，含 padding:3px + border:1px，content-box）**。
+  本票**照票册字面值**实现 240×135 / 150×84，偏差留待站长在票 10 目视环节裁决。
+- 已知后果：.goon 在 ≤680px 是 display:none !important（global.css:4913，非本票引入），故窄屏下
+  总览卡的「进入目录 »」整块消失。票册判据未要求处理，本票默认不处理，已在报告披露并列入
+  票 10 目视清单。
+
+未动：
+
+- 不实现 resolveSeriesCover（属票 07）；不调 getCover()。不碰 src/constants/（pnpm build 重写了
+  image-manifest / lqips / github-* 产物，提交前已 git checkout 还原）。不碰既有 .post-thumbnail
+  规则与其它无关代码。
+- 票册状态行与判据勾选留给收口期统一回填；未 push / 未合并 / 未关 issue。

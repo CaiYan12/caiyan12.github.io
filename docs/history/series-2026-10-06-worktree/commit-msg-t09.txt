@@ -1,0 +1,48 @@
+feat(series): 文集接线冒烟（票 09，缝隙 A）
+
+把「页面有没有把算出来的导航接上」变成可跑判据：scripts/series-smoke.mjs
+复用 scripts/lib/smoke-harness.mjs 的台子（check / checkClean / finish 不重写），
+用真 dist + 真浏览器断言接线，补上纯函数测试盖不到的失效模式——「构建成功但
+链接指错、测试全绿」。
+
+判据总数写死在 EXPECTED_CHECKS = 32，同批固定后不得增减（#49 不变量）；
+实际 check 数不等于它时以退出码 2 拒绝运行。
+
+判据构成（32 条）：
+
+- 组内相邻 6 条：两文集各成员页的 rel="prev"/"next" href 与 seriesOrder 序一致；
+  首篇无 prev、末篇无 next（该方向悬浮箭头整块消失）。
+- 非成员 3 条：prev 落在非成员序列、无 next、左右按钮都不落在任何文集成员上
+  （跳过整块）。
+- 两行提示 6 条：第〇章与第三章的顶部/末尾行文本与链接；末章改收尾
+  （《…》已读完 · 看其它文集 → /series/）；量词取 unit（第 1 / 2 篇）。
+- 非成员两行 1 条：整块不渲染。
+- 侧栏目录 4 条：成员页在、当前章 .current + aria-current、链接按 seriesOrder
+  升序、非成员页无。
+- 目录页与总览页 10 条：三路由 200、封面走回退（本书 → ch0 头图 /
+  Matt → workflow-cover）、alt/title 取文集名、og:image 三处、总览卡 2 张
+  用 .series-thumb 且与目录页同源。
+- 全程无本地 console / page 报错 1 条。
+- 非成员样本刻意用 20260927082016（private:false）而非票面写的 20260728000000
+  （private:true 会被 isPublicPost 剔出时间线，判据天然为真）。
+
+红证据（变异式）：把第〇章 seriesOrder 0→4（组内仍唯一、不触发票 03 完整性校验）
+→ 12 条判据翻红，其中含「封面回退从 ch0 移到 ch1」——证明封面回退真按
+「序号升序取首位带 image 的成员」实现；还原后复绿 32/0。
+
+改动清单：
+
+- scripts/series-smoke.mjs 新增（327 行）
+- package.json 增 smoke:series
+
+验证：
+
+- node scripts/series-smoke.mjs → 合计 32 项，失败 0 项（exit 0）
+- EXPECTED_CHECKS 改 31 → 退出码 2 并打印差值说明（自守卫真咬人）
+- 红证据 12 条翻红 → 还原 → 32/0
+- scripts/ui-smoke.mjs 零改动；pnpm-lock.yaml 零 diff
+
+未动：
+
+- scripts/ui-smoke.mjs（其 121 项判据被 #49 票册当基线引用过）
+- 本 smoke 属缝隙 A，按仓库约定不进 CI、只手工跑

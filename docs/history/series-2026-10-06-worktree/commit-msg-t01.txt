@@ -1,0 +1,40 @@
+feat(series): 文集字段与组内相邻（票 01 tracer）
+
+《看懂 AI 写的网站》四章与随后那篇 Matt Pocock 文章在文章页左右按钮上互相串门：第三章的右按钮
+指向不属于本书的文章，Matt 篇的左按钮落进本书第三章。起因是 getNeighbors() 在一条全站时间线上
+取相邻项。本票落数据模型与组内相邻两块地基：给文章两个可选 frontmatter 字段，并让左右按钮在文集
+内相邻、非成员跳过整个文集。
+
+改动清单：
+
+- src/utils/posts-schema.ts 新建：把 postsCollection 的 schema 从 src/content.config.ts 抽出并具名
+  导出 postsSchema，增两个可选字段 series（z.string().min(1)，空串是刻意的 schema 错误）与
+  seriesOrder（z.number().int().nonnegative()）。抽出的唯一目的是让这两条规则进 pnpm test:utils——
+  content.config.ts 依赖 astro:content 虚拟模块，裸 node 不可导入，而 astro/zod 可以。
+- src/content.config.ts 改为 schema: postsSchema（spec 的 schema 留在原处不动）。
+- src/utils/posts-schema.test.ts 新建：series 接受 "matt-pocock"、拒绝 ""、接受缺省；seriesOrder
+  接受 0、拒绝 -1 与 1.5、接受缺省。不改 scripts/test-hooks.mjs。
+- src/utils/content-utils.ts 增 isSeriesMember(post)（只看 frontmatter 有没有 series 属性，不查登记表）
+  与 getSeriesNeighbors(posts, slug)（成员按 seriesOrder 升序取组内相邻、边界不跨出文集；非成员把带
+  series 的文章从 getSortedPosts 里剔除后复用既有 getNeighbors）。既有 getNeighbors 保留不改。
+- src/utils/content-utils.test.ts 增六条用例：组内中间篇 / 首篇 prev === null / 末篇 next === null /
+  单篇文集两侧皆 null / 非成员跳过整块 / 两篇 series 值相同即互为相邻（即使该 slug 未登记）。
+- src/pages/posts/[...slug].astro 把 getNeighbors(allPosts, post.id) 换成 getSeriesNeighbors(allPosts, post.id)。
+- 两篇 Matt 文章 frontmatter 各加 series: "matt-pocock" 与 seriesOrder（0 / 1）。
+
+验证：
+
+- 红证据：把 posts-schema.test.ts 里「series 拒绝空串」那条断言临时改成断言 succeed，pnpm test:utils
+  真翻红（not ok 14，AssertionError expected true actual false，# fail 1），还原后回绿。
+- pnpm test:utils → # tests 20 / # pass 20 / # fail 0。
+- pnpm check → Result (163 files): 0 errors, 0 warnings, 2 hints（两条 hint 是既有文件 home.ts 与
+  theme-script.ts 的旧读数，与本票无关）。
+- pnpm exec prettier --check ./src ./docs → All matched files use Prettier code style!。
+
+未动：
+
+- spec 的 schema、既有 getNeighbors 与其用例、scripts/test-hooks.mjs 一行未改。
+- 尚未建 src/data/series.ts（票 02 交付物）。getSeriesNeighbors 返回的 series.name / unit 暂取 slug
+  与 "篇"（即 spec 里 resolveSeriesMeta 的防御回退值），已在代码注释写明票 02 应改用 resolveSeriesMeta。
+  本票无消费方（两行提示属票 05、侧栏目录属票 06），不产生用户可见错误。
+- 票册状态行与判据勾选留给收口期统一回填。

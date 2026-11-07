@@ -1,0 +1,1161 @@
+
+> myblog@1.0.0 build D:\pages\myblog.worktrees\t04
+> pnpm test:projects && pnpm test:nice-books && pnpm test:site-stats && pnpm test:utils && pnpm test:contributions && pnpm test:friend-icons && pnpm test:lib && node scripts/validate-post-slugs.mjs && node scripts/fetch-friend-icons.mjs && node scripts/generate-lqips.mjs && node scripts/fetch-github-projects.mjs && node scripts/fetch-github-repos.mjs && node scripts/fetch-github-contributions.mjs && astro build && node scripts/inject-buddha-banner.mjs && pagefind --site dist
+
+
+> myblog@1.0.0 test:projects D:\pages\myblog.worktrees\t04
+> node --test scripts/fetch-github-projects.test.mjs && node --import ./scripts/test-hooks.mjs --test "src/utils/projects.test.ts" "src/data/projects.test.ts"
+
+TAP version 13
+# Subtest: fetchGitHubProjects 分页拉取，排除 fork/归档，并只保留已收录 pinned
+ok 1 - fetchGitHubProjects 分页拉取，排除 fork/归档，并只保留已收录 pinned
+  ---
+  duration_ms: 104.054
+  type: 'test'
+  ...
+# Subtest: fetchGitHubProjects 无令牌时不请求、不改旧缓存
+ok 2 - fetchGitHubProjects 无令牌时不请求、不改旧缓存
+  ---
+  duration_ms: 1.8723
+  type: 'test'
+  ...
+# Subtest: syncGitHubProjects 请求失败时复用有效缓存
+ok 3 - syncGitHubProjects 请求失败时复用有效缓存
+  ---
+  duration_ms: 3.4408
+  type: 'test'
+  ...
+# Subtest: syncGitHubProjects 没有有效缓存时失败，绝不生成空目录
+ok 4 - syncGitHubProjects 没有有效缓存时失败，绝不生成空目录
+  ---
+  duration_ms: 4.6203
+  type: 'test'
+  ...
+# Subtest: 游标不前进视为非法响应并保留旧缓存
+ok 5 - 游标不前进视为非法响应并保留旧缓存
+  ---
+  duration_ms: 2.1924
+  type: 'test'
+  ...
+# Subtest: validateSnapshot 拒绝 pinned 指向不存在仓库和重复仓库
+ok 6 - validateSnapshot 拒绝 pinned 指向不存在仓库和重复仓库
+  ---
+  duration_ms: 0.5525
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 207.9109
+TAP version 13
+# Subtest: projectsData：真实快照全部进入目录，Pinned 顺序与快照一致
+ok 1 - projectsData：真实快照全部进入目录，Pinned 顺序与快照一致
+  ---
+  duration_ms: 2.3882
+  type: 'test'
+  ...
+# Subtest: projectsData：自动项目不推断状态，人工项目保留策展字段
+ok 2 - projectsData：自动项目不推断状态，人工项目保留策展字段
+  ---
+  duration_ms: 0.2313
+  type: 'test'
+  ...
+# Subtest: resolveProjects：Pinned 按 GitHub 顺序置顶，其余按开始时间倒序
+ok 3 - resolveProjects：Pinned 按 GitHub 顺序置顶，其余按开始时间倒序
+  ---
+  duration_ms: 1.528
+  type: 'test'
+  ...
+# Subtest: resolveProjects：人工字段覆盖 GitHub，私有项目保持原值
+ok 4 - resolveProjects：人工字段覆盖 GitHub，私有项目保持原值
+  ---
+  duration_ms: 0.2691
+  type: 'test'
+  ...
+# Subtest: resolveProjects：新仓库用主语言与 Topics 回退，不推断状态
+ok 5 - resolveProjects：新仓库用主语言与 Topics 回退，不推断状态
+  ---
+  duration_ms: 0.2572
+  type: 'test'
+  ...
+# Subtest: resolveProjects：null 或空白简介显示明确回退文案
+ok 6 - resolveProjects：null 或空白简介显示明确回退文案
+  ---
+  duration_ms: 0.174
+  type: 'test'
+  ...
+# Subtest: resolveProjects：排除表生效，且同日期按 id 稳定排序
+ok 7 - resolveProjects：排除表生效，且同日期按 id 稳定排序
+  ---
+  duration_ms: 0.1659
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 150.4852
+
+> myblog@1.0.0 test:nice-books D:\pages\myblog.worktrees\t04
+> node --import ./scripts/test-hooks.mjs --test "src/nice-books/**/*.test.ts"
+
+TAP version 13
+# Subtest: books：规模满足 V1 契约（≥20 本，主提示词 §43）
+ok 1 - books：规模满足 V1 契约（≥20 本，主提示词 §43）
+  ---
+  duration_ms: 1.5952
+  type: 'test'
+  ...
+# Subtest: books：id 全部为两位数字字符串且唯一
+ok 2 - books：id 全部为两位数字字符串且唯一
+  ---
+  duration_ms: 0.4022
+  type: 'test'
+  ...
+# Subtest: books：author 必须为非空 string[]（不得退化为单字符串）
+ok 3 - books：author 必须为非空 string[]（不得退化为单字符串）
+  ---
+  duration_ms: 0.3656
+  type: 'test'
+  ...
+# Subtest: books：featured 池 ≥ 12（2×6，保证「新组排除旧组」整组换始终可行）
+ok 4 - books：featured 池 ≥ 12（2×6，保证「新组排除旧组」整组换始终可行）
+  ---
+  duration_ms: 0.1616
+  type: 'test'
+  ...
+# Subtest: books：必填字符串字段非空、firstEdition 合法、coverUrl 为 null 或本地路径
+ok 5 - books：必填字符串字段非空、firstEdition 合法、coverUrl 为 null 或本地路径
+  ---
+  duration_ms: 0.4418
+  type: 'test'
+  ...
+# Subtest: getBookById：命中返回原对象，未命中返回 null
+ok 6 - getBookById：命中返回原对象，未命中返回 null
+  ---
+  duration_ms: 0.1515
+  type: 'test'
+  ...
+# Subtest: getSameShelf：≤4 本、不含自身、全部与目标共享至少 1 个标签
+ok 7 - getSameShelf：≤4 本、不含自身、全部与目标共享至少 1 个标签
+  ---
+  duration_ms: 2.8753
+  type: 'test'
+  ...
+# Subtest: allTags：按出现频次降序
+ok 8 - allTags：按出现频次降序
+  ---
+  duration_ms: 0.6614
+  type: 'test'
+  ...
+# Subtest: 三档书型共享同一组有效几何参数
+ok 9 - 三档书型共享同一组有效几何参数
+  ---
+  duration_ms: 0.8559
+  type: 'test'
+  ...
+# Subtest: 几何配置完整输出为 CSS Variables
+ok 10 - 几何配置完整输出为 CSS Variables
+  ---
+  duration_ms: 0.2551
+  type: 'test'
+  ...
+# Subtest: 同一本书永远得到同一张封面（确定性）
+ok 11 - 同一本书永远得到同一张封面（确定性）
+  ---
+  duration_ms: 1.9233
+  type: 'test'
+  ...
+# Subtest: 输出为 2:3 书封（viewBox 0 0 300 450）且含 role/aria-label
+ok 12 - 输出为 2:3 书封（viewBox 0 0 300 450）且含 role/aria-label
+  ---
+  duration_ms: 0.3686
+  type: 'test'
+  ...
+# Subtest: 短标题（≤4 字）走竖排分支：dominant-baseline central + 逐字 <text>
+ok 13 - 短标题（≤4 字）走竖排分支：dominant-baseline central + 逐字 <text>
+  ---
+  duration_ms: 0.1937
+  type: 'test'
+  ...
+# Subtest: 四字文学标题上收，为腰封预留下部安全区
+ok 14 - 四字文学标题上收，为腰封预留下部安全区
+  ---
+  duration_ms: 0.4128
+  type: 'test'
+  ...
+# Subtest: 所有书目标题均停在 hero/card 腰封安全线之上
+ok 15 - 所有书目标题均停在 hero/card 腰封安全线之上
+  ---
+  duration_ms: 2.8518
+  type: 'test'
+  ...
+# Subtest: 长标题（>6 字）拆两行横排
+ok 16 - 长标题（>6 字）拆两行横排
+  ---
+  duration_ms: 0.2035
+  type: 'test'
+  ...
+# Subtest: 不含 <defs>/<id>（多内联实例互不冲突）
+ok 17 - 不含 <defs>/<id>（多内联实例互不冲突）
+  ---
+  duration_ms: 0.8357
+  type: 'test'
+  ...
+# Subtest: 不同 id 允许不同配色，但同 id 配色恒定（palette 由 id 决定）
+ok 18 - 不同 id 允许不同配色，但同 id 配色恒定（palette 由 id 决定）
+  ---
+  duration_ms: 0.2272
+  type: 'test'
+  ...
+# Subtest: 四个族保留独立构图，特殊标题与未知 ID 均安全回退
+ok 19 - 四个族保留独立构图，特殊标题与未知 ID 均安全回退
+  ---
+  duration_ms: 0.4241
+  type: 'test'
+  ...
+# Subtest: 每个封面族的第二套配色也由 ID 稳定选择
+ok 20 - 每个封面族的第二套配色也由 ID 稳定选择
+  ---
+  duration_ms: 0.7704
+  type: 'test'
+  ...
+# Subtest: pickOne：同种子结果确定（可复现）
+ok 21 - pickOne：同种子结果确定（可复现）
+  ---
+  duration_ms: 1.0105
+  type: 'test'
+  ...
+# Subtest: pickOne：排除当前 id 后永不返回当前书（契约：新 ≠ 当前）
+ok 22 - pickOne：排除当前 id 后永不返回当前书（契约：新 ≠ 当前）
+  ---
+  duration_ms: 0.8387
+  type: 'test'
+  ...
+# Subtest: pickOne：排除后池为空时抛错（而不是返回当前书）
+ok 23 - pickOne：排除后池为空时抛错（而不是返回当前书）
+  ---
+  duration_ms: 0.52
+  type: 'test'
+  ...
+# Subtest: sampleUnique：抽 n 本，组内 id 无重复
+ok 24 - sampleUnique：抽 n 本，组内 id 无重复
+  ---
+  duration_ms: 0.8207
+  type: 'test'
+  ...
+# Subtest: sampleUnique：新组排除旧组全部 id（契约：站长推荐整组替换）
+ok 25 - sampleUnique：新组排除旧组全部 id（契约：站长推荐整组替换）
+  ---
+  duration_ms: 1.7899
+  type: 'test'
+  ...
+# Subtest: sampleUnique：同种子结果确定
+ok 26 - sampleUnique：同种子结果确定
+  ---
+  duration_ms: 1.2635
+  type: 'test'
+  ...
+# Subtest: sampleUnique：池不足时放宽排除并返回池规模上限（原型兜底语义）
+ok 27 - sampleUnique：池不足时放宽排除并返回池规模上限（原型兜底语义）
+  ---
+  duration_ms: 0.2793
+  type: 'test'
+  ...
+# Subtest: 所有书目均有固定封面族，未知 ID 回退文学族
+ok 28 - 所有书目均有固定封面族，未知 ID 回退文学族
+  ---
+  duration_ms: 0.7625
+  type: 'test'
+  ...
+# Subtest: 所有书目均提供至少一条精选摘抄
+ok 29 - 所有书目均提供至少一条精选摘抄
+  ---
+  duration_ms: 0.2244
+  type: 'test'
+  ...
+# Subtest: 四个封面族有可辨识且确定的 SVG 构图
+ok 30 - 四个封面族有可辨识且确定的 SVG 构图
+  ---
+  duration_ms: 1.7691
+  type: 'test'
+  ...
+# Subtest: 书封支持 hero/card/list 三种展示规格与封面书签
+ok 31 - 书封支持 hero/card/list 三种展示规格与封面书签
+  ---
+  duration_ms: 0.6081
+  type: 'test'
+  ...
+# Subtest: featured hero/card 有腰封，列表与普通书封均无腰封
+ok 32 - featured hero/card 有腰封，列表与普通书封均无腰封
+  ---
+  duration_ms: 0.576
+  type: 'test'
+  ...
+# Subtest: 所有书目均可输出三档封面，辅助字号不低于 13px
+ok 33 - 所有书目均可输出三档封面，辅助字号不低于 13px
+  ---
+  duration_ms: 2.8841
+  type: 'test'
+  ...
+# Subtest: 荐语标题可在详情页关闭，首页默认显示
+ok 34 - 荐语标题可在详情页关闭，首页默认显示
+  ---
+  duration_ms: 0.3094
+  type: 'test'
+  ...
+# Subtest: 标签筛选按钮暴露 aria-pressed 选中状态
+ok 35 - 标签筛选按钮暴露 aria-pressed 选中状态
+  ---
+  duration_ms: 0.0905
+  type: 'test'
+  ...
+# Subtest: 六字段逐一命中：title/author/publisher/description/recommendationReason/tags
+ok 36 - 六字段逐一命中：title/author/publisher/description/recommendationReason/tags
+  ---
+  duration_ms: 0.9603
+  type: 'test'
+  ...
+# Subtest: query 大小写不敏感（西文片段）
+ok 37 - query 大小写不敏感（西文片段）
+  ---
+  duration_ms: 0.2929
+  type: 'test'
+  ...
+# Subtest: 标签筛选：命中 / 不命中
+ok 38 - 标签筛选：命中 / 不命中
+  ---
+  duration_ms: 0.1608
+  type: 'test'
+  ...
+# Subtest: 搜索与标签叠加为 AND
+ok 39 - 搜索与标签叠加为 AND
+  ---
+  duration_ms: 0.1797
+  type: 'test'
+  ...
+# Subtest: searchBooks：空 query + 无 tag 返回全量；无结果返回空数组
+ok 40 - searchBooks：空 query + 无 tag 返回全量；无结果返回空数组
+  ---
+  duration_ms: 0.4315
+  type: 'test'
+  ...
+# Subtest: searchBooks：全量数据集上标签组合结果一致于逐本 matchBook
+ok 41 - searchBooks：全量数据集上标签组合结果一致于逐本 matchBook
+  ---
+  duration_ms: 1.0595
+  type: 'test'
+  ...
+# Subtest: 书库载入控件保留 12 本初始页、异步忙碌态与收起回退契约
+ok 42 - 书库载入控件保留 12 本初始页、异步忙碌态与收起回退契约
+  ---
+  duration_ms: 1.8156
+  type: 'test'
+  ...
+# Subtest: 导航与返回链接把下划线限制在文字层，同时保留 44px 点击区
+ok 43 - 导航与返回链接把下划线限制在文字层，同时保留 44px 点击区
+  ---
+  duration_ms: 0.2082
+  type: 'test'
+  ...
+# Subtest: 详情页书签从正文栏顶部的索引轨悬挂
+ok 44 - 详情页书签从正文栏顶部的索引轨悬挂
+  ---
+  duration_ms: 0.2439
+  type: 'test'
+  ...
+# Subtest: 页脚导航组以独立 auto 列保持页面中心对齐
+ok 45 - 页脚导航组以独立 auto 列保持页面中心对齐
+  ---
+  duration_ms: 0.0759
+  type: 'test'
+  ...
+# Subtest: 减少动态效果时摘抄卡清除默认旋转
+ok 46 - 减少动态效果时摘抄卡清除默认旋转
+  ---
+  duration_ms: 0.2629
+  type: 'test'
+  ...
+# Subtest: 腰封荐语保留两行且不再移动封面文字避让
+ok 47 - 腰封荐语保留两行且不再移动封面文字避让
+  ---
+  duration_ms: 0.309
+  type: 'test'
+  ...
+# Subtest: 共享书架卡片样式收窄硬壳阴影，hover 恢复正常阴影并保留书本轻抬与印章红反馈
+ok 48 - 共享书架卡片样式收窄硬壳阴影，hover 恢复正常阴影并保留书本轻抬与印章红反馈
+  ---
+  duration_ms: 0.4835
+  type: 'test'
+  ...
+# Subtest: 书架与书库卡片作者行使用单行省略截断，避免译者孤字换行
+ok 49 - 书架与书库卡片作者行使用单行省略截断，避免译者孤字换行
+  ---
+  duration_ms: 0.1463
+  type: 'test'
+  ...
+# Subtest: 书本几何层复刻前封、后封与双倍厚度书口坐标
+ok 50 - 书本几何层复刻前封、后封与双倍厚度书口坐标
+  ---
+  duration_ms: 0.4304
+  type: 'test'
+  ...
+# Subtest: 腰封只绕前封硬壳，书口保持裸露，背封仅显示窄回折
+ok 51 - 腰封只绕前封硬壳，书口保持裸露，背封仅显示窄回折
+  ---
+  duration_ms: 0.5568
+  type: 'test'
+  ...
+1..51
+# tests 51
+# suites 0
+# pass 51
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 202.1399
+
+> myblog@1.0.0 test:site-stats D:\pages\myblog.worktrees\t04
+> node --test scripts/sync-site-stats.test.mjs scripts/site-stats-fixture.test.mjs
+
+TAP version 13
+# Subtest: 远端显式 0 覆盖 frontmatter 值 8
+ok 1 - 远端显式 0 覆盖 frontmatter 值 8
+  ---
+  duration_ms: 0.7215
+  type: 'test'
+  ...
+# Subtest: 远端缺失 key 回退 frontmatter 值
+ok 2 - 远端缺失 key 回退 frontmatter 值
+  ---
+  duration_ms: 0.1071
+  type: 'test'
+  ...
+# Subtest: fixture 中远端评论数 1 被采用
+ok 3 - fixture 中远端评论数 1 被采用
+  ---
+  duration_ms: 0.0834
+  type: 'test'
+  ...
+# Subtest: 负数与非有限值归一化为 0
+ok 4 - 负数与非有限值归一化为 0
+  ---
+  duration_ms: 0.0798
+  type: 'test'
+  ...
+# Subtest: countDiscussionComments 跨页汇总顶层与回复
+ok 5 - countDiscussionComments 跨页汇总顶层与回复
+  ---
+  duration_ms: 1.4181
+  type: 'test'
+  ...
+# Subtest: buildSnapshot 校验 key 与计数
+ok 6 - buildSnapshot 校验 key 与计数
+  ---
+  duration_ms: 0.8431
+  type: 'test'
+  ...
+# Subtest: selectRandomComments 支持展示上限和较大的构建期评论池
+ok 7 - selectRandomComments 支持展示上限和较大的构建期评论池
+  ---
+  duration_ms: 0.3683
+  type: 'test'
+  ...
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# Subtest: Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标题被忽略
+ok 8 - Discussions 游标分页 + 顶层/回复汇总 + 显式 0 + 未匹配标题被忽略
+  ---
+  duration_ms: 129.9143
+  type: 'test'
+  ...
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220514182600, 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# Subtest: guestbook 留言独立保存并只保留最新 20 条
+ok 9 - guestbook 留言独立保存并只保留最新 20 条
+  ---
+  duration_ms: 23.7902
+  type: 'test'
+  ...
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# Subtest: 空内容评论/留言（纯表情空白）跳过本条而不阻塞整批同步
+ok 10 - 空内容评论/留言（纯表情空白）跳过本条而不阻塞整批同步
+  ---
+  duration_ms: 20.0093
+  type: 'test'
+  ...
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# [sync] guestbook Discussion not found; guestbookComments will be empty
+# Subtest: 有效的 Discussions 与 comments 分页超过 50 页仍完成
+ok 11 - 有效的 Discussions 与 comments 分页超过 50 页仍完成
+  ---
+  duration_ms: 23.4594
+  type: 'test'
+  ...
+# Subtest: Discussions 交替游标循环 fail closed 且不替换既有快照
+ok 12 - Discussions 交替游标循环 fail closed 且不替换既有快照
+  ---
+  duration_ms: 13.3966
+  type: 'test'
+  ...
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# Subtest: comments 交替游标循环 fail closed 且不替换既有快照
+ok 13 - comments 交替游标循环 fail closed 且不替换既有快照
+  ---
+  duration_ms: 12.99
+  type: 'test'
+  ...
+# Subtest: malformed Discussions 分页连接 fail closed
+ok 14 - malformed Discussions 分页连接 fail closed
+  ---
+  duration_ms: 55.8365
+  type: 'test'
+  ...
+# Subtest: malformed Discussion 节点与匹配文章的 unusable id fail closed
+ok 15 - malformed Discussion 节点与匹配文章的 unusable id fail closed
+  ---
+  duration_ms: 51.6042
+  type: 'test'
+  ...
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# Subtest: malformed comments 分页连接均不替换既有快照
+ok 16 - malformed comments 分页连接均不替换既有快照
+  ---
+  duration_ms: 96.6211
+  type: 'test'
+  ...
+# [sync] unmatched article slugs (kept on frontmatter fallback): 20220701000000, 20220801000000, 20231001000000, 20240115000000, 20240401000000, 20240501000000, 20250120000000, 20251226160000, 20260318161300, 20260318161900, 20260320000000, 20260402161000, 20260715000000, 20260720000000, 20260728000000, 20260831000000, 20260831120000, 20260903134906, 20260907181300, 20260909092113, 20260919135000, 20260925150221, 20260927082016, 20261002071103, 20261002081331, 20261002093931, 20261002204249, 20261006110122
+# Subtest: comments 非递进游标 fail closed 且不替换既有快照
+ok 17 - comments 非递进游标 fail closed 且不替换既有快照
+  ---
+  duration_ms: 14.2838
+  type: 'test'
+  ...
+# Subtest: GraphQL errors 中止：输出字节不变且无 tmp 残留
+ok 18 - GraphQL errors 中止：输出字节不变且无 tmp 残留
+  ---
+  duration_ms: 21.2855
+  type: 'test'
+  ...
+# Subtest: GitHub 非 2xx 中止且不写输出
+ok 19 - GitHub 非 2xx 中止且不写输出
+  ---
+  duration_ms: 15.5435
+  type: 'test'
+  ...
+1..19
+# tests 19
+# suites 0
+# pass 19
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 590.7531
+
+> myblog@1.0.0 test:utils D:\pages\myblog.worktrees\t04
+> node --import ./scripts/test-hooks.mjs --test "src/utils/*.test.ts"
+
+TAP version 13
+# Subtest: getSortedPosts：置顶优先，同级按发布时间倒序，过滤草稿与私密帖
+ok 1 - getSortedPosts：置顶优先，同级按发布时间倒序，过滤草稿与私密帖
+  ---
+  duration_ms: 2.6366
+  type: 'test'
+  ...
+# Subtest: getHotPosts：hotness×100+有效评论数评分，同分按发布时间倒序
+ok 2 - getHotPosts：hotness×100+有效评论数评分，同分按发布时间倒序
+  ---
+  duration_ms: 0.346
+  type: 'test'
+  ...
+# Subtest: getTagList/getCategoryList：按文章数倒序，忽略草稿与私密帖，空分类跳过
+ok 3 - getTagList/getCategoryList：按文章数倒序，忽略草稿与私密帖，空分类跳过
+  ---
+  duration_ms: 0.3757
+  type: 'test'
+  ...
+# Subtest: getNeighbors：prev 为更早一篇、next 为更新一篇；首末篇与未知 slug 边界
+ok 4 - getNeighbors：prev 为更早一篇、next 为更新一篇；首末篇与未知 slug 边界
+  ---
+  duration_ms: 0.2709
+  type: 'test'
+  ...
+# Subtest: isSeriesMember：只看 frontmatter 有没有 series 属性，不查登记表
+ok 5 - isSeriesMember：只看 frontmatter 有没有 series 属性，不查登记表
+  ---
+  duration_ms: 0.1164
+  type: 'test'
+  ...
+# Subtest: getSeriesNeighbors：组内按 seriesOrder 相邻、边界不渲染、非成员跳过整块
+ok 6 - getSeriesNeighbors：组内按 seriesOrder 相邻、边界不渲染、非成员跳过整块
+  ---
+  duration_ms: 0.5123
+  type: 'test'
+  ...
+# Subtest: resolveSeriesMeta：登记过的 slug 取到 name / unit
+ok 7 - resolveSeriesMeta：登记过的 slug 取到 name / unit
+  ---
+  duration_ms: 0.1453
+  type: 'test'
+  ...
+# Subtest: resolveSeriesMeta：未登记的 slug 回退为 name = slug、unit = 篇、description = 空
+ok 8 - resolveSeriesMeta：未登记的 slug 回退为 name = slug、unit = 篇、description = 空
+  ---
+  duration_ms: 0.1954
+  type: 'test'
+  ...
+# Subtest: getCover：frontmatter image 优先；无图时 slug hash 稳定映射到 1..40 缩略图
+ok 9 - getCover：frontmatter image 优先；无图时 slug hash 稳定映射到 1..40 缩略图
+  ---
+  duration_ms: 0.4809
+  type: 'test'
+  ...
+# Subtest: getExcerpt：frontmatter excerpt 优先；否则剥离 Markdown 粗读正文并截断
+ok 10 - getExcerpt：frontmatter excerpt 优先；否则剥离 Markdown 粗读正文并截断
+  ---
+  duration_ms: 0.9592
+  type: 'test'
+  ...
+# Subtest: getPaginationUrl：根 URL 规范化补尾斜杠
+ok 11 - getPaginationUrl：根 URL 规范化补尾斜杠
+  ---
+  duration_ms: 0.6771
+  type: 'test'
+  ...
+# Subtest: getPaginationUrl：第 1 页（数字与字符串）返回根 URL，不带 /page/1/
+ok 12 - getPaginationUrl：第 1 页（数字与字符串）返回根 URL，不带 /page/1/
+  ---
+  duration_ms: 0.0998
+  type: 'test'
+  ...
+# Subtest: getPaginationUrl：第 2+ 页返回 /page/N/ 嵌套形式
+ok 13 - getPaginationUrl：第 2+ 页返回 /page/N/ 嵌套形式
+  ---
+  duration_ms: 0.0833
+  type: 'test'
+  ...
+# Subtest: getPageMeta：第 1 页原样返回 base（标题与描述都不加页码）
+ok 14 - getPageMeta：第 1 页原样返回 base（标题与描述都不加页码）
+  ---
+  duration_ms: 0.3112
+  type: 'test'
+  ...
+# Subtest: getPageMeta：第 ≥2 页的标题与描述都带页码，两者互不重复
+ok 15 - getPageMeta：第 ≥2 页的标题与描述都带页码，两者互不重复
+  ---
+  duration_ms: 0.1628
+  type: 'test'
+  ...
+# Subtest: postsSchema.series：接受非空 slug、拒绝空串、接受缺省
+ok 16 - postsSchema.series：接受非空 slug、拒绝空串、接受缺省
+  ---
+  duration_ms: 2.2332
+  type: 'test'
+  ...
+# Subtest: postsSchema.seriesOrder：接受 0、拒绝 -1 与 1.5、接受缺省
+ok 17 - postsSchema.seriesOrder：接受 0、拒绝 -1 与 1.5、接受缺省
+  ---
+  duration_ms: 0.4716
+  type: 'test'
+  ...
+# Subtest: resolveProjects：Pinned 按 GitHub 顺序置顶，其余按开始时间倒序
+ok 18 - resolveProjects：Pinned 按 GitHub 顺序置顶，其余按开始时间倒序
+  ---
+  duration_ms: 1.4489
+  type: 'test'
+  ...
+# Subtest: resolveProjects：人工字段覆盖 GitHub，私有项目保持原值
+ok 19 - resolveProjects：人工字段覆盖 GitHub，私有项目保持原值
+  ---
+  duration_ms: 0.2322
+  type: 'test'
+  ...
+# Subtest: resolveProjects：新仓库用主语言与 Topics 回退，不推断状态
+ok 20 - resolveProjects：新仓库用主语言与 Topics 回退，不推断状态
+  ---
+  duration_ms: 0.2381
+  type: 'test'
+  ...
+# Subtest: resolveProjects：null 或空白简介显示明确回退文案
+ok 21 - resolveProjects：null 或空白简介显示明确回退文案
+  ---
+  duration_ms: 0.1639
+  type: 'test'
+  ...
+# Subtest: resolveProjects：排除表生效，且同日期按 id 稳定排序
+ok 22 - resolveProjects：排除表生效，且同日期按 id 稳定排序
+  ---
+  duration_ms: 0.1773
+  type: 'test'
+  ...
+1..22
+# tests 22
+# suites 0
+# pass 22
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 350.6111
+
+> myblog@1.0.0 test:contributions D:\pages\myblog.worktrees\t04
+> node --test scripts/fetch-github-contributions.test.mjs
+
+TAP version 13
+# Subtest: normalizeCalendar 校验非法形状并按日期排序
+ok 1 - normalizeCalendar 校验非法形状并按日期排序
+  ---
+  duration_ms: 1.865
+  type: 'test'
+  ...
+# Subtest: padToFullWeeks 补齐首尾完整周（消费端整周断言与 7 天切列契约）
+ok 2 - padToFullWeeks 补齐首尾完整周（消费端整周断言与 7 天切列契约）
+  ---
+  duration_ms: 1.845
+  type: 'test'
+  ...
+# Subtest: computeStats 统计总贡献与连续口径
+ok 3 - computeStats 统计总贡献与连续口径
+  ---
+  duration_ms: 0.2295
+  type: 'test'
+  ...
+# Subtest: fetchContributions 正常路径：写缓存并返回统计
+ok 4 - fetchContributions 正常路径：写缓存并返回统计
+  ---
+  duration_ms: 108.19
+  type: 'test'
+  ...
+# Subtest: fetchContributions 使用环境令牌发送 Authorization
+ok 5 - fetchContributions 使用环境令牌发送 Authorization
+  ---
+  duration_ms: 8.785
+  type: 'test'
+  ...
+# Subtest: fetchContributions 无令牌时不发请求、不动缓存
+ok 6 - fetchContributions 无令牌时不发请求、不动缓存
+  ---
+  duration_ms: 1.2381
+  type: 'test'
+  ...
+# Subtest: fetchContributions HTTP 失败时保留旧缓存且不留 tmp
+ok 7 - fetchContributions HTTP 失败时保留旧缓存且不留 tmp
+  ---
+  duration_ms: 1.5426
+  type: 'test'
+  ...
+# Subtest: fetchContributions 非法响应时保留旧缓存
+ok 8 - fetchContributions 非法响应时保留旧缓存
+  ---
+  duration_ms: 1.0981
+  type: 'test'
+  ...
+# Subtest: fetchContributions 网络异常时保留旧缓存
+ok 9 - fetchContributions 网络异常时保留旧缓存
+  ---
+  duration_ms: 1.5835
+  type: 'test'
+  ...
+# Subtest: fetchContributions 零贡献也是有效快照
+ok 10 - fetchContributions 零贡献也是有效快照
+  ---
+  duration_ms: 9.9784
+  type: 'test'
+  ...
+# Subtest: 末位零日时当前连续回看一天
+ok 11 - 末位零日时当前连续回看一天
+  ---
+  duration_ms: 8.9306
+  type: 'test'
+  ...
+1..11
+# tests 11
+# suites 0
+# pass 11
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 226.6862
+
+> myblog@1.0.0 test:friend-icons D:\pages\myblog.worktrees\t04
+> node --test scripts/fetch-friend-icons.test.mjs
+
+TAP version 13
+# Subtest: normalizeFriendUrl removes fragment/default port and keeps path/query
+ok 1 - normalizeFriendUrl removes fragment/default port and keeps path/query
+  ---
+  duration_ms: 1.0281
+  type: 'test'
+  ...
+# Subtest: parseIconCandidates follows rel tokens case-insensitively and resolves against final URL
+ok 2 - parseIconCandidates follows rel tokens case-insensitively and resolves against final URL
+  ---
+  duration_ms: 2.8107
+  type: 'test'
+  ...
+# FETCHED A
+# Subtest: fetchFriendIcons fetches remote avatar first, writes manifest and stable asset
+ok 3 - fetchFriendIcons fetches remote avatar first, writes manifest and stable asset
+  ---
+  duration_ms: 111.9844
+  type: 'test'
+  ...
+# FETCHED A
+# Subtest: local root-relative avatar is verified and avoids network
+ok 4 - local root-relative avatar is verified and avoids network
+  ---
+  duration_ms: 10.0317
+  type: 'test'
+  ...
+# FETCHED A
+# Subtest: HTML candidates fall back after bad icon and preserve final redirect URL
+ok 5 - HTML candidates fall back after bad icon and preserve final redirect URL
+  ---
+  duration_ms: 11.8465
+  type: 'test'
+  ...
+# friend icon fetch failed for Loop (redirect-limit)
+# FALLBACK Loop
+# Subtest: redirect limit stops a loop and final response URL drives relative candidates
+ok 6 - redirect limit stops a loop and final response URL drives relative candidates
+  ---
+  duration_ms: 7.4015
+  type: 'test'
+  ...
+# FETCHED Favicon
+# Subtest: no-icon HTML falls back to the final origin favicon
+ok 7 - no-icon HTML falls back to the final origin favicon
+  ---
+  duration_ms: 11.8849
+  type: 'test'
+  ...
+# FETCHED Malformed
+# Subtest: malformed HTML still reaches the final origin favicon
+ok 8 - malformed HTML still reaches the final origin favicon
+  ---
+  duration_ms: 12.9186
+  type: 'test'
+  ...
+# FETCHED A
+# CACHED A
+# friend icon fetch failed for A (network-error)
+# KEPT OLD A
+# Subtest: normal mode skips valid cache, refresh fetches, and failed refresh keeps old bytes
+ok 9 - normal mode skips valid cache, refresh fetches, and failed refresh keeps old bytes
+  ---
+  duration_ms: 12.7308
+  type: 'test'
+  ...
+# FETCHED A
+# FALLBACK C
+# Subtest: duplicate and invalid friends are handled without duplicate requests
+ok 10 - duplicate and invalid friends are handled without duplicate requests
+  ---
+  duration_ms: 8.4343
+  type: 'test'
+  ...
+# friend icon fetch failed for A (no-valid-icon)
+# FALLBACK A
+# Subtest: bad image MIME produces fallback and no temporary files
+ok 11 - bad image MIME produces fallback and no temporary files
+  ---
+  duration_ms: 8.459
+  type: 'test'
+  ...
+# friend icon fetch failed for A (no-valid-icon)
+# FALLBACK A
+# Subtest: bad image signature produces fallback and no temporary files
+ok 12 - bad image signature produces fallback and no temporary files
+  ---
+  duration_ms: 9.9606
+  type: 'test'
+  ...
+# friend icon fetch failed for A (body-too-large)
+# FALLBACK A
+# Subtest: oversized body produces fallback and no temporary files
+ok 13 - oversized body produces fallback and no temporary files
+  ---
+  duration_ms: 10.6735
+  type: 'test'
+  ...
+# FETCHED A
+# Subtest: maxBytes accepts a lower positive value up to the hard ceiling
+ok 14 - maxBytes accepts a lower positive value up to the hard ceiling
+  ---
+  duration_ms: 10.0057
+  type: 'test'
+  ...
+# Subtest: maxBytes rejects invalid values before any network request
+ok 15 - maxBytes rejects invalid values before any network request
+  ---
+  duration_ms: 3.2679
+  type: 'test'
+  ...
+# friend icon fetch failed for A (timeout)
+# FALLBACK A
+# Subtest: hung requests time out and continue without leaving temporary files
+ok 16 - hung requests time out and continue without leaving temporary files
+  ---
+  duration_ms: 29.1472
+  type: 'test'
+  ...
+# Subtest: atomic replacement restores old bytes when the replacement is interrupted
+ok 17 - atomic replacement restores old bytes when the replacement is interrupted
+  ---
+  duration_ms: 5.2996
+  type: 'test'
+  ...
+# Subtest: atomic writes serialize same-target operations and clean unique artifacts
+ok 18 - atomic writes serialize same-target operations and clean unique artifacts
+  ---
+  duration_ms: 51.0692
+  type: 'test'
+  ...
+# FETCHED A
+# Subtest: cache metadata byte size mismatch triggers a refetch
+ok 19 - cache metadata byte size mismatch triggers a refetch
+  ---
+  duration_ms: 11.7816
+  type: 'test'
+  ...
+# FETCHED A
+# Subtest: cache metadata content type mismatch triggers a refetch
+ok 20 - cache metadata content type mismatch triggers a refetch
+  ---
+  duration_ms: 11.731
+  type: 'test'
+  ...
+# friend icon fetch failed for A (network-error)
+# FALLBACK A
+# Subtest: missing old asset is removed from the active manifest after refresh failure
+ok 21 - missing old asset is removed from the active manifest after refresh failure
+  ---
+  duration_ms: 7.7208
+  type: 'test'
+  ...
+# friend icon fetch failed for A (network-error)
+# FALLBACK A
+# Subtest: corrupt old asset is removed from the active manifest after refresh failure
+ok 22 - corrupt old asset is removed from the active manifest after refresh failure
+  ---
+  duration_ms: 9.3524
+  type: 'test'
+  ...
+# Subtest: first complete candidate failure writes a versioned negative cache
+ok 23 - first complete candidate failure writes a versioned negative cache
+  ---
+  duration_ms: 7.2789
+  type: 'test'
+  ...
+# Subtest: normal mode uses a negative cache without issuing another request
+ok 24 - normal mode uses a negative cache without issuing another request
+  ---
+  duration_ms: 8.2186
+  type: 'test'
+  ...
+# Subtest: committed current cache schema and assets are accepted with zero fetches
+ok 25 - committed current cache schema and assets are accepted with zero fetches
+  ---
+  duration_ms: 9.5439
+  type: 'test'
+  ...
+# Subtest: refresh retries a negative cache and promotes success
+ok 26 - refresh retries a negative cache and promotes success
+  ---
+  duration_ms: 11.5364
+  type: 'test'
+  ...
+# Subtest: negative records for removed friends remain historical
+ok 27 - negative records for removed friends remain historical
+  ---
+  duration_ms: 1.7748
+  type: 'test'
+  ...
+# Subtest: failed refresh updates the negative timestamp and keeps a controlled status code
+ok 28 - failed refresh updates the negative timestamp and keeps a controlled status code
+  ---
+  duration_ms: 9.6159
+  type: 'test'
+  ...
+# Subtest: valid success wins over a stray negative record when refresh fails
+ok 29 - valid success wins over a stray negative record when refresh fails
+  ---
+  duration_ms: 11.8799
+  type: 'test'
+  ...
+# Subtest: raw fetch errors are absent from the manifest and logs
+ok 30 - raw fetch errors are absent from the manifest and logs
+  ---
+  duration_ms: 11.6493
+  type: 'test'
+  ...
+# Subtest: malformed negative cache entries are fatal
+ok 31 - malformed negative cache entries are fatal
+  ---
+  duration_ms: 5.0755
+  type: 'test'
+  ...
+# Subtest: malformed positive cache entries are fatal before any fetch
+ok 32 - malformed positive cache entries are fatal before any fetch
+  ---
+  duration_ms: 32.2091
+  type: 'test'
+  ...
+1..32
+# tests 32
+# suites 0
+# pass 32
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 594.9499
+
+> myblog@1.0.0 test:lib D:\pages\myblog.worktrees\t04
+> node --test "scripts/lib/*.test.mjs" "src/plugins/*.test.mjs"
+
+TAP version 13
+# Subtest: atomicWriteJson 写出可被 Prettier 接受的排版，且不留下临时文件
+ok 1 - atomicWriteJson 写出可被 Prettier 接受的排版，且不留下临时文件
+  ---
+  duration_ms: 107.7131
+  type: 'test'
+  ...
+# Subtest: 写入中途失败：旧文件字节不变，且不留临时文件
+ok 2 - 写入中途失败：旧文件字节不变，且不留临时文件
+  ---
+  duration_ms: 6.4604
+  type: 'test'
+  ...
+# Subtest: 目标已存在时 rename 被拒：走备份位安装新内容，并清理备份
+ok 3 - 目标已存在时 rename 被拒：走备份位安装新内容，并清理备份
+  ---
+  duration_ms: 9.6146
+  type: 'test'
+  ...
+# Subtest: 换装第二步也被打断：把备份放回去，旧字节不丢
+ok 4 - 换装第二步也被打断：把备份放回去，旧字节不丢
+  ---
+  duration_ms: 9.9044
+  type: 'test'
+  ...
+# Subtest: 同一目标的并发写被串行化，不出现交错
+ok 5 - 同一目标的并发写被串行化，不出现交错
+  ---
+  duration_ms: 11.0505
+  type: 'test'
+  ...
+# [smoke] HARNESS_TEST_BASE=http://localhost:4399（形态：站点根）
+# [smoke] HARNESS_TEST_BASE=http://localhost:4399（形态：站点根）
+# [smoke] HARNESS_TEST_BASE=http://127.0.0.1:4321/ai-news/（形态：完整页面/目录地址（/ai-news/））
+# [smoke] HARNESS_TEST_BASE=http://localhost:4399（形态：站点根）
+# [smoke] HARNESS_TEST_BASE=http://localhost:4399（形态：站点根）
+# [smoke] HARNESS_TEST_BASE=http://localhost:4399（形态：站点根）
+# [smoke] HARNESS_TEST_BASE=http://localhost:4399（形态：站点根）
+# Subtest: 同源 console error 必须入列并让 checkClean 翻红
+ok 6 - 同源 console error 必须入列并让 checkClean 翻红
+  ---
+  duration_ms: 1.607
+  type: 'test'
+  ...
+# Subtest: 外部域报错按调用点策略不计失败（台子不预设清单）
+ok 7 - 外部域报错按调用点策略不计失败（台子不预设清单）
+  ---
+  duration_ms: 0.8678
+  type: 'test'
+  ...
+# Subtest: pageerror 与按文案的噪声策略都生效（ai-news 那类离线快照场景）
+ok 8 - pageerror 与按文案的噪声策略都生效（ai-news 那类离线快照场景）
+  ---
+  duration_ms: 0.2684
+  type: 'test'
+  ...
+# Subtest: checkClean 按段归属：前一段的报错不算到后一段头上
+ok 9 - checkClean 按段归属：前一段的报错不算到后一段头上
+  ---
+  duration_ms: 0.3035
+  type: 'test'
+  ...
+# Subtest: 多页面各一个报错汇，互不污染
+ok 10 - 多页面各一个报错汇，互不污染
+  ---
+  duration_ms: 0.2224
+  type: 'test'
+  ...
+# Subtest: 跨报错汇的游标各自独立：子汇的报错不得被主汇游标吞掉
+ok 11 - 跨报错汇的游标各自独立：子汇的报错不得被主汇游标吞掉
+  ---
+  duration_ms: 0.2684
+  type: 'test'
+  ...
+# Subtest: 汇总口径与 check 的第四参数位
+ok 12 - 汇总口径与 check 的第四参数位
+  ---
+  duration_ms: 0.2999
+  type: 'test'
+  ...
+# Subtest: base 形态在启动时回显（三种形态传错曾造出假失败）
+ok 13 - base 形态在启动时回显（三种形态传错曾造出假失败）
+  ---
+  duration_ms: 0.2305
+  type: 'test'
+  ...
+# Subtest: 站点根带结尾斜杠仍判为站点根，并警告会拼出协议相对 URL
+ok 14 - 站点根带结尾斜杠仍判为站点根，并警告会拼出协议相对 URL
+  ---
+  duration_ms: 0.2687
+  type: 'test'
+  ...
+# Subtest: container directive label becomes an admonition title
+ok 15 - container directive label becomes an admonition title
+  ---
+  duration_ms: 2.8986
+  type: 'test'
+  ...
+# Subtest: unlabelled container keeps its first paragraph as content
+ok 16 - unlabelled container keeps its first paragraph as content
+  ---
+  duration_ms: 0.5154
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 488.1162
+文章 URL slug 校验通过：29 个目录均符合 yyyymmddhhmmss。
+CACHED 明月浩空
+CACHED 江西财经大学计算机协会
+CACHED YHY Study Website
+CACHED MIUMA
+CACHED JUFE Offer
+CACHED Astro
+CACHED ZCJUN.COM
+CACHED 洛谷
+Loaded 228 existing entries from src/constants/lqips.json
+Found 228 images, 0 new to process.
+
+Done! Processed 0/0 new images. Total: 228. Output: src/constants/lqips.json
+Variants: 264 generated, 0 up-to-date. Manifest entries: 91. Output: src/constants/image-manifest.json
+ ELIFECYCLE  Command failed with exit code 3221225794.

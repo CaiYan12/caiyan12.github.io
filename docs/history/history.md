@@ -1,9 +1,9 @@
 # 历史记录索引
 
-本文件是**已归档计划文档**的索引。被索引的原文件已从仓库删除，全文仍可从 Git 历史按「恢复命令」一列逐字取回。
+本文件是**已归档计划文档**的索引。前五批被索引的原文件已从仓库删除，全文仍可从 Git 历史按「恢复命令」一列逐字取回；第六批从未纳入 Git，以实体文件逐字保留在 `docs/history/series-2026-10-06-worktree/`，没有恢复命令。
 
-- 归档日期：2026-10-30（第一批、第三批）、2026-11-02（第二批）、2026-11-05（第四批）、2026-11-07（第五批）
-- 归档范围：第一批为 `docs/plans/` 下 23 份已完成或已冻结的计划 / 规格 / 票册；第二批为 `docs/plans/wallpaper-pull-handoff/`（拉绳壁纸挂件的执行提示词、实施计划与两张参考图，功能已于同日上线）；第三批为 T0–T3 全轮的决策登记册；第四批为 Tailwind v4 与 Satori 升级两份规格、六张票与一份隔离探针调研；第五批为 2026-11-02～03 依赖升级与阶段五迁移的 14 份计划 / 专项报告 / 评估与实施骨架
+- 归档日期：2026-10-30（第一批、第三批）、2026-11-02（第二批）、2026-11-05（第四批）、2026-11-07（第五批、第六批）
+- 归档范围：第一批为 `docs/plans/` 下 23 份已完成或已冻结的计划 / 规格 / 票册；第二批为 `docs/plans/wallpaper-pull-handoff/`（拉绳壁纸挂件的执行提示词、实施计划与两张参考图，功能已于同日上线）；第三批为 T0–T3 全轮的决策登记册；第四批为 Tailwind v4 与 Satori 升级两份规格、六张票与一份隔离探针调研；第五批为 2026-11-02～03 依赖升级与阶段五迁移的 14 份计划 / 专项报告 / 评估与实施骨架；第六批为 2026-10-06 文集（series）10 票执行期留在 worktree 的 21 份过程文档（提交信息草稿、PR 正文、代码库笔记、运行日志与四份构建日志），从未纳入 Git，故以实体文件保留在 `docs/history/series-2026-10-06-worktree/`，不适用 `git show` 恢复
 - 保留在原处：`docs/plans/2026-09-28-weather-capsule-spec.md` 与 `docs/plans/2026-09-28-weather-capsule-plan.md`（`docs/history/qweather-settingup-history-sessions.md` 里有 40 处不可修改的原文引用；`README.md` 也直接链向它们）
 
 ## 怎么用这一页
@@ -98,6 +98,18 @@ git show 4a35268:docs/plans/2026-10-14-article-toc-spec.md > /tmp/toc-spec.md
 | 2026-11-03 | `2026-11-03-phase5-migration-assessment`（150 行）           | 阶段五剩余四项跨版本迁移的逐项评估，含「三、Tailwind 3.4.19 → 4.3.4（风险：高，属接入方式重写）」一节（即第三节）与 Mermaid 节裁定；KaTeX / Mermaid 后续已实装上线。结论已沉到 ADR 0011 / 0012。            | —                   | `git show b616255:docs/plans/2026-11-03-phase5-migration-assessment.md`          |
 | 2026-11-03 | `2026-11-03-phase5-migration-implementation-plan`（1425 行） | 阶段五实施骨架：Task 1–16 的执行步骤、命令与判据，含「Task 16: Satori 探索性验证（决定是否值得排期）」。Task 12–15 是占位结构，方案获批后才补写成可执行步骤。结论已沉到 ADR 0011 / 0012 与 `docs/agents/`。 | —                   | `git show 44b7979:docs/plans/2026-11-03-phase5-migration-implementation-plan.md` |
 | 2026-11-03 | `2026-11-03-svelte-upgrade`（112 行）                        | 第三批 Svelte 5.56.8→5.57.3 专项验收：仅验证 Chromium，同输入 A/B 中非 HTML 且非 Svelte chunk 的产物逐字节 0 差异；组件契约结论已沉到 `docs/agents/components.md`。                                         | `1073945`           | `git show daf85c9:docs/plans/2026-11-03-svelte-upgrade.md`                       |
+
+## 归档清单（第六批：文集 worktree 过程文档）
+
+第六批于 2026-11-07 收尾，来源是 2026-10-06 文集（series）10 票执行期留在 worktree 的编排侧产物，共 21 份 362605 B。**与前五批不同**：这些文件从未纳入 Git，删掉即不可恢复，因此以实体文件逐字保留在 [`docs/history/series-2026-10-06-worktree/`](series-2026-10-06-worktree/)，**没有 `git show` 恢复命令**；四份 `.md` 含内嵌代码片段，已按「逐字保留」范式加入 `.prettierignore`。原 worktree 目录其余部分（`t01`–`t09`、`_integration`）只剩 `node_modules` 空壳，可再生；整个目录已由站长于 2026-11-07 手动删除。归档原文里出现的旧 worktree 绝对路径均为当时的路径记录，目录删除后不再有效，不是指针。
+
+- 权威进度账：[`series-run-log.md`](series-2026-10-06-worktree/series-run-log.md)（271 行，含 10 票逐票证据与编排教训）；`.workbuddy-ai/memory/MEMORY.md`（本地记忆，不入库）的引用已改指此处。
+- 清理四要素：时间 2026-11-07；范围见下方逐项清单；归档位置 `docs/history/series-2026-10-06-worktree/`；结果 21 份逐字节一致复制完成，原目录已由站长于同日手动删除，删除后复核归档副本仍为 21 份 / 362605 B。
+- 提交信息草稿 13 份：`commit-msg-border.txt`、`commit-msg-boundary.txt`、`commit-msg-docs.txt`、`commit-msg-fixbatch.txt`、`commit-msg-ledger.txt`、`commit-msg-rename.txt`、`commit-msg-sticky.txt`、`commit-msg-t01.txt`、`commit-msg-t02.txt`、`commit-msg-t04.txt`、`commit-msg-t09.txt`、`commit-msg-toclink.txt`、`commit-msg-transition.txt`
+- PR 正文 2 份：`pr-body-final.md`、`pr-body-series.md`
+- 代码库笔记：`series-codebase-notes.md`（3093 行 / 122974 B）
+- 运行日志：`series-run-log.md`（271 行 / 42796 B）
+- 票 04 构建与红绿日志 4 份：`t04-build.log`、`t04-build2.log`、`t04-green.log`、`t04-red.log`
 
 ## 按轮次索引
 
