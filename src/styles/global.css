@@ -2080,7 +2080,7 @@ img:hover {
 
 #header .site-title {
   overflow: hidden;
-  width: 980px;
+  width: fit-content;
   margin: 0;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -1,5 +1,17 @@
 # 更新日志
 
+## 2026-11-07：站点标题链接的点击命中区收紧到文字宽度
+
+**改了什么**：`src/styles/global.css` 的 `#header .site-title` 把 `width: 980px` 换成 `width: fit-content`，只动一处声明；`GLOSSARY.md` 新增「站点标题链接」词条（桌面形态「桌面站点标题链接」、移动形态「移动站点标志」）。`src/components/layout/Navbar.astro` 的两处 DOM 分支、`global.css` 里 `#header .site-title a, #header .text a` 的共用截断块、`max-width: calc(100% - 100px)`、`overflow / text-overflow / white-space`、以及所有 `cursor` 声明与 token 均未动。同步修订 `docs/agents/styles.md`「桌面头部标题」条里已被 `1e91e869` 降级掉的旧选择器 `#header h1`，并在 `docs/agents/commands.md`「本地预览该用哪一条」节补本轮踩到的命令坑。
+
+**为什么这么定**：站长报的是「宽屏下站点标题文字右侧一大片空白 hover 也是手型、还能点回首页」。根因是 `<a>` 被共用截断块的 `display: block` 撑成块级、填满 `p.site-title` 的 980px 固定宽，文字只占左侧。收紧靠**缩小父盒**，不在 `<a>` 上写 `cursor` 覆盖——`docs/agents/styles.md`「自定义光标」条把本站手型定死在 `--cursor-link` 单源，类选择器裸写 `cursor` 会以更高特异性把指针静默退回系统手型，`pnpm smoke:ui` 的光标负扫守着这条。`fit-content` 复用同文件语录条 `.quote-band__zh` 已实测的写法（该条记「实测盒宽与墨迹宽逐像素相等」），符合 `AGENTS.md`「元件设计约束」的复用优先级。**有意不做**：不更新 `scripts/ui-smoke.mjs` 的 `HEAD_BASE` 基线（票 09「视觉逐像素不变」锁，锁的是改动前的标题带盒宽）、不改 GLOSSARY 措辞、不新建 ADR——这三项经站长 20:49 裁决「保持现状」。因此 `pnpm smoke:ui` 会持续有一条「头部标题在五档下几何与计算值逐项不变」报红，属**已接受的基线未随设计更新**，不是回归，也别为它削弱判据或加放行条目。
+
+**裁决留痕**：20:49 站长曾裁定「保持现状」，其中「文档同步」一项已由 20:54「文档需要更新，如 CHANGELOG」明确推翻，本条即为该次补同步；`HEAD_BASE` 基线不更新、GLOSSARY 措辞不调整两项仍按 20:49 裁决执行，不新建 ADR 沿用 Q1 决定。
+
+**实测证据（2026-11-07，headless Chromium 读 `pnpm preview --port 4322` 的构建产物，探针 `output/site-title-hitarea/probe.mjs`）**：改前 `<a>` 盒宽 965.0px、文字墨迹宽 328.1px，文字右侧 x=733.1 处 `elementFromPoint` 落在该 `<a>` 上、计算 `cursor` 含 `/style/link.cur`；改后盒宽 328.1px 与墨迹宽相等，同一点落到 `DIV.box`、计算 `cursor` 含 `/style/default.cur`，文字区仍落 `<a>` 且为 `link.cur`。垂直行盒 60px、字号 30px、色 `#fff`（静息与 hover 相同）、`margin-left:15px`、`title` 与 `href` 逐项不变；微言碎语 ticker 的 `<a>` 仍是 `display:block`。1440 / 1100 / 1000 / 980 / 860 / 769 / 681 各档标题仍在 100px 浮动 logo 右侧、未落入 `#header` 裁切区。`pnpm smoke:ui` 那条头部基线判据的失败详情反过来印证视觉未动：改后各档宽度均为 343px（墨迹 328.1 + `margin-left:15px`），而 x / y / 高 / font-size / font-weight / line-height 逐项等于原基线。
+
+**怎么验证的**：`pnpm exec astro build` 退出码 0 且生成 sitemap；`pnpm check` 0 errors；`pnpm exec prettier --check ./src ./docs ./*.md` 绿；`pnpm smoke:ui` 补齐 pagefind 索引后，除上述已接受的一条外全绿，光标负扫与 body 箭头判据绿。**失败路径照记**：① `pnpm dev` 在本机起不来——Vite 预构建依赖时要批量删 `node_modules/.vite/deps` 与 `deps_temp_*`，撞上本机 `node-safe-delete-shim` 的批量删除守卫（`SAFE_DELETE_BULK_CONFIRM_REQUIRED`），dev 要么直接退出、要么挂 `vite-error-overlay` 挡住全部指针事件；此时 `elementFromPoint` 读到的是遮罩，命中区判据整段失真。不绕过守卫，改走 `astro build` + `pnpm preview`，旧缓存只改名留档不删。② 只跑 `pnpm exec astro build` 不生成 pagefind 索引，`pnpm smoke:ui` 的搜索判据会假红，补 `pnpm exec pagefind --site dist` 后转绿；`docs/agents/commands.md` 原句「建产物只跑 `astro build` 就够了」已就此补注。③ 一次改前基线构建同样被守卫在清理 `dist/.prerender/.vite` 时拦下，退出码 1、`astro:build:done` 未执行、sitemap 缺失；它与改后那次退出码 0 的构建条件不同，不把前者记为通过。纯文档与一行 CSS 改动走轻量档，未跑整条 `pnpm build`。**不 commit、不 push**——`push main` 等于生产部署。
+
 ## 2026-11-07：归档本轮剩余 14 份过程文档，全仓零死链（第五批）
 
 **改了什么**：把 2026-11-02～03 依赖升级与阶段五迁移轮留下的 14 份 3053 行过程文档从 `docs/plans/` 删除，索引进 [`docs/history/history.md`](docs/history/history.md) 新增的「归档清单（第五批）」——沿用第四批的 5 列表格，逐份记结果、验收 / 落地提交与 `git show` 恢复命令；结果列写明阶段五评估第三节、实施计划 Task 16、Mermaid 报告第 5 节三个锚点。删后 `docs/plans/` 只剩两份天气胶囊文档。全仓 36 行 / 42 处引用改指第五批索引（`CHANGELOG.md` 15、`docs/agents/build-and-deploy.md` 10、`README.md` 4、`docs/agents/components.md` 3、`docs/agents/commands.md` 3、`docs/agents/styles.md` 1），`docs/agents/build-and-deploy.md` 的「升级路线与交接」节就地补 8 批次上线 sha 简表，承重结论留在活树。
