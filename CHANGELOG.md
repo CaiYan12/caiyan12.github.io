@@ -1,5 +1,17 @@
 # 更新日志
 
+## 2026-11-07：更新 ui-smoke 头部标题几何基线并做变异验证
+
+**改了什么**：`scripts/ui-smoke.mjs` 的 `HEAD_BASE` 各档宽度期望值从改动前实测的 `980/960/840/720/630/541` 改为 `343`（`fit-content` 后实测），并补注释说明来源与变异验证方法；`headRows.every` 的逐项比较、`<= 1` 容差、以及 x / y / 高 / font-size / font-weight / line-height 这些其余基线一律未动。同步修订 `docs/agents/styles.md`「桌面头部标题」条里「裁决保持不更新、持续报红是已知接受状态」这句活口径。
+
+**为什么这么定**：`3073094` 把 `#header .site-title` 从 `width:980px` 改为 `width:fit-content` 之后，这条判据锁的仍是改动前的盒宽，于是持续报红。按 `AGENTS.md`「文档同步」§1「文档与代码矛盾时，先证明哪边是真的，再改表述」：代码侧是站长确认并已上线的设计，过时的是基线，所以更新基线而不是回滚代码。**判据没有被削弱**——没删 `headRows.every`、没放宽容差、没加放行条目，只把宽度换成新实测值，其余各项继续逐像素锁；按 `AGENTS.md`「样式指纹的状态采样」条的同款纪律，改判据后必须做变异验证，否则等于把它削弱成永远绿。
+
+**实测证据（2026-11-07，`pnpm preview --port 4322` 上的 `dist/` 产物、headless Chromium）**：备份 `dist/_astro/MainGridLayout.Bol8q-YJ.css` 后，精确把 `#header .site-title{...}` 整条规则块内的 `width:fit-content` 改回 `width:980px`，跑 `pnpm smoke:ui` 得 `MUTATION_SMOKE_EXIT=1`，失败项恰好是「头部标题在五档下几何与计算值逐项不变」；失败详情显示各档实测回到 `980/960/840/720/630/541`、期望 `343`，而 x / y / 高 / `26px` / `400` / `31.2px`（681 档为 `20px` / `400` / `24px`）逐项仍相等——判据只抓宽度回归，没有误伤其余项。逐字节恢复后 SHA256 与备份一致（`C866E1D7…`），再跑 `pnpm smoke:ui` 得 `RESTORED_SMOKE_EXIT=0`、零失败。
+
+**怎么验证的**：两次全量 `pnpm smoke:ui`（变异态 / 恢复态）、`pnpm exec prettier --check ./src ./docs ./*.md`、`git diff --check`、`verify-no-hardcoded-counts.mjs` / `verify-doc-versions.mjs` / `verify-eol.mjs`；`scripts/ui-smoke.mjs` 与两份文档改后仍是纯 CRLF。**失败路径照记**：① 产物里语录条 `.quote-band__zh` 也用 `width:fit-content`，全局替换会连带改坏它、污染其它判据，故变异必须精确匹配 `#header .site-title{...}` 这一整条规则块（实测目标只命中一处）。② 变异前须确认 `dist/pagefind/` 索引在，只跑 `astro build` 会让搜索判据假红，与本次改动无关（见前一条 CHANGELOG）。③ dev 路线仍受本机批量删除守卫限制，本轮验证走 `astro build` + `pnpm preview`。**不 commit、不 push**——本轮授权只有「处理报红」，`push main` 等于生产部署。
+
+**裁决留痕**：站长 21:27「处理 ui-smoke 的报红」推翻 20:49「保持现状」裁决中的第 ① 项，也使上一条 CHANGELOG 的「有意不做」段与「裁决留痕」段里关于 `HEAD_BASE` 不更新的表述失效；历史条目按本仓库惯例不回写，在此留痕。GLOSSARY 措辞不调整、不新建 ADR 两项仍按原裁决执行。
+
 ## 2026-11-07：站点标题链接的点击命中区收紧到文字宽度
 
 **改了什么**：`src/styles/global.css` 的 `#header .site-title` 把 `width: 980px` 换成 `width: fit-content`，只动一处声明；`GLOSSARY.md` 新增「站点标题链接」词条（桌面形态「桌面站点标题链接」、移动形态「移动站点标志」）。`src/components/layout/Navbar.astro` 的两处 DOM 分支、`global.css` 里 `#header .site-title a, #header .text a` 的共用截断块、`max-width: calc(100% - 100px)`、`overflow / text-overflow / white-space`、以及所有 `cursor` 声明与 token 均未动。同步修订 `docs/agents/styles.md`「桌面头部标题」条里已被 `1e91e869` 降级掉的旧选择器 `#header h1`，并在 `docs/agents/commands.md`「本地预览该用哪一条」节补本轮踩到的命令坑。
