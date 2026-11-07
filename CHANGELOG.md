@@ -1,5 +1,19 @@
 # 更新日志
 
+## 2026-11-07：把 `scripts/` 与 `tailwind.config.cjs` 纳入 Prettier 门禁
+
+**改了什么**：`.github/workflows/lint.yml:39` 的 `prettier --check` 与 `.githooks/pre-commit.mjs` 的 `inScope` 都从 `./src ./docs ./*.md` 扩为 `./src ./scripts ./docs ./*.md tailwind.config.cjs`，与 `package.json:47` 的 `pnpm format` 同范围；钩子开头的范围注释、作用域注释和未格式化报错文案一并改。同步改掉写死旧命令的活文档：`.githooks/README.md`、`docs/agents/commands.md:242`、`README.md:448`、`docs/agents/build-and-deploy.md:78`。`AGENTS.md` 只说「提交时有本地 prettier 门禁（只查暂存内容）」，没写死范围，不动；`CHANGELOG.md` 历史条目、`docs/history/`、`docs/agents/styles.md:46` 与 `emlog-mapping.md:52` 里指向 `prettier --check ./src` 的历史说明按惯例不回写。
+
+**为什么这么定**：`/retro` 候选 2 发现 `format` 含 `./scripts` 与 `tailwind.config.cjs`，而 CI 与 pre-commit 只查 `./src ./docs ./*.md`——本轮改 `scripts/ui-smoke.mjs` 时全程没有自动格式门禁覆盖，只能靠 diff 逐行核对。按 `AGENTS.md:110`「文档与代码矛盾时先证明哪边是真的」的同一口径，先只读核对欠债再动手：两者都零欠债，纳入范围不产生任何格式化 diff，所以这是「补上门禁」而不是「顺手格式化」。**没有跑 `pnpm format` 全量改写**，避免产生与 surgical changes 冲突的大 diff。
+
+**实测证据（2026-11-07，本机 Node 24.18.0 / pnpm / Windows，命令在仓库根执行）**：改动前 `pnpm exec prettier --check ./scripts` 与 `prettier --check tailwind.config.cjs` 均 `EXIT=0`、0 warn，`.prettierignore` 无 `scripts/` 相关排除；完整新范围 `pnpm exec prettier --check ./src ./scripts ./docs ./*.md tailwind.config.cjs` `EXIT=0`。变异验证：在 `scripts/` 下放一个格式不良的临时 `_prettier-scope-probe.mjs`，同一条 CI 命令得 `EXIT=1` 且 `[warn] scripts/_prettier-scope-probe.mjs`；用隔离的 `GIT_INDEX_FILE`（不动真实索引、不 commit）跑 `.githooks/pre-commit.mjs` 得 `EXIT=1` 并列名同一文件。换成合规临时文件后两处都是 `EXIT=0`，临时文件与隔离索引随后删除。日志 `output/site-title-hitarea/prettier-scope-mutation.log`。
+
+**怎么验证的**：`node --check .githooks/pre-commit.mjs`、上述变异/恢复两轮、`pnpm exec prettier --check ./src ./docs ./*.md`（旧共用底线仍绿）、`git diff --check`、`verify-no-hardcoded-counts.mjs` / `verify-doc-versions.mjs` / `verify-eol.mjs`、`pnpm check`、`pnpm test:prettier-math`；逐文件复核行尾保持各自原有的纯 LF / 纯 CRLF。改的是格式门禁本身，没有源码、样式、内容或依赖变更，按 `commands.md:238`「改的是什么就看什么」未跑 `astro build`。**阶段边界**：上述验证在未提交状态下完成；上线由站长 23:16 单独授权，本条目随该笔提交一并入库。`push main` 等于生产部署。
+
+**失败路径与踩坑**：① 复盘时把「`scripts/` 历史欠债多、全量格式化会产生大 diff」列为风险，实测是零欠债，该风险假设作废——先 `--check` 再决定对齐，比凭印象判断可靠。② 隔离索引验证钩子必须把 `GIT_DIR`、`GIT_WORK_TREE`、`GIT_INDEX_FILE` 三个变量一起指定，钩子里是裸 `git` 调用，漏一个就会读到真实索引或找不到仓库。③ `core.autocrlf=true` 下 Git 对新建的纯 LF 临时文件会打印「LF will be replaced by CRLF」，那是既有检出规则、不是混合行尾，`verify-eol` 判定为 0 混合；别把它当成行尾门禁失败去「修」。
+
+**裁决留痕**：站长 22:51「确认走2，零负债」选定 `/retro` 候选 2，23:13 确认完整对齐并收口，23:16 授权推送上线（验证阶段的「不 commit、不 push」随之解除）；候选 1（守卫指针）已在前一轮落地，与本次改动同笔提交，候选 3、4 与低优先级观察按「其他不做」一律不实施。
+
 ## 2026-11-07：更新 ui-smoke 头部标题几何基线并做变异验证
 
 **改了什么**：`scripts/ui-smoke.mjs` 的 `HEAD_BASE` 各档宽度期望值从改动前实测的 `980/960/840/720/630/541` 改为 `343`（`fit-content` 后实测），并补注释说明来源与变异验证方法；`headRows.every` 的逐项比较、`<= 1` 容差、以及 x / y / 高 / font-size / font-weight / line-height 这些其余基线一律未动。同步修订 `docs/agents/styles.md`「桌面头部标题」条里「裁决保持不更新、持续报红是已知接受状态」这句活口径。

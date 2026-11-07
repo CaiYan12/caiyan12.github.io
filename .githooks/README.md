@@ -1,6 +1,6 @@
 # .githooks/ — 提交前 prettier 门禁
 
-`pre-commit`：只对**暂存内容**（索引）用 Prettier 官方 Node API 做 `check`，范围与 CI 一致（`src/` + `docs/`，见 `.github/workflows/lint.yml`）。只读——不改动索引、工作区或任何受控文件。
+`pre-commit`：只对**暂存内容**（索引）用 Prettier 官方 Node API 做 `check`，范围与 CI 及 `pnpm format` 一致（`src/` + `scripts/` + `docs/` + 根 `*.md` + `tailwind.config.cjs`，见 `.github/workflows/lint.yml`）。只读——不改动索引、工作区或任何受控文件。
 
 ## 行为
 
@@ -19,5 +19,5 @@
 ## 绕过与边界
 
 - 显式单次绕过：`git commit --no-verify`。
-- hook 只查本次暂存文件，是本地快反馈；**push 后 CI 对全量 `./src ./docs` 的检查才是权威门禁**，绕过会在 CI 暴露。
+- hook 只查本次暂存文件，是本地快反馈；**push 后 CI 对全量 `./src ./scripts ./docs ./*.md tailwind.config.cjs` 的检查才是权威门禁**，绕过会在 CI 暴露。
 - 修复建议是单文件 `pnpm exec prettier --write <file>` 后由作者审阅、重新暂存；hook 不自动改写，也不建议以整仓 `pnpm format` 作为默认修复动作。

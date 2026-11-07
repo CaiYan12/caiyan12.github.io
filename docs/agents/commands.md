@@ -239,7 +239,7 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 
 **两档共用的底线（不许省）**
 
-- `pnpm exec prettier --check ./src ./docs ./*.md` 必须绿；
+- `pnpm exec prettier --check ./src ./scripts ./docs ./*.md tailwind.config.cjs` 必须绿（与 `pnpm format` 同范围；2026-11-07 把 `./scripts` 与 `tailwind.config.cjs` 纳入，此前只查 `./src ./docs ./*.md`，`scripts/` 的改动没有自动格式门禁）；
 - **push 到 `main` 就是生产部署**，push 前按 `AGENTS.md`「交付纪律」节核对；
 - 部署后核对 `headSha`（见「查 CI / 部署状态」节），不是「最近一次运行成功」。
 

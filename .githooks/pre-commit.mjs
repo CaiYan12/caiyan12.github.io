@@ -1,8 +1,9 @@
 // Pre-commit gate: check the STAGED content (index blobs) with Prettier's
 // official Node API — ignore rules, config resolution and the format decision
 // all come from that API; no CLI output parsing. Scope matches CI
-// (lint.yml: `prettier --check ./src ./docs`). Read-only: the index, the
-// working tree, and every version-controlled file stay untouched.
+// (lint.yml: `prettier --check ./src ./scripts ./docs ./*.md tailwind.config.cjs`)
+// and `pnpm format`. Read-only: the index, the working tree, and every
+// version-controlled file stay untouched.
 // Bypass a single commit with `git commit --no-verify`.
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -42,13 +43,16 @@ const staged = stagedRaw
 	? stagedRaw.toString("utf8").split("\0").filter(Boolean)
 	: [];
 
-// 2) Scope: src/ + docs/ only, same as CI. Everything else exits fast — the
-//    Prettier requirement below only applies when there IS something to check.
+// 2) Scope: src/ + scripts/ + docs/ + root *.md + tailwind.config.cjs,
+//    same as CI and `pnpm format`. Everything else exits fast — the Prettier
+//    requirement below only applies when there IS something to check.
 const inScope = staged.filter(
 	(f) =>
 		f.startsWith("src/") ||
+		f.startsWith("scripts/") ||
 		f.startsWith("docs/") ||
-		/^[^/]+\.md$/.test(f),
+		/^[^/]+\.md$/.test(f) ||
+		f === "tailwind.config.cjs",
 );
 if (inScope.length === 0) process.exit(0);
 
@@ -177,7 +181,7 @@ if (errors.length > 0) {
 }
 if (unformatted.length > 0) {
 	console.error(
-		`${TAG} staged file(s) not formatted (checked under src/ + docs/):`,
+		`${TAG} staged file(s) not formatted (checked under the CI/format scope):`,
 	);
 	for (const f of unformatted) console.error(`  ${f}`);
 }
