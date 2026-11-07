@@ -1,6 +1,6 @@
 # 样式约定
 
-> 2026-11-02 Astro 7 收尾：`WidgetHotLog.astro` 的热门链接与 `WidgetSeries.astro` 的文集链接，在条件 JSX 中使用固定字面量 Fragment `set:html`，保持图标与文字相邻。它们继续复用 `.widget-more-link` / `.series-toc-link` 及已有 3px 图标 margin；不要再插入 JSX 换行空格，也不通过修改共用动作族的 CSS 来抵消（那会改变其余未回归的链接）。两处真实宽度已对齐 Astro 6 基线，证据见 `docs/plans/2026-11-02-astro7-followup.md`。
+> 2026-11-02 Astro 7 收尾：`WidgetHotLog.astro` 的热门链接与 `WidgetSeries.astro` 的文集链接，在条件 JSX 中使用固定字面量 Fragment `set:html`，保持图标与文字相邻。它们继续复用 `.widget-more-link` / `.series-toc-link` 及已有 3px 图标 margin；不要再插入 JSX 换行空格，也不通过修改共用动作族的 CSS 来抵消（那会改变其余未回归的链接）。两处真实宽度已对齐 Astro 6 基线，证据见 Astro 7 剩余项收口（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）。
 
 > 本仓库的 CSS 约定：层级与特异性、token 来源、组件类名复用、已转正偏离项。**改任何样式前读这份**——里面的规则比任何通用建议都具体。
 

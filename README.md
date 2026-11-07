@@ -357,7 +357,7 @@ AI 日报由独立仓库 [CaiYan12/ai-news](https://github.com/CaiYan12/ai-news)
 
 Astro 7.4.4 + TypeScript + Svelte 5（搜索组件）；Tailwind CSS 4（经 `@tailwindcss/vite` 接管，**不是 PostCSS 插件**；`postcss.config.mjs` 只剩 `postcss-nesting` + `autoprefixer`，**不要加回 `@astrojs/tailwind`**）；Swup.js 无刷新切页；Pagefind 构建期搜索；Giscus 评论；Fancybox 6 灯箱；Expressive Code + KaTeX。
 
-构建链各组件的现版本直接从 `package.json` + `pnpm-lock.yaml` 读，现测命令见 [`docs/agents/build-and-deploy.md`](docs/agents/build-and-deploy.md) 的「当前构建链版本」节；`lint.yml` 会核对头部徽章与真源是否一致。改依赖时同步徽章与 `CHANGELOG.md`，别只改一处。Astro 7 升级的范围、构建前后差异与本地验收边界见 [实施记录](docs/plans/2026-11-02-astro7-upgrade.md)。
+构建链各组件的现版本直接从 `package.json` + `pnpm-lock.yaml` 读，现测命令见 [`docs/agents/build-and-deploy.md`](docs/agents/build-and-deploy.md) 的「当前构建链版本」节；`lint.yml` 会核对头部徽章与真源是否一致。改依赖时同步徽章与 `CHANGELOG.md`，别只改一处。Astro 7 升级的范围、构建前后差异与本地验收边界见 实施记录（已归档，索引与取回命令见 [`docs/history/history.md`](docs/history/history.md) 的「归档清单（第五批）」）。
 
 OG 图由 Satori 接收普通元素对象生成；`@types/react` 供其 `ReactNode` 类型使用，不代表本站包含 React 页面或 React 运行时依赖。
 
@@ -524,7 +524,7 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     **踩坑（写下来防重犯，五条）**：① 预览服务器会把所有路径返回首页（`serve -s` 的 SPA fallback、`astro preview`、Python `http.server` 三种都踩），指纹采集会得到「每页都是 851 个元素」的假象——须自写按 `trailingSlash: "always"` 映射到 `index.html` 且不做 fallback 的静态服务；② 截图对比必须先定噪声底线，且要区分两类随机源：背景壁纸是**运行时**随机（4 张候选，`Math.random` 选一张，覆盖整页，是最大噪声源），侧栏「手气不错」是**构建期**随机（`shuffleArray`）；③ 判断某条规则是否生效必须用**真实 DOM 结构**量——本轮曾用手写 fixture 测出「导航 padding v3=18px / v4=0px」的**假回归**，真实站点里 `#menu-index > li{padding:0}`（特异性 1-0-1）本就压着那条规则，v3 与 v4 实际完全一致；④ v4 把字号工具类的行高从绝对长度改成**比值**，继承到用 em 相对字号的子元素会按子元素字号重算（`/books/` 页因此差 1px），**不能用 `leading-[inherit]` 修**；⑤ 样式测试可能对 CSS 缩进有硬依赖，重排样式格式后要重跑。完整五条见 [`docs/agents/commands.md` 的「样式 A/B 的判据纪律」](docs/agents/commands.md#样式-ab-的五条判据纪律2026-11-04-立tailwind-v4-迁移实测得出)。
 
-    → 评估原文：`docs/plans/2026-11-03-phase5-migration-assessment.md` 第三节；原实施骨架：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 11-15（Task 12-15 是占位结构，方案获批后才可补写成可执行步骤）。
+    → 评估原文：阶段五剩余四项迁移评估的第三节；原实施骨架：阶段五实施计划的 Task 11-15（Task 12-15 是占位结构，方案获批后才可补写成可执行步骤）。两份已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」。
 
     **上线记录（2026-11-04）**：三条 CI 全绿（`Astro Check` 35s / `Prettier Check` 42s / `Astro Build` 1m21s，Linux 上真实构建通过），合并后 `Deploy to GitHub Pages` 2m23s success。线上 `Last-Modified: 08:38:55 GMT` 晚于推送；`pnpm verify:live` **连跑三次均 29/29**；`pnpm verify:live:swup` document 级接管证据通过。线上产物确为 v4：CSS 里有 `@layer` 声明（v3 产物层数为 0），字节数 **195,513** 与本地构建**字节数相同**（逐字节差 1 字节，见下条）。
 
@@ -542,7 +542,7 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     已知约束：OG 端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori。Node 内置 `fetch` **默认不读 `HTTP(S)_PROXY`**，只有 `NODE_USE_ENV_PROXY=1`（Node ≥24）才会读——2026-11-05 用坏代理（`127.0.0.1:9`）对照实测：不设变量请求成功，设了立刻 `ECONNREFUSED`。但**本机没有真正的直连**：Clash Verge 的 Mihomo TUN（网卡 `Mihomo` / `Meta Tunnel`）以 fake-ip 接管 DNS 与流量，`dns.lookup("fonts.googleapis.com")` 返回 `198.18.0.108`——不设变量的那条路照样经代理，只是走 TUN 而不是 `HTTP_PROXY`。两条路依赖**同一份订阅节点**，节点抖动时都会超时（曾有一次 10 s），所以「设不设变量」不是稳定性开关：报字体错误时先换节点或重试，不要改构建代码。详见 `docs/agents/commands.md` 的 `NODE_USE_ENV_PROXY` 条目。另：在 `output/` 子目录里 `pnpm install` 会被父工作区吞掉（报 Done 但不生成 `node_modules`），探针须用 `npm install`。
 
-    → 探测步骤：`docs/plans/2026-11-03-phase5-migration-implementation-plan.md` 的 Task 16；实测结论与偏差见已归档的调研报告（`docs/history/history.md` 第四批）。
+    → 探测步骤：阶段五实施计划的 Task 16（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）；实测结论与偏差见已归档的调研报告（`docs/history/history.md` 第四批）。
 
     **收口记录（2026-11-05，spec #144 / 五票 #145–#149）**：依赖写成精确 `"0.63.2"`（无 caret），锁文件 +17/−11 全部落在 satori 自己的子树（+`fflate@0.7.3`、+`harfbuzzjs@0.10.0`、−`yoga-layout@3.2.1`），`sharp` 与其余包零变动、头像仍走原 sharp 转码。三笔代码提交：`bcdfa3c`（模板两处声明）、`6d80662`（OG 产物断言 `scripts/verify-og-images.mjs`）、`999d3f8`（依赖升级），另有 `9beb8ae`（文档收口 #148）、`b3f8a1c`（合并 PR #150）；集成分支 `d2c3f9f`。部署 run `41962881752` 的 headSha 与合并提交相同；线上复核 33 张：29 张逐字节相同、4 张差 0.017%–0.028%、无异常。包体 satori 解压后 5.4 MB → 26 MB（布局引擎换成包内 `layout.wasm`）。
 
@@ -552,7 +552,7 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
     **构建链全绿**：230 个 HTML、33 张 OG；`verify-og-images` 33/33（最小非白像素 4.199%）；KaTeX 类名校验旧类名 0 / 新类名 1338；`prettier --check` 通过。逐张三联图（旧｜新｜差异×8）原存于 `output/satori-upgrade/t3-shots/`，已随 2026-11-05 证据目录清理删除；结论与取回方式见 `docs/history/history.md` 第四批。
 
-> **两项迁移的共同前提**：不得全量 `update --latest`，不得跳过 A/B。本仓库已确立「每批只动一个直接依赖、同输入构建 A/B、真实浏览器验收、文档与代码同批」的流程，四批依赖升级（Svelte / Autoprefixer / KaTeX / Mermaid）都照此执行，证据格式参考 `docs/plans/2026-11-03-katex-upgrade.md` 与 `docs/plans/2026-11-03-mermaid-upgrade.md`。
+> **两项迁移的共同前提**：不得全量 `update --latest`，不得跳过 A/B。本仓库已确立「每批只动一个直接依赖、同输入构建 A/B、真实浏览器验收、文档与代码同批」的流程，四批依赖升级（Svelte / Autoprefixer / KaTeX / Mermaid）都照此执行，证据格式参考 KaTeX 专项验收 与 Mermaid 专项验收（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）。
 
 ### 观望（触发条件未满足，不排期）
 

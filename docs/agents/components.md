@@ -6,10 +6,10 @@
 
 ## 客户端脚本与 Swup 生命周期
 
-- **Svelte 5.57.3 升级不影响组件契约（2026-11-03）**：`Search.svelte` 与 `Pio.svelte` 源码未改，升级前后同一套 32 条实机判据逐条读数一致。两条**验证时必须知道的口径**：① `pioConfig.hiddenOnMobile` 的判据是 `matchMedia("(max-width: 1280px)")`（`Pio.svelte` 约 78 行），**宽度正好 1280 也命中**，此时 `startPio()` 不执行、`window.Paul_Pio` 不存在、DOM 里也没有 `.pio-show`（它由 `pio.js` 运行时 append）。所以「默认折叠、点 `.pio-show` 召唤」只能在 **>1280** 的视口验证，1440×900 可用；390 与 1280 都没有 Pio，那是设计不是缺陷。② Swup 的 `SwupScriptsPlugin` 会重建整个 document 的 script 节点，切页后 `script[src*='pio.js']` 计数归 0，但脚本副作用仍在（`window.Paul_Pio` 存在、实例仍唯一）。要判「没有重复挂载」请看 `.pio-container` / `#pio` / `.pio-show` 的数量，不要数 script 标签。详见 [Svelte 专项验收](../plans/2026-11-03-svelte-upgrade.md)。
+- **Svelte 5.57.3 升级不影响组件契约（2026-11-03）**：`Search.svelte` 与 `Pio.svelte` 源码未改，升级前后同一套 32 条实机判据逐条读数一致。两条**验证时必须知道的口径**：① `pioConfig.hiddenOnMobile` 的判据是 `matchMedia("(max-width: 1280px)")`（`Pio.svelte` 约 78 行），**宽度正好 1280 也命中**，此时 `startPio()` 不执行、`window.Paul_Pio` 不存在、DOM 里也没有 `.pio-show`（它由 `pio.js` 运行时 append）。所以「默认折叠、点 `.pio-show` 召唤」只能在 **>1280** 的视口验证，1440×900 可用；390 与 1280 都没有 Pio，那是设计不是缺陷。② Swup 的 `SwupScriptsPlugin` 会重建整个 document 的 script 节点，切页后 `script[src*='pio.js']` 计数归 0，但脚本副作用仍在（`window.Paul_Pio` 存在、实例仍唯一）。要判「没有重复挂载」请看 `.pio-container` / `#pio` / `.pio-show` 的数量，不要数 script 标签。详见 Svelte 专项验收（已归档，索引与取回命令见 [`docs/history/history.md`](../history/history.md) 的「归档清单（第五批）」）。
 - **搜索「无结果」用例必须用已验证 0 命中的查询**：Pagefind 1.6.0 对随机字母串会返回弱相关部分匹配（实测 `zzzqqqxxxnotfound` 得 5 条、`kqxjzvbfhwtmp` 得 2 条），拿它当无结果用例会假红。第二批起一直用 `zzz没有这条内容987654321`（实测 0 命中），沿用即可。另外搜索结果不全是 `/posts/`，也含 `/diary/`、`/about/`、`/tag/` 等被索引页面，判据别写「所有 href 以 /posts/ 开头」。
 
-- **全局搜索升级边界（2026-11-02）**：`src/components/control/Search.svelte` 仍使用 Pagefind JavaScript API 与现有 12 条展示上限，不使用官方 Component UI。Pagefind 1.6.0 改变分词后的匹配、排名和摘要，源码与权重没有随升级调整。主模块加载失败会显示“搜索暂时不可用”；索引分片失败首轮仍可能显示“没有找到”，新版再次提交可恢复，不能称为所有网络异常都有错误提示。现有相关链接/热门推荐文字会进入部分页面的索引内容，因此命中未必来自文章正文；本轮保持旧收录集合，不在依赖升级里改内容排除策略。证据与已知行为见 [Pagefind 专项验收](../plans/2026-11-02-pagefind-upgrade.md)。
+- **全局搜索升级边界（2026-11-02）**：`src/components/control/Search.svelte` 仍使用 Pagefind JavaScript API 与现有 12 条展示上限，不使用官方 Component UI。Pagefind 1.6.0 改变分词后的匹配、排名和摘要，源码与权重没有随升级调整。主模块加载失败会显示“搜索暂时不可用”；索引分片失败首轮仍可能显示“没有找到”，新版再次提交可恢复，不能称为所有网络异常都有错误提示。现有相关链接/热门推荐文字会进入部分页面的索引内容，因此命中未必来自文章正文；本轮保持旧收录集合，不在依赖升级里改内容排除策略。证据与已知行为见 Pagefind 专项验收（已归档，索引与取回命令见 [`docs/history/history.md`](../history/history.md) 的「归档清单（第五批）」）。
 
 - `src/utils/theme-script.ts` 已收薄为装配表、生命周期声明与 page-load 辅助三件：功能块按关注面分文件置于 `src/utils/runtime/`
 - **Swup 重初始化协议（2026-09-06 审查后统一，新增客户端代码必须遵守）**：`main` Swup 容器内的组件统一监听自定义事件 `colorful:page:loaded`（切换后重跑）并配 `dataset` 守卫防重复初始化（如 Slideshow 的 `data-initialized`）；`main` 容器外的布局级组件（导航/移动菜单/返回顶部/背景）只随 `pagefindReady()` 初始化一次，靠 `*Bound` 旗帜或 dataset 守卫防重入，勿自行监听 `astro:*` 原生事件——容器外布局级确需 before-swap 清理（如 Fancybox destroy）才允许直接听 `astro:*`。历史上四轨并存（_Bound 委托/dataset 守卫/自定义事件/内联 astro:_），新代码不得新增第四种形态；theme-script 按"唯一协议 + 多 init 函数"保持单文件，按关注面拆分已于 2026-10-29 完成，见规格 #115
@@ -27,7 +27,7 @@
 
 - **侧栏文章目录防抖**：`src/utils/runtime/article-toc.ts` 的定时器到期必须现量真实阅读索引，不能只比较缓存 `activeIndex` / pendingIndex。scroll 的 rAF 可能晚于定时器；提前朝旧目标启动会进入“在飞追新”分支，跳过新目标静默期。`pnpm test:article-toc-browser` 用真实 DOM 与可控时钟守这条，真实文集 `smoke:series` 另测实际布局；其旧同步两次 scrollTo 会合并、不能证明防抖，勿恢复。
 - **技能图标**：`src/pages/skills.astro` 只引用本地 `public/skill-icons/`，原 Iconify 标识保存在 `src/data/skills.ts`；原图、逐文件 hash、作者与许可均在该目录维护。手动同步 `scripts/sync-skill-icons.mjs`，不在普通构建中联网取图。首字回退保留；`pnpm smoke:skills` 必须在外网不可用时仍解码全部图标，单项通过不代表 console 门禁通过。
-- **播放器与多页面烟测**：上游以 `myhk_player_load` / `myhk_player_feed` 的活跃心跳实施跨页互斥，会抛“已在其他页面加载”，在 window error 中可能只剩 opaque `Script error.`。这是本日实测来源归属，不据此新增全局放行或绕过互斥。Fancybox 每个独立场景用独立 context，且每个页面均挂异常与本地请求失败采集，不能再用“只监听首篇文章”声称全程零错误。详见 [剩余项收口](../plans/2026-11-02-astro7-followup.md)。
+- **播放器与多页面烟测**：上游以 `myhk_player_load` / `myhk_player_feed` 的活跃心跳实施跨页互斥，会抛“已在其他页面加载”，在 window error 中可能只剩 opaque `Script error.`。这是本日实测来源归属，不据此新增全局放行或绕过互斥。Fancybox 每个独立场景用独立 context，且每个页面均挂异常与本地请求失败采集，不能再用“只监听首篇文章”声称全程零错误。详见 剩余项收口（已归档，索引与取回命令见 [`docs/history/history.md`](../history/history.md) 的「归档清单（第五批）」）。
 
 ### 减少动效只有这一个判定点（2026-11-02 收敛）
 

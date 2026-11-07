@@ -1,5 +1,17 @@
 # 更新日志
 
+## 2026-11-07：归档本轮剩余 14 份过程文档，全仓零死链（第五批）
+
+**改了什么**：把 2026-11-02～03 依赖升级与阶段五迁移轮留下的 14 份 3053 行过程文档从 `docs/plans/` 删除，索引进 [`docs/history/history.md`](docs/history/history.md) 新增的「归档清单（第五批）」——沿用第四批的 5 列表格，逐份记结果、验收 / 落地提交与 `git show` 恢复命令；结果列写明阶段五评估第三节、实施计划 Task 16、Mermaid 报告第 5 节三个锚点。删后 `docs/plans/` 只剩两份天气胶囊文档。全仓 36 行 / 42 处引用改指第五批索引（`CHANGELOG.md` 15、`docs/agents/build-and-deploy.md` 10、`README.md` 4、`docs/agents/components.md` 3、`docs/agents/commands.md` 3、`docs/agents/styles.md` 1），`docs/agents/build-and-deploy.md` 的「升级路线与交接」节就地补 8 批次上线 sha 简表，承重结论留在活树。
+
+**为什么这么定**：第四批（`4ac31aa`）只归档 Tailwind v4 / Satori 两轮的 9 份 957 行，同轮剩余文档仍在 `docs/plans/`。站长裁定补为第五批、AI 日报迁移收尾那一份一并纳入、走 A 方案（README 与 CHANGELOG 历史条目都改），并明确**推翻 2026-11-05「README 已收口 Tailwind v4 / Satori 条目按硬边界不动」的既有裁决**——按 `AGENTS.md`「文档改动会推翻一条既有裁决先问」，此处为站长已裁决事项，留痕备查。改写沿用第四批范式：删掉旧路径、文档名降级为自然语言、追加归档注记、改指「归档清单（第五批）」、不用 `#` 锚点；实测数字、当时状态（「未推送/未部署」「阶段五剩余 4 类」）、日期、sha 一字不动，`CHANGELOG.md` 两条 2026-11-05 元记录仅改路径；`CHANGELOG.md:476`、`docs/agents/commands.md:182`、`docs/nice-books-design.md:3` 三条早前批次的历史注记不动。零死链限定为**本次 14 个路径在活文档中清零**，排除 `docs/history/history.md` 恢复命令列、qweather 会话转录、`.workbuddy/memory/` 追加型工作日志与被删文件内部互引；`lint.yml` 的 Prettier / 公式保护 / 三个 `verify-*.mjs` 里**没有任何 markdown 死链判据**，零死链是本次 `git grep` 人工判据。
+
+**有意不做**：`AGENTS.md` 全文件不动——第四批已补齐「改什么 → 必须同步哪一份」表的「归档 / 删除」行与「深入文档」表的 `docs/history/history.md` 入口，本轮它对这 14 个路径零引用，文首 `!IMPORTANT` 以上为只读固定区。ADR 0011 / 0012 仍在生效、继续留在 `docs/adr/`。`docs/history/history.md` 既有四批清单表、「按轮次索引」表、「未完成或未实施的事项」表（含 40 条失效 `output/` 指针那行）均不动；其中 `docs/plans/` 部分的 40 条失效指针已随第五批归档移出活树，改在此处补记，不回写历史表格（改单元格会按显示宽度触发 Prettier 全表重排）。
+
+**实测证据**：14 条 `git show <sha>:docs/plans/<文件名>.md` 恢复命令逐条实跑并用 `wc -l` 核对，取回行数与磁盘逐份一致（61 / 51 / 55 / 99 / 72 / 64 / 60 / 130 / 251 / 302 / 221 / 150 / 1425 / 112，合计 3053），确认取到的是归档时最终内容后才删除。归档阶段 `docs/history/history.md` 的 `git diff --numstat` 为 `+23 −2`（文首两行 + 新增第五批节），既有表格逐字未动。
+
+**怎么验证的**：`pnpm exec prettier --check ./src ./docs ./*.md` 全绿；`git diff --check` exit 0；`verify-no-hardcoded-counts.mjs` 与 `verify-doc-versions.mjs` 全绿；按 14 个精确文档名的 `git grep` 复扫（排除项如上）无输出。**一条工具暂态失败已查明并如实登记**：`verify-eol.mjs` 遍历 `git ls-files`，14 份已用 `rm` 删除但未 stage 的文件仍列在 index 里，故报 `ENOENT`（不是行尾缺陷）；改用同一脚本导出的 `scanTrackedFiles()` 传入现存文件列表复核，424 个现存 tracked 文本文件 **0 混合行尾**；7 个改动文件逐文件形态为 6 个 CRLF + 1 个 LF（`docs/agents/components.md`）、0 混合。另注：`docs/history/history.md` 现值已为 CRLF，与 2026-11-05 条目所记「保持全 LF」不同，本轮未改变其形态（`+23 −2` 的 diff 可证），历史条目按规矩不回写。**纯文档改动走轻量档，未跑 `pnpm build`**（文档不进产物，本机构建受订阅节点影响；2026-11-05 多轮纯文档改动同口径）。**不 commit、不 push**——`push main` 等于生产部署。
+
 ## 2026-11-05：把失效指针复核的四条经验接进导航文档
 
 **改了什么**：`/retro` 报告按严重度给出六项候选，站长裁定推进 S1–S4、S5/S6 不做。落点全在既有文档，不新增脚本、不接门禁：
@@ -14,7 +26,7 @@
 
 ## 2026-11-05：清理历史文档里失效的 output/ 指针
 
-**改了什么**：给 `docs/plans/2026-11-03-phase5-migration-implementation-plan.md`、`docs/plans/2026-11-03-katex-upgrade.md`、`docs/plans/2026-11-03-mermaid-upgrade.md`、`docs/plans/2026-11-02-ai-news-closeout.md` 各加一处 H1 下方的「历史快照说明」注记，逐字相同；`docs/agents/commands.md` 的「探针与证据留在哪」句与「变异验证」脚本位置句去掉无条件「可复跑」，改注当前不可复跑及前提；同文件「一次性探针脚本该放哪」节的「别把它清成空目录」改为分级保留口径。历史文档正文里的 `output/` 路径、读数与命令一字未动。
+**改了什么**：给 阶段五实施计划、KaTeX 专项验收、Mermaid 专项验收、AI News 迁移收尾（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」） 各加一处 H1 下方的「历史快照说明」注记，逐字相同；`docs/agents/commands.md` 的「探针与证据留在哪」句与「变异验证」脚本位置句去掉无条件「可复跑」，改注当前不可复跑及前提；同文件「一次性探针脚本该放哪」节的「别把它清成空目录」改为分级保留口径。历史文档正文里的 `output/` 路径、读数与命令一字未动。
 
 **为什么这么定**：工作集按分类后的口径，不按任何一套登记计数。A 类（历史执行记录里的命令与路径）保留原文事实、只加文件级一处注记，避免逐条编辑把执行快照改得面目全非；B 类（声称「证据在此、可复跑」的活口径）逐句改；C 类（规范占位符 `output/<批次名>/` 与仍存在的路径）和 D 类（会话转录、被截断的路径片段、通配符、既有根相对链接）不算死链，不改。术语口径：指向已删证据目录、只作当时记录的称「历史指针」，声称证据仍在或可复跑的称「活口径」，两者处置不同。
 
@@ -55,7 +67,7 @@
 
 - `README.md` 徽章 `Astro-6.4.8` → `Astro-7.4.4`；技术栈段补一句单一真源指引——完整现版本以 `docs/agents/build-and-deploy.md` 的「当前构建链版本」表为准，改依赖时徽章、维护文档、`CHANGELOG` 一起核。
 - `docs/agents/build-and-deploy.md` 新增「当前构建链版本（2026-11-05 实测）」表（上面那组数值 + 各包的声明形态），并明确它是**核对用现值、不是权威源**；开头路线图状态改为「阶段五两项均已上线、无进行中的迁移批次」；第 37 行「该批保持 Tailwind 3.4.19」加「当时」二字，避免读成当前事实。
-- **有意不改**：`README.md` 第 572/573/587 行的 `6.4.8` 与 `docs/plans/2026-11-02-build-system-upgrade-recheck.md` 的 `6.4.8` 都是 2026-09～11 的历史记录 / 实施前研究快照（后者文首已声明），不是当前状态；`AGENTS.md` 的 `Node.js: 24.18.0` 在 `!IMPORTANT` 声明的只读固定区，且与本机系统 Node 一致。
+- **有意不改**：`README.md` 第 572/573/587 行的 `6.4.8` 与 构建系统升级复核（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」） 的 `6.4.8` 都是 2026-09～11 的历史记录 / 实施前研究快照（后者文首已声明），不是当前状态；`AGENTS.md` 的 `Node.js: 24.18.0` 在 `!IMPORTANT` 声明的只读固定区，且与本机系统 Node 一致。
 
 **CHANGELOG 自身的核查结论**：Astro 6.4.8→7.4.4 的升级记录**有**，在 2026-11-02 的「构建系统升级复核（尚未升级）」「Astro 7 联动升级与同数据构建验收」「Astro 7 验收剩余项收口」三条里；但**缺上线闭环**——升级条目末尾停在「未运行线上 CI、未推送或部署」，后续 2026-11-03 的「四批依赖升级发布上线」只列了检查器 / Pagefind / Svelte / Autoprefixer / `@swup`，不含 Astro 7.4.4，导致按 `7.4.4` 检索全文找不到「已上线」的证据。已在该条目末尾按仓库规矩补记（标日期 + 证据来源），不改动历史原文。
 
@@ -236,7 +248,7 @@
 - **线上实测 38 项全部通过**（真实 Chromium 打 `https://caiyan12.github.io`）：KaTeX 298 公式、**旧类 `.base`/`.strut` 计数均为 0 而新类 652**（CSS 与 HTML 同源、无版本错配的直接证据）、零 `katex-error`、零溢出、零 pageerror；Mermaid **14/14 图表渲染**、节点标签 72、**图表区总高 5136px**（与本地恢复值完全一致，证明 `wrappingWidth: 200` / `minNodeWidth: 0` 钉值在线上同样生效）；微言新条目在 `/diary/` 与首页侧栏均出现且排首位、日期 `11月3日`/`15:35`；搜索「看板娘」2 条、「Astro」12 条；Swup 确证接管（document 实例存活、`visit:start` 触发 1 次、未整页刷新）；移动端 390×900 同样 298 公式零溢出。
 - **部署身份仍用平台无关证据**：`Last-Modified: 09:56:19 GMT` 晚于部署完成时间，CSS 资源名 `katex.qjoI73Dg.css` 与本地构建完全相同。**不要改用 JS chunk 哈希或 Pagefind 索引哈希判定**——两者平台相关，Windows 与 Linux 必然不同。
 - **本轮踩到的探针缺陷（都是探针错、不是站点错，写下来防重犯）**：① 搜索选择器 `a[href*="/posts/"]` 会命中导航与侧栏，两次查询都返回 48 条相同结果，**看起来像搜索坏了**，真实结果在 `.search-panel ul li`；② 搜索面板是独立页 `/search/`（`client:only="svelte"`），不在首页；③ 搜索**不由输入触发**，组件只在 `form` 提交或 URL `?keyword=` 时检索，单纯改 `input` 值不会触发、界面会一直停在「没有找到」，走 URL 参数才稳定；④ Swup 探针必须在 `window.swup.navigate` 可用**之后**再埋，否则首次加载会把它换掉、表现为 `alive=null` 的假失败；`framenavigated +1` 是 Playwright 对 `history.pushState` 的判定伪影，改用 document 级标记（整页刷新必换 `document` 实例）才能定论；⑤ 本地 `dist/pagefind/` 为空**不代表线上索引缺失**，那只是本地未跑 `pagefind` 的状态，线上以 CI 日志与 `pagefind-entry.json`（`zh-cn` 28 页）为准。
-- 文档同步：`docs/plans/2026-11-03-dependency-upgrade-roadmap.md` 阶段一状态表把第三至第六批从「仅本地」改为「已发布」并写死 SHA；阶段六新增「第二轮发布」节记录本次 run 与线上判据；两份专项报告的「未推送 / 未跑远端 CI」陈述已改为已发布事实。提升后的 TODO 区整理见上一条。
+- 文档同步：升级总计划（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」） 阶段一状态表把第三至第六批从「仅本地」改为「已发布」并写死 SHA；阶段六新增「第二轮发布」节记录本次 run 与线上判据；两份专项报告的「未推送 / 未跑远端 CI」陈述已改为已发布事实。提升后的 TODO 区整理见上一条。
 
 ## 2026-11-03：Mermaid 升至 12.2.0，99 个图表逐图恢复原有尺寸
 
@@ -252,7 +264,7 @@
 - **对照器两次失败的教训（这批最贵的成本）**：(1) roughjs 的 `handDrawnSeed` 默认 `0` = 每次随机，导致圆角矩形贝塞尔控制点每次都变（`C-31.2`/`C-18.4`/`C-25.2`），必须固定种子；同时 webfont 分片未就绪会按回退字体度量算控制点，须按站点运行时的 `fonts.load`+`fonts.ready` 门补上。(2) **同一 page 内连续渲染 99 个图表会互相干扰**，不稳定项会在 classDiagram/gantt 之间转移；改为**每个 worker 独立 page** 后两版各自 99/99 两次渲染完全相同。不做隔离就拿不到可信基线。
 - **门禁**：`pnpm check` 0 errors / 0 warnings / 6 hints；`test:lib` 16/16（含两处视觉契约：字体就绪门、themeCSS 换行终态）；`test:utils` 261/261；`prettier --check ./src ./docs` 通过；`pnpm install --frozen-lockfile --offline` exit 0。
 - **连带传递依赖与 Node 边界**：mermaid 12 依赖栈整体换代——新增 `elkjs@0.9.3`（12 把 ELK 内置，原来要单独装 `@mermaid-js/layout-elk`；本站钉 dagre，不参与渲染）、`chevrotain` 11.1.2→13.2.0、`@mermaid-js/parser` 1.2.1→2.0.1，并**移除 `fastdom@1.0.12`**（`pnpm why fastdom` 已确认输出为空，不是遗漏）。**`mermaid@12.2.0` 要求 `node >=22.12.0`**（连同第五批带入的 `commander@15.0.0` 同要求）：本机 24.18.0、`build.yml`/`deploy.yml` 的 Node 24 均满足；`lint.yml` 的 `node-version: 22` 解析为最新 22.x（2026-11-03 为 22.23.4）也满足。**残留风险**：若把 lint.yml 钉到 22.11.0 及以下或启用 `engine-strict`，安装会警告甚至失败（当前 `engine-strict` 未设置）。
-- **未验证边界**：只验 Chromium，未在 Safari 17.4 以下实测（无法实机），也未在 Safari 17.4+ 验证渲染正确性；未跑远端 CI、未推送、未部署；未验证 ELK 布局的实际观感（本站钉回 dagre，ELK 路径从未在真实页面跑过）；mindmap 的 1.7px 差异未归因到底；只比对本站 99 个图表，未跑 mermaid 官方语料。详见 `docs/plans/2026-11-03-mermaid-upgrade.md`。
+- **未验证边界**：只验 Chromium，未在 Safari 17.4 以下实测（无法实机），也未在 Safari 17.4+ 验证渲染正确性；未跑远端 CI、未推送、未部署；未验证 ELK 布局的实际观感（本站钉回 dagre，ELK 路径从未在真实页面跑过）；mindmap 的 1.7px 差异未归因到底；只比对本站 99 个图表，未跑 mermaid 官方语料。详见 Mermaid 专项验收（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）。
 
 ## 2026-11-03：KaTeX 升至 0.19.1，307 个公式逐条 A/B
 
@@ -269,7 +281,7 @@
 - **方法论收获（已写进构建文档）**：计划原本的三项判据**全部会绿而站点已坏**——Task 2 的公式 A/B 脚本 `import katex` 命中的是根包（恒 0.19.1）、根本不测构建用的那份；「字体族是否都在」在错配下两侧都是 61 个；「`.katex` 盒子宽高 > 0」在错配下也非零只是高度错了。补上的判据是**直接数产物 HTML 里的旧类名出现次数必须为 0**。
 - **连带传递依赖**：`katex@0.19.1` 声明 `commander: ^15.0.0`（0.16.47 是 `^8.0.0`），锁文件因此把 `commander@8.3.0` 换成 `commander@15.0.0`，`engines.node` 从 `>= 12` 抬到 **`>=22.12.0`**。已核对三处 Node：本机 24.18.0、`build.yml`/`deploy.yml` 的 Node 24 均满足；`lint.yml` 的 `node-version: 22` 由 `actions/setup-node` 解析为最新 22.x（2026-11-03 为 22.23.4）也满足。**产物不受影响**——`commander` 只被 `katex/cli.js` 用，`katex/dist/katex.js` 与 `katex.mjs` 两个库入口完全不引用它，本站也从不调用 katex 的 bin。残留风险：若把 lint.yml 钉到 22.11.0 以下或启用 `engine-strict`，安装会警告甚至失败（当前 `engine-strict` 未设置）。
 - 顺带修正：计划里的安装命令 `--store-dir .pnpm-store` 是错的，本机实际 store 在 `D:\.pnpm-store\v10`，照抄会报 `ERR_PNPM_UNEXPECTED_STORE`。
-- **未验证边界**：只验 Chromium，未在 Safari / Firefox 实机跑；未跑远端 CI、未推送、未部署；只比对了本站 307 个公式，未跑 KaTeX 官方完整语料；未测 `strict: "error"` 场景；错配反证只用了 40 个去重样本而非全部 307 个。详见 `docs/plans/2026-11-03-katex-upgrade.md`。
+- **未验证边界**：只验 Chromium，未在 Safari / Firefox 实机跑；未跑远端 CI、未推送、未部署；只比对了本站 307 个公式，未跑 KaTeX 官方完整语料；未测 `strict: "error"` 场景；错配反证只用了 40 个去重样本而非全部 307 个。详见 KaTeX 专项验收（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）。
 
 ## 2026-11-03：四批依赖升级发布上线，线上功能验证 9/9
 
@@ -278,7 +290,7 @@
 - 唯一文本差异是 `/about/` 的 GitHub 贡献日历：线上 1912 次 / 连续 17 天，本地 1881 次 / 连续 16 天。这是 CI 构建链 `fetch-github-contributions.mjs` 实时抓取所致，**反而是「线上确为本次新构建」的正面证据**。
 - **线上功能实测 9/9**（真实 Chromium 打 `https://caiyan12.github.io`）：搜索岛完成水合（无 `ssr` 属性），中文「看板娘」2 条、英文「Astro」12 条；Swup 切页未整页刷新且后退恢复关键词与结果；文章页 298 个 KaTeX、首个公式盒 734×20 且含原生 MathML，截图确认公式排版正确；看板娘 `window.Paul_Pio` 存在且容器/canvas 各 1；移动端 390×900 搜索 12 条、零横向溢出；两视口 pageerror 与本站 requestfailed 均为 0。
 - **已知边界**：线上导航用 `waitUntil:"load"` 会因第三方播放器拖住 load 事件而超时，改 `domcontentloaded` 后正常，属既有环境问题，与本次升级无关。
-- 阶段五剩余 4 类跨版本迁移（Tailwind 4 / Mermaid 12 / Satori 0.63 / KaTeX 0.19）与 Prettier 上游阻塞仍未处理，站长已定「逐个做、每次单独授权」。完整发布证据见 `docs/plans/2026-11-03-dependency-upgrade-roadmap.md` 阶段六。
+- 阶段五剩余 4 类跨版本迁移（Tailwind 4 / Mermaid 12 / Satori 0.63 / KaTeX 0.19）与 Prettier 上游阻塞仍未处理，站长已定「逐个做、每次单独授权」。完整发布证据见 升级总计划（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」） 阶段六。
 
 ## 2026-11-03：修正 @swup/astro 的声明偏差，触发一次 postcss 去重
 
@@ -298,7 +310,7 @@
 - **样式指纹 A/B**（`scripts/upgrade-style-audit.mjs`，23 页逐元素计算样式）：**21/23 页完全相同**（含三页 Nice Books 与文章页、404）；仅 `/albums/`、`/timeline/` 两页有 208 条差异，且**全部落在同一个 `figure:5` 语录块内**（`span.quote-band__char` 逐字符宽度）。对**同一份构建**再采一次自检，差异页集合与 A/B **完全相同**，证明这是 `crypto.getRandomValues` 的语录随机噪声，与升级无关。
 - **踩坑记录**：`upgrade-style-audit.mjs` 的 URL 归一化只匹配 `localhost:<port>`，**不匹配 `127.0.0.1:<port>`**；首次用两个不同端口采集时 diff 出 15820 条假差异（全是 `cursor`/`background-image` 里的端口号），统一端口重采后归零。
 - `pnpm check` 0 errors / 0 warnings / 6 hints，公式保护 38/38，格式门禁通过，`test:lib` 16/16、`test:utils` 261/261；浏览器验收沿用 32 条判据打本批产物 **32/32**（两视口 pageerror、本站 requestfailed、非资源类 console.error 均为 0）。
-- 只验证 Chromium（前缀集合零变化，跨浏览器风险与升级前等同）；未跑远端 CI 或部署。方法与证据见 `docs/plans/2026-11-03-autoprefixer-upgrade.md`。
+- 只验证 Chromium（前缀集合零变化，跨浏览器风险与升级前等同）；未跑远端 CI 或部署。方法与证据见 Autoprefixer 专项验收（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）。
 
 ## 2026-11-03：Svelte 升至 5.57.3，浏览器判据升级前后逐条一致
 
@@ -310,7 +322,7 @@
 - **实机 A/B 用同一份探针、同一套 32 条判据分别打升级前后产物**：升级前 32/32、升级后 32/32，**同一断言名逐条 `ok` 与读数完全一致、0 处差异**（含 CSS 作用域 hash `svelte-a15wih`）。覆盖搜索水合/URL 预填/中英查询/空查询静默/无结果/忙碌重复提交防护/Swup 切页与后退恢复/零横向溢出，以及看板娘默认折叠·召唤·收起·Swup 往返后实例唯一·重载后仍可用，两视口 pageerror、本站 requestfailed、非资源类 console.error 均为 0。
 - **清了两条容易误判的口径**：① `pioConfig.hiddenOnMobile` 的断点是 `(max-width: 1280px)`，所以 1280×900 下 Pio 按设计不初始化、页面里没有 `.pio-show`——桌面验证必须用 >1280 的视口；② Pagefind 1.6.0 对随机字母串会返回弱相关部分匹配（如 `zzzqqqxxxnotfound` 得 5 条），「无结果」用例必须用前批已记录的 `zzz没有这条内容987654321`（实测 0 命中）。另：Swup 会重建 script 节点，切页后 `script[src*='pio.js']` 计数归 0 属既有行为，升级前后一致。
 - dev HMR 实测：改 `Search.svelte` 的 placeholder 热更新生效、改回即还原、`window.__hmrSentinel` 存活证明非整页刷新；源码 SHA-256 与原始文件逐字节相同。`pnpm check` 0 errors / 0 warnings / 6 hints，公式保护 38/38，`prettier --check ./src ./docs` 通过，`test:lib` 16/16、`test:utils` 261/261。
-- 仅验证 Chromium，未跑 Firefox/WebKit（本次不动 CSS 前缀与层叠）；未运行远端 CI 或部署。方法与完整证据见 `docs/plans/2026-11-03-svelte-upgrade.md`。
+- 仅验证 Chromium，未跑 Firefox/WebKit（本次不动 CSS 前缀与层叠）；未运行远端 CI 或部署。方法与完整证据见 Svelte 专项验收（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）。
 
 ## 2026-11-02：Pagefind 升至 1.6.0，完成中文检索 A/B
 
@@ -318,14 +330,14 @@
 - 2026-11-02 Windows / Node 24.18.0 本地：28 个收录文档集合/标题保持；31 组完整 API 查询中 6 组集合变化、18 组顺序变化、29 组摘要变化。“看板娘”23→2，减少仅匹配“看”的结果；“技术架构”“经济学”“AI 编程”等也新增弱相关部分匹配，存在精确性取舍，不宣称统一质量提升。
 - 新旧桌面/移动的查询、空态、忙碌重复提交、Swup 切页后退通过，正常页面异常/本站失败请求均为零。分片故障首轮两版仍显示“没有找到”，第二轮旧版未恢复、新版恢复结果；没有把它写成所有网络错误都有提示或自动恢复。
 - 同输入 Astro 构建均 229 页；搜索外产物无未解释变化。Pagefind 目录 53→67 文件、约 1.57→2.13 MB（整目录总量），不是访客查询下载量。Check 为 0 errors / 0 warnings / 6 hints，公式保护 38/38。
-- 变化明细、故障注入、索引文本空白差异及本地验证边界见 `docs/plans/2026-11-02-pagefind-upgrade.md`。同步构建、组件和命令约定；未运行远端 CI 或发布。
+- 变化明细、故障注入、索引文本空白差异及本地验证边界见 Pagefind 专项验收（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）。同步构建、组件和命令约定；未运行远端 CI 或发布。
 
 ## 2026-11-02：独立升级 Astro 检查器至 0.9.12
 
 - `package.json` / `pnpm-lock.yaml` 将 `@astrojs/check` 0.9.10 升至精确 0.9.12，其他直接依赖不变。必要传递变化包括语言服务 2.17.3、新增 astro2tsx/WASM 检查链、chokidar 5、yargs 18.2.0 与语言服务使用的 vscode-uri 3.2.0；未联动 Svelte、Pagefind 或 TypeScript。
 - 2026-11-02 Windows / Node 24.18.0 本地检查新旧均为 0 errors / 0 warnings / 6 hints；公式保护 38/38。旧新版监听对照中，已有 TS/Astro 文件错误依次检出、修正后清零，单次负向检查 exit 1。**新建文件漏检两版均复现**，记录为既有限制；新增文件后需重新执行单次检查或重启 watch，未修改依赖代码规避。
 - 同数据构建均 229 页、产物文件清单相同；全部非 HTML 逐字节一致，146 个 HTML 仅随机推荐侧栏不同。1280px / 390px 本地搜索、公式、切页后退验证通过，页面异常和本站请求失败为零。
-- 对照入口的新 CLI/旧 API 边界、失败路径、依赖审查及命令见 `docs/plans/2026-11-02-astro-check-upgrade.md`；同步 `docs/agents/build-and-deploy.md` 和 `docs/agents/commands.md`。本地验收，未运行远端 CI 或发布。
+- 对照入口的新 CLI/旧 API 边界、失败路径、依赖审查及命令见 检查器专项验收（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）；同步 `docs/agents/build-and-deploy.md` 和 `docs/agents/commands.md`。本地验收，未运行远端 CI 或发布。
 
 ## 2026-11-02：Prettier 升至 3.9.8，加入公式保护门禁
 
@@ -333,7 +345,7 @@
 - **暂缓 3.9.9 / 3.9.10**：上游关闭单美元公式识别后会把公式星号当成 emphasis。当前已找到单行最小复现，修正旧文档“需要整篇解析态”的推论；历史测量数字保留。详见 `docs/agents/build-and-deploy.md` 与上游 issue #20199。
 - 新增 `scripts/prettier-math.test.mjs` / `pnpm test:prettier-math` 并接入 `lint.yml`。用独立 remark-math 比较格式化前后的公式类型、原文与 KaTeX 渲染，不以格式化器自己的 AST 自证。2026-11-02 Windows 本地覆盖 36 个内容文件、307 个公式，3.9.8 为 38/38；3.9.10 的最小样例与真实文章按预期失败。
 - 升级前后 342 个受检文件的格式化输出一致（实际加载 78 个 Astro 文件、2 个 Svelte 文件的插件）；同数据 Astro 构建均为 229 页。1308 个产物的清单一致，非 HTML 逐字节一致；146 个 HTML 只在随机推荐侧栏有差异。Check 为 0 errors / 0 warnings / 6 hints，桌面 1280px / 移动 390px 的公式、Swup 切页后退与布局验证通过，页面异常和本站失败请求均为零。
-- 完整命令、测试计数、失败路径及验收边界见 `docs/plans/2026-11-02-prettier-upgrade.md`。本轮本地验收未执行网络快照刷新链、远端 CI 或发布；文章源文件未改变。
+- 完整命令、测试计数、失败路径及验收边界见 Prettier 专项验收（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）。本轮本地验收未执行网络快照刷新链、远端 CI 或发布；文章源文件未改变。
 
 ## 2026-11-02：Astro 7 验收剩余项收口
 
@@ -341,7 +353,7 @@
 - **文章目录真实竞态**：防抖到期前位置已变、scroll 的 rAF 未处理时，缓存激活项会让旧动画提前启动并跳过新目标静默期。定时器到期先现量位置，再按 update 重排；真实 DOM + 可控时钟先复现 1354≠1415，再验证 2/2。文集烟测也修正相位：先等前段动画静止、确认首次真实激活再立即反向，不再同步连发两次会合并的 scrollTo。
 - **相册脚本错误归属**：同一第二标签中同时复现播放器“已在其他页面加载”异常和 window 的 opaque `Script error.`，与供应商 storage 心跳互斥规则一致。灯箱测试全部页面补异常/本站请求监听，独立场景隔离 context；不改播放器互斥、不屏蔽异常。正常流程 27/27，给相册注入错误则按预期失败，证明后续页面错误不会遗漏。
 - **旧版间距恢复**：`WidgetHotLog.astro` / `WidgetSeries.astro` 的固定静态 Fragment 保持图标与 span 相邻；两处动作宽度恢复 60.4375 / 62.15625px，复用原 3px 图标 margin，未改共用 CSS。
-- 本地构建 229 页，check 0 errors / 0 warnings / 6 hints，utils 261/261，文集产物烟测 88/88。命令、红绿证据及失败路径见 `docs/plans/2026-11-02-astro7-followup.md`；此前初轮“待复核”记录保留历史，并补最新结果指针。未推送或部署。
+- 本地构建 229 页，check 0 errors / 0 warnings / 6 hints，utils 261/261，文集产物烟测 88/88。命令、红绿证据及失败路径见 Astro 7 剩余项收口（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）；此前初轮“待复核”记录保留历史，并补最新结果指针。未推送或部署。
 
 ## 2026-11-02：Astro 7 联动升级与同数据构建验收
 
@@ -350,14 +362,14 @@
 - **2026-11-02 Windows 本地 A/B**：两侧 Astro 均构建 229 页，完整产物均 230 个 HTML；路由、链接、图片、标题、代码与公式语义一致，49 页仅总文本空白有差异。OG 与 Pagefind 目录逐字节一致。16 组同状态桌面/移动首屏截图像素差异为零；原始样式指纹差异保留，区分 CSS 等价序列化、随机/外部服务状态与两处链接约 2.5/3px 宽度变化，不声称全部资源 hash 相同或性能提升。
 - **发现并处理**：dev 首次文件监听阻塞导致 Vite 模块通信超时、文章集合为空；CPU profile 的主要时间落在 `fs.watch` 注册。排除本地 `.pnpm-store` / `output` 后，默认 CLI 约 13 秒同步内容并启动；真实内容、CSS 与 Svelte 热更新及恢复通过。没有增加超时、外部化整包或修改依赖源码。
 - 本地 check 为 0 errors / 0 warnings / 6 hints，相关单测通过；UI 142/142、好书 72/72、灯箱 27/27、壁纸 47/47、AI News 主站边界通过。文集首次目录防抖判据失败、独立确认 88/88，首次失败仍保存；全页 console 门禁新旧均 REVIEW（技能页 32 个外部 Iconify 请求），不写成全绿。dev 相册另出现一条来源待核的 `Script error.`，调查结果在实施记录维护。
-- 范围、命令、逐项差异、失败日志与剩余边界见 `docs/plans/2026-11-02-astro7-upgrade.md`；当前为本地升级验收，未运行线上 CI、未推送或部署。
+- 范围、命令、逐项差异、失败日志与剩余边界见 Astro 7 实施验收（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）；当前为本地升级验收，未运行线上 CI、未推送或部署。
 - **补记（2026-11-05，证据：`git show a42a170 -- package.json` 与 `git merge-base --is-ancestor a42a170 origin/main`）**：上一行的「未推送或部署」是 2026-11-02 当日状态，不是最终状态。升级提交 `a42a170`（2026-11-02 20:47，`Upgrade Astro 7 after AI News extraction and fix upgrade regressions`）把 `astro` 从 `6.4.8` 改为 `7.4.4`、`@astrojs/svelte` 从 `8.1.2` 改为 `9.1.2`，且已是 `origin/main` 的祖先——该升级随后随主干部署上线。当时未回写这一条；后续 2026-11-03 的「四批依赖升级发布上线」条目也没提 Astro 7.4.4，所以按版本号检索 CHANGELOG 会漏掉上线证据。此处只补索引，历史原文保留不动。
 
 ## 2026-11-02：构建系统升级复核（尚未升级）
 
 - AI News 迁出后重新查询官方发布信息：Astro 当前 6.4.8、最新稳定版 7.4.4；Svelte 集成、Markdown 处理器和 Expressive Code 的最小联动组已在临时独立 workspace 中通过严格 peer 解析。主站依赖保持原版本，未用解析成功代替构建或实机验收。
 - Prettier 3.9.6 → 3.9.10 的内存对照覆盖当前 34 篇 Markdown，1 篇的 13 行仍会改坏公式，KaTeX 样例实测报错；文章未写回。Tailwind 4、TypeScript 7 等独立升级不捆绑进 Astro 联动组。
-- 本日 registry 来源、官方迁移说明、命令与验证边界见 `docs/plans/2026-11-02-build-system-upgrade-recheck.md`；`docs/agents/build-and-deploy.md` 已补充复核指针。未升级、提交、推送或发布。
+- 本日 registry 来源、官方迁移说明、命令与验证边界见 构建系统升级复核（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）；`docs/agents/build-and-deploy.md` 已补充复核指针。未升级、提交、推送或发布。
 
 ## 2026-11-02：AI 日报独立项目迁移收尾
 
@@ -365,7 +377,7 @@
 - **配置清理**：`tailwind.config.cjs` 删除无消费者的日报 `--t-*` 色板/字体/圆角映射，`tsconfig.json` 删除无 JSX/TSX 消费者的 React JSX 设置，`package.json` / `pnpm-lock.yaml` 移除 `react` 运行时依赖。OG 图仍给 Satori 传普通元素对象，`ReactNode` 类型仍被使用，故保留 `@types/react`。冻结锁文件的离线安装确认仅移除该运行时包，未升级依赖。
 - **边界与回归**：按 ADR 0009 保留 `/ai-news/` 桌面/移动导航、sitemap 与现有边界脚本；历史 ADR/日志、文章和项目展示保留。`scripts/ai-news-ownership.test.mjs` 改查源目录及整个日报产物目录缺席；通用测试 fixture 与脚本注释不再沿用旧日报页面地址或 `AI_NEWS_BASE_URL`。
 - **2026-11-02 本地 Windows 实测**：`pnpm check` 为 0 error / 0 warning / 6 hints；`pnpm test:lib` 16/16；修改前后 `pnpm exec astro build` 均成功生成 229 页，12 份 CSS 逐字节相同，33 张 OG PNG 均为 1200×630；`pnpm test:ai-news-ownership` 通过，临时产物目录注入多余日报文件后按预期失败。`MAIN_SITE_URL=http://localhost:4323/` 的 `pnpm smoke:ai-news` 在无窗口 Chromium 下通过 1280px / 390px 两档入口 DOM 检查；变更文件 Prettier 与 `git diff --check` 见本轮计划的最终复核记录。
-- **环境失败路径**：首次沙箱构建字体域名 DNS 返回 `ENOTFOUND`，联网环境设 `NODE_USE_ENV_PROXY=1` 后构建成功；原子写入测试在沙箱默认临时目录 rename 返回 `EPERM`，将 `TEMP` / `TMP` 指向工作区证据目录后通过；沙箱浏览器缓存缺席、沙箱 preview 端口不可达，改用本机已有浏览器与本机 preview 后通过。未修改生产代码来绕开这些限制。完整证据、剩余引用分类与命令边界见 `docs/plans/2026-11-02-ai-news-closeout.md`；未执行完整 `pnpm build` 联网刷新链、线上旅程或独立项目内部验收，未推送/发布。
+- **环境失败路径**：首次沙箱构建字体域名 DNS 返回 `ENOTFOUND`，联网环境设 `NODE_USE_ENV_PROXY=1` 后构建成功；原子写入测试在沙箱默认临时目录 rename 返回 `EPERM`，将 `TEMP` / `TMP` 指向工作区证据目录后通过；沙箱浏览器缓存缺席、沙箱 preview 端口不可达，改用本机已有浏览器与本机 preview 后通过。未修改生产代码来绕开这些限制。完整证据、剩余引用分类与命令边界见 AI News 迁移收尾（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）；未执行完整 `pnpm build` 联网刷新链、线上旅程或独立项目内部验收，未推送/发布。
 
 ## 2026-11-02（下午）：减少动效判定收敛，两件遗留收口
 
