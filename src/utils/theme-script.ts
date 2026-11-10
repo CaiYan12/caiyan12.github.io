@@ -49,6 +49,11 @@ import { initVisibilityTitle } from "./runtime/visibility-title";
 import { initLqipFade } from "./runtime/lqip-fade";
 import { initProtectedEmail } from "./runtime/protected-email";
 import { initToastTrigger } from "./runtime/toast-trigger";
+import { createPageSessionOwner } from "./runtime/page-session";
+import { slideshowSession } from "./runtime/slideshow";
+import { fontSizeSession } from "./runtime/font-size";
+import { sidebarTabsSession } from "./runtime/sidebar-tabs";
+import { tagCloud3DSession } from "./runtime/tag-cloud-3d";
 
 declare global {
 	interface Window {
@@ -93,6 +98,18 @@ function initSwupHooks() {
 }
 
 /**
+ * 页面级会话：只有一页一份、随换页销毁的功能（F2.2 起）。
+ * 清单即家谱——新增页面级功能加一行，不要在功能模块里自行注册。
+ * 常驻模块不在这里（头部微言、拉绳壁纸、导航、液态玻璃、随机背景）。
+ */
+const pageSessions = createPageSessionOwner([
+	slideshowSession,
+	fontSizeSession,
+	sidebarTabsSession,
+	tagCloud3DSession,
+]);
+
+/**
  * 运行时装配表：主站全部运行时功能块的唯一家谱。
  *
  * - 初始装载：`pagefindReady()` 按表序逐行执行（行序 = 既有调用序，勿重排）；
@@ -132,6 +149,9 @@ const runtimeTable: RuntimeEntry[] = [
 	{ init: initPaperHandwriting, swap: 7 },
 	{ init: initQuoteBand },
 	{ init: initArticleToc, swap: 8 },
+	// 页面级会话：初始装载与换页重跑共用这一行；停止在 runtimeHooks.beforeSwap。
+	// swap 9 是新增序号，1–8 的相对次序不受影响。
+	{ init: pageSessions.start, swap: 9 },
 	{ init: initSwupHooks },
 ];
 
@@ -146,8 +166,9 @@ const runtimeHooks: {
 	beforeSwap: Array<() => void>;
 	pageLoad: Array<() => void>;
 } = {
-	// 灯箱清理：实现已迁至 runtime/fancybox.ts，此处只引用其导出
-	beforeSwap: [destroyFancybox],
+	// 灯箱清理：实现已迁至 runtime/fancybox.ts，此处只引用其导出。
+	// 页面级会话停止在其后：先收灯箱，再收页面功能的定时器与监听（既有项次序不变）。
+	beforeSwap: [destroyFancybox, pageSessions.stop],
 	// 1. 滚动位置复位 → 2. 阅读进度重算 → 3. 派发页面就绪事件
 	pageLoad: [
 		resetScrollToTop,

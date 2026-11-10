@@ -1,5 +1,89 @@
 # 更新日志
 
+## 2026-11-10：样式指纹不再把「不渲染元素的增删」算成可见差异（F1 仪器补丁）
+
+**改了什么**：新增 `scripts/lib/style-nonrendering.mjs`（判定六类不生成盒子的标签：`script` / `style` / `link` / `meta` / `noscript` / `template`）与 `scripts/lib/style-nonrendering.test.mjs`（16 条，随 `pnpm test:lib` 的 `scripts/lib/*.test.mjs` glob 自动执行）；`scripts/upgrade-style-audit.mjs` 的 `load()` 在完整性校验之后、比对之前剔除这些行，并在汇总里打印两侧各剔除了多少条。**采集端未改**，artifact 里仍保留全部行，`elements` / `staticLines` / sha / 四态计数仍按采集时的正文校验；可见性分类的阈值与规则、`bag` 的两档规则、退出码语义都没动。
+
+**为什么**：`diff` 的比对键 = 状态前缀 + **全部兄弟元素序号**，且元素增删一律记「可见」。这两条叠加后，删掉一个不生成盒子的 `<script>` 会同时制造两类假差异：脚本自己少一行，以及它之后所有元素的序号前移、成批变成 REMOVED/ADDED。F2 把四个页面级功能的内联脚本迁进共享 chunk 时正好撞上：真实差异只有 **18 个 `<script>`**，工具却报 **12/23 页、2,365 条**，把「结构性搬动」误报成「全站样式变化」。这类假阳性会让人开始怀疑判据本身，比漏报更伤。
+
+**实测证据（2026-11-10，Windows 11 / Node 24.18.0）**：
+
+- **同一对真实 artifact 复跑**（`output/architecture-2026-11-10/F2.5/` 的 `fp-before` / `fp-after`）：修复前 `exit 1`、`12/23` 页、`2,365` 条；修复后 **`exit 0`、`0/23` 页、`0` 条**，汇总行注明两侧各剔除 199 / 181 条不渲染元素行（`diff-after-instrument-fix.log`）。
+- **变异矩阵**（`output/architecture-2026-11-10/F1-instrument/`，每份变异都同步修正 manifest 让产物保持自洽完整；最后一列是同一份脚本**只把剔除那步关掉**的对照版，用来证明「补丁只改了它该改的那一处」）：
+
+    | 变异                                     | 补丁版                       | 对照版（不剔除）             |
+    | ---------------------------------------- | ---------------------------- | ---------------------------- |
+    | 删掉全部不渲染元素行                     | `exit 0`、`0/23`             | `exit 1`、`23/23`、181 条    |
+    | 删一条渲染元素（`article.post-list`）    | `exit 1`、1 页、1 条、可见 1 | `exit 1`、1 页、1 条、可见 1 |
+    | 加一条渲染元素                           | `exit 1`、1 页、1 条、可见 1 | `exit 1`、1 页、1 条、可见 1 |
+    | 改一处渲染元素 `color`                   | `exit 1`、1 页、1 条、可见 1 | `exit 1`、1 页、1 条、可见 1 |
+    | 改一条 `:hover` 状态行 `color`           | `exit 1`、1 页、1 条、可见 1 | `exit 1`、1 页、1 条、可见 1 |
+    | 删不渲染行 **且** 改一处渲染元素 `color` | `exit 1`、1 页、**1 条**     | `exit 1`、`23/23`、182 条    |
+
+    结论：凡是**渲染元素**的增删或样式改动，两版判定逐项相同（都是 1 页 1 条）；差别只出现在涉及不渲染元素的用例上，且合并用例从 182 条降到 1 条——补丁既没放过真差异，也没让真差异被噪声淹没。
+
+- **同码自等**：同一份 `dist/` 连采两次（`fp-self-a` / `fp-self-b`），正文**逐字节 23/23 相同**，与 17:00 那次采集也 **23/23 相同**；补丁版 `diff` 是 `0/23`，**关掉剔除的对照版同样是 `0/23`**——说明自等不是补丁造出来的。
+- **真实 CSS 变异**（改产物 CSS 再重采，不是改 artifact）：给 `dist/_astro/MainGridLayout.wWwsudvT.css` 追加 `article.post-list{padding-left:37px!important;}`，先在浏览器确认首页 10 个 `article.post-list` 的计算值都变成 `37px`，再全量 capture，采完立刻恢复（sha256 与备份一致、文件与服务内容无残留）。补丁版与对照版**都**是 `exit 1`、`2/23` 页、160 条差异，逐项相同。
+- **完整性没被绕过**：把某页正文截掉一行、manifest 不动 → `exit 1`，报「manifest 记录 1080 行，正文实际 1079 行」「正文摘要与 manifest 不符」「disabled 采样 60 → 59」，在样式比较之前就退出。
+- `pnpm test:lib` 70/70（原 54 + 新增 16）、全范围 Prettier 退出码 0、`verify-eol` 441 文件 0 混合。
+
+**失败路径与边界**：① 只放过这六类标签；`img` / `input` / `br` 这类会生成盒子或被布局计数的元素仍在比对范围内。② 不渲染元素行不参与比对，但**仍然参与完整性校验**——采集少写了它们照样判不完整。③ 这条改动只解决「不渲染元素增删」，不解决「元素真实重排导致路径键漂移」：那种情况依旧先由 `bag` 判成 `reorder-only`，`bag` 也不相等时才会逐条比。④ 上一轮 F2.5 记录里「按字面为红」的结论保留在计划文件的历史记录中，本轮补丁后已用同一对 artifact 复跑转 `0/23`。
+
+**阶段边界**：本轮只做这处仪器口径补丁，未进入 F3。**未 commit、未 push。**
+
+## 2026-11-10：页面级 runtime 收进一个会话 owner（轮播、字号、侧栏 tabs、3D 云）
+
+**改了什么**：新增 `src/utils/runtime/page-session.ts`（页面级会话 owner，只做 start/stop 调度，不碰 DOM）、`src/utils/runtime/slideshow.ts`、`src/utils/runtime/font-size.ts`、`src/utils/runtime/sidebar-tabs.ts`、`src/utils/runtime/tag-cloud-3d.ts`（四个功能从各自 `.astro` 的内联脚本原样迁出）；`src/utils/theme-script.ts` 增加 `pageSessions` 清单（四项）、装配表一行 `{ init: pageSessions.start, swap: 9 }`、`runtimeHooks.beforeSwap` 追加 `pageSessions.stop`；`Slideshow.astro` −98 行、`posts/[...slug].astro` −95 行、`WidgetNewLog.astro` −41 行、`TagCloud3D.astro` −123 行（各删一个 `<script>` 块，markup、样式、类名、DOM 顺序零改动）。`docs/agents/components.md` 补「页面级功能走会话 owner」协议。
+
+**为什么这么定**：旧形态是内联 init + 自监听 `colorful:page:loaded` + `dataset` 守卫，只有「同页防重入」，没有「离开页面」的语义——首页轮播的 `setInterval` 在 `#slider` 脱离 DOM 后仍在跑，回到首页再起一条（实测 2 → 2 → 3，`clearInterval` 一次都没调用）；字号的 click-away 用 `window.__fontSizeClickAwayBound` 全局旗标压重复注册，那个旗标没有「页面结束」的出口（**已删除**）；tabs 的监听绑在会被换页丢弃的节点上，靠「不可达」冒充清理；3D 云的销毁挂在「下一次 init」上，离开后不再进云集页就一直活着。owner 不新增轨道：初始装载与换页重跑复用 `runtimeTable` 的一行，离开前停止挂在既有 `runtimeHooks.beforeSwap`，常驻模块（头部微言、拉绳壁纸、导航、液态玻璃、随机背景）不进清单。
+
+**实测证据（2026-11-10，Windows 11 / Node 24.18.0 / `astro build` 产物 + `preview --port 4322`）**：
+
+- **生命周期**：修前 2 → 2 → 3（`output/architecture-2026-11-10/F2-baseline/lifecycle-red*.log`，5 PASS / 2 FAIL、退出码 1）；修后 interval 2 → 1 → 1 → 1 → 2、**17/17**、退出码 0（`F2.2/lifecycle-green.log`、`F2.3/lifecycle.log`、`F2.4/lifecycle.log`、`lifecycle-restored.log`）。
+- **监听计数**（生命周期测试直接读，不靠行为推断）：文章页 `document` 的 pointerdown = 1 → 离开后 0 → 回来仍 1（不累积）；旧 tab 节点的 click = 1 → 0。
+- **异步竞态**：用 `page.route` 把 `SVG3DTagCloud.global.js` 压住 1.5s，进 `/tag/` 后立刻换页，2.2s 后 `window.__tagCloud3D` 为 `undefined`、页面无 `.tag3d-stage svg`（前置断言 `libRequests=1` 保证请求真被拦过）。
+- **相位**：`slider:initialized` 迁移前 355.7ms、迁移后 419.2ms，两次都与 `domcontentloaded` 同刻——init 只写 `data-initialized` 并起计时器，首张 `active` 是构建期标记，首帧不受影响（`F2.2/timeline-before.json` / `timeline-after.json`）。
+- **DOM 不变**：`#slider` 子树与迁移前逐字节相同（5780 bytes `===`）；`tab_nav` 块 358 bytes、字号弹层 216 bytes 同样逐字节相同；空 `<script></script>` 计数 9→9。`#newlog` / `#randlog` 列表跨构建本就不同（构建期抽样，ADR 0012 记过整站非确定），不计入比对。
+- **可见行为**：`smoke:ui` **142/142、0 失败、退出码 0**（三次：F2.2 / F2.3 / F2.4 各一次，与改前基线同读数）；轮播三组读数见 `F2.2/behavior.json`；字号与 tabs 见 `F2.3/behavior.json`（打开/外部点击关闭/滑块 18px/存储 `"18"`/离开再回来仍 18px；tabs 点击、Enter、Space 三组状态同步，换页后新侧栏仍可切换）；3D 云见 `F2.4/behavior.json`（`/tag/`→`/category/`→`/tag/` 各 1 个 svg、32 条链接、`consoleErrors: []`、药丸命中测试 `hitInsideAnchor=true` 且导航到 `/tag/AI%E7%BC%96%E7%A8%8B/`；reduced-motion 下 svg=0、注册表为空、药丸云仍在）。
+- **变异**：轮播 `stop()` 不执行 teardown → 回到 2 → 2 → 3；字号 stop 不清理 → `pointerAfter=1`、`pointerBack=2`；tabs stop 不清理 → `tabClickAfter=1`；3D 云删掉「已离开则不创建」守卫 → `registry="object"`。四次都退出码 1，恢复后 sha256 与备份一致、各自回绿。
+
+**怎么验证的**：上述读数逐条实跑；`pnpm check` 0 errors / 0 warnings / 6 hints、`pnpm test:lib` 54/54、`pnpm test:utils` 261/261、`pnpm test:article-toc-browser` 2/2、`verify-eol` 441 文件 0 混合、全范围 Prettier 退出码 0。
+
+**失败路径与踩坑**：① hover 暂停的第一次探针读成「没暂停」，实为点完指示点后指针仍停在轮播内、不会重新触发 `mouseenter`（旧实现同样如此，`click` 会重新起表）；修正探针顺序后读到正确值，没有为此改生产代码。② `astro build` 在已有 `dist/` 上可能被宿主的批量删除守卫拦（见 `docs/agents/commands.md` 的「宿主的批量删除守卫」节），也可能因 `fonts.googleapis.com` 取字体超时中止（`Error fetching fonts: TypeError: terminated`）——两者都按既有处置重试，未改构建代码。③ 删 `<script>` 块时用一次性脚本按标记切；第一版按 `<script` 前缀找块，把自闭合的 JSON-LD `<script ... />` 当成开标签、连带吞掉中间内容，靠「删完剩余 `<script` 数量必须等于预期」的自检拦住，改成只认裸 `<script>` 后才落盘。④ 3D 云的药丸链接在转动，Playwright 的「元素稳定」判据永远不满足，`click()` 会一直重试到超时；改成同一帧里量矩形 + `elementFromPoint` 命中测试，再用合成 click 验证导航（`hitTag=text`、跳到 `/tag/AI%E7%BC%96%E7%A8%8B/`）。⑤ 样式指纹的 A/B 采集端口不影响 `diff`（`load()` 会把 `localhost` / `127.0.0.1` / `0.0.0.0` 的主机与端口一并抹掉），但**直接读原始 artifact 的一次性探针没有这层归一化**——`background-image` 里带着 `http://127.0.0.1:<port>/…`，跨端口比对会每页凭空多出几百条。F2.5 首次就是拿两个端口采的，工具读数一致，探针却对不上，最后统一下到同一端口重采了改后侧。
+
+**F2.5 全量验收（2026-11-10 17:01–17:42，同一份 `dist/` 与 14:12 归档产物，同端口 127.0.0.1:4401 分别采集）**：
+
+- **样式指纹**：两侧 artifact 均 `complete:true`（各 23 页、四态目标/定位 1,220/1,220、无 uneven 页），元素行 22,542 → 22,524。工具 `diff` **按字面为红**：12/23 页、2,365 条差异、退出码 1。逐条归因后差异只有 **18 个被迁走的内联 `<script>` 元素**——`diff` 的键含全部兄弟元素序号、元素增删一律记「可见」，删脚本会把下游序号整体前移。剔掉不渲染元素后按「元素标识 + 样式」做多重集比较 **23/23 页一致**（首页 1 条属随机抽样的 `nth-child` 配色，工具自己的 `dropBg` 档同样放过），HTML 剥脚本并归一化随机列表与产物哈希后 6/6 逐字节相同。**未改仪器**（F2 的允许文件不含 `scripts/upgrade-style-audit.mjs`），建议另开一单让 `diff` 不计不渲染元素的增删，再用这两份 artifact 复跑预期 0/23。
+- **截图与几何**：18 张（桌面 1440×900 / 移动 390×844 × 首页首帧 / 文章页字号弹层关闭 / `/tag/` / `/category/`，桌面另含打开态）。`#slider`、字号按钮与弹层、`.tag3d-stage`（各 1 个 `svg`，桌面 `{221,424.8,712,413}`、移动 `{30,202.8,330,191}`）、`ul.blogtags`、tabs 的 rect 与计算样式逐项相同；唯一差异是移动端两个云集的 `scrollHeight`，同侧三次重复即自证为噪声（870/895/845 与 870/895/915）。移动端没有字号弹层打开态，因为 `@media (max-width:680px)` 的 `.post-metaa .tools{display:none!important}`，两侧一致。
+- **烟测失败集合**：`smoke:ui` 142/142、`smoke:series` 88/88、`smoke:wallpaper-pull` 47/47、`smoke:console` 23/23，四套的**判据名集合完全相同**、`FAIL` 行 0、无新增失败。
+- **客户端产物**：JS 两侧都是 124 个 chunk、文件名一一对应，只有 `Layout.astro_astro_type_script_index_0_lang.*.js` 由 45,732 变 51,380 B（+5,648；gzip9 +1,691；brotli +1,429），站内 JS 总量 +0.10%；每页实读 `decodedBodySize` 恰好 +5,648、请求数不变。CSS 8 个同名文件逐字节相同（归档里另有两份 11-07 的无引用残留）。
+- **时序**：`runtimeTable` 28 → 29 行，非页面级行序逐项相同；swap 1–8 逐项相同、只在末尾追加 9；新行位于 `initArticleToc` 与 `initSwupHooks` 之间；`beforeSwap` 只尾追加 `pageSessions.stop`；`pageLoad` 三项不变。
+
+**阶段边界**：F2.2–F2.5 已完成；F2.6 是回滚与停止条款，本轮未触发、未执行。**未 commit、未 push。**
+
+## 2026-11-10：样式指纹 artifact 自带版本与四态覆盖，采集失败不再伪装成「没有差异」
+
+**改了什么**：新增 `scripts/lib/style-audit-artifact.mjs`（artifact 的唯一格式契约：写入 / 读取校验 / 覆盖比较）与 `scripts/lib/style-audit-artifact.test.mjs`（11 条契约测试，随 `pnpm test:lib` 的 `scripts/lib/*.test.mjs` glob 自动执行）；`scripts/upgrade-style-audit.mjs` 的 `capture` 改为经该 module 逐页写入、`load`/`diff` 改为**先校验 artifact 再比样式**，状态采样失败从空 `catch` 降级改成记录 `stateError` 并以非零退出。`index.json` 新增 `formatVersion`（`style-audit-artifact@1`）、`states`、`complete`、`problems`；每页新增 `staticLines` 与 `coverage{targets, located, states, stateError}`。同步补 `docs/agents/commands.md` 的「样式指纹的状态采样」节。`src/`、页面、CSS、路由、依赖、`package.json`、四态集合、`STATE_MAX`、`AUDIT_PAGES`、可见性分类与阈值一律未动，gzip 正文的行内格式（`<标识> | <位置路径> | <属性…>`、`:hover …`）逐字节保持不变。
+
+**为什么这么定**：旧实现的 `catch {}` 让 CDP 失败降级成「没有状态行」，而 manifest 只记一个总行数——产物与完整采集长得完全一样，`diff` 无从判断。这不是理论风险：本轮用 HEAD 版脚本实测，CDP 一失败仍 `EXIT=0`，23 页只剩 17,662 行（正好是静态行数，4×1,220 条状态行凭空消失），manifest 字段与完整采集同形；把它复制一份做 diff，得到 `pages differing: 0/23, element diffs: 0`。同一份里只要一侧完整一侧失败就报 23/23 页、4,880 条差异——**失败只在单侧时才看得见**，这正是「没测到」被当成「没变化」的入口。所以把版本、每页静态/四态计数、完整性收进一个窄 interface，并且**不信 manifest 自报**：读取时从正文重算行数、静态行、四态计数与 sha，逐项比对。
+
+**实测证据（2026-11-10，Windows 11 / Node 24.18.0 / pnpm 10.26.2，`pnpm exec astro build` 的 `dist/` + `pnpm preview --port 4322`）**：
+
+- **同 dist 连采两次**：`fp-c` 6m24s、`fp-d` 6m42s，各 23 页 / 22,542 行（静态 17,662 + 四态各 1,220；`targets` 与 `located` 各 1,220，无页面四态不等），两份 `complete:true`、`problems: []`；`diff` 得 `pages differing: 0/23, element diffs: 0`、退出码 0。
+- **行内格式未变**：同一份 dist 上，旧实现（HEAD）与新实现写出的 23 份 gzip 正文**逐字节相同**（逐页 `===` 比对，23/23 相同、0 不同）。新实现只多了 manifest 字段。
+- **旧格式显式拒绝**：`diff` 读 2026-11-10 之前采的 artifact（无 `formatVersion`）直接 `EXIT=1`，提示「artifact 索引里没有格式版本，当前工具只认 style-audit-artifact@1：不猜测、不静默兼容，请重新采集」。
+- **四种变异各自红**：① 只删所有 `:hover` 行（manifest 一字不动）→ `EXIT=1`，逐页报「manifest 记录 hover 采样 60 行，正文重算为 0 行」；② 只把 `formatVersion` 改成 `style-audit-artifact@0` → `EXIT=1`；③ A 侧某页最后两个目标的四态行整组删掉、manifest 同步改成自洽的 58 → 两份都 `complete:true`，`diff` 报「`/`：目标元素数不一致（A 58 / B 60）」并逐态列出 `hover` / `focus-visible` / `active` / `disabled`；④ 只把 manifest 的 hover 计数 60 改成 59 → `EXIT=1`，报「正文重算为 60 行」且「四态计数不一致」。
+- **capture 失败语义**：在 `newCDPSession` 前注入 `throw` 跑一次 capture，得 `EXIT=1`、artifact `complete:false`、23 条问题（每页一条带错误摘要）；恢复源码后脚本 sha256 回到变异前的 `0f90b2b1…`，`grep "F1 变异"` 计数为 0。
+- **测试与检查**：`pnpm test:lib` 54/54（基线 43/43，新增 11 条）、`pnpm test:utils` 261/261、`pnpm check` 0 errors / 0 warnings / 6 hints、全范围 `prettier --check` 通过。日志与采集都在 `output/architecture-2026-11-10/F1/`。
+
+**怎么验证的**：上列读数逐条来自当日实跑，命令与退出码对齐；`git diff --name-only` 只出现 `docs/agents/commands.md` 与 `scripts/upgrade-style-audit.mjs`，另有三个未跟踪文件（两个新脚本 + 站长的 `docs/improvements/`）。没有 `src/`、CSS、页面、路由或依赖变化。
+
+**失败路径与踩坑**：① 本机 `astro build` 仍在收尾清理 `dist/.prerender/.vite` 时被宿主的批量删除守卫拦下（`[safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED] {"count":50,"threshold":50,…}`，与 2026-11-05 / 11-07 同一处），**真实退出码 1**、`astro:build:done` 未执行、sitemap 与 pagefind 没刷新；页面与 CSS 确由本次写出（`dist/index.html` 时间戳 14:12:36），F1 的采集不消费 sitemap/pagefind，但按「该步未执行」记录，不写成构建通过。**同日 15:21 找到可复现的本地解法**：把旧 `dist/` 整目录 `mv output/dist-archive/dist-<时间戳>` 留档（不是删除）后再构建，两次 `astro build` 都是退出码 0、`@astrojs/sitemap` 正常写出、`pagefind` 退出码 0；操作顺序与读数记在 `docs/agents/commands.md` 的「宿主的批量删除守卫」节。② 本会话的托管 Node 是 22.22.2，被 Astro 7.4.4 直接拒绝（要求 `>=22.23.4`），必须把系统 Node 24.18.0 放到 `PATH` 前头再跑 pnpm；`astro check` 与 `.astro` 产物无关，不受影响。③ Git Bash 会把裸参数 `/` 转成 Git 安装路径（报 `page not found: D:/Program Files/…/PortableGit/`），给探针传页路径 `/` 要加 `MSYS_NO_PATHCONV=1`。④ 中途发现 `load()` 在「完整」与「不完整」两种情况下返回形状不一致（完整时返回 index、失败时返回 read 结果），于是 `a.status` 为 `undefined`、所有 artifact 都被判成不通过；已改成统一返回 `{status, problems, index, pages}`。这个缺陷单测抓不到（单测只覆盖 module），是 C/D 集成比对暴露的——**artifact 契约必须由真实 capture→diff 走一遍才算验过**。
+
+**已知边界（本轮不改）**：每页的 `errors`（console 报错摘要）仍然**只记录、不参与 diff 比较**。实测 `fp-c` 与 `fp-d` 在 `/posts/20260919135000/` 上一次记 3 条、一次记 1 条（第三方资源 404 / `ERR_CONNECTION_CLOSED` 抖动），`diff` 仍是 `0/23`。把 `errors` 纳入比较会把第三方噪声变成红灯，与既有「第三方件不进指纹」的口径冲突；要改它得先定义「哪些报错算回归」，不在 F1 范围内。
+
+**阶段边界**：本轮授权为共用开工门禁（Phase 0）+ Phase F1，F2–F5 未开始；**未 commit、未 push**（`push main` 等于生产部署），改动停在本地。
+
 ## 2026-11-07：把 `scripts/` 与 `tailwind.config.cjs` 纳入 Prettier 门禁
 
 **改了什么**：`.github/workflows/lint.yml:39` 的 `prettier --check` 与 `.githooks/pre-commit.mjs` 的 `inScope` 都从 `./src ./docs ./*.md` 扩为 `./src ./scripts ./docs ./*.md tailwind.config.cjs`，与 `package.json:47` 的 `pnpm format` 同范围；钩子开头的范围注释、作用域注释和未格式化报错文案一并改。同步改掉写死旧命令的活文档：`.githooks/README.md`、`docs/agents/commands.md:242`、`README.md:448`、`docs/agents/build-and-deploy.md:78`。`AGENTS.md` 只说「提交时有本地 prettier 门禁（只查暂存内容）」，没写死范围，不动；`CHANGELOG.md` 历史条目、`docs/history/`、`docs/agents/styles.md:46` 与 `emlog-mapping.md:52` 里指向 `prettier --check ./src` 的历史说明按惯例不回写。

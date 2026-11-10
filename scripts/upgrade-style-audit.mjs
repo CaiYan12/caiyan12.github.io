@@ -13,15 +13,20 @@
 // 不是为了把明细替换掉。
 import { chromium } from "playwright";
 import { createHash } from "node:crypto";
-import { gzipSync, gunzipSync } from "node:zlib";
-import { mkdirSync, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { AUDIT_PAGES } from "./lib/smoke-pages.mjs";
+import {
+	ARTIFACT_STATUS,
+	compareCoverage,
+	createCapture,
+	readArtifact,
+} from "./lib/style-audit-artifact.mjs";
 import {
 	diffElementLines,
 	judgePropertyDiff,
 } from "./lib/style-diff-visibility.mjs";
 import { compareColors } from "./lib/style-color-equivalence.mjs";
+import { stripNonRenderingLines } from "./lib/style-nonrendering.mjs";
 
 const PROPS = [
 	"font-family",
@@ -251,14 +256,22 @@ function arg(name, fallback) {
 async function capture() {
 	const base = arg("base", "http://localhost:4399");
 	const out = arg("out", "output/fp");
-	mkdirSync(out, { recursive: true });
+	// artifact 的格式、版本与完整性由 scripts/lib/style-audit-artifact.mjs 统一声明。
+	// 状态清单只在这里定义一次（STATE_PSEUDOS 的键序即状态行的先后），artifact 不自带一份。
+	const states = Object.keys(STATE_PSEUDOS);
+	// expectedPages 用审计页清单：少采一页也算不完整，不能靠「两侧都没采」蒙过去。
+	const artifact = createCapture({
+		dir: out,
+		base,
+		states,
+		expectedPages: PAGES,
+	});
 	const browser = await chromium.launch();
 	const ctx = await browser.newContext({
 		viewport: { width: 1440, height: 900 },
 		deviceScaleFactor: 1,
 	});
 	await ctx.addInitScript(SEED);
-	const index = { base, generated: new Date().toISOString(), pages: [] };
 	for (const path of PAGES) {
 		const page = await ctx.newPage();
 		const errors = [];
@@ -395,8 +408,13 @@ async function capture() {
 		);
 		// ---- 状态采样：:hover / :focus-visible ----
 		// CDP 的 CSS.forcePseudoState 直接强制伪类，不走 page.hover()/.focus()，
-		// 原因见 STATE_SELECTORS 上方注释。失败即降级，不影响既有指纹。
+		// 原因见 STATE_SELECTORS 上方注释。
+		// 失败不再「降级为没有状态行」：那会让产物与完整采集长得一样，diff 无从分辨。
+		// 现在的口径是记下 stateError 与目标/定位计数，artifact 标 incomplete，进程非零。
 		const stateLines = [];
+		let targets = 0;
+		let located = 0;
+		let stateError = null;
 		try {
 			const cdp = await page.context().newCDPSession(page);
 			await cdp.send("DOM.enable");
@@ -404,7 +422,7 @@ async function capture() {
 			const { root } = await cdp.send("DOM.getDocument", { depth: -1 });
 			// 给可见可交互元素打临时标记，用标记做 CDP 定位。状态采样发生在静态
 			// 采集之后，标记不会污染已产出的指纹。
-			const targets = await page.evaluate(
+			const targetList = await page.evaluate(
 				([selectors, max, widgetRoots]) => {
 					const skip = new Set();
 					for (const w of document.querySelectorAll(widgetRoots)) {
@@ -455,12 +473,14 @@ async function capture() {
 				},
 				[STATE_SELECTORS, STATE_MAX, WIDGET_ROOTS],
 			);
-			for (const t of targets) {
+			targets = targetList.length;
+			for (const t of targetList) {
 				const { nodeId } = await cdp.send("DOM.querySelector", {
 					nodeId: root.nodeId,
 					selector: t.marker,
 				});
 				if (!nodeId) continue;
+				located++;
 				for (const [pseudo, forcedPseudoClasses] of Object.entries(
 					STATE_PSEUDOS,
 				)) {
@@ -495,41 +515,47 @@ async function capture() {
 					el.removeAttribute("data-fp-state");
 			});
 			await cdp.detach();
-		} catch {
-			// 状态采样是增量；CDP 不可用时降级为「没有状态行」，既有指纹照常产出。
+		} catch (error) {
+			stateError = String(error?.message ?? error).slice(0, 160);
 		}
 		lines.push(...stateLines);
-		const body = lines.join("\n");
-		const sha = createHash("sha256")
-			.update(body)
-			.digest("hex")
-			.slice(0, 16);
-		const slug =
-			path.replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, "") || "root";
-		writeFileSync(
-			join(out, `${slug}.txt.gz`),
-			gzipSync(Buffer.from(body, "utf8")),
-		);
-		index.pages.push({
+		const record = artifact.addPage({
 			path,
-			slug,
-			elements: lines.length,
-			sha,
-			errors: errors.slice(0, 4),
+			lines,
+			errors,
+			coverage: { targets, located, stateError },
 		});
 		console.log(
-			`captured ${path}  elements=${lines.length}  sha=${sha}` +
+			`captured ${path}  elements=${record.elements}  sha=${record.sha}` +
 				(errors.length ? `  consoleErrors=${errors.length}` : ""),
 		);
 		await page.close();
 	}
 	await browser.close();
-	writeFileSync(join(out, "index.json"), JSON.stringify(index, null, 2));
+	const result = artifact.finish();
+	if (!result.complete) {
+		console.error(
+			`\nartifact 不完整（${result.problems.length} 条问题）：`,
+		);
+		for (const message of result.problems) console.error(`  - ${message}`);
+		console.error(
+			"  → 这份 artifact 不能用于 diff；修好采集后重新 capture。",
+		);
+		process.exitCode = 1;
+	}
 	console.log("\nwrote", join(out, "index.json"));
 }
 
-function load(out) {
-	const index = JSON.parse(readFileSync(join(out, "index.json"), "utf8"));
+function load(out, states) {
+	const result = readArtifact(out, {
+		expectedStates: states,
+		expectedPages: PAGES,
+	});
+	// 无论完整与否都返回同一个形状（status / problems / index / pages），
+	// 避免 caller 从「有没有 status 字段」反推结果。
+	if (result.status !== ARTIFACT_STATUS.complete) return result;
+	result.index.pages = result.pages;
+	const index = result.index;
 	// 指纹里的 url() 带绝对地址（含端口与域名），换宿主预览会造成全量假阳性；比对时归一化掉。
 	// swup 在切换瞬间给 html/body 挂的类名同理（采集时机不同就会出现"local-only/body.transition-swup-*"）。
 	// 明月浩空播放器是远端第三方件，其提示/歌词底色与歌单高度随远端响应变化，不属本站样式，剔除。
@@ -552,28 +578,71 @@ function load(out) {
 			.replace(/body\.transition-swup-[a-z-]+/g, "body")
 			.replace(/\s?(is-changing|to-page-load|removing|leaving)/g, "");
 	for (const p of index.pages) {
-		p.lines = gunzipSync(readFileSync(join(out, `${p.slug}.txt.gz`)))
-			.toString("utf8")
-			.split("\n")
-			.filter(
-				(l) =>
-					!/#?myhk|musicbottom|musicheader/i.test(
-						l.split(" | ")[0] || "",
-					),
-			)
-			.map(strip);
+		const kept = p.lines.filter(
+			(l) =>
+				!/#?myhk|musicbottom|musicheader/i.test(
+					l.split(" | ")[0] || "",
+				),
+		);
+		// 不渲染元素（script/style/link/meta/noscript/template）不生成盒子，增删不改变可见结果；
+		// 更麻烦的是比对键含「全部兄弟元素序号」——删一个 body 级 `<script>` 会让它之后所有元素
+		// 的序号整体前移，产出成百条 REMOVED/ADDED。实测：把四个页面级功能的内联脚本迁进共享
+		// chunk，真实差异只有 18 个 `<script>`，diff 却报 12/23 页、2365 条。
+		// 剔除后仍由「渲染元素逐条比对」把关：删一个真正占位的元素、改一处计算样式，照样红。
+		// 采集端不动，artifact 里仍保留全部行（完整性校验与 elements 计数用的是采集时的值）。
+		const { lines, dropped } = stripNonRenderingLines(kept);
+		p.lines = lines.map(strip);
+		p.nonRenderingDropped = dropped;
 		// 用归一化后的内容重算摘要，避免"仅端口不同"被判成整页差异
 		p.sha = createHash("sha256")
 			.update(p.lines.join("\n"))
 			.digest("hex")
 			.slice(0, 16);
 	}
-	return index;
+	return result;
 }
 
 function diff() {
-	const a = load(arg("a", "output/fp-before"));
-	const b = load(arg("b", "output/fp-after"));
+	const states = Object.keys(STATE_PSEUDOS);
+	const aPath = arg("a", "output/fp-before");
+	const bPath = arg("b", "output/fp-after");
+	const a = load(aPath, states);
+	const b = load(bPath, states);
+	// 先验 artifact，再比样式。任一不完整、版本不符、页集合不一致或四态覆盖不对称，
+	// 都直接非零退出——「没采到」与「没变化」在输出上必须长得不一样。
+	const rejected = [
+		["A", aPath, a],
+		["B", bPath, b],
+	];
+	let blocked = false;
+	for (const [label, dir, result] of rejected) {
+		if (result.status === ARTIFACT_STATUS.complete) continue;
+		blocked = true;
+		console.error(`\n${label} 侧 artifact ${result.status}：${dir}`);
+		for (const message of result.problems) console.error(`  - ${message}`);
+	}
+	if (blocked) {
+		console.error(
+			"\n两份 artifact 都必须完整采集才能比样式。请重新 capture 后再 diff。",
+		);
+		process.exit(1);
+	}
+	const coverage = compareCoverage(a, b);
+	if (!coverage.ok) {
+		console.error(
+			`\n两份 artifact 的覆盖不对称（${coverage.problems.length} 条）：`,
+		);
+		const shown = coverage.problems.slice(0, 40);
+		for (const message of shown) console.error(`  - ${message}`);
+		if (coverage.problems.length > shown.length)
+			console.error(
+				`  ... 另有 ${coverage.problems.length - shown.length} 条`,
+			);
+		console.error(
+			"\n覆盖不对称说明两次采集看到的输入不同，样式差异无法归因；先重新 capture。",
+		);
+		process.exit(1);
+	}
 	const mapB = new Map(b.pages.map((p) => [p.path, p]));
 	let totalDiff = 0;
 	let pagesDiff = 0;
@@ -851,6 +920,20 @@ function diff() {
 					: "") +
 				(c.equivalent ? `  (另有 ${c.equivalent} 条是等价色)` : ""),
 		);
+	const droppedA = a.pages.reduce(
+		(sum, p) => sum + (p.nonRenderingDropped ?? 0),
+		0,
+	);
+	const droppedB = b.pages.reduce(
+		(sum, p) => sum + (p.nonRenderingDropped ?? 0),
+		0,
+	);
+	if (droppedA || droppedB) {
+		console.log(
+			`\n注：比对时剔除不渲染元素 ${droppedA}/${droppedB} 条（A/B；script/style/link/meta/noscript/template）。` +
+				`它们不生成盒子，增删不改变可见结果；采集产物里仍保留这些行。`,
+		);
+	}
 	console.log(
 		`\n=== pages differing: ${pagesDiff}/${a.pages.length}, element diffs: ${totalDiff} ===`,
 	);

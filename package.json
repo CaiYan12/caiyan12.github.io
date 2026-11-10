@@ -16,6 +16,7 @@
 		"smoke:ui": "node scripts/ui-smoke.mjs",
 		"smoke:wallpaper-pull": "node scripts/wallpaper-pull-smoke.mjs",
 		"smoke:console": "node scripts/console-smoke.mjs",
+		"smoke:runtime-lifecycle": "node scripts/runtime-lifecycle-smoke.mjs",
 		"test:console": "node --test scripts/console-smoke.test.mjs",
 		"test:prettier-math": "node --test scripts/prettier-math.test.mjs",
 		"test:article-toc-browser": "node --test scripts/article-toc-browser.test.mjs",
