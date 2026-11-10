@@ -1,5 +1,30 @@
 # 更新日志
 
+## 2026-11-10：拉绳壁纸两套测试桩合成一个 scenario adapter（Phase F3）
+
+**改了什么**：新增 `src/utils/runtime/wallpaper-scenario.ts`（测试专用 scenario adapter，不参与客户端打包）与 `src/utils/runtime/wallpaper-scenario.test.ts`（adapter 自身的 7 条单测）；`wallpaper-pull-interaction.test.ts`（30 例）与 `wallpaper-pull-failure.test.ts`（14 例）改为共用它，两个文件合计 **−559 行**。**生产代码零改动**：`wallpaper-pull.ts` / `wallpaper-crossfade.ts` / `wallpaper-pull-drag.ts` / `wallpaper-pull-attempts.ts` / 样式 / 页面 / 依赖一个字节没动。
+
+**为什么**：这两个文件各自抄了一份最小 DOM 桩（事件目标、Image、计时器、classList、document/window 全局），加起来近千行几乎全是重复的搭建代码；两份桩的关键语义还悄悄分叉了——flush 轮数 8 与 12、classList 有无 `contains`、要不要捕获长计时器、要不要记录请求地址。桩分叉的真正代价不是行数，而是「同一个行为在两个文件里被测出两个口径」，出问题时很难判断是实现变了还是桩变了。合成一份之后，搭建只有一处，行为断言仍然留在各自测试里。
+
+**adapter 的边界**：只提供**操作**（派发点击/拖拽/键盘/取消、驱动预载成功/失败/超时、布置池与偏好）与**观测**（背景 src、播报词、宿主 class、CSS 变量、dataset、尝试次数、请求地址），**不提供** `expectSuccess()` 这类会复制 implementation 判断的高阶断言——期望必须留在测试里，这条由 adapter 单测的一条护栏钉住（`Object.keys(scenario)` 里不得出现 `expect*` / `assert*` / `should*`）。未知选择器、派发到没有监听器的事件类型、没有可结束的候选预载一律抛错，不允许静默空跑。
+
+**实测证据（2026-11-10，Windows 11 / Node 24.18.0 / pnpm 10.26.2，起点 `91a5255`）**：
+
+- **用例零丢失**：44 条测试名迁移前后**逐字一致**（`diff` 两文件均为空）；断言消息逐字一致，差异只有 3 条搬进 adapter 的桩内断言（`harness 必须先建好` / `应当有一次候选预载` / `应存在一个明确的加载上限计时器`），它们本来就只服务于桩自身。场景一个没删：失败、超时、无候选、减少动态、摇头、解锁全部保留。
+- **`pnpm test:utils` 268/268**、退出码 0（基线 261 + adapter 新增 7）；`pnpm check` 0 errors / 0 warnings / 6 hints；全范围 Prettier 退出码 0；`verify-eol` 451 文件 0 混合。
+- **flush 轮数统一（唯一一处改动了既有桩行为的地方）**：原为 interaction 8 轮 / failure 12 轮，统一到 12。改前用**未改动**的两个原文件各复制一份、只改轮数做两向对照：interaction 8→12 得 **30/30**，failure 12→8 得 **14/14**（`output/architecture-2026-11-10/F3/flush-equiv/flush-equiv.log`），证明轮数只影响等多久、不改变任何结局。
+- **变异验证**（每次跑完立即用备份还原，`sha256` 回到 `64dd9bad…`、`grep "F3 变异"` = 0）：删掉 `finally` 里的 `busy = false` 与 dataset 清理 → **6 红**（四条解锁路径全塌）；删掉 decode 被拒后的「加载完成 + 固有尺寸」回退 → **18 红**（全部成功路径）；删掉 `pointercancel` 的复位 → **1 红**（「pointercancel 一律不换图，但会安全复位」）。
+- **helper 没进客户端包**：`dist/` 全量搜 adapter 的 5 个特征串 **0 命中**；客户端 JS chunk 摘要与本轮改动前**逐字节相同**（124 个 chunk / 5,478,983 B，`4964d832…`）。
+
+**失败路径与踩坑**：
+
+1. **多指路径没有测试覆盖**——变异三的另一个分支（删掉 `releasePointer` 的指针 ID 过滤）跑出来仍是 44/44 全绿。也就是说现有用例里没有任何一条覆盖「第二根手指按下时不应接管手势」。这是本轮实测出来的**既有覆盖缺口**，与迁移无关；本轮没有补（补它属于新增行为断言，超出 F3「只允许合并 setup」的边界），留给 F5 决定。
+2. **桩里有四处「承重」的语义不得顺手补全**：`document` 故意没有 `createElement`、`getComputedStyle` 故意不返回 `getPropertyValue`（两者合起来让交叉淡入的临时层必然建不起来 → 走 `skipped` → 直接切换的退化路径，补上任何一个都会让事务挂在 `waitForImage` 上）、`Image.decode` 恒 reject（逼出「加载完成 + 固有尺寸」的退化判据）、未知 selector 抛错（让提示气泡与衣服 SVG 刻意缺席，走 CSS 兜底）。这四条已写进 adapter 文件头。
+3. **`installGlobals` 不能重复包裹计时器**：原 failure 桩在同一文件里第二次调用时会把**已被替换的** `globalThis.setTimeout` 当成真身再包一层；adapter 改为模块加载时取一次真身，场景工厂只重装不重包。
+4. **`astro build` 首次因 `fonts.googleapis.com` 取字体抖动中止**（`Error fetching fonts: TypeError: terminated` → satori「No fonts are loaded」），重试退出码 0；与本轮改动无关。
+
+**阶段边界**：本轮只做 F3，F4 / F5 未开始。**未 commit、未 push、未建 PR、未部署。**
+
 ## 2026-11-10：样式指纹不再把「不渲染元素的增删」算成可见差异（F1 仪器补丁）
 
 **改了什么**：新增 `scripts/lib/style-nonrendering.mjs`（判定六类不生成盒子的标签：`script` / `style` / `link` / `meta` / `noscript` / `template`）与 `scripts/lib/style-nonrendering.test.mjs`（16 条，随 `pnpm test:lib` 的 `scripts/lib/*.test.mjs` glob 自动执行）；`scripts/upgrade-style-audit.mjs` 的 `load()` 在完整性校验之后、比对之前剔除这些行，并在汇总里打印两侧各剔除了多少条。**采集端未改**，artifact 里仍保留全部行，`elements` / `staticLines` / sha / 四态计数仍按采集时的正文校验；可见性分类的阈值与规则、`bag` 的两档规则、退出码语义都没动。
