@@ -1,6 +1,6 @@
 # 更新日志
 
-## 2026-11-11：壁纸的「图片何时可画」抽成共享内部 module（Phase F5.2）
+## 2026-11-11：壁纸的「图片何时可画」抽成共享内部 module（Phase F5.2–F5.3）
 
 **改了什么**：新增 `src/utils/runtime/image-readiness.ts`（127 行），只导出 `whenPaintable(image, { timeoutMs })` 一个 interface，返回 `"ok" | "failed" | "timeout"` 三档；module 内只做四件事——**第一个信号定案**、可画判定（`complete && naturalWidth > 0`）、结算即摘监听与清计时器、一个加载上限。`wallpaper-pull.ts` 的 `preloadCandidate`（33 行 → 9 行）与 `wallpaper-crossfade.ts` 的 `commitOriginal`（删掉 `waitForImage` 15 行）都改调它。新增 `src/utils/runtime/image-readiness.test.ts`（13 条定向单测）。测试桩 `wallpaper-scenario.ts` 的假图片从 `onload/onerror` 属性换成 `addEventListener/removeEventListener`（setup 性质）。**四个既有测试文件一行未动**；样式、页面、依赖、`package.json` 未动。
 
@@ -16,7 +16,23 @@
 
 **失败路径与踩坑**：① 落地 module 的第一版照抄 spike 草稿（load 分支等 decode 落定再判定），commit 侧矩阵 #8 直接变红——不是「测试写错了」，是草稿的结算时机与两条事务的既有语义都不合；② adapter 的假图片原本只有 `onload/onerror` 属性，module 改用监听后预载侧整片用例变红（Promise 执行器里抛错被吞成「加载失败」），必须让桩与生产同形；③ 改生产文件时用一次性脚本按精确文本替换（CRLF 文件手改会把行尾切成 LF，造成混合行尾），改完跑 `verify-eol.mjs` 复核。
 
-**阶段边界**：本轮只做 F5.2（实施内部 module），**F5.3（变异与最终验收，含 `smoke:wallpaper-pull` 实机与三组变异）未开始**。**未 commit、未 push。**
+**F5.3 验收（2026-11-11 同日，起点 `b674ad3`）**：
+
+- **三组变异**（每组跑完立即还原，sha256 回到 `ebbdf13e…`、`git diff` 为空、还原后 85/85 回绿）：
+
+    | 变异                                  | 结果                              |
+    | ------------------------------------- | --------------------------------- |
+    | 删「第一个信号定案」的 `claimed` 守卫 | **2 红**、退出码 1                |
+    | 只删 `settled` 那一道                 | 起初 **0 红** → 补判据后 **1 红** |
+    | 删 decode 被拒后的固有尺寸兜底        | **24 红**、退出码 1               |
+    | 删结算时的监听清理                    | **3 红**、退出码 1                |
+
+- **实机烟测**：`astro build` 退出码 0（无 `SAFE_DELETE`）+ `pagefind --site dist` 退出码 0 → `pnpm preview --port 4322` → `pnpm smoke:wallpaper-pull` **47/47、0 FAIL、退出码 0**。与 F2.1 基线比**判据名集合**（不是总数）：47 条逐条一致，双向差集都是 0。
+- **浏览器 A/B**：把两个生产文件回退到 `9b3fff6`（F5.2 之前）构建一份「改前」产物，与当前产物用**同一套静态服务器**（只换根目录）跑同一套 Playwright 探针：三个视口（1440×900 桌面 / 768×1024 平板 / 390×844 手机）+ 减少动态一档，六类场景（单击 / 拖拽达阈值 / 未达阈值回弹 / 键盘 Enter+Space / 失败播报 / 减少动态）全覆盖。**逐项对比：除 base URL 本身外零差异。**手机档挂件按设计隐藏（`max-width:680px`），只验「隐藏 + 背景层完好 + 无 console/page 报错」。
+- **补判据**：变异一之补（只删 `settled` 那一道）起初**测不出红灯**——那道守卫不改变结局（Promise 只 resolve 一次，`claimed` 已挡住迟到信号），它真正保证的是 `settle()` 的**副作用**也只做一次。补了一条数「一共摘过几个监听器」的判据（`image-readiness.test.ts`，+1 条），该变异现在 **1 红**。
+- **门禁**：`pnpm test:utils` **296/296**、退出码 0；`pnpm check` 0 errors / 0 warnings / 6 hints；全范围 Prettier 退出码 0；`verify-eol` 456 文件 0 混合。
+
+**阶段边界**：F5 是本 finding 的最后一个阶段，**Phase F5 全部完成**（F5.0–F5.3）。F5.3 未改动任何生产代码。**未 commit、未 push。**
 
 ## 2026-11-11：壁纸两条事务的「可画判定」行为矩阵补齐，并判定共享 module 能不能只暴露一个小 interface（Phase F5.1）
 

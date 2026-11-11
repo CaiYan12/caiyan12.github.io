@@ -27,6 +27,15 @@ type FakeImage = {
 	fire(type: "load" | "error"): void;
 	/** 仍挂着的监听器数（按类型） */
 	listenerCount(type: "load" | "error"): number;
+	/**
+	 * 累计摘掉过多少个监听器。
+	 *
+	 * 「只结算一次」这道守卫**不改变结局**（Promise 只会 resolve 一次，后来的
+	 * `resolve` 被引擎忽略），所以它的存在与否从结局上看不出来。它真正保证的是
+	 * `settle()` 的**副作用**也只做一次——摘监听、清计时器。这里数摘监听次数，
+	 * 就是把那条语义变成可观测的。
+	 */
+	removalCount(): number;
 };
 
 function makeImage(options?: {
@@ -37,6 +46,7 @@ function makeImage(options?: {
 	decodeDelayMs?: number;
 }): FakeImage {
 	const listeners = new Map<string, (() => void)[]>();
+	let removals = 0;
 	const image: FakeImage = {
 		complete: options?.complete ?? false,
 		naturalWidth: options?.naturalWidth ?? 0,
@@ -47,6 +57,7 @@ function makeImage(options?: {
 			listeners.set(type, list);
 		},
 		removeEventListener(type, listener) {
+			removals++;
 			listeners.set(
 				type,
 				(listeners.get(type) ?? []).filter((item) => item !== listener),
@@ -57,6 +68,9 @@ function makeImage(options?: {
 		},
 		listenerCount(type) {
 			return (listeners.get(type) ?? []).length;
+		},
+		removalCount() {
+			return removals;
 		},
 	};
 	if (options?.decode === "resolve") {
@@ -262,4 +276,40 @@ test("结算之后计时器被清掉（不会再触发第二次结算）", async
 	await new Promise((resolve) => setTimeout(resolve, 30));
 
 	assert.equal(await pending, "timeout");
+});
+
+/**
+ * 「只结算一次」这道守卫的**可观测形式**。
+ *
+ * 它不改变结局——Promise 只会 resolve 一次，后来的 `resolve` 被引擎忽略，所以
+ * 「有没有这道守卫」从结局上看不出来（删掉它，判据一条也不会红）。它真正保证的
+ * 是 `settle()` 的**副作用**也只做一次：摘监听、清计时器。
+ *
+ * 这条用例数的是「一共摘过几个监听器」：一次结算摘掉 load 与 error 两个；
+ * 若守卫没了，迟到的解码会再走一次 `settle()`，把计数推到 4。
+ */
+test("结算只做一次：迟到信号不得让 module 再摘一次监听", async () => {
+	const image = makeImage({ decode: "late", decodeDelayMs: 60 });
+	const pending = whenPaintable(asImage(image), { timeoutMs: 10 });
+
+	// load 先到，但解码迟迟不落定 → 上限先到点，按超时收口
+	image.complete = true;
+	image.naturalWidth = 1920;
+	image.fire("load");
+
+	assert.equal(await pending, "timeout", "上限先到点，按超时收口");
+	assert.equal(
+		image.removalCount(),
+		2,
+		"一次结算摘掉 load 与 error 两个监听",
+	);
+
+	// 迟到的解码落定：它会再走一次判定。没有守卫的话 module 会再摘一次监听
+	await new Promise((resolve) => setTimeout(resolve, 120));
+
+	assert.equal(
+		image.removalCount(),
+		2,
+		"结算只做一次：迟到信号不得让 module 再摘一次监听",
+	);
 });
