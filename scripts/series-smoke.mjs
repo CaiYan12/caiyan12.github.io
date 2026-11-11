@@ -74,7 +74,16 @@
 import { makeHarness } from "./lib/smoke-harness.mjs";
 
 // + 5 条：非文章页在无 JS 时不输出目录空壳，站内往返首页不残留且能重建目录。
-const EXPECTED_CHECKS = 88;
+// + 29 条 = F4（文集成员页烟测场景化，2026-11-10）：成员相关的判据从「按章节号
+// 手写」改成「一个循环覆盖 MEMBERS 全部成员」——每个成员四条（两行都在 / 顶部行
+// + 目录链接 / 末尾行 / 侧栏当前项 = 本篇），11 × 4 = 44 条，替掉原先手写的 17 条
+// 成员文案判据与 1 条「第三章当前章」；系列级侧栏判据（条目数 / 链接升序 / 标题栏
+// 「查看目录」）从「只测 webapp 一家」改成按 SERIES 循环，2 × 3 = 6 条，替掉原先
+// 3 条。净 +29：88 → 117。新增覆盖此前一条判据都没有的三个成员——webapp 第 1 章
+// （20261002081331）、第 2 章（20261002093931）与 matt 第 0 篇（20260919135000）；
+// 末章判定改为「序号 === 总数 − 1」，不再写死章节号，新增成员不必再手写一段判据。
+// 生产代码零改动。
+const EXPECTED_CHECKS = 117;
 
 // 组成员与序号：与 src/data/series.ts 及十篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
@@ -115,6 +124,14 @@ const SERIES_NAME = {
 	"matt-pocock": "Matt Pocock 技能选讲",
 };
 
+// 量词（章 / 篇）：与 src/data/series.ts 登记表的 unit 同值，**独立抄写**——
+// 期望文案由它拼出，不调用生产 buildSeriesNote（那正是被测对象，用它生成
+// 期望等于让 oracle 自己证明自己）。
+const UNIT = {
+	"webapp-vibe-coding": "章",
+	"matt-pocock": "篇",
+};
+
 // 外部服务（Giscus 评论接口、字体 CDN）在本机网络下可能 4xx/重置：单列统计，不计 FAIL；
 // 本地资源的失败仍然严格判失败。策略写在调用点，台子内不放行任何东西。
 const externalIssues = [];
@@ -131,11 +148,27 @@ const base = harness.base;
 const { check } = harness;
 
 const browser = await harness.browser.launch(harness.launch);
+
+// 文章正文里有裸的第三方视频 iframe（YouTube / Bilibili / 腾讯视频）。整套用
+// waitUntil:"load" 导航，而 load 要等这些子帧——它们可达与否取决于本地网络当时
+// 的状态。2026-11-10 实测：Matt Pocock 第 0 篇（20260919135000）正文含 YouTube
+// 嵌入，本站自己的资源 634ms 就加载完，YouTube 子帧却要 8.7s、Google 广告 7.4s；
+// 连访两次把 load 拖到 15.5s，第二次直接 30s 超时（整套中途死掉、不产生 FAIL 行）。
+// 文集判据不依赖外部视频站的可用性，故在 context 级别掐掉这些请求——与
+// scripts/ui-smoke.mjs 的 stubExternalEmbeds 同款做法：只匹配外部域名，
+// 本地资源一条都不动。
+const EXTERNAL_EMBEDS =
+	/(?:youtube.com|youtu.be|player.bilibili.com|v.qq.com)/i;
+const stubExternalEmbeds = (context) =>
+	context.route(EXTERNAL_EMBEDS, (route) => route.abort("blockedbyclient"));
+
 const ctx = await browser.newContext();
+stubExternalEmbeds(ctx);
 const page = harness.attach(await ctx.newPage());
 
 // 构建期边界：禁用 JS，防止客户端清理把错误的服务端输出掩盖掉。
 const noJsCtx = await browser.newContext({ javaScriptEnabled: false });
+stubExternalEmbeds(noJsCtx);
 const noJsPage = await noJsCtx.newPage();
 for (const path of ["/", "/archive/", "/series/"]) {
 	const response = await noJsPage.goto(base + path, {
@@ -196,8 +229,34 @@ async function sidebarSeries() {
 			),
 			currentHref: current?.getAttribute("href") ?? null,
 			currentAria: current?.getAttribute("aria-current") ?? null,
+			// 高亮项个数：侧栏目录任何时刻只应有一个 .current（多个 = 高亮漂移）
+			currentCount: toc.querySelectorAll("li.current").length,
 		};
 	});
+}
+
+/**
+ * 成员场景的期望生成器（oracle）。
+ *
+ * 输入：成员 id、组内序号（0 基）、组内总数、文集名、量词、文集 slug。
+ * 输出：顶部行 / 末尾行 / 侧栏当前项的期望文案与链接。
+ *
+ * 刻意**不引用**生产侧 `buildSeriesNote` / `getSeriesView`：那两个函数正是
+ * 被测对象，用它们生成期望等于让 oracle 自己证明自己（GLOSSARY「组内序列」）。
+ * 末章判定只看「序号 === 总数 − 1」，不写死任何章节号——新增成员只要登记进
+ * MEMBERS 就自动获得接线验证，不必再手写一段判据。
+ */
+function memberScenario({ id, index, total, name, unit, slug }) {
+	const isLast = index === total - 1;
+	const belonging = `本文属于《${name}》· 第 ${index} / ${total} ${unit}`;
+	return {
+		isLast,
+		top: { text: `${belonging} · 目录`, href: `/series/${slug}/` },
+		bottom: isLast
+			? { text: `《${name}》已读完 · 看其它文集`, href: "/series/" }
+			: { text: belonging, href: null },
+		currentHref: `/posts/${id}/`,
+	};
 }
 
 // —— 1. 组内相邻：成员页左右按钮的 href 指向同文集相邻篇，首/末篇该方向整块消失 ——
@@ -241,126 +300,54 @@ check(
 	`prev=${nmNav.prev} next=${nmNav.next}`,
 );
 
-// —— 3. 顶部与末尾两行：成员在、末章改收尾、非成员整块不渲染 ——
-await goto(`/posts/20261002071103/`);
-const ch0Notes = await seriesNotes();
-check("第〇章：两行都在", ch0Notes.length === 2, `count=${ch0Notes.length}`);
-check(
-	"第〇章：顶部行 = 第 0 / 9 章 + 目录链接",
-	ch0Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 0 / 9 章 · 目录` &&
-		ch0Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
-	`${ch0Notes[0]?.text} | ${ch0Notes[0]?.links?.join(",")}`,
-);
-check(
-	"第〇章：末尾行 = 第 0 / 9 章（非末章，不收尾）",
-	ch0Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 0 / 9 章` &&
-		ch0Notes[1]?.links.length === 0,
-	`${ch0Notes[1]?.text} | ${ch0Notes[1]?.links?.join(",")}`,
-);
-
-await goto(`/posts/20261002204249/`);
-const ch3Notes = await seriesNotes();
-check(
-	"第三章：顶部行 = 第 3 / 9 章 + 目录链接",
-	ch3Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 3 / 9 章 · 目录` &&
-		ch3Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
-	`${ch3Notes[0]?.text}`,
-);
-check(
-	"第三章（非末章）：末尾行 = 第 3 / 9 章（收尾已移交给第八章）",
-	ch3Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 3 / 9 章` &&
-		ch3Notes[1]?.links.length === 0,
-	`${ch3Notes[1]?.text} | ${ch3Notes[1]?.links?.join(",")}`,
-);
-
-await goto(`/posts/20261010081019/`);
-const ch4Notes = await seriesNotes();
-check(
-	"第四章：顶部行 = 第 4 / 9 章 + 目录链接",
-	ch4Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 4 / 9 章 · 目录` &&
-		ch4Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
-	`${ch4Notes[0]?.text}`,
-);
-check(
-	"第四章（非末章）：末尾行 = 第 4 / 9 章（收尾已移交给第八章）",
-	ch4Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 4 / 9 章` &&
-		ch4Notes[1]?.links.length === 0,
-	`${ch4Notes[1]?.text} | ${ch4Notes[1]?.links?.join(",")}`,
-);
-
-await goto(`/posts/20261011101832/`);
-const ch5Notes = await seriesNotes();
-check(
-	"第五章：顶部行 = 第 5 / 9 章 + 目录链接",
-	ch5Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 5 / 9 章 · 目录` &&
-		ch5Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
-	`${ch5Notes[0]?.text}`,
-);
-check(
-	"第五章（非末章）：末尾行 = 第 5 / 9 章（收尾已移交给第八章）",
-	ch5Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 5 / 9 章` &&
-		ch5Notes[1]?.links.length === 0,
-	`${ch5Notes[1]?.text} | ${ch5Notes[1]?.links?.join(",")}`,
-);
-
-await goto(`/posts/20261016083904/`);
-const ch6Notes = await seriesNotes();
-check(
-	"第六章：顶部行 = 第 6 / 9 章 + 目录链接",
-	ch6Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 6 / 9 章 · 目录` &&
-		ch6Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
-	`${ch6Notes[0]?.text}`,
-);
-check(
-	"第六章（非末章）：末尾行 = 第 6 / 9 章（收尾已移交给第八章）",
-	ch6Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 6 / 9 章` &&
-		ch6Notes[1]?.links.length === 0,
-	`${ch6Notes[1]?.text} | ${ch6Notes[1]?.links?.join(",")}`,
-);
-await goto(`/posts/20261022192826/`);
-const ch7Notes = await seriesNotes();
-check(
-	"第七章：顶部行 = 第 7 / 9 章 + 目录链接",
-	ch7Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 7 / 9 章 · 目录` &&
-		ch7Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
-	`${ch7Notes[0]?.text}`,
-);
-check(
-	"第七章（非末章）：末尾行 = 第 7 / 9 章（收尾已移交给第八章）",
-	ch7Notes[1]?.text === `本文属于《看懂 AI 写的网站》· 第 7 / 9 章` &&
-		ch7Notes[1]?.links.length === 0,
-	`${ch7Notes[1]?.text} | ${ch7Notes[1]?.links?.join(",")}`,
-);
-
-await goto(`/posts/20261027151827/`);
-const ch8Notes = await seriesNotes();
-check(
-	"第八章：顶部行 = 第 8 / 9 章 + 目录链接",
-	ch8Notes[0]?.text === `本文属于《看懂 AI 写的网站》· 第 8 / 9 章 · 目录` &&
-		ch8Notes[0]?.links[0] === `/series/webapp-vibe-coding/`,
-	`${ch8Notes[0]?.text}`,
-);
-check(
-	"第八章（末章）：末尾行改收尾 → 《…》已读完 · 看其它文集 → /series/",
-	ch8Notes[1]?.text === `《看懂 AI 写的网站》已读完 · 看其它文集` &&
-		ch8Notes[1]?.links[0] === `/series/`,
-	`${ch8Notes[1]?.text} | ${ch8Notes[1]?.links?.join(",")}`,
-);
-
-await goto(`/posts/20261006110122/`);
-const matt1Notes = await seriesNotes();
-check(
-	"Matt 末篇：顶部行 = 第 1 / 2 篇（量词取 unit）",
-	matt1Notes[0]?.text ===
-		`本文属于《Matt Pocock 技能选讲》· 第 1 / 2 篇 · 目录`,
-	`${matt1Notes[0]?.text}`,
-);
-check(
-	"Matt 末篇：末尾行改收尾 → 《…》已读完 · 看其它文集",
-	matt1Notes[1]?.text === `《Matt Pocock 技能选讲》已读完 · 看其它文集` &&
-		matt1Notes[1]?.links[0] === `/series/`,
-	`${matt1Notes[1]?.text} | ${matt1Notes[1]?.links?.join(",")}`,
-);
+// —— 3. 成员场景：顶部行 / 末尾行 / 侧栏当前项，一个循环覆盖 MEMBERS 全部成员 ——
+// 每个成员四条判据：①顶部与末尾两行都在 ②顶部行文案 + 目录链接
+// ③末尾行文案（非末章重复归属句 / 末章换收尾并链到 /series/）
+// ④侧栏当前项就是本篇（唯一 .current + aria-current="page"）。
+// 期望由 memberScenario 从独立数据拼出，不复用生产 buildSeriesNote。
+for (const [slug, ids] of Object.entries(MEMBERS)) {
+	const name = SERIES_NAME[slug];
+	const unit = UNIT[slug];
+	const total = ids.length;
+	for (let index = 0; index < total; index++) {
+		const id = ids[index];
+		const exp = memberScenario({ id, index, total, name, unit, slug });
+		const label = `${name} 成员 ${index}/${total - 1}（${id}）`;
+		await goto(`/posts/${id}/`);
+		const notes = await seriesNotes();
+		check(
+			`${label}：顶部与末尾两行都在`,
+			notes.length === 2,
+			`count=${notes.length}`,
+		);
+		check(
+			`${label}：顶部行 = 第 ${index} / ${total} ${unit} + 目录链接`,
+			notes[0]?.text === exp.top.text &&
+				notes[0]?.links?.[0] === exp.top.href,
+			`${notes[0]?.text} | ${notes[0]?.links?.join(",")}`,
+		);
+		check(
+			exp.isLast
+				? `${label}：末尾行改收尾 → 《…》已读完 · 看其它文集 → /series/`
+				: `${label}：末尾行 = 第 ${index} / ${total} ${unit}（非末章，不收尾）`,
+			exp.isLast
+				? notes[1]?.text === exp.bottom.text &&
+						notes[1]?.links?.[0] === exp.bottom.href
+				: notes[1]?.text === exp.bottom.text &&
+						notes[1]?.links.length === 0,
+			`${notes[1]?.text} | ${notes[1]?.links?.join(",")}`,
+		);
+		const sidebar = await sidebarSeries();
+		check(
+			`${label}：侧栏当前项 = 本篇（唯一 .current + aria-current="page"）`,
+			sidebar !== null &&
+				sidebar.currentHref === exp.currentHref &&
+				sidebar.currentAria === "page" &&
+				sidebar.currentCount === 1,
+			`current=${sidebar?.currentHref} aria=${sidebar?.currentAria} currentCount=${sidebar?.currentCount}`,
+		);
+	}
+}
 
 await goto(`/posts/${NON_MEMBER}/`);
 const nmNotes = await seriesNotes();
@@ -370,45 +357,44 @@ check(
 	`count=${nmNotes.length}`,
 );
 
-// —— 4. 侧栏章节目录：成员页在、当前章高亮、非成员页无 ——
-await goto(`/posts/20261002204249/`);
-const ch3Sidebar = await sidebarSeries();
-check(
-	"第三章：侧栏有章节目录，9 条成员链接",
-	ch3Sidebar !== null && ch3Sidebar.items === 9,
-	`items=${ch3Sidebar?.items ?? "无"}`,
-);
-check(
-	'第三章：当前章带 .current 与 aria-current="page"',
-	ch3Sidebar?.currentHref === `/posts/20261002204249/` &&
-		ch3Sidebar?.currentAria === "page",
-	`current=${ch3Sidebar?.currentHref} aria=${ch3Sidebar?.currentAria}`,
-);
-check(
-	"第三章：侧栏目录的链接按 seriesOrder 升序 = 九章顺序",
-	JSON.stringify(ch3Sidebar?.links) ===
-		JSON.stringify(
-			MEMBERS["webapp-vibe-coding"].map((id) => `/posts/${id}/`),
-		),
-	`${ch3Sidebar?.links?.join(",")}`,
-);
-// 标题栏 actions 槽的「查看目录」（站长 2026-10-06 目视后由左下角移入）：
-// 在 h2 内且指向该文集目录页；旧的底部入口 .series-toc-more 必须已不存在。
-const ch3TocLink = await page.evaluate(() => {
-	const link = document.querySelector("#sidebar h2 a.series-toc-link");
-	return {
-		exists: link !== null,
-		href: link?.getAttribute("href") ?? null,
-		moreGone: document.querySelector("#sidebar .series-toc-more") === null,
-	};
-});
-check(
-	"第三章：「查看目录」在标题栏 actions 槽且指向 /series/webapp-vibe-coding/",
-	ch3TocLink.exists &&
-		ch3TocLink.href === "/series/webapp-vibe-coding/" &&
-		ch3TocLink.moreGone,
-	`exists=${ch3TocLink.exists} href=${ch3TocLink.href} moreGone=${ch3TocLink.moreGone}`,
-);
+// —— 4. 侧栏章节目录（系列级）：条目数、按组内序升序、标题栏「查看目录」入口 ——
+// 期望继续从 MEMBERS 派生，不复用生产 getSeriesView；侧栏内容与文集绑定、
+// 与当前打开的是哪一篇无关，故取该文集第一篇作为入口页。
+for (const [slug, ids] of Object.entries(MEMBERS)) {
+	const name = SERIES_NAME[slug];
+	await goto(`/posts/${ids[0]}/`);
+	const sb = await sidebarSeries();
+	check(
+		`${name}：侧栏有章节目录，${ids.length} 条成员链接`,
+		sb !== null && sb.items === ids.length,
+		`items=${sb?.items ?? "无"}`,
+	);
+	check(
+		`${name}：侧栏目录的链接按 seriesOrder 升序 = ${ids.length} 条成员顺序`,
+		JSON.stringify(sb?.links) ===
+			JSON.stringify(ids.map((id) => `/posts/${id}/`)),
+		`${sb?.links?.join(",")}`,
+	);
+	// 标题栏 actions 槽的「查看目录」（站长 2026-10-06 目视后由左下角移入）：
+	// 在 h2 内且指向该文集目录页；旧的底部入口 .series-toc-more 必须已不存在。
+	const tocLink = await page.evaluate(() => {
+		const link = document.querySelector("#sidebar h2 a.series-toc-link");
+		return {
+			exists: link !== null,
+			href: link?.getAttribute("href") ?? null,
+			moreGone:
+				document.querySelector("#sidebar .series-toc-more") === null,
+		};
+	});
+	check(
+		`${name}：「查看目录」在标题栏 actions 槽且指向 /series/${slug}/`,
+		tocLink.exists &&
+			tocLink.href === `/series/${slug}/` &&
+			tocLink.moreGone,
+		`exists=${tocLink.exists} href=${tocLink.href} moreGone=${tocLink.moreGone}`,
+	);
+}
+
 await goto(`/posts/${NON_MEMBER}/`);
 const nmSidebar = await sidebarSeries();
 check(
@@ -416,7 +402,6 @@ check(
 	nmSidebar === null,
 	`result=${JSON.stringify(nmSidebar)}`,
 );
-
 // —— 4b. 粘性跟随（站长 2026-10-06 目视后新增，纯 CSS sticky）：三条判据全部
 // 真滚动测量。**量测对象是粘性容器（[data-widget-stack]），不是小部件自身**——
 // #97 起粘性由「包住文集目录的共享容器」独家承担（小部件自粘会让第二个成员
@@ -431,6 +416,7 @@ check(
 const stickyCtx = await browser.newContext({
 	viewport: { width: 1280, height: 360 },
 });
+stubExternalEmbeds(stickyCtx);
 const stickyPage = harness.attach(await stickyCtx.newPage());
 const sp = stickyPage;
 await sp.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
@@ -614,6 +600,7 @@ check(
 		const flexCtx = await browser.newContext({
 			viewport: { width: 1280, height: vh },
 		});
+		stubExternalEmbeds(flexCtx);
 		const flexPage = harness.attach(await flexCtx.newPage());
 		const fp = flexPage;
 		await fp.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
@@ -754,6 +741,7 @@ const installTocSettleWait = (pg) =>
 	const spyCtx = await browser.newContext({
 		viewport: { width: 1280, height: 720 },
 	});
+	stubExternalEmbeds(spyCtx);
 	const spyPage = harness.attach(await spyCtx.newPage());
 	const sp2 = spyPage;
 	await sp2.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
@@ -1424,6 +1412,7 @@ const installTocSettleWait = (pg) =>
 		viewport: { width: 1280, height: 720 },
 		reducedMotion: "reduce",
 	});
+	stubExternalEmbeds(rmCtx);
 	const rmPage = harness.attach(await rmCtx.newPage());
 	await rmPage.goto(base + `/posts/20261002204249/`, { waitUntil: "load" });
 	// 同 4d：先钉稳布局再测，图片加载移位会把「瞬时直达」读成中间帧假象。
@@ -1470,6 +1459,7 @@ const installTocSettleWait = (pg) =>
 	const swapCtx = await browser.newContext({
 		viewport: { width: 1280, height: 720 },
 	});
+	stubExternalEmbeds(swapCtx);
 	const swapPage = harness.attach(await swapCtx.newPage());
 	const sp3 = swapPage;
 

@@ -1,5 +1,39 @@
 # 更新日志
 
+## 2026-11-10：文集成员页烟测场景化，新增成员自动获得接线验证（Phase F4）
+
+**改了什么**：只动 `scripts/series-smoke.mjs` 一个文件（**生产代码零改动**：`src/utils/series.ts` / `series-integrity.ts` / 文章 frontmatter / 页面组件 / 样式一个字节没动）。①新增独立数据 `UNIT`（每个文集的量词：章 / 篇），与成员名单一样是**独立抄写**，不从生产 `buildSeriesNote` 生成期望；②新增 oracle `memberScenario({id, index, total, name, unit, slug})`，输出顶部行 / 末尾行 / 侧栏当前项的期望文案与链接，**刻意不引用**生产的 `buildSeriesNote` / `getSeriesView`（那正是被测对象，用它生成期望等于让 oracle 自己证明自己）；③原先按章节号手写的成员判据（第〇章、第三章到第八章、Matt 末篇）换成**一个循环覆盖 `MEMBERS` 全部 11 个成员**，每个成员四测：两行都在 / 顶部行 + 目录链接 / 末尾行（末章收尾或非末章归属句）/ 侧栏当前项 = 本篇；④系列级侧栏判据（条目数、链接升序、标题栏「查看目录」）从「只测 webapp 一家」改成按文集循环，两个文集都测；⑤套件补上 context 级外部视频嵌入拦截（`stubExternalEmbeds`，与 `smoke:ui` 同款）；⑥`EXPECTED_CHECKS` 由 88 更新为实测的 117。
+
+**为什么这么定**：旧形态是「每加一章就手写一段判据」——webapp 九章里第 1、2 章和 matt 两篇里第 0 篇**一条判据都没有**（2026-11-10 实测：`20261002081331`、`20261002093931`、`20260919135000` 三个成员完全无覆盖），末章判定还写死成「第八章」。F4 把成员场景抽成「一个循环 + 一个 oracle + 一份独立数据」，末章由「序号 === 总数 − 1」判定，新增成员登记进 `MEMBERS` 就自动获得四条接线验证，不必再手写一段、也不必记得把末章挪到新的那一章。
+
+**实测证据（2026-11-10，Windows 11 / Node 24.18.0 / pnpm 10.26.2，起点 `7a0c89c`）**：
+
+- **基线**：改动前同一份 `dist/` 上 `pnpm smoke:series` **88/88、退出码 0**（`output/architecture-2026-11-10/F4/baseline-series.log`）。**`docs/agents/commands.md` 当时写的是「39 条判据」，与脚本里的 `EXPECTED_CHECKS = 88` 不符**——按计划不拿 39 当基线，以实测 88 为准，并已在本次文档同步里改成实测值。
+- **改后**：**117/117、0 失败、退出码 0**（`after-run3.log`，恢复态产物上复跑同样 117/117，`after-restored.log`）。计数差值来源：88 − 21 + 50 = 117；消失的 21 条**全是成员相关的旧判据**（被参数化替代），新增 50 条 = 11 成员 × 4 条 + 系列级侧栏 2 文集 × 3 条。
+- **通过集合逐项比对**：改前 88 条、改后 117 条按判据名集合比对——**「原有非成员 / 封面 / 粘性 / 文章目录等异质判据」零条丢失**（消失的 21 条全部属于成员相关）；新增成员覆盖项 44 条逐条列出，覆盖全部 11 个成员，其中三个此前完全无判据的成员（`20261002081331`、`20261002093931`、`20260919135000`）首次获得覆盖。
+- **变异验证**（每组跑完立即还原，`sha256` 回到 `5c12a071…`、`git diff --name-only -- src/` = 0）：
+
+    | 变异                                        | 实测结果                                                 |
+    | ------------------------------------------- | -------------------------------------------------------- |
+    | 故意漏跑一个成员场景                        | **退出码 2**、113 项，守卫按预期拦住                     |
+    | oracle 侧：末章判定恒为 false               | **退出码 1**、恰好 2 红（两个末章成员）                  |
+    | oracle 侧：某一成员的侧栏当前项期望写错一位 | **退出码 1**、恰好 1 红（就是那一个成员）                |
+    | 从 `MEMBERS` 删一个成员但保留循环           | **退出码 2**、112 项、20 红，覆盖与 total 同变           |
+    | **生产侧**：`buildSeriesNote` 末章不再收尾  | **退出码 1**、恰好 2 红（两个末章成员），其余 115 条仍绿 |
+
+    最后一条是系统侧证据：临时把 `src/utils/series.ts` 的 `bottom: isLast` 改成 `bottom: isLast && false`、重建产物后跑，整套只红那两条末章判据——证明新判据咬的是真回归，不是自己跟自己比。
+
+- **守卫仍有效**：`EXPECTED_CHECKS` 是写死基线，漏跑成员场景 / 删成员都会让 total 与基线不符，进程以**退出码 2** 拒绝运行（不是退出码 1 的「有判据红」，两者含义不同）。
+
+**失败路径与踩坑**：
+
+1. **`/posts/20260919135000/` 正文含裸 YouTube iframe，`load` 事件被第三方拖垮**：本站资源 634ms 就加载完，YouTube 子帧却要 8.7s、Google 广告 7.4s，连访两次把 load 拖到 15.5s、第二次直接 30s 超时——整套**中途死掉且不产生任何 FAIL 行**，看着像「套件没跑完」而不是「有判据红」。处置：按 `smoke:ui` 的既有做法在 context 级掐掉外部视频嵌入（只匹配外部域名，本地资源一条不动），掐完该页 load 正常、外部问题清单里也不再出现 `myhkw.cn` 与 `static.doubleclick.net`。
+2. **Windows 上 `astro build` 与 `astro preview` 不能同时在跑**：preview 占着 `dist/_astro/` 里的旧资产文件，构建收尾的 `ssrMoveAssets` 要 rename `dist/.prerender/_astro/*` 进去，被占用的文件报 `EPERM: operation not permitted`，构建退出码 1。固定顺序：**停 preview → build → 起 preview**。这与批量删除守卫（报 `SAFE_DELETE_*`）是两回事。
+3. **变异第一次构建失败后那轮 smoke 的读数不算证据**：构建挂掉时 `dist/` 是半成品，smoke 跑到第 4 条就崩，读数被当成「变异结果」记过一次。已按失败处理并重跑——变异结论只取构建退出码 0 之后的那一轮。
+4. **`docs/agents/commands.md` 的 series 条目写「39 条判据」，实际是 88 条**（2026-11-10 之前就存在的偏差）。本次按计划以实测值修正为 117，并写明「以脚本里的 `EXPECTED_CHECKS` 为准」，不再抄会漂的数字。
+
+**阶段边界**：本轮只做 F4，F5 未开始。**未 commit、未 push、未建 PR、未部署。**
+
 ## 2026-11-10：拉绳壁纸两套测试桩合成一个 scenario adapter（Phase F3）
 
 **改了什么**：新增 `src/utils/runtime/wallpaper-scenario.ts`（测试专用 scenario adapter，不参与客户端打包）与 `src/utils/runtime/wallpaper-scenario.test.ts`（adapter 自身的 7 条单测）；`wallpaper-pull-interaction.test.ts`（30 例）与 `wallpaper-pull-failure.test.ts`（14 例）改为共用它，两个文件合计 **−559 行**。**生产代码零改动**：`wallpaper-pull.ts` / `wallpaper-crossfade.ts` / `wallpaper-pull-drag.ts` / `wallpaper-pull-attempts.ts` / 样式 / 页面 / 依赖一个字节没动。
