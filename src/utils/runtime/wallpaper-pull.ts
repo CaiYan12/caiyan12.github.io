@@ -33,6 +33,7 @@ import {
 	isPullPastThreshold,
 	resolvePull,
 } from "../wallpaper-pull-drag";
+import { whenPaintable } from "./image-readiness";
 import { prefersReducedMotion } from "./reduced-motion";
 import { crossfadeBackground } from "./wallpaper-crossfade";
 
@@ -342,42 +343,19 @@ function applyHintPlacement(
  * 判据不是「decode 成功」而是「能用」：decode 被拒绝时退化为
  * 「加载完成且具有固有尺寸」——并发与大尺寸图片会拒掉合法图片（spec 原文）。
  *
- * 每个候选只尝试一次；超过 `LOAD_TIMEOUT_MS` 返回 `timeout`（**按失败处理**，
- * 让调用方换下一个候选并解除忙碌，弱网下不永久锁死）。
+ * 判定与结算知识在共享 module `image-readiness.ts` 里；这一侧只留事务差异：
+ * 每次**新建**独立图像对象、`LOAD_TIMEOUT_MS` 的加载上限、超时**独立成档**
+ * （**按失败处理**，让调用方换下一个候选并解除忙碌，弱网下不永久锁死）。
  */
 function preloadCandidate(url: string): Promise<TryLoadResult> {
-	return new Promise<TryLoadResult>((resolve) => {
-		const image = new Image();
-		let settled = false;
-		let timer: ReturnType<typeof setTimeout> | null = null;
-
-		const finish = (result: TryLoadResult) => {
-			if (settled) return;
-			settled = true;
-			if (timer !== null) clearTimeout(timer);
-			image.onload = null;
-			image.onerror = null;
-			resolve(result);
-		};
-
-		image.onload = () => {
-			// 加载完成后再问一次 decode；被拒不算失败，交给固有尺寸判据
-			const decoded =
-				typeof image.decode === "function"
-					? image.decode()
-					: Promise.resolve();
-			const settle = () =>
-				finish(
-					image.complete && image.naturalWidth > 0 ? "ok" : "failed",
-				);
-			Promise.resolve(decoded).then(settle, settle);
-		};
-		image.onerror = () => finish("failed");
-
-		// 明确的加载上限：到点按超时收口，绝不无限挂着忙碌锁
-		timer = setTimeout(() => finish("timeout"), LOAD_TIMEOUT_MS);
-		image.src = url;
+	const image = new Image();
+	// 共享 module 收「单次结算 + 可画判定 + 清理」；这里传的是这一侧的上限
+	const ready: Promise<TryLoadResult> = whenPaintable(image, {
+		timeoutMs: LOAD_TIMEOUT_MS,
 	});
+	// src 必须最后写：module 在调用时就把监听挂上了，早于 src 才有意义
+	image.src = url;
+	return ready;
 }
 
 /** 从既有背景层上读壁纸池（配置的唯一序列化通道） */

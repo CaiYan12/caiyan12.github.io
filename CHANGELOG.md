@@ -1,5 +1,23 @@
 # 更新日志
 
+## 2026-11-11：壁纸的「图片何时可画」抽成共享内部 module（Phase F5.2）
+
+**改了什么**：新增 `src/utils/runtime/image-readiness.ts`（127 行），只导出 `whenPaintable(image, { timeoutMs })` 一个 interface，返回 `"ok" | "failed" | "timeout"` 三档；module 内只做四件事——**第一个信号定案**、可画判定（`complete && naturalWidth > 0`）、结算即摘监听与清计时器、一个加载上限。`wallpaper-pull.ts` 的 `preloadCandidate`（33 行 → 9 行）与 `wallpaper-crossfade.ts` 的 `commitOriginal`（删掉 `waitForImage` 15 行）都改调它。新增 `src/utils/runtime/image-readiness.test.ts`（13 条定向单测）。测试桩 `wallpaper-scenario.ts` 的假图片从 `onload/onerror` 属性换成 `addEventListener/removeEventListener`（setup 性质）。**四个既有测试文件一行未动**；样式、页面、依赖、`package.json` 未动。
+
+**为什么这么定**：两条事务各自散落着同一套**结算知识**——什么时候问 decode、什么时候算可画、什么时候只结算一次、结算之后要把什么清掉。这套知识因此在两个文件里各写了一遍，晚到事件与清理规则也跟着写了两遍。共享 module 把「共同的部分」收一处，**事务差异留在 caller**：decode 提问的位置（提交侧自己那一次留在 load 之前）、超时的含义（预载把超时独立成档、提交按「不可画」处理并回滚）、谁设置 `src`。机制上选 `addEventListener` 而不是 `onload` 属性：提交事务操作的是**长期共享**的原图层（`.bg-image`），属性赋值等于占用它的处理器槽位。
+
+**实测证据（2026-11-11，Node 24.18.0 / pnpm 10.26.2，起点 `9b3fff6`）**：
+
+- **用例**：`pnpm test:utils` **295/295**、退出码 0（基线 282 + module 新增 13）；四份壁纸测试 71/71、module 13/13；`pnpm check` 0 errors / 0 warnings / 6 hints；全范围 Prettier 退出码 0；`verify-eol` 454 文件 0 混合。
+- **等价性**：差分探针（`output/architecture-2026-11-10/F5.2/spike/`）把「改前的两条事务」与「现在的两条事务」放在同一批 **11 个场景**上跑，**9 个结局完全一致**。探针里的「改前实现」由 `verify-old-copies.mjs` 证明与改前生产代码逐行一致。
+- **两处不同**：① **S10**（load 后同一 tick 到达 error）· 预载侧：改前 `failed`、现在 `ok`——module 实行「第一个信号定案」，load 先到就由 load 定案；改前的预载之所以是 `failed`，是因为它的 load 分支要等 decode 落定（结算被推迟），同 tick 到达的 error 抢先结算了。提交侧两边都是「可画」，**提交侧语义未变**。② **S9**（第二次 decode 很慢）· 提交侧：改前可画、现在不可画——F5.1 已记录的残留 B（Chromium 实测同一元素第二次 `decode()` 为 **0ms**、结果不变）。另有 2 处「结局同、decode 次数不同」（残留 A，同样实测 0ms）。
+- **S10 不可达**：真实 Chromium 实测三次——合法图只收到 `load`、坏图只收到 `error`、只有「换 src」才同时收到两个（`[load, error]`）。预载的图像对象**每次新建、`src` 只写一次**，因此「同一次请求先 load 再 error」不会发生；即便发生，新结局（`ok`）也更贴近事实（那张图确实加载成功且有固有尺寸）。
+- **实现上的一处修正（相对 F5.1 spike 草稿）**：草稿在 load 分支等 decode 落定后才判定可画，**结算被推迟一个微任务**——同 tick 到达的 error 会抢先，F5.1 写下的 commit 侧矩阵 #8（「load 与 error 先后到，结果只由第一次结算决定」）因此变红。落地的 module 改为**第一个信号定案**：load 分支在 load 当刻取「可画性快照」，判定不再被后到的信号改写。两条事务的「只结算一次」语义因此都成立，且**没有改动任何既有断言**。
+
+**失败路径与踩坑**：① 落地 module 的第一版照抄 spike 草稿（load 分支等 decode 落定再判定），commit 侧矩阵 #8 直接变红——不是「测试写错了」，是草稿的结算时机与两条事务的既有语义都不合；② adapter 的假图片原本只有 `onload/onerror` 属性，module 改用监听后预载侧整片用例变红（Promise 执行器里抛错被吞成「加载失败」），必须让桩与生产同形；③ 改生产文件时用一次性脚本按精确文本替换（CRLF 文件手改会把行尾切成 LF，造成混合行尾），改完跑 `verify-eol.mjs` 复核。
+
+**阶段边界**：本轮只做 F5.2（实施内部 module），**F5.3（变异与最终验收，含 `smoke:wallpaper-pull` 实机与三组变异）未开始**。**未 commit、未 push。**
+
 ## 2026-11-11：壁纸两条事务的「可画判定」行为矩阵补齐，并判定共享 module 能不能只暴露一个小 interface（Phase F5.1）
 
 **改了什么**：**生产代码零改动**（`wallpaper-pull.ts` / `wallpaper-crossfade.ts` / 样式 / 页面 / 依赖一个字节没动）。只动测试与测试桩：①新增 `src/utils/runtime/wallpaper-preload-readiness.test.ts`（6 条，覆盖候选预载事务的「可画判定」矩阵）；②`wallpaper-crossfade.test.ts` 增加 6 条矩阵用例，并加了一处 setup——捕获长计时器，用来驱动提交阶段那 **1.5s 上限**（此前**从未被任何测试触发过**）；③`wallpaper-scenario.ts`（F3 的 scenario adapter）扩了三处能力：`decodeOutcome` 可选（默认仍是「被拒」）、`firePreloadEvent`（同步派发，可指向指定那一次预载）、`preloadHandlersAttached`（按次观测处理器是否被摘掉）。adapter 这三处扩展是「补 F3」性质的改动——F5.0 的允许清单里没写 adapter，授权来自 F5.3 那条「若 F3 的 adapter 不能覆盖矩阵，先补 F3」。

@@ -143,14 +143,21 @@ function makeEventTarget(label: string) {
 
 // ---- 场景 ----
 
-/** 候选预载用的假图；结局由测试显式驱动（成功 / 失败 / 超时） */
+/**
+ * 候选预载用的假图；结局由测试显式驱动（成功 / 失败 / 超时）。
+ *
+ * 事件机制与真实 `<img>` 一致：`addEventListener` / `removeEventListener`。
+ * 共享的「可画判定」module（`image-readiness.ts`）用的是监听而不是
+ * `onload` 属性——提交事务操作的是长期共享的原图层，属性赋值等于占用它的
+ * 处理器槽位。假图必须跟上同一套机制，否则桩与生产代码不同形。
+ */
 export type FakeWallpaperImage = {
 	complete: boolean;
 	naturalWidth: number;
 	src: string;
-	onload: (() => void) | null;
-	onerror: (() => void) | null;
 	decode: () => Promise<void>;
+	addEventListener(type: string, listener: () => void): void;
+	removeEventListener(type: string, listener: () => void): void;
 };
 
 export type WallpaperScenarioOptions = {
@@ -400,6 +407,26 @@ export function createWallpaperScenario(
 
 	const pending: FakeWallpaperImage[] = [];
 	const requestedUrls: string[] = [];
+	/**
+	 * 每张假图上挂着的监听器（按事件类型分）。
+	 *
+	 * 与 document / window 的桩分开：那两个「派发到没有监听器就抛错」，
+	 * 因为它们抛的是「派发了但没人接」；而图片上的**迟到事件本就该被吞掉**
+	 * （结算之后不该再有处理器），静默空跑才是正确语义。
+	 */
+	const preloadListeners = new Map<
+		FakeWallpaperImage,
+		Map<string, (() => void)[]>
+	>();
+
+	/** 派发一次事件给图片的监听器；没有监听器时静默空跑 */
+	function dispatchPreloadEvent(
+		image: FakeWallpaperImage,
+		type: "load" | "error",
+	): void {
+		const list = preloadListeners.get(image)?.get(type) ?? [];
+		for (const listener of [...list]) listener();
+	}
 
 	const documentTarget = makeEventTarget("document");
 	const windowTarget = makeEventTarget("window");
@@ -457,14 +484,27 @@ export function createWallpaperScenario(
 			complete: false,
 			naturalWidth: 0,
 			src: "",
-			onload: null,
-			onerror: null,
 			// decode 的结局由场景选项决定：默认被拒（真实浏览器的常态），
 			// 判据必须退化为「加载完成 + 固有尺寸」
 			decode: () =>
 				decodeOutcome === "resolve"
 					? Promise.resolve()
 					: Promise.reject(new Error("decode rejected for test")),
+			addEventListener(type: string, listener: () => void) {
+				const per = preloadListeners.get(image) ?? new Map();
+				const list = per.get(type) ?? [];
+				list.push(listener);
+				per.set(type, list);
+				preloadListeners.set(image, per);
+			},
+			removeEventListener(type: string, listener: () => void) {
+				const per = preloadListeners.get(image);
+				if (!per) return;
+				per.set(
+					type,
+					(per.get(type) ?? []).filter((item) => item !== listener),
+				);
+			},
 		};
 		Object.defineProperty(image, "src", {
 			get: () => "",
@@ -616,8 +656,7 @@ export function createWallpaperScenario(
 			}
 			image.complete = true;
 			image.naturalWidth = ok ? 1200 : 0;
-			if (ok) image.onload?.();
-			else image.onerror?.();
+			dispatchPreloadEvent(image, ok ? "load" : "error");
 			await flush();
 		},
 		firePreloadEvent(
@@ -635,8 +674,7 @@ export function createWallpaperScenario(
 			}
 			image.complete = true;
 			image.naturalWidth = naturalWidth ?? (kind === "load" ? 1200 : 0);
-			if (kind === "load") image.onload?.();
-			else image.onerror?.();
+			dispatchPreloadEvent(image, kind);
 		},
 		preloadImageCount() {
 			assertAlive();
@@ -651,7 +689,11 @@ export function createWallpaperScenario(
 					`[wallpaper-scenario] 没有第 ${at} 次候选预载（共 ${pending.length} 次）`,
 				);
 			}
-			return image.onload !== null || image.onerror !== null;
+			const per = preloadListeners.get(image);
+			const attached =
+				(per?.get("load")?.length ?? 0) +
+				(per?.get("error")?.length ?? 0);
+			return attached > 0;
 		},
 		async failAllPreloads(limit = 8) {
 			assertAlive();
@@ -661,7 +703,7 @@ export function createWallpaperScenario(
 				if (!image || image.complete) break;
 				image.complete = true;
 				image.naturalWidth = 0;
-				image.onerror?.();
+				dispatchPreloadEvent(image, "error");
 				await flush();
 			}
 			await flush();

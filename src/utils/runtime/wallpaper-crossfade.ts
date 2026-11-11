@@ -17,6 +17,7 @@
  * 过渡结束、异常、被中断三条路径都由同一个收尾口移除临时层，绝不堆积。
  */
 
+import { whenPaintable } from "./image-readiness";
 import { prefersReducedMotion } from "./reduced-motion";
 
 /** 临时层类名（样式在 global.css「拉绳壁纸挂件」一节） */
@@ -237,6 +238,10 @@ function replicate(source: HTMLImageElement, layer: HTMLElement): string {
  * 候选已经预载过一次，缓存命中时 `decode()` 立即 resolve；被拒时退化为
  * 「等 load 事件」——与调用点的 `preloadCandidate` 同一口径
  * （并发与大尺寸会拒掉合法图片）。
+ *
+ * 判定与结算知识在共享 module `image-readiness.ts` 里；这一侧只留事务差异：
+ * **自己的那一次 decode 留在 caller**（位置在 load 之前，且不受 1.5s 上限约束）、
+ * 1.5s 上限按「不可画」处理、失败要回滚到旧地址。
  */
 async function commitOriginal(
 	target: HTMLImageElement,
@@ -252,26 +257,11 @@ async function commitOriginal(
 			// 解码被拒不算失败：退化到 load 判据
 		}
 	}
-	const ready = await waitForImage(target);
-	if (!ready) target.src = previous;
-	return ready;
-}
-
-/** 等图片可画；load / error / 超时三路都收尾，不无限阻塞 */
-function waitForImage(image: HTMLImageElement): Promise<boolean> {
-	if (image.complete && image.naturalWidth > 0) return Promise.resolve(true);
-	return new Promise<boolean>((resolve) => {
-		let done = false;
-		const finish = () => {
-			if (done) return;
-			done = true;
-			clearTimeout(timer);
-			image.removeEventListener("load", finish);
-			image.removeEventListener("error", finish);
-			resolve(image.complete && image.naturalWidth > 0);
-		};
-		const timer = setTimeout(finish, COMMIT_TIMEOUT_MS);
-		image.addEventListener("load", finish);
-		image.addEventListener("error", finish);
+	// 共享 module：单次结算、可画判定、监听与计时器清理都在里面。
+	// 超时与失败都按「不可画」处理——这一侧不区分二者（不留证据）。
+	const result = await whenPaintable(target, {
+		timeoutMs: COMMIT_TIMEOUT_MS,
 	});
+	if (result !== "ok") target.src = previous;
+	return result === "ok";
 }
