@@ -21,8 +21,10 @@
  *    而背景桩没有 `complete` / `naturalWidth` / `addEventListener`，事务会挂死。
  * 2. `getComputedStyle` 故意**不返回** `getPropertyValue` —— 同上，让临时层必然
  *    建不起来。
- * 3. `Image.decode` **恒 reject** —— 逼 `preloadCandidate` 退化为「加载完成 +
- *    固有尺寸」判据；改成 resolve 就绕开了这条退化分支。
+ * 3. `Image.decode` **默认恒 reject** —— 逼 `preloadCandidate` 退化为「加载完成 +
+ *    固有尺寸」判据；改成 resolve 就绕开了这条退化分支。**F5.1 起 decode 的结局改为
+ *    可选**（`WallpaperScenarioOptions.decodeOutcome`），默认仍是 reject——
+ *    「decode 兑现即算可画」那条路要单独开一个场景覆盖，但默认口径不许变。
  * 4. `host.querySelector` 对未知选择器**抛错**（不是返回 null）—— 提示气泡与衣服
  *    SVG 刻意缺席，让 `applyHintPlacement` 走「量不到 → CSS 兜底」。
  */
@@ -160,6 +162,15 @@ export type WallpaperScenarioOptions = {
 	reducedMotion?: boolean;
 	/** 站点根 */
 	baseUrl?: string;
+	/**
+	 * 候选预载时 `decode()` 的结局：
+	 * - `reject`（默认）：decode 被拒，判据退化为「加载完成 + 固有尺寸」；
+	 * - `resolve`：decode 成功，走「decode 兑现即算可画」那条路。
+	 *
+	 * 真实浏览器里 decode 被拒是常态（并发与大尺寸图片会拒掉合法图片），
+	 * 所以默认必须是 reject；resolve 那条路要有用例覆盖，就得显式开。
+	 */
+	decodeOutcome?: "resolve" | "reject";
 };
 
 export type WallpaperScenario = {
@@ -212,6 +223,32 @@ export type WallpaperScenario = {
 	failAllPreloads(limit?: number): Promise<void>;
 	/** 触发已登记的「加载上限」计时器——模拟弱网下迟迟等不到结果 */
 	fireLoadTimeouts(): Promise<void>;
+	/**
+	 * 在某一次预载上**同步**派发一个事件，不自动 flush。
+	 *
+	 * 用来测「两个信号先后到」与「迟到的事件」：生产实现在 load 之后才问 decode，
+	 * decode 的 settle 落在微任务里；因此同步连发两个信号时，先同步结算的那个定案。
+	 * `load` 会把图片置成「已完成且有固有尺寸」，`error` 会置成「已完成但无尺寸」。
+	 *
+	 * @param kind "load"（加载完成）/ "error"（加载失败）
+	 * @param naturalWidth 加载完成时的固有尺寸；不传则 load 用 1200、error 用 0
+	 * @param index 目标是第几次发起的预载（按创建顺序；默认 -1 = 最近一次）。
+	 *   测「迟到事件」时要指向**已经结算过**的那一次，用 `preloadImageCount()` 算下标。
+	 */
+	firePreloadEvent(
+		kind: "load" | "error",
+		naturalWidth?: number,
+		index?: number,
+	): void;
+	/** 观测：已发起的预载图片数（按创建顺序） */
+	preloadImageCount(): number;
+	/**
+	 * 观测：第 `index` 次预载（按创建顺序，默认最近一次）是否还挂着 load/error 处理器。
+	 *
+	 * 按次看而不是统计总数：一次候选被判失败后会立刻起下一次预载，总数不会归零，
+	 * 只有「这一次的处理器有没有被摘掉」才说明清理真的发生了。
+	 */
+	preloadHandlersAttached(index?: number): boolean;
 
 	// ---------- 时序 ----------
 	/** 等所有 promise 链跑完（不 sleep 固定毫秒） */
@@ -231,6 +268,8 @@ type CapturedTimer = { cb: () => void; delay: number };
 let capturedTimers: CapturedTimer[] = [];
 /** 当前「减少动态」偏好：运行时每次调用 `prefersReducedMotion()` 都重新读它 */
 let reducedMotion = false;
+/** 当前 `decode()` 的结局（见 WallpaperScenarioOptions.decodeOutcome） */
+let decodeOutcome: "resolve" | "reject" = "reject";
 /** 当前场景（供 currentWallpaperScenario 查询） */
 let activeScenario: WallpaperScenario | null = null;
 
@@ -287,6 +326,7 @@ export function createWallpaperScenario(
 		options.current ?? (pool.length > 0 ? wallpaperUrl(pool[0]!) : "");
 
 	reducedMotion = options.reducedMotion ?? false;
+	decodeOutcome = options.decodeOutcome ?? "reject";
 	capturedTimers = [];
 	Math.random = realRandom;
 
@@ -419,8 +459,12 @@ export function createWallpaperScenario(
 			src: "",
 			onload: null,
 			onerror: null,
-			// 刻意让 decode 被拒：判据必须退化为「加载完成 + 固有尺寸」
-			decode: () => Promise.reject(new Error("decode rejected for test")),
+			// decode 的结局由场景选项决定：默认被拒（真实浏览器的常态），
+			// 判据必须退化为「加载完成 + 固有尺寸」
+			decode: () =>
+				decodeOutcome === "resolve"
+					? Promise.resolve()
+					: Promise.reject(new Error("decode rejected for test")),
 		};
 		Object.defineProperty(image, "src", {
 			get: () => "",
@@ -575,6 +619,39 @@ export function createWallpaperScenario(
 			if (ok) image.onload?.();
 			else image.onerror?.();
 			await flush();
+		},
+		firePreloadEvent(
+			kind: "load" | "error",
+			naturalWidth?: number,
+			index = -1,
+		) {
+			assertAlive();
+			const at = index < 0 ? pending.length + index : index;
+			const image = pending[at];
+			if (!image) {
+				throw new Error(
+					`[wallpaper-scenario] 没有第 ${at} 次候选预载（共 ${pending.length} 次）`,
+				);
+			}
+			image.complete = true;
+			image.naturalWidth = naturalWidth ?? (kind === "load" ? 1200 : 0);
+			if (kind === "load") image.onload?.();
+			else image.onerror?.();
+		},
+		preloadImageCount() {
+			assertAlive();
+			return pending.length;
+		},
+		preloadHandlersAttached(index = -1) {
+			assertAlive();
+			const at = index < 0 ? pending.length + index : index;
+			const image = pending[at];
+			if (!image) {
+				throw new Error(
+					`[wallpaper-scenario] 没有第 ${at} 次候选预载（共 ${pending.length} 次）`,
+				);
+			}
+			return image.onload !== null || image.onerror !== null;
 		},
 		async failAllPreloads(limit = 8) {
 			assertAlive();

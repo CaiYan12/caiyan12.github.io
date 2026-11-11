@@ -108,3 +108,61 @@ test("adapter 不提供 expectSuccess 之类的高阶断言：期望必须留在
 	assert.deepEqual(offending, [], "adapter 只提供操作与观测");
 	scenario.dispose();
 });
+
+test("没有候选预载时派发事件抛错；下标越界也抛错", async () => {
+	const scenario = createWallpaperScenario();
+	assert.throws(
+		() => scenario.firePreloadEvent("load"),
+		/没有第 -1 次候选预载/,
+	);
+
+	initWallpaperPull();
+	scenario.click({ detail: 1, timeStamp: 100 });
+	await scenario.flush();
+
+	assert.equal(scenario.preloadImageCount(), 1);
+	assert.throws(
+		() => scenario.firePreloadEvent("load", undefined, 5),
+		/没有第 5 次候选预载/,
+	);
+	scenario.dispose();
+});
+
+test("decode 结局可配置，默认仍是「被拒」；处理器数量可观测", async () => {
+	const scenario = createWallpaperScenario();
+	initWallpaperPull();
+	scenario.click({ detail: 1, timeStamp: 100 });
+	await scenario.flush();
+
+	// 预载进行中：处理器挂着
+	assert.equal(scenario.preloadHandlersAttached(0), true);
+
+	// 默认 decode 被拒：图片「无固有尺寸」时判失败
+	scenario.firePreloadEvent("load", 0);
+	await scenario.flush();
+	assert.equal(
+		scenario.preloadHandlersAttached(0),
+		false,
+		"结算后这一次预载的处理器应被摘掉（总数不会归零：失败后会立刻起下一次预载）",
+	);
+	assert.equal(
+		scenario.preloadHandlersAttached(-1),
+		true,
+		"新起的那一次预载仍应挂着处理器",
+	);
+	scenario.dispose();
+
+	const resolved = createWallpaperScenario({ decodeOutcome: "resolve" });
+	initWallpaperPull();
+	resolved.click({ detail: 1, timeStamp: 100 });
+	await resolved.flush();
+	resolved.firePreloadEvent("load", 1200);
+	await resolved.flush();
+	// decode 兑现 + 有固有尺寸 → 换图成功（背景不再是初始那张）
+	assert.notEqual(
+		resolved.backgroundSrc,
+		"https://example.test/images/bg/a.jpg",
+		"decode 兑现且有固有尺寸时应当换图成功",
+	);
+	resolved.dispose();
+});

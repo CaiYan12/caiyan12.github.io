@@ -99,6 +99,35 @@ let setupFails: "create" | "insert" | null = null;
 /** getComputedStyle 返回的那个「原图层计算值」表 */
 let computedValues: Record<string, string> = ORIGINAL_STYLE;
 
+/**
+ * 提交阶段的上限（`COMMIT_TIMEOUT_MS`，`wallpaper-crossfade.ts` 里未导出）。
+ * 这里的数值与生产常量一一对应；改了生产常量，这条用例会因「没登记到计时器」而红。
+ */
+const COMMIT_TIMEOUT_MS = 1500;
+
+/**
+ * 被捕获的长计时器（按 delay 登记）：提交阶段的 1.5s 上限靠它驱动。
+ *
+ * 为什么需要捕获：`waitForImage` 的上限是**唯一**能让「解码被拒且图片始终没加载」
+ * 这条路径收尾的东西，不驱动它就等于没测过超时。淡入兜底计时器是 720ms，
+ * 落在阈值以下照常走真实计时器，不会被截住。
+ */
+let capturedTimers: { cb: () => void; delay: number }[] = [];
+
+/** 真定时器：模块加载时取一次，重复包裹会把「已被替换的」当成真身再包一层 */
+const realSetTimeout = globalThis.setTimeout;
+const realClearTimeout = globalThis.clearTimeout;
+
+/** 触发提交阶段的 1.5s 上限计时器 */
+function fireCommitTimeout(): void {
+	const timer = capturedTimers.find((t) => t.delay === COMMIT_TIMEOUT_MS);
+	if (!timer) {
+		throw new Error("没有登记到提交阶段的 1.5s 上限计时器");
+	}
+	capturedTimers = capturedTimers.filter((t) => t !== timer);
+	timer.cb();
+}
+
 function makeOriginal(): FakeOriginal & { insertAdjacentElement: InsertFn } {
 	const base = makeElement("img") as unknown as FakeOriginal & {
 		insertAdjacentElement: InsertFn;
@@ -137,6 +166,7 @@ beforeEach(() => {
 	created = [];
 	setupFails = null;
 	computedValues = ORIGINAL_STYLE;
+	capturedTimers = [];
 
 	original = makeOriginal();
 	// 原图层自己先挂在 document 上，临时层才有「插在它之后」可言
@@ -155,6 +185,18 @@ beforeEach(() => {
 		getPropertyValue: (name: string) => computedValues[name] ?? "",
 	});
 	g.window = { matchMedia: () => ({ matches: false }) };
+	// 长计时器登记而不调度，由测试显式触发；其余照常走真实计时器
+	g.setTimeout = ((cb: () => void, delay?: number) => {
+		if ((delay ?? 0) >= 1000) {
+			capturedTimers.push({ cb, delay: delay ?? 0 });
+			return 0 as unknown as ReturnType<typeof setTimeout>;
+		}
+		return realSetTimeout(cb, delay);
+	}) as unknown as typeof setTimeout;
+	g.clearTimeout = ((handle: unknown) => {
+		if (handle === 0) return;
+		realClearTimeout(handle as ReturnType<typeof setTimeout>);
+	}) as unknown as typeof clearTimeout;
 });
 
 /** 把微任务与一个宏任务清空（不 sleep 固定毫秒） */
@@ -489,4 +531,148 @@ test("减少动态下直接切换不依赖临时层：原图层一次就落到�
 	assert.equal(result, "committed");
 	assert.deepEqual(seen, [], "没有临时层就没有插入动作");
 	assert.equal(original.src, NEW_URL);
+});
+
+// ---- 可画判定行为矩阵（Phase F5.1） ----
+//
+// 缝隙：`commitOriginal` / `waitForImage` 这条提交事务的结算知识——decode 什么时候问、
+// 什么时候算可画、什么时候只结算一次、结算后要把什么清掉。行号与
+// `output/architecture-2026-11-10/F5.1/behavior-matrix.md` 一一对应。
+//
+// 这几条用例只看「原图层什么时候算可画、失败怎么回滚、迟到的事件会不会翻案」；
+// 临时层的建层与互斥由上面的用例负责。
+
+/** 让提交事务走「解码被拒 → 等 load 事件」那条路 */
+function rejectDecode(): void {
+	original.decode = () => Promise.reject(new Error("decode rejected"));
+}
+
+/** 把原图层置成「已完成且有固有尺寸」并派发 load */
+function deliverLoad(): void {
+	original.complete = true;
+	original.naturalWidth = 1920;
+	original.dispatch("load", undefined);
+}
+
+test("矩阵 #3：解码被拒后靠 load 事件判定可画", async () => {
+	rejectDecode();
+	const done = crossfadeBackground(asImage(original), NEW_URL);
+	await flush();
+	endFade();
+	await flush();
+
+	assert.equal(
+		tempLayers().length,
+		1,
+		"原图层还没画出来时不得撤掉临时层（撤了就露底色）",
+	);
+
+	deliverLoad();
+	await flush();
+
+	assert.equal(await done, "committed");
+	assert.equal(original.src, NEW_URL);
+	assert.equal(tempLayers().length, 0);
+});
+
+test("矩阵 #5：提交阶段 1.5s 到点判失败，原图层回滚", async () => {
+	rejectDecode();
+	const done = crossfadeBackground(asImage(original), NEW_URL);
+	await flush();
+	endFade();
+	await flush();
+	assert.equal(original.src, NEW_URL, "提交阶段已经把新地址写上去了");
+
+	fireCommitTimeout();
+	await flush();
+
+	assert.equal(await done, "failed");
+	assert.equal(original.src, OLD_URL, "超时判失败要回滚");
+	assert.equal(tempLayers().length, 0, "失败路径同样要移除临时层");
+});
+
+test("矩阵 #6：超时之后才到的 load 不得把失败翻成成功", async () => {
+	rejectDecode();
+	const done = crossfadeBackground(asImage(original), NEW_URL);
+	await flush();
+	endFade();
+	await flush();
+
+	fireCommitTimeout();
+	await flush();
+	assert.equal(await done, "failed");
+
+	deliverLoad();
+	await flush();
+
+	assert.equal(await done, "failed", "迟到的 load 不得翻案");
+	assert.equal(original.src, OLD_URL, "背景仍应是回滚后的旧地址");
+});
+
+test("矩阵 #7：提交成功之后才到的 error 不得把成功翻成失败", async () => {
+	rejectDecode();
+	const done = crossfadeBackground(asImage(original), NEW_URL);
+	await flush();
+	endFade();
+	await flush();
+
+	deliverLoad();
+	await flush();
+	assert.equal(await done, "committed");
+
+	original.complete = true;
+	original.naturalWidth = 0;
+	original.dispatch("error", undefined);
+	await flush();
+
+	assert.equal(await done, "committed", "迟到的 error 不得翻案");
+	assert.equal(original.src, NEW_URL);
+});
+
+test("矩阵 #8：load 与 error 先后到，结果只由第一次结算决定", async () => {
+	rejectDecode();
+	const done = crossfadeBackground(asImage(original), NEW_URL);
+	await flush();
+	endFade();
+	await flush();
+
+	// 真实浏览器里 load 与 error 互斥；这里连发是为了钉住「只结算一次」
+	deliverLoad();
+	original.complete = true;
+	original.naturalWidth = 0;
+	original.dispatch("error", undefined);
+	await flush();
+
+	assert.equal(await done, "committed", "后到的信号不得把第一次结算翻掉");
+	assert.equal(original.src, NEW_URL);
+});
+
+test("矩阵 #9：结算之后 load/error 监听被摘掉", async () => {
+	rejectDecode();
+	const done = crossfadeBackground(asImage(original), NEW_URL);
+	await flush();
+	endFade();
+	await flush();
+
+	assert.equal(
+		original.listenerCount("load"),
+		1,
+		"提交阶段应当挂着 load 监听",
+	);
+	assert.equal(
+		original.listenerCount("error"),
+		1,
+		"提交阶段应当挂着 error 监听",
+	);
+
+	deliverLoad();
+	await flush();
+
+	assert.equal(
+		original.listenerCount("load"),
+		0,
+		"结算后不得再留着监听，否则迟到的事件还会打到已定案的结局上",
+	);
+	assert.equal(original.listenerCount("error"), 0);
+	await done;
 });

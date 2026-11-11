@@ -1,5 +1,19 @@
 # 更新日志
 
+## 2026-11-11：壁纸两条事务的「可画判定」行为矩阵补齐，并判定共享 module 能不能只暴露一个小 interface（Phase F5.1）
+
+**改了什么**：**生产代码零改动**（`wallpaper-pull.ts` / `wallpaper-crossfade.ts` / 样式 / 页面 / 依赖一个字节没动）。只动测试与测试桩：①新增 `src/utils/runtime/wallpaper-preload-readiness.test.ts`（6 条，覆盖候选预载事务的「可画判定」矩阵）；②`wallpaper-crossfade.test.ts` 增加 6 条矩阵用例，并加了一处 setup——捕获长计时器，用来驱动提交阶段那 **1.5s 上限**（此前**从未被任何测试触发过**）；③`wallpaper-scenario.ts`（F3 的 scenario adapter）扩了三处能力：`decodeOutcome` 可选（默认仍是「被拒」）、`firePreloadEvent`（同步派发，可指向指定那一次预载）、`preloadHandlersAttached`（按次观测处理器是否被摘掉）。adapter 这三处扩展是「补 F3」性质的改动——F5.0 的允许清单里没写 adapter，授权来自 F5.3 那条「若 F3 的 adapter 不能覆盖矩阵，先补 F3」。
+
+**补上的 11 处覆盖缺口**（矩阵 10 行 × 2 侧）：预载侧缺 decode 兑现、late load、late error、二次 settle、监听清理；提交侧缺 load 事件路径、1.5s 超时、late load、late error、二次 settle、监听清理。原先提交侧只测到「解码被拒 + 加载报错」与「解码被拒 + 已完成有尺寸（走早退分支）」，**load 事件那条分支一次都没走过**，超时也一次都没被驱动过。
+
+**spike 判定：deletion test 通过。** 把「今天的预载 / 今天的提交 / 候选草稿预载 / 候选草稿提交」四条实现放在同一批 9 个场景上跑差分探针（草稿与探针都在 `output/architecture-2026-11-10/F5.1/spike/`，**未进仓库**）：**8 个场景的结局完全一致**。共享 module 的 interface 可以是 `whenPaintable(image, { timeoutMs })`——**一个超时参数、无 `mode`、无回滚标志**，两侧的事务差异（decode 提问位置、超时含义、回滚、谁设置 src）全部留在 caller。
+
+**两处残留（如实记录）**：①提交侧会多问一次 `decode()`（module 的 decode 在 load 之后问、提交自己那次在 load 之前问，两边都保留）——在真实 Chromium 上量同一个 `<img>` 连续两次 `decode()`：合法图 5ms→**0ms**、坏图 1ms→**0ms**（结果不变、坏图也不重试）；②若第二次 decode 真的很慢，提交侧会超时回滚而今天会成功——该场景在真实浏览器里不成立（实测第二次 decode 是 0ms），保留它是为了把风险边界写死。
+
+**实测读数（2026-11-11，Windows 11 / Node 24.18.0 / pnpm 10.26.2，起点 `7a0c89c`）**：`pnpm test:utils` **282/282**、退出码 0（基线 268 + 新增 14）；差分探针 9 场景 8 结局一致；Chromium 两次 decode 第二次 0ms。
+
+**阶段边界**：本轮只做 F5.1（等价性判定 + 覆盖补齐），**F5.2（实施内部 module）与 F5.3（变异与最终验收）未开始**。**未 commit、未 push、未建 PR、未部署。**
+
 ## 2026-11-10：文集成员页烟测场景化，新增成员自动获得接线验证（Phase F4）
 
 **改了什么**：只动 `scripts/series-smoke.mjs` 一个文件（**生产代码零改动**：`src/utils/series.ts` / `series-integrity.ts` / 文章 frontmatter / 页面组件 / 样式一个字节没动）。①新增独立数据 `UNIT`（每个文集的量词：章 / 篇），与成员名单一样是**独立抄写**，不从生产 `buildSeriesNote` 生成期望；②新增 oracle `memberScenario({id, index, total, name, unit, slug})`，输出顶部行 / 末尾行 / 侧栏当前项的期望文案与链接，**刻意不引用**生产的 `buildSeriesNote` / `getSeriesView`（那正是被测对象，用它生成期望等于让 oracle 自己证明自己）；③原先按章节号手写的成员判据（第〇章、第三章到第八章、Matt 末篇）换成**一个循环覆盖 `MEMBERS` 全部 11 个成员**，每个成员四测：两行都在 / 顶部行 + 目录链接 / 末尾行（末章收尾或非末章归属句）/ 侧栏当前项 = 本篇；④系列级侧栏判据（条目数、链接升序、标题栏「查看目录」）从「只测 webapp 一家」改成按文集循环，两个文集都测；⑤套件补上 context 级外部视频嵌入拦截（`stubExternalEmbeds`，与 `smoke:ui` 同款）；⑥`EXPECTED_CHECKS` 由 88 更新为实测的 117。
