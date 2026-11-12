@@ -1,0 +1,1164 @@
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>WindowsIt's Music Club — Architecture Review — 2026-11-10</title>
+		<script src="https://cdn.tailwindcss.com"></script>
+		<script type="module">
+			import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+			mermaid.initialize({
+				startOnLoad: true,
+				theme: "neutral",
+				securityLevel: "strict",
+			});
+		</script>
+		<style>
+			.seam {
+				stroke-dasharray: 4 4;
+			}
+			.leak {
+				stroke: #dc2626;
+			}
+			.deep {
+				background: linear-gradient(135deg, #0f172a, #1e293b);
+			}
+			.module-box {
+				border: 1px solid #cbd5e1;
+				border-radius: 0.65rem;
+				background: #fff;
+				padding: 0.7rem;
+				font-size: 0.75rem;
+				line-height: 1.35;
+			}
+			.module-box strong {
+				display: block;
+				margin-bottom: 0.25rem;
+				font-size: 0.7rem;
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
+			}
+			.module-box.deep {
+				border: 2px solid #0f172a;
+				color: #fff;
+			}
+			.interface-bar {
+				border-bottom: 1px dashed #94a3b8;
+				margin: -0.7rem -0.7rem 0.65rem;
+				padding: 0.55rem 0.7rem;
+				font-size: 0.68rem;
+				letter-spacing: 0.04em;
+			}
+			.shallow .interface-bar {
+				min-height: 4.4rem;
+			}
+			.deep .interface-bar {
+				min-height: 2rem;
+				border-color: #64748b;
+			}
+			.implementation-note {
+				color: #64748b;
+			}
+			.deep .implementation-note {
+				color: #cbd5e1;
+			}
+			.diagram-label {
+				font-size: 0.68rem;
+				font-weight: 700;
+				letter-spacing: 0.12em;
+				text-transform: uppercase;
+				color: #64748b;
+			}
+			.flow-arrow {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				color: #94a3b8;
+				font-size: 1.25rem;
+			}
+			.flow-arrow.leaking {
+				color: #dc2626;
+			}
+			.file-list {
+				font-family:
+					ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+					monospace;
+				font-size: 0.8rem;
+				line-height: 1.65;
+			}
+			.badge {
+				display: inline-flex;
+				align-items: center;
+				border-radius: 9999px;
+				padding: 0.25rem 0.65rem;
+				font-size: 0.7rem;
+				font-weight: 700;
+				letter-spacing: 0.04em;
+			}
+			.badge-strong {
+				background: #d1fae5;
+				color: #065f46;
+			}
+			.badge-worth {
+				background: #fef3c7;
+				color: #92400e;
+			}
+			.badge-speculative {
+				background: #e2e8f0;
+				color: #334155;
+			}
+			.badge-kind {
+				background: #f1f5f9;
+				color: #475569;
+			}
+			.card-anchor {
+				scroll-margin-top: 2rem;
+			}
+			@media print {
+				.no-print {
+					display: none;
+				}
+				article {
+					break-inside: avoid;
+				}
+				body {
+					background: #fff;
+				}
+			}
+		</style>
+	</head>
+	<body class="bg-stone-50 font-sans text-slate-900">
+		<main class="mx-auto max-w-6xl space-y-12 px-6 py-12">
+			<header class="space-y-6 border-b border-stone-200 pb-10">
+				<div class="space-y-2">
+					<p
+						class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-700"
+					>
+						Architecture review · 2026-11-10
+					</p>
+					<h1
+						class="font-serif text-4xl font-semibold tracking-tight text-slate-950"
+					>
+						WindowsIt's Music Club
+					</h1>
+					<p class="text-sm text-slate-500">
+						调查起点：<code>e060f02</code> · 只读调查 · 线上 UI
+						保持不变
+					</p>
+				</div>
+				<div
+					class="flex flex-wrap gap-x-6 gap-y-3 text-xs text-slate-600"
+					aria-label="图例"
+				>
+					<span class="flex items-center gap-2"
+						><span
+							class="inline-block h-5 w-8 rounded border border-slate-300 bg-white"
+						></span
+						>module</span
+					>
+					<span class="flex items-center gap-2"
+						><span
+							class="inline-block w-10 border-t border-dashed border-slate-500"
+						></span
+						>seam</span
+					>
+					<span class="flex items-center gap-2"
+						><span
+							class="inline-block w-10 border-t-2 border-red-600"
+						></span
+						>leakage</span
+					>
+					<span class="flex items-center gap-2"
+						><span
+							class="deep inline-block h-5 w-8 rounded border-2 border-slate-900"
+						></span
+						>deep module</span
+					>
+					<span class="flex items-center gap-2"
+						><span class="badge badge-strong">Strong</span
+						><span class="badge badge-worth">Worth exploring</span
+						><span class="badge badge-speculative"
+							>Speculative</span
+						></span
+					>
+				</div>
+				<nav
+					class="no-print flex flex-wrap gap-3 text-sm"
+					aria-label="候选导航"
+				>
+					<a
+						class="rounded-full border border-slate-300 bg-white px-4 py-2 hover:border-emerald-600 hover:text-emerald-700"
+						href="#c1"
+						>01 · 样式指纹自证覆盖</a
+					>
+					<a
+						class="rounded-full border border-slate-300 bg-white px-4 py-2 hover:border-emerald-600 hover:text-emerald-700"
+						href="#c2"
+						>02 · 页面级 runtime 会话</a
+					>
+					<a
+						class="rounded-full border border-slate-300 bg-white px-4 py-2 hover:border-emerald-600 hover:text-emerald-700"
+						href="#c3"
+						>03 · 壁纸测试场景 adapter</a
+					>
+					<a
+						class="rounded-full border border-slate-300 bg-white px-4 py-2 hover:border-emerald-600 hover:text-emerald-700"
+						href="#c4"
+						>04 · 文集烟测场景化</a
+					>
+					<a
+						class="rounded-full border border-slate-300 bg-white px-4 py-2 hover:border-emerald-600 hover:text-emerald-700"
+						href="#c5"
+						>05 · 图片就绪判定</a
+					>
+				</nav>
+			</header>
+
+			<section
+				id="candidates"
+				class="space-y-10"
+				aria-label="架构深化候选"
+			>
+				<article
+					id="c1"
+					class="card-anchor rounded-2xl border border-slate-200 bg-white p-7 shadow-sm md:p-9"
+				>
+					<div class="flex flex-wrap items-center gap-2">
+						<span class="badge badge-strong">Strong</span>
+						<span class="badge badge-kind"
+							>测试仪器 · 零线上影响</span
+						>
+						<span class="badge badge-kind">优先执行</span>
+					</div>
+					<h2
+						class="mt-4 font-serif text-2xl font-semibold tracking-tight"
+					>
+						让样式指纹 artifact 自己声明覆盖是否完整
+					</h2>
+					<p class="mt-2 text-sm text-slate-500">
+						artifact 是 capture 与 diff 之间的 module；现在它的
+						interface 说不清“四种状态到底采到了没有”。
+					</p>
+
+					<div class="mt-5">
+						<p class="diagram-label">Files</p>
+						<ul class="file-list mt-1 text-slate-700">
+							<li>
+								<code
+									>scripts/upgrade-style-audit.mjs:189-194</code
+								>
+								— 四种状态定义
+							</li>
+							<li>
+								<code
+									>scripts/upgrade-style-audit.mjs:396-500</code
+								>
+								— CDP 失败被空 <code>catch</code> 吞掉
+							</li>
+							<li>
+								<code
+									>scripts/upgrade-style-audit.mjs:513-519</code
+								>
+								— manifest 只记总行数
+							</li>
+							<li>
+								<code
+									>scripts/upgrade-style-audit.mjs:637-654,854-857</code
+								>
+								— diff 只按差异退出
+							</li>
+							<li>
+								拟新增：<code
+									>scripts/lib/style-audit-artifact.mjs</code
+								>
+								+ 同目录测试
+							</li>
+						</ul>
+					</div>
+
+					<div class="mt-6 grid gap-4 md:grid-cols-2">
+						<div
+							class="rounded-xl border border-red-200 bg-red-50/50 p-4"
+						>
+							<p class="diagram-label text-red-700">
+								Before · 隐式格式，失败旁路
+							</p>
+							<div class="mt-3 space-y-2">
+								<div class="module-box shallow">
+									<div class="interface-bar">
+										隐式 interface：gzip 文本行 + index.json
+										摘要
+									</div>
+									<p class="implementation-note">
+										capture 与 diff 各自理解格式；manifest
+										没有“状态覆盖”字段。
+									</p>
+								</div>
+								<div class="flow-arrow">↓</div>
+								<div class="module-box">
+									load /
+									diff：只比较现有行，缺状态行也当成“没差异”
+								</div>
+								<div
+									class="rounded-lg border border-red-300 bg-white px-3 py-2 text-xs text-red-700"
+								>
+									<strong>CDP 失败</strong> → 空
+									<code>catch</code> → 仍写出 artifact →
+									两侧同时缺状态 → 可能全绿
+								</div>
+							</div>
+						</div>
+						<div
+							class="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4"
+						>
+							<p class="diagram-label text-emerald-700">
+								After · artifact 自证
+							</p>
+							<div class="mt-3 space-y-2">
+								<div class="module-box">capture</div>
+								<div class="flow-arrow">↓</div>
+								<div class="module-box deep">
+									<div class="interface-bar">
+										artifact module：版本 + 每页静态数 +
+										四态计数 + 完整性
+									</div>
+									<p class="implementation-note">
+										写入与读取共用同一
+										schema；旧格式必须显式拒绝。
+									</p>
+								</div>
+								<div class="flow-arrow">↓</div>
+								<div class="module-box">
+									diff：先校验覆盖与对称性，再比较差异
+								</div>
+								<div
+									class="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-xs text-emerald-800"
+								>
+									incomplete / 版本不符 / 状态数不对称 →
+									响亮失败
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="mt-5 grid gap-4 md:grid-cols-2">
+						<div>
+							<p
+								class="text-xs font-bold uppercase tracking-wider text-slate-500"
+							>
+								Problem
+							</p>
+							<p class="mt-1 text-sm">
+								采集失败时，artifact
+								仍看起来合法；测试门禁无法表达“覆盖不完整”，因此可能把没测到误当成没变化。
+							</p>
+						</div>
+						<div>
+							<p
+								class="text-xs font-bold uppercase tracking-wider text-slate-500"
+							>
+								Solution
+							</p>
+							<p class="mt-1 text-sm">
+								把 artifact 的格式、覆盖与兼容判定收进一个窄
+								interface，让 capture 与 diff 两个真实 caller
+								共用；失败要么使 capture 非零，要么留下 diff
+								必拒的 incomplete artifact。
+							</p>
+						</div>
+					</div>
+					<div
+						class="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-4"
+					>
+						<p
+							class="text-xs font-bold uppercase tracking-wider text-slate-500"
+						>
+							Wins
+						</p>
+						<ul class="mt-2 grid gap-1 text-sm md:grid-cols-2">
+							<li>leverage：两个 caller 共用一套格式契约</li>
+							<li>locality：覆盖失败只在 artifact 一处判定</li>
+							<li>测试直接构造缺状态、版本漂移、非对称</li>
+							<li>后续 runtime 改动获得可信 UI 证据</li>
+						</ul>
+					</div>
+					<p class="mt-4 text-xs text-slate-500">
+						<strong>UI 约束：</strong
+						>不碰任何页面、CSS、渲染产物；只改脚本与测试。<strong>ADR：</strong>不重开
+						ADR 0011 的层策略。
+					</p>
+				</article>
+
+				<article
+					id="c2"
+					class="card-anchor rounded-2xl border border-slate-200 bg-white p-7 shadow-sm md:p-9"
+				>
+					<div class="flex flex-wrap items-center gap-2">
+						<span class="badge badge-strong">Strong</span>
+						<span class="badge badge-kind"
+							>运行时 · 需真实 Swup 验证</span
+						>
+						<span class="badge badge-kind">最高生产 leverage</span>
+					</div>
+					<h2
+						class="mt-4 font-serif text-2xl font-semibold tracking-tight"
+					>
+						收拢页面级 runtime 的 start / stop 所有权
+					</h2>
+					<p class="mt-2 text-sm text-slate-500">
+						页面会话的生存与销毁散在多个 Astro 内联脚本里，caller
+						必须懂四套协议；timer 与监听器没有统一归宿。
+					</p>
+
+					<div class="mt-5">
+						<p class="diagram-label">Files</p>
+						<ul class="file-list mt-1 text-slate-700">
+							<li>
+								<code
+									>src/components/control/Slideshow.astro:138-170</code
+								>
+								— interval 只在 hover / 重启时清理
+							</li>
+							<li>
+								<code
+									>src/pages/posts/[...slug].astro:453-472</code
+								>
+								— 字号初始化 + 另一套 window 防重入
+							</li>
+							<li>
+								<code
+									>src/components/widget/WidgetNewLog.astro:67-104</code
+								>
+								— tabs 自己监听
+								<code>colorful:page:loaded</code>
+							</li>
+							<li>
+								<code
+									>src/components/layout/TagCloud3D.astro:162-218</code
+								>
+								— 异步实例 + window 注册表 + 再一套监听
+							</li>
+							<li>
+								<code
+									>src/utils/theme-script.ts:75-93,145-156</code
+								>
+								— beforeSwap 目前只有 Fancybox 清理
+							</li>
+						</ul>
+					</div>
+
+					<div class="mt-6 grid gap-4 md:grid-cols-2">
+						<div
+							class="rounded-xl border border-red-200 bg-red-50/50 p-4"
+						>
+							<p class="diagram-label text-red-700">
+								Before · 四条生命周期各自为政
+							</p>
+							<div
+								class="mt-3 rounded-lg border border-slate-200 bg-white p-2"
+							>
+								<pre class="mermaid">
+flowchart LR
+  H["Slideshow inline"] --> E["colorful:page:loaded"]
+  A["字号 inline"] --> E
+  W["WidgetNewLog inline"] --> E
+  T["TagCloud3D inline"] --> E
+  E --> L["document listeners"]
+  H --> I["4000ms interval"]
+  I -. "旧 DOM 已脱离" .-> X["继续触发"]
+  classDef leak stroke:#dc2626,stroke-width:2px,color:#991b1b;
+  class I,X leak
+								</pre>
+							</div>
+							<p class="mt-2 text-xs text-red-700">
+								2026-11-10 本机探针：初始两条 4000ms interval
+								含常驻头部轮播；离开首页后仍是
+								2（轮播那条未清），回到首页变 3，<code
+									>clearInterval</code
+								>
+								计数为 0；页面无报错。
+							</p>
+						</div>
+						<div
+							class="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4"
+						>
+							<p class="diagram-label text-emerald-700">
+								After · 一个页面会话 owner
+							</p>
+							<div
+								class="mt-3 rounded-lg border border-slate-200 bg-white p-2"
+							>
+								<pre class="mermaid">
+flowchart LR
+  P["pagefindReady"] --> O["页面会话 owner"]
+  O --> S["beforeSwap: stop 上一页"]
+  O --> R["afterSwap: start 当前页"]
+  R --> H["Slideshow"]
+  R --> A["字号"]
+  R --> W["tabs"]
+  R --> T["TagCloud3D"]
+  classDef deep fill:#0f172a,color:#fff,stroke:#0f172a,stroke-width:2px;
+  class O deep
+								</pre>
+							</div>
+							<p class="mt-2 text-xs text-emerald-800">
+								常驻模块不进入页面会话：拉绳挂件、头部微言轮播仍按既有一次性初始化。
+							</p>
+						</div>
+					</div>
+
+					<div class="mt-5 grid gap-4 md:grid-cols-2">
+						<div>
+							<p
+								class="text-xs font-bold uppercase tracking-wider text-slate-500"
+							>
+								Problem
+							</p>
+							<p class="mt-1 text-sm">
+								“这个页面级功能何时算活、何时必须死”没有单一
+								interface；旧 interval 与监听器可越过 swap
+								存活，真实 bug 藏在调用处而非纯函数里。
+							</p>
+						</div>
+						<div>
+							<p
+								class="text-xs font-bold uppercase tracking-wider text-slate-500"
+							>
+								Solution
+							</p>
+							<p class="mt-1 text-sm">
+								在既有
+								<code
+									>pagefindReady →
+									runtimeTable/runtimeHooks</code
+								>
+								seam 内加深页面会话 owner：各功能只声明页面级
+								start / stop，不再自行监听页面加载事件；先迁
+								Slideshow 与字号，再迁 tabs 与 TagCloud3D。
+							</p>
+						</div>
+					</div>
+					<div
+						class="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-4"
+					>
+						<p
+							class="text-xs font-bold uppercase tracking-wider text-slate-500"
+						>
+							Wins
+						</p>
+						<ul class="mt-2 grid gap-1 text-sm md:grid-cols-2">
+							<li>
+								leverage：一个生命周期 interface 覆盖多个功能
+							</li>
+							<li>
+								locality：timer / listener / 异步收尾集中清理
+							</li>
+							<li>真实 Swup 行为可测，不依赖内部布尔量</li>
+							<li>旧 DOM 不再被后台 interval 改写</li>
+						</ul>
+					</div>
+					<p class="mt-4 text-xs text-slate-500">
+						<strong>UI 约束：</strong>不改 DOM、样式、轮播间隔、swap
+						1–8 次序、字体功能与
+						reduced-motion。<strong>ADR：</strong>与
+						0004/0007/0008/0010/0011/0012 无直接冲突，但必须保留 ADR
+						0008 的目录换页时序。
+					</p>
+				</article>
+
+				<article
+					id="c3"
+					class="card-anchor rounded-2xl border border-slate-200 bg-white p-7 shadow-sm md:p-9"
+				>
+					<div class="flex flex-wrap items-center gap-2">
+						<span class="badge badge-worth">Worth exploring</span>
+						<span class="badge badge-kind"
+							>测试侧 adapter · 零线上影响</span
+						>
+					</div>
+					<h2
+						class="mt-4 font-serif text-2xl font-semibold tracking-tight"
+					>
+						把两套拉绳壁纸测试桩合成 scenario-driven adapter
+					</h2>
+					<p class="mt-2 text-sm text-slate-500">
+						测试穿过了正确的
+						<code>initWallpaperPull</code> seam，却被迫学习大量宿主
+						implementation。
+					</p>
+
+					<div class="mt-5">
+						<p class="diagram-label">Files</p>
+						<ul class="file-list mt-1 text-slate-700">
+							<li>
+								<code
+									>src/utils/runtime/wallpaper-pull-interaction.test.ts:57-112,130-198,201-253</code
+								>
+							</li>
+							<li>
+								<code
+									>src/utils/runtime/wallpaper-pull-failure.test.ts:61-198,200-272</code
+								>
+							</li>
+							<li>
+								两处 <code>flush()</code> 分别等待 8 / 12
+								轮；classList 与计时器能力各自分叉
+							</li>
+						</ul>
+					</div>
+
+					<div class="mt-6 grid gap-4 md:grid-cols-2">
+						<div
+							class="rounded-xl border border-amber-200 bg-amber-50/40 p-4"
+						>
+							<p class="diagram-label text-amber-800">
+								Before · 两套几乎重写的搭建
+							</p>
+							<div class="mt-3 grid grid-cols-2 gap-3">
+								<div class="module-box shallow">
+									<div class="interface-bar">
+										interaction test
+									</div>
+									<p class="implementation-note">
+										event target · DOM · Image · style ·
+										classList · flush
+									</p>
+									<div class="mt-2 space-y-1 text-[0.68rem]">
+										<div
+											class="rounded bg-slate-100 px-2 py-1"
+										>
+											成功路径
+										</div>
+										<div
+											class="rounded bg-slate-100 px-2 py-1"
+										>
+											拖拽 / 键盘
+										</div>
+									</div>
+								</div>
+								<div class="module-box shallow">
+									<div class="interface-bar">
+										failure test
+									</div>
+									<p class="implementation-note">
+										同一套宿主，再写一次；计时器捕获与 class
+										能力不同
+									</p>
+									<div class="mt-2 space-y-1 text-[0.68rem]">
+										<div
+											class="rounded bg-slate-100 px-2 py-1"
+										>
+											失败 / 超时
+										</div>
+										<div
+											class="rounded bg-slate-100 px-2 py-1"
+										>
+											解锁 / 摇头
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="flow-arrow leaking mt-2">↘</div>
+							<div
+								class="rounded-lg border border-slate-200 bg-white p-2 text-center text-xs"
+							>
+								同一个
+								<code>initWallpaperPull()</code> interface
+							</div>
+						</div>
+						<div
+							class="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4"
+						>
+							<p class="diagram-label text-emerald-700">
+								After · 共享 scenario，断言仍分开
+							</p>
+							<div class="mt-3 space-y-2">
+								<div
+									class="grid grid-cols-2 gap-2 text-center text-xs"
+								>
+									<div
+										class="rounded-lg border border-slate-200 bg-white p-2"
+									>
+										interaction assertions
+									</div>
+									<div
+										class="rounded-lg border border-slate-200 bg-white p-2"
+									>
+										failure assertions
+									</div>
+								</div>
+								<div class="flow-arrow">↓</div>
+								<div class="module-box deep">
+									<div class="interface-bar">
+										scenario adapter：布置 → 手势 → 结算 →
+										读取可观察状态
+									</div>
+									<p class="implementation-note">
+										只提供操作与观测，不提供“期望成功”这种会复制
+										implementation 的高阶断言。
+									</p>
+								</div>
+								<div class="flow-arrow">↓</div>
+								<div
+									class="rounded-lg border border-slate-200 bg-white p-2 text-center text-xs"
+								>
+									现有 <code>initWallpaperPull()</code> seam
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="mt-5 grid gap-4 md:grid-cols-2">
+						<div>
+							<p
+								class="text-xs font-bold uppercase tracking-wider text-slate-500"
+							>
+								Problem
+							</p>
+							<p class="mt-1 text-sm">
+								测试准备与平台桩几乎复制两份，新增一个平台调用要修多处；交互断言被宿主细节淹没，失败路径的
+								locality 很差。
+							</p>
+						</div>
+						<div>
+							<p
+								class="text-xs font-bold uppercase tracking-wider text-slate-500"
+							>
+								Solution
+							</p>
+							<p class="mt-1 text-sm">
+								只在测试侧建立一个 scenario
+								adapter：布置壁纸池与偏好、派发点击 / 拖拽 /
+								键盘、结算预载或超时、读取 src / 播报 / class /
+								busy / 尝试次数。生产 interface 不变。
+							</p>
+						</div>
+					</div>
+					<div
+						class="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-4"
+					>
+						<p
+							class="text-xs font-bold uppercase tracking-wider text-slate-500"
+						>
+							Wins
+						</p>
+						<ul class="mt-2 grid gap-1 text-sm md:grid-cols-2">
+							<li>locality：平台知识只在一处</li>
+							<li>leverage：成功、失败、拖拽、键盘共享搭建</li>
+							<li>断言仍留在各测试，避免 oracle 合并</li>
+							<li>为候选 05 提供行为矩阵基础</li>
+						</ul>
+					</div>
+					<p class="mt-4 text-xs text-slate-500">
+						<strong>UI 约束：</strong>不改生产
+						DOM、交互或测试覆盖；真实浏览器仍由
+						<code>smoke:wallpaper-pull</code>
+						负责。<strong>ADR：</strong>无冲突。
+					</p>
+				</article>
+
+				<article
+					id="c4"
+					class="card-anchor rounded-2xl border border-slate-200 bg-white p-7 shadow-sm md:p-9"
+				>
+					<div class="flex flex-wrap items-center gap-2">
+						<span class="badge badge-worth">Worth exploring</span>
+						<span class="badge badge-kind"
+							>测试侧 · 零线上影响</span
+						>
+					</div>
+					<h2
+						class="mt-4 font-serif text-2xl font-semibold tracking-tight"
+					>
+						把文集成员页烟测改为数据驱动场景
+					</h2>
+					<p class="mt-2 text-sm text-slate-500">
+						独立 oracle 已经集中，但每个成员页仍手抄同一组“序号 /
+						总数 / 末章 / 链接”知识。
+					</p>
+
+					<div class="mt-5">
+						<p class="diagram-label">Files</p>
+						<ul class="file-list mt-1 text-slate-700">
+							<li>
+								<code>scripts/series-smoke.mjs:81-116</code> —
+								MEMBERS / 名称 / 封面独立 oracle
+							</li>
+							<li>
+								<code>scripts/series-smoke.mjs:245-363</code> —
+								第〇、三至八章逐页重复断言
+							</li>
+							<li>
+								<code>scripts/series-smoke.mjs:373-394</code> —
+								侧栏已经按 MEMBERS 求期望
+							</li>
+							<li>
+								<code>scripts/series-smoke.mjs:1762-1768</code>
+								— 固定判据总数守卫
+							</li>
+						</ul>
+					</div>
+
+					<div class="mt-6 grid gap-4 md:grid-cols-2">
+						<div
+							class="rounded-xl border border-amber-200 bg-amber-50/40 p-4"
+						>
+							<p class="diagram-label text-amber-800">
+								Before · 每章手抄一组
+							</p>
+							<div
+								class="mt-3 grid grid-cols-4 gap-2 text-center text-[0.68rem]"
+							>
+								<div
+									class="rounded border border-slate-200 bg-white p-2"
+								>
+									ch0<br />2 checks
+								</div>
+								<div
+									class="rounded border border-slate-200 bg-white p-2"
+								>
+									ch3<br />2 checks
+								</div>
+								<div
+									class="rounded border border-slate-200 bg-white p-2"
+								>
+									ch4<br />2 checks
+								</div>
+								<div
+									class="rounded border border-slate-200 bg-white p-2"
+								>
+									ch5<br />2 checks
+								</div>
+								<div
+									class="rounded border border-slate-200 bg-white p-2"
+								>
+									ch6<br />2 checks
+								</div>
+								<div
+									class="rounded border border-slate-200 bg-white p-2"
+								>
+									ch7<br />2 checks
+								</div>
+								<div
+									class="rounded border border-slate-200 bg-white p-2"
+								>
+									ch8<br />末章分支
+								</div>
+								<div
+									class="rounded border border-dashed border-red-300 bg-red-50 p-2 text-red-700"
+								>
+									新增成员<br />不会自动覆盖
+								</div>
+							</div>
+							<div class="flow-arrow leaking mt-2">↓</div>
+							<div
+								class="rounded-lg border border-slate-200 bg-white p-2 text-xs"
+							>
+								同一套文案 / 链接 oracle 被 copy 多次
+							</div>
+						</div>
+						<div
+							class="rounded-xl border border-emerald-200 bg-emerald-50/40 p-4"
+						>
+							<p class="diagram-label text-emerald-700">
+								After · 成员场景统一循环
+							</p>
+							<div class="mt-3 space-y-2">
+								<div class="module-box deep">
+									<div class="interface-bar">
+										scenario：成员 + 序号 + unit +
+										名称（独立数据）
+									</div>
+									<p class="implementation-note">
+										不 import
+										<code>buildSeriesNote</code>
+										生成期望，避免实现自证。
+									</p>
+								</div>
+								<div class="flow-arrow">↓</div>
+								<div
+									class="grid grid-cols-3 gap-2 text-center text-[0.68rem]"
+								>
+									<div
+										class="rounded border border-slate-200 bg-white p-2"
+									>
+										顶部行
+									</div>
+									<div
+										class="rounded border border-slate-200 bg-white p-2"
+									>
+										末尾行
+									</div>
+									<div
+										class="rounded border border-slate-200 bg-white p-2"
+									>
+										侧栏 / 链接
+									</div>
+								</div>
+								<div class="flow-arrow">↓</div>
+								<div
+									class="rounded-lg border border-emerald-300 bg-white p-2 text-center text-xs"
+								>
+									同一检查器跑全部成员；末章由序列位置决定
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="mt-5 grid gap-4 md:grid-cols-2">
+						<div>
+							<p
+								class="text-xs font-bold uppercase tracking-wider text-slate-500"
+							>
+								Problem
+							</p>
+							<p class="mt-1 text-sm">
+								新增成员只更新 MEMBERS
+								会扩展相邻导航，却不会自动获得归属两行覆盖；测试深度随内容增长而漏损。
+							</p>
+						</div>
+						<div>
+							<p
+								class="text-xs font-bold uppercase tracking-wider text-slate-500"
+							>
+								Solution
+							</p>
+							<p class="mt-1 text-sm">
+								沿用独立 MEMBERS / 名称 /
+								unit，用一个成员场景检查器覆盖顶部、末尾、当前项与链接；非成员、粘性栈、文章目录等异质场景保持原状。
+							</p>
+						</div>
+					</div>
+					<div
+						class="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-4"
+					>
+						<p
+							class="text-xs font-bold uppercase tracking-wider text-slate-500"
+						>
+							Wins
+						</p>
+						<ul class="mt-2 grid gap-1 text-sm md:grid-cols-2">
+							<li>leverage：每个成员自动获得同一深度验证</li>
+							<li>locality：文案与链接判据只在一处</li>
+							<li>oracle 保持独立，不复制生产函数</li>
+							<li>新增章节时测试覆盖自动延伸</li>
+						</ul>
+					</div>
+					<p class="mt-4 text-xs text-slate-500">
+						<strong>UI 约束：</strong
+						>只改测试脚本。<strong>ADR：</strong>严格保留 ADR 0007
+						的组内序列、0 基显示、末章收尾与单位量词。
+					</p>
+				</article>
+
+				<article
+					id="c5"
+					class="card-anchor rounded-2xl border border-slate-200 bg-white p-7 shadow-sm md:p-9"
+				>
+					<div class="flex flex-wrap items-center gap-2">
+						<span class="badge badge-speculative">Speculative</span>
+						<span class="badge badge-kind"
+							>壁纸内部 · 先 spike</span
+						>
+					</div>
+					<h2
+						class="mt-4 font-serif text-2xl font-semibold tracking-tight"
+					>
+						合并“图片何时可画”的内部判定，但保留两种事务策略
+					</h2>
+					<p class="mt-2 text-sm text-slate-500">
+						预载与提交都在实现同一套可画性知识；但两者的事务顺序、超时与回滚确实不同。
+					</p>
+
+					<div class="mt-5">
+						<p class="diagram-label">Files</p>
+						<ul class="file-list mt-1 text-slate-700">
+							<li>
+								<code
+									>src/utils/runtime/wallpaper-pull.ts:348-380</code
+								>
+								— decode 拒绝回退 + 单次结算 + 12s 超时
+							</li>
+							<li>
+								<code
+									>src/utils/runtime/wallpaper-crossfade.ts:241-277</code
+								>
+								— decode 回退 + load/error + 清理 + 1.5s 超时
+							</li>
+							<li>
+								注释已自认两处“同一口径”；删除任一侧会把清理知识复制回
+								caller
+							</li>
+						</ul>
+					</div>
+
+					<div class="mt-6 grid gap-4 md:grid-cols-2">
+						<div
+							class="rounded-xl border border-slate-200 bg-stone-50 p-4"
+						>
+							<p class="diagram-label">
+								Before · 同一知识两套实现
+							</p>
+							<div class="mt-3 grid grid-cols-2 gap-3">
+								<div class="module-box shallow">
+									<div class="interface-bar">
+										preloadCandidate
+									</div>
+									<p class="implementation-note">
+										独立 Image<br />decode → complete +
+										naturalWidth<br />12s · 只结算一次
+									</p>
+								</div>
+								<div class="module-box shallow">
+									<div class="interface-bar">
+										commitOriginal
+									</div>
+									<p class="implementation-note">
+										现有图层<br />decode → load/error<br />1.5s
+										· 回滚旧地址
+									</p>
+								</div>
+							</div>
+							<div class="flow-arrow leaking mt-2">↘</div>
+							<div
+								class="rounded-lg border border-red-200 bg-white p-2 text-center text-xs text-red-700"
+							>
+								晚到事件 / 监听清理 / 可画判定的 bug 必须修两次
+							</div>
+						</div>
+						<div
+							class="rounded-xl border border-slate-300 bg-white p-4"
+						>
+							<p class="diagram-label">
+								After · 只共享内部 readiness
+							</p>
+							<div class="mt-3 grid grid-cols-2 gap-3">
+								<div class="module-box">
+									<div class="interface-bar">预载事务</div>
+									<p class="implementation-note">
+										独立 Image · 12s · 候选轮换
+									</p>
+								</div>
+								<div class="module-box">
+									<div class="interface-bar">提交事务</div>
+									<p class="implementation-note">
+										原图层 · 1.5s · 回滚
+									</p>
+								</div>
+							</div>
+							<div class="flow-arrow">↓</div>
+							<div class="module-box deep mx-auto w-4/5">
+								<div class="interface-bar">
+									readiness 内部 module
+								</div>
+								<p class="implementation-note">
+									单次结算 · 可画判定 · 监听清理
+								</p>
+							</div>
+							<div
+								class="mt-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-center text-xs text-amber-800"
+							>
+								若需要多种模式开关才能兼容 → 停止，不强行统一
+							</div>
+						</div>
+					</div>
+
+					<div class="mt-5 grid gap-4 md:grid-cols-2">
+						<div>
+							<p
+								class="text-xs font-bold uppercase tracking-wider text-slate-500"
+							>
+								Problem
+							</p>
+							<p class="mt-1 text-sm">
+								同一可画性知识跨 seam
+								泄漏；修一侧的晚到事件或监听清理，另一侧不会自动受益。
+							</p>
+						</div>
+						<div>
+							<p
+								class="text-xs font-bold uppercase tracking-wider text-slate-500"
+							>
+								Solution
+							</p>
+							<p class="mt-1 text-sm">
+								先做等价性 spike，只抽“单次结算 + 可画判断 +
+								清理”的内部 module；预载仍拥有 12s
+								与候选轮换，交叉淡入仍拥有 1.5s、临时层与回滚。
+							</p>
+						</div>
+					</div>
+					<div
+						class="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-4"
+					>
+						<p
+							class="text-xs font-bold uppercase tracking-wider text-slate-500"
+						>
+							Wins
+						</p>
+						<ul class="mt-2 grid gap-1 text-sm md:grid-cols-2">
+							<li>两个真实 caller 共用 readiness</li>
+							<li>晚到事件与监听清理获得 locality</li>
+							<li>保留两种事务，不制造多参数 module</li>
+							<li>现有测试矩阵即可验证，不新增生产出口</li>
+						</ul>
+					</div>
+					<p class="mt-4 text-xs text-slate-500">
+						<strong>UI 约束：</strong
+						>不改视觉、超时时长、临时层顺序、交叉淡入与回滚语义。<strong>ADR：</strong>与
+						ADR 0010 的挂件行为无冲突；不得把随机背景选图合并进来。
+					</p>
+				</article>
+			</section>
+
+			<section
+				id="top-recommendation"
+				class="rounded-2xl border-2 border-emerald-700 bg-emerald-50 p-8 shadow-sm"
+			>
+				<p
+					class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-800"
+				>
+					Top recommendation
+				</p>
+				<h2
+					class="mt-2 font-serif text-2xl font-semibold text-slate-950"
+				>
+					先修测量仪，再动页面生命周期
+				</h2>
+				<p class="mt-3 max-w-3xl text-sm leading-6 text-slate-700">
+					首选
+					<a
+						class="font-semibold text-emerald-800 underline decoration-emerald-400 underline-offset-2"
+						href="#c1"
+						>01 · 样式指纹自证覆盖</a
+					>。它对线上 UI 零影响，却决定后续所有“UI
+					没变”结论是否可信；当前 CDP 失败可静默产出看似合法的
+					artifact。修完它，再做生产 leverage 最大的
+					<a
+						class="font-semibold text-emerald-800 underline decoration-emerald-400 underline-offset-2"
+						href="#c2"
+						>02 · 页面级 runtime 会话</a
+					>，用同一套可信门禁守住真实 Swup 往返。
+				</p>
+				<p class="mt-3 text-xs text-slate-600">
+					执行顺序：01 → 02 → 03 → 04 → 05。03 是 05 的前置；04 可与
+					02 解耦推进。任何阶段出现可见差异，停止并交站长裁决。
+				</p>
+			</section>
+
+			<footer
+				class="border-t border-stone-200 pt-6 text-xs leading-6 text-slate-500"
+			>
+				<p>
+					配套执行计划：<code
+						>docs/improvements/architecture-improvement-plan-2026-11-10.md</code
+					>
+				</p>
+				<p>
+					本报告只提出候选，不代表已实施；所有 path:line 均为
+					2026-11-10 对当前磁盘的调查锚点，后续执行须重新核对。
+				</p>
+			</footer>
+		</main>
+	</body>
+</html>

@@ -8,6 +8,8 @@ docs/history/qweather-settingup-history-sessions.md
 docs/reference/colorful-original.css
 # 2026-11-07 第六批归档：文集 worktree 过程文档逐字保留，不参与格式化（含内嵌代码片段）
 docs/history/series-2026-10-06-worktree/**
+# 2026-11-12 第七批归档：架构改进批次的执行计划与评审 HTML 逐字保留，不参与格式化（含大量判据清单与内嵌 mermaid）
+docs/history/architecture-2026-11-10/**
 # Literal source snippets in this plan must retain their exact formatting.
 # The file was archived on 2026-10-30 (see docs/history/history.md); this line is
 # kept so the protection applies again automatically if it is ever restored with
