@@ -1,5 +1,35 @@
 # 更新日志
 
+## 2026-11-12：架构改进批次落定四个 ADR（0013–0016）
+
+**这条只记决定，不改代码**：本批的实现已在前六笔提交里；这一笔把四条「难以回退、有真实取舍、令人意外」的结论写成 ADR，并改掉上一节里那句会被这次发布推翻的「未 push」表述。
+
+- [ADR 0013](docs/adr/0013-style-audit-artifact-version.md)：artifact 自带 `style-audit-artifact@1`；无版本 / 版本不符 / 索引读不到一律按「旧格式」拒绝重采；manifest 不自证，读取时从正文重算行数、静态行、四态计数与 sha。边界写明：`targets` / `located` 仍无法自证。
+- [ADR 0014](docs/adr/0014-nonrendering-verdict.md)：`script` / `style` / `link` / `meta` / `noscript` / `template` 六类不生成盒子的标签不参与可见差异；采集端不动，少写它们照样判「不完整」。被否方案里记了「从比对键删掉兄弟序号」——那会连真实重排一起放行。
+- [ADR 0015](docs/adr/0015-page-session-owner.md)：页面级 runtime 走 `pageSessions` 清单，初始装载与换页重跑共用 `runtimeTable` 一行、停止挂 `beforeSwap`，不新增第四轨；常驻模块不进清单，判据是 DOM 是否随页面替换。
+- [ADR 0016](docs/adr/0016-first-signal-settles.md)：可画判定由第一个信号定案、`load` 当刻取快照；`decode()` 只等不判，被拒不算失败；`timeout` 独立成档。边界写明 S10（预载 `failed` → `ok`，实测不可达）与提交侧多问一次 `decode()`（实测 0ms）。
+
+`src/`、CSS、构建链、依赖、四态集合与阈值均未改动；四份 ADR 的实测读数全部取自 `output/architecture-2026-11-10/`（git-ignored）。
+
+## 2026-11-11：架构改进批次收口（Phase 0 / F1–F5 合并验收）
+
+**这条只记验收，不改代码**：本批六个阶段（样式指纹 artifact 契约、不渲染元素口径、页面级 runtime 会话 owner、壁纸测试桩 adapter、文集成员页烟测、壁纸「图片何时可画」共享 module）全部完成后的合并验收。除补一条 `docs/agents/components.md`（写明 F5.2 的 `image-readiness.ts` 契约）外，本阶段**没有改动任何代码或样式**。
+
+**批次级证据（2026-11-11，Node 24.18.0 / pnpm 10.26.2，起点 `b56c913`）**：
+
+- **样式指纹 A/B（`origin/main` vs `HEAD`，23 个审计页）**：**0/23 页、0 条差异**、退出码 0。其中 11 页完全相同、12 页仅「位置互换」（侧栏「文章推荐」是构建期随机抽样，工具已按 `reorder-only` 归为等价）。
+- **有效 CSS 逐字节相同**：`MainGridLayout` / `SiteFooter` / `Layout` 三份同名文件 `cmp` 全部通过——本批一行 CSS 也没改。
+- **五套实机烟测**（在补齐 `verify-og-images` + `verify-katex-classes` + `inject-buddha-banner` 的**完整产物**上重跑）：`wallpaper-pull` **47/47**、`runtime-lifecycle` **17/17**、`series` **117/117**、`console` **23/23**、`ui` **142/142**，退出码全 0；与各自基线比**判据名集合**逐条一致（双向差集都是 0）。
+- **离线门禁**：`test:lib` **70/70**、`test:utils` **296/296**、`test:article-toc-browser` **2/2**、`pnpm check` 0 errors / 0 warnings / 6 hints、全范围 Prettier 退出码 0、`verify-eol` 456 文件 0 混合。
+- **范围核对**：`origin/main..HEAD` 共 32 个文件，逐个对得上各阶段允许清单；零 CSS、零 `src/constants/` 改动、`scripts/` 下无探针文件、代码里无变异残留。
+
+**两处方法学教训（都记进计划文件的收口记录）**：
+
+1. **烟测要跑在完整产物上**：`pnpm build` 链尾的 `inject-buddha-banner` 会往每个 HTML 首行写注释、往 `<head>` 内联一段 `console.info`；只跑 `astro build` 得到的 dist 并不等于上线产物。首轮漏了这步，补齐后全部重跑，读数逐条一致。
+2. **批次 A/B 不能用 `git worktree` + `node_modules` 目录联结做**：worktree 缺 `public/images/_variants/`（gitignore 的生成物），而共享 `node_modules` 把 Tailwind 的扫描缓存也共享了——worktree 产出的 `MainGridLayout.*.css` 与归档里一份 **2026-11-07 的残留文件逐字节相同**。因此第一次得到的「5/23 页、747 条差异」是构建环境差异，不是代码差异；改用主仓就地构建的 base 采集重做才得 0/23。
+
+**阶段边界**：Phase 0 与 F1–F5 全部完成，计划里 183 条 checkbox 全部勾上、0 条未勾。收口时停在本地；提交与发布由站长在 2026-11-12 单独授权（`push main` 会触发 `deploy.yml`，等于上线生产）。
+
 ## 2026-11-11：壁纸的「图片何时可画」抽成共享内部 module（Phase F5.2–F5.3）
 
 **改了什么**：新增 `src/utils/runtime/image-readiness.ts`（127 行），只导出 `whenPaintable(image, { timeoutMs })` 一个 interface，返回 `"ok" | "failed" | "timeout"` 三档；module 内只做四件事——**第一个信号定案**、可画判定（`complete && naturalWidth > 0`）、结算即摘监听与清计时器、一个加载上限。`wallpaper-pull.ts` 的 `preloadCandidate`（33 行 → 9 行）与 `wallpaper-crossfade.ts` 的 `commitOriginal`（删掉 `waitForImage` 15 行）都改调它。新增 `src/utils/runtime/image-readiness.test.ts`（13 条定向单测）。测试桩 `wallpaper-scenario.ts` 的假图片从 `onload/onerror` 属性换成 `addEventListener/removeEventListener`（setup 性质）。**四个既有测试文件一行未动**；样式、页面、依赖、`package.json` 未动。

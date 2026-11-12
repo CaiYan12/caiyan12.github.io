@@ -44,6 +44,7 @@
 - **两段 SVG 各有坐标系**：绳（6×22）与衣服（30×28）都是 viewBox 与渲染尺寸 1:1，path 坐标即 CSS 像素；绳只按 `--wpull-rope-scale` 做 `scaleY`（`transform-origin` 在绳顶，所以上端钉在视口顶边），衣服按 `translateY(calc(--wpull-rope-rest + --wpull-pull))` 跟随。`ROPE_REST`（JS）与 `--wpull-rope-rest`（CSS）必须同值——分处两侧，靠冒烟的「绳尾与衣服顶边相接」判据守。
 - **点击区大于图形**：图形 30×50，命中区由 `.wpull__grab` 单独撑到 46×50；`cursor` 必须走 `var(--cursor-link)`（裸写 `pointer` 会被 `a,button` 的 (0,0,1) 与类的 (0,1,0) 对比反转，见 styles.md「自定义光标」）。
 - **减少动态**：跟手位移、回弹过渡、摇头、悬停倾斜全部撤掉，功能（换图 / 阈值判定 / 播报）不降级；≤680px 整件 `display:none`（此时页面本来也没有壁纸）。
+- **「图片何时可画」只有一处实现（2026-11-11 立，Phase F5）**：预载（`preloadCandidate`，在独立 `Image` 上确认候选可用）与提交（`commitOriginal`，把新地址落到原图层上）共用 `src/utils/runtime/image-readiness.ts` 的 `whenPaintable(image, { timeoutMs })` → `"ok" | "failed" | "timeout"`。module 只做四件事：**第一个信号定案**（load 与 error 谁先到谁说了算，后到的不许翻案）、可画判定（`complete && naturalWidth > 0`）、结算即摘监听与清计时器、一个加载上限。**事务差异留在 caller**：提交侧自己那一次 `decode()` 在 load **之前**问、且不受 1.5s 预算约束（**别把它挪进 module**）；预载 12s、提交 1.5s 各自成档；回滚只在提交侧。判定口径为什么不是「decode 成功」：`decode()` 被拒不算失败——并发与大尺寸图片会拒掉合法图片（spec 原文），所以兑现与被拒走**同一条**判定，问它只是为了等解码落定。监听走 `addEventListener` 而不是 `onload` 属性：提交侧操作的是**长期共享**的原图层，属性赋值等于占用它的处理器槽位。**不要再抄第二份这种判定**——两份实现必然出现「一处认 decode、一处认尺寸」的分叉。回归：`image-readiness.test.ts`（14 条，含「结算的副作用也只做一次」）+ 两条事务各自的可画判定矩阵 + `pnpm smoke:wallpaper-pull`。
 
 ### 侧栏“最新评论”换一批交互硬约束
 
