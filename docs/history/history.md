@@ -115,7 +115,7 @@ git show 4a35268:docs/plans/2026-10-14-article-toc-spec.md > /tmp/toc-spec.md
 
 第七批于 2026-11-12 收尾。范围是 2026-11-10～12 的架构改进批次：一份执行计划（Phase 0 与 F1–F5 五个 finding 的全部步骤、183 条判据）与一份同日生成的架构评审报告。两份**从未纳入 Git**（当时站长定「暂不入库」），删掉即不可恢复，因此以实体文件逐字保留在 [`docs/history/architecture-2026-11-10/`](architecture-2026-11-10/)，**没有 `git show` 恢复命令**；已按「逐字保留」范式加入 `.prettierignore`，不参与格式化。
 
-- 移动前后 sha256 逐份一致：计划 `bd372259…`、评审报告 `fc616967…`；行尾保持原样（两份均为 LF，未改写）。原 `docs/improvements/` 目录已删除。
+- 移动前后 sha256 逐份一致（**按 git blob 计**）：计划 `bd372259…`、评审报告 `fc616967…`；两份归档都是 LF，仓库开着 `core.autocrlf=true`，全新检出的工作区副本是 CRLF，复核时以 `git cat-file blob <path> | sha256sum` 为准。原 `docs/improvements/` 目录已删除。
 - 归档原文里出现的 `docs/improvements/` 路径是**原始位置**，目录删除后不再是指针；正文与「附录 A：供 clean 后新会话使用的完整提示词」按原样保留，不做改写。
 - 批次的**结论**留在活树里：[ADR 0013](../adr/0013-style-audit-artifact-version.md)（指纹 artifact 契约）、[ADR 0014](../adr/0014-nonrendering-verdict.md)（不渲染元素口径）、[ADR 0015](../adr/0015-page-session-owner.md)（页面级会话 owner）、[ADR 0016](../adr/0016-first-signal-settles.md)（第一个信号定案）；实现与验收读数见 `CHANGELOG.md` 2026-11-10～12 各条。
 
