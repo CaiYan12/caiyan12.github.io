@@ -43,11 +43,12 @@ export const SHELL_PAGES = [
 /**
  * 仅 upgrade-style-audit 需要的扩展页。它做的是像素指纹比对（同一份 dist 连采
  * 两遍必须完全一致），覆盖面要求比「带壳真页面」大：多验一篇最老的文章、一个
- * 相册子页、分类/热门/书籍系列页，以及两条**刻意不带壳**的边界页。
+ * 相册子页、分类/热门/系列页，以及两条**刻意不带壳**的边界页。
  *
  * 注意 `/images/` 与 `/this-page-should-404/`：它们**没有 Layout 壳**，
  * 「恰好一个可见 h1」类判据在上面不成立，故只能进本组、不能进 SHELL_PAGES。
- * `/ai-news/` 已迁为独立项目，不属于主站构建与样式审计范围（ADR 0009）。
+ * `/ai-news/` 与 Nice Books 均由独立项目维护；Nice Books 旧 URL 由
+ * `smoke:nice-books-migration` 单独验收，不进入主站页面和样式审计清单。
  */
 export const AUDIT_EXTRA_PAGES = [
 	"/posts/20260831000000/",
@@ -56,9 +57,6 @@ export const AUDIT_EXTRA_PAGES = [
 	"/images/",
 	"/category/",
 	"/hot/",
-	"/books/",
-	"/books/archive/",
-	"/books/01/",
 	"/this-page-should-404/",
 ];
 

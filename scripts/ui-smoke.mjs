@@ -2650,7 +2650,7 @@ check(
 //   · 明月浩空播放器子树——远端组件，自带 myhkw.cn 的 link.cur，不归本站管
 //   · a.copy-post-link（copy）、[aria-disabled] / .is-disabled（not-allowed）、
 //     .photo/正文图（zoom-in）、输入框（text）、看板娘拖拽（move）
-// /books/、/pelican-bike/ 是站长点名排除的导入独立壳，不在页面集内。
+// Nice Books 旧 URL 是兼容页，由迁移烟测单独覆盖；/pelican-bike/ 仍是独立壳。
 // /ai-news/ 已迁为独立项目，不属于本站页面集。
 const CURSOR_SELECTOR = [
 	"a[href]",

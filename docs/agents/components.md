@@ -1,15 +1,17 @@
 # 站点组件与客户端脚本约定
 
-> 客户端脚本与 Swup 生命周期、侧栏「最新评论」交互、Pio 看板娘、Nice Books 每日好书、表情与统计边界、工具函数清单。**动这些组件或写客户端脚本时读对应那节**。
+> 客户端脚本与 Swup 生命周期、侧栏「最新评论」交互、Pio 看板娘、迁出后的 Nice Books 博客边界、表情与统计边界、工具函数清单。**动这些组件或写客户端脚本时读对应那节**。
 
-（本文由 `AGENTS.md` 的「站点组件与客户端脚本约定」一节迁出；内容逐字保留。）
+（本文由 `AGENTS.md` 的「站点组件与客户端脚本约定」一节迁出；现状调整以本文件及实现为准。）
 
 ## 客户端脚本与 Swup 生命周期
 
 - **Svelte 5.57.3 升级不影响组件契约（2026-11-03）**：`Search.svelte` 与 `Pio.svelte` 源码未改，升级前后同一套 32 条实机判据逐条读数一致。两条**验证时必须知道的口径**：① `pioConfig.hiddenOnMobile` 的判据是 `matchMedia("(max-width: 1280px)")`（`Pio.svelte` 约 78 行），**宽度正好 1280 也命中**，此时 `startPio()` 不执行、`window.Paul_Pio` 不存在、DOM 里也没有 `.pio-show`（它由 `pio.js` 运行时 append）。所以「默认折叠、点 `.pio-show` 召唤」只能在 **>1280** 的视口验证，1440×900 可用；390 与 1280 都没有 Pio，那是设计不是缺陷。② Swup 的 `SwupScriptsPlugin` 会重建整个 document 的 script 节点，切页后 `script[src*='pio.js']` 计数归 0，但脚本副作用仍在（`window.Paul_Pio` 存在、实例仍唯一）。要判「没有重复挂载」请看 `.pio-container` / `#pio` / `.pio-show` 的数量，不要数 script 标签。详见 Svelte 专项验收（已归档，索引与取回命令见 [`docs/history/history.md`](../history/history.md) 的「归档清单（第五批）」）。
-- **搜索「无结果」用例必须用已验证 0 命中的查询**：Pagefind 1.6.0 对随机字母串会返回弱相关部分匹配（实测 `zzzqqqxxxnotfound` 得 5 条、`kqxjzvbfhwtmp` 得 2 条），拿它当无结果用例会假红。第二批起一直用 `zzz没有这条内容987654321`（实测 0 命中），沿用即可。另外搜索结果不全是 `/posts/`，也含 `/diary/`、`/about/`、`/tag/` 等被索引页面，判据别写「所有 href 以 /posts/ 开头」。
+- **搜索「无结果」用例必须用已验证 0 命中的查询**：Pagefind 1.6.0 对随机字母串会返回弱相关部分匹配（实测 `zzzqqqxxxnotfound` 得 5 条、`kqxjzvbfhwtmp` 得 2 条），拿它当无结果用例会假红。第二批起一直用 `zzz没有这条内容987654321`（实测 0 命中），沿用即可。另外搜索结果不全是 `/posts/`，也含 `/diary/`、`/about/`、`/tag/` 等被索引页面，判据别写「所有 href 以 `/posts/` 开头」。
 
-- **全局搜索升级边界（2026-11-02）**：`src/components/control/Search.svelte` 仍使用 Pagefind JavaScript API 与现有 12 条展示上限，不使用官方 Component UI。Pagefind 1.6.0 改变分词后的匹配、排名和摘要，源码与权重没有随升级调整。主模块加载失败会显示“搜索暂时不可用”；索引分片失败首轮仍可能显示“没有找到”，新版再次提交可恢复，不能称为所有网络异常都有错误提示。现有相关链接/热门推荐文字会进入部分页面的索引内容，因此命中未必来自文章正文；本轮保持旧收录集合，不在依赖升级里改内容排除策略。证据与已知行为见 Pagefind 专项验收（已归档，索引与取回命令见 [`docs/history/history.md`](../history/history.md) 的「归档清单（第五批）」）。
+- **全局搜索升级边界（2026-11-02 历史记录）**：`src/components/control/Search.svelte` 仍使用 Pagefind JavaScript API 与现有 12 条展示上限，不使用官方 Component UI。Pagefind 1.6.0 改变分词后的匹配、排名和摘要，源码与权重没有随升级调整。主模块加载失败会显示“搜索暂时不可用”；索引分片失败首轮仍可能显示“没有找到”，新版再次提交可恢复，不能称为所有网络异常都有错误提示。现有相关链接/热门推荐文字会进入部分页面的索引内容，因此命中未必来自文章正文。**本轮保留的实际索引范围见下方 2026-11-13 基线条目**。证据与已知行为见 Pagefind 专项验收（已归档，索引与取回命令见 [`docs/history/history.md`](../history/history.md) 的「归档清单（第五批）」）。
+
+- **Nice Books 迁出时保留 Pagefind 收录范围（2026-11-13）**：本轮基线为 **28 个路由**：23 篇文章与 `/about/`、`/diary/`、`/projects/`、`/skills/`、`/timeline/` 五个页面。迁移保留这组博客内容，只排除 `/books/` 兼容跳转页与独立项目的 `/nice-books/` 页面；搜索 UI、权重和文章内容排除策略不在本轮改动范围。最终集合核验结果记在 [issue #159](https://github.com/CaiYan12/caiyan12.github.io/issues/159)。
 
 - `src/utils/theme-script.ts` 已收薄为装配表、生命周期声明与 page-load 辅助三件：功能块按关注面分文件置于 `src/utils/runtime/`
 - **Swup 重初始化协议（2026-09-06 审查后统一，新增客户端代码必须遵守）**：`main` Swup 容器内的组件统一监听自定义事件 `colorful:page:loaded`（切换后重跑）并配 `dataset` 守卫防重复初始化（如 Slideshow 的 `data-initialized`）；`main` 容器外的布局级组件（导航/移动菜单/返回顶部/背景）只随 `pagefindReady()` 初始化一次，靠 `*Bound` 旗帜或 dataset 守卫防重入，勿自行监听 `astro:*` 原生事件——容器外布局级确需 before-swap 清理（如 Fancybox destroy）才允许直接听 `astro:*`。历史上四轨并存（_Bound 委托/dataset 守卫/自定义事件/内联 astro:_），新代码不得新增第四种形态；theme-script 按"唯一协议 + 多 init 函数"保持单文件，按关注面拆分已于 2026-10-29 完成，见规格 #115
@@ -61,16 +63,17 @@
 - pio 定位样式在 `pio.css`（`public/` 静态文件，不走构建管线），改动后需同步 `dist/` 才能在 preview 验证。**「`pnpm dev` 下 Pio 因 Svelte hydration 报错不渲染」这条旧结论已在 2026-11-02 实测推翻，勿再据此绕道 build**：`start.bat`（= `pnpm start --open`）与 `pnpm dev` 都是 `astro dev`，该形态下 `.pio-container` 确实存在、带 Svelte 作用域类（水合成功）、`pageerror` 为 0；它看起来「没渲染」是因为**默认折叠**（`localStorage.posterGirl` 非 `"1"` 时带 `hidden` 类、盒子 0×0，见下一条的折叠口径），不是 hydration 失败。验证 Pio 交互时点一下左下角的「召唤」把它展开即可；只有在验 `pio.css` 改动（不经构建管线）时才需要 `pnpm build && pnpm preview` 同步 `dist/`。
 - myhkw 播放器以 `z-index` 压制 Pio（Layout.astro 内联样式）；Pio 的按钮/消息框位置调整需同时考虑播放器展开面板与底部歌词框的遮挡。
 
-### Nice Books 每日好书（src/nice-books/ + src/pages/books/，2026-09-06 移植）
+### Nice Books 博客边界与迁出前历史（2026-11-13）
 
-- 2026-11-12 已经两轮 GRILLING 确认独立维护与 Pages 发布的目标边界，站长随后授权独立项目本地实施，见 [ADR 0017](../adr/0017-nice-books-separate-deployment.md)。博客仍持有当前实现，以下各条描述博客侧行为；独立站线上验收通过后按既定顺序切换与清理。
+- **当前归属**：业务源码、书目数据、设计和产品 QA 由独立仓库 [`CaiYan12/nice-books`](https://github.com/CaiYan12/nice-books) 维护。博客保留 `/nice-books/` 导航（`noSwup: true`）、sitemap 地址、`/books/` 旧路径兼容跳转及归属检查；博客侧入口/兼容 smoke 命令见 [`docs/agents/commands.md`](commands.md)。切分决定见 [ADR 0017](../adr/0017-nice-books-separate-deployment.md)。
+- **下列实现细节均是迁出前的博客副本记录**（始于 2026-09-06），保留作历史追溯；其中 `src/nice-books/`、旧测试与 `/books/` 业务路由已不属于当前博客。当前项目行为、测试命令与源码位置以独立仓库为准。
 - **独立壳**模块：`/books/`（今日好书随机 + 换一换 + 站长推荐 + 探索更多）、`/books/archive/`（书库：六字段搜索 × 标签叠加 × 双视图 × 载入更多 × `?q=`/`?tag=` 直达）、`/books/:id/`（getStaticPaths **70** 静态页，与 `books.ts` 条目数一致 + 同架 top4；无效 id 自然落站级 404）。不加载博客 Layout/global.css/Pio/播放器；产品契约=访问级随机（禁日期映射）、无评论/评分/购买。
 - 数据单一真相源 `src/nice-books/data/books.ts`（**70 条书目**，`id:`/`author:`/收尾 `},` 三向计数一致；早期 V1 fixture 为 01–22，其后逐批扩充，文档曾长期停在「22 本」——改动时一并核对文件头注释与 `/books/:id/` 的 getStaticPaths 页数 + 顶层运行时断言 fail-fast，build链头部 `pnpm test:nice-books` 把关）；查询函数纯函数化（`lib/random.ts` RNG 可注入、`lib/search.ts` 六字段、`lib/cover.ts` 确定性 SVG 书封兜底——`coverUrl` 非空走 `<img>`、onerror 由 shared 的捕获监听重建 SVG）。
 - **SSR/客户端标记单源**：凡会被客户端 innerHTML 重渲染的片段（hero 卡/网格卡/便签/标签药丸/列表行）一律由 `lib/render.ts` 字符串构造器输出（.astro 侧 `set:html` 引用同一函数），禁止在 .astro 里另写一份标记。
 - 样式：`styles/books.css` 是 books 页面唯一样式源（含 `@tailwind` 三指令 → 有 preflight）；2026-09-07 用户批准「私人藏书桌」设计升级，`docs/nice-books-design.md` 替代旧 handoff §5–§8 的固定视觉值。继续使用 `--nb-*` token、Tailwind v3 `nb.` 命名空间（由本仓库维护；日报色板已随独立项目迁出），`font-nb-body` 映射正文思源黑体。网格 `<360px` 单列、`360–759px` 两列、`>=760px` 三列，同架图书 `>=1080px` 四列。**坑：Tailwind utility 的 display 会覆盖 `[hidden]` 属性**，books.css @layer base 的 `[hidden]{display:none!important}` 勿删。
 - swup 协议（模块脚本）：顶层直接 init（首次整页加载）+ `document.addEventListener("astro:page-load", init)`（swup 导航进入时重跑）+ main 内 `dataset.nbInit` 守卫 + 目标元素缺失早退；document 级监听（archive 的「/」快捷键、封面 onerror）只在模块顶层注册一次。注意 `@swup/astro` 默认 `loadOnIdle`——swup 实例在页面空闲后才存在（`window.swup` 需等待），未就绪窗口内点击链接无害降级为整页加载。
 - 两套 Playwright Smoke 的**计时与等待不能用固定毫秒数**（2026-09-20 线上实测教训）：`test:fancybox` 的放大两项原先点完死等 1500ms，远端 4608×3072 的原图还没解码，量出来「放大后仍等于适配态」，改为 `waitForFunction(complete && naturalHeight>0)` + 轮询到高度连续一致；`smoke:nice-books` 的「主书换书约 420ms」原先把计时起点放在 `page.click()` 之前，于是 Playwright 的可操作性等待与后续四次 `getAttribute` 往返全被算进动画窗口（本地约 +40ms、远端 +400ms 以上），改为在按钮的 capture 监听里打 `performance.now()` 戳、settle 后先在页面内取差值再做其它跨进程调用 —— 修好后本地读数 422ms，正对设计值 240+170=410ms。**但 `smoke:nice-books` 仍以本地 build+preview 为权威**：打线上时该项仍会到 ~996ms，而单独隔离测量线上换书只花 428–482ms 且期间零请求，差值来自该 smoke 自身在同一个 context 里开的一堆远端页面对主线程与网络的挤占，不是站点缺陷。
-- books 全部页面 main 带 `data-pagefind-ignore="all"`（决策：博客全局搜索只搜正式文章，详情页也不进索引）；导航入口在 `navBarConfig.resourceSite`「每日好书」（`noSwup: true`，Navbar/MMenu 数据驱动自动渲染）；`pnpm smoke:nice-books` 覆盖三页业务、Swup 切页/后退/重复初始化与忙碌中断；`node scripts/nice-books-design-qa.mjs` 补充设计、响应式及故障检查（先 build + preview，默认4322端口）。实际项目数与截图见 `docs/nice-books-design-test.md`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕；字体 CDN 的网络层失败单独统计。
+- **迁出前搜索排除**：旧博客 books 页面用 `data-pagefind-ignore="all"` 排除 Nice Books 内容；这不代表 Pagefind 只收正式文章，实际博客基线为上方记录的 28 个路由。旧导航/业务 smoke/设计 QA 的实现与命令名均属历史；目前博客用 `pnpm test:nice-books-ownership` 与 `pnpm smoke:nice-books-migration` 检查边界和跳转，独立项目负责书籍业务、设计与对应 QA。旧项目数与截图见 `docs/nice-books-design-test.md`〔2026-10-30 已归档，全文见 `docs/history/history.md`〕；字体 CDN 的网络层失败单独统计。
 - 2026-09-07 书封展示：`lib/display.ts` 按 ID 确定四种原创 SVG 家族，未知 ID 回退文学；不往 `Book` 加展示字段。`coverHTML` 支持 `hero/card/list`，精选书主图和卡片带腰封，列表省略腰封，普通书裸封。封面硬壳最大、纸块内缩、右侧书口、左侧装订；外壳允许厚度和胶带外伸，图像内层独立裁切，真实图片 `object-contain`。腰封只引用现有荐语，禁止编造奖项或销量。
 - 2026-09-07 动效生命周期：GSAP 按需用于 books 主书时间线，常规反馈用 CSS/WAAPI；两个今日换书入口共享全周期忙碌状态并在 finally 恢复。`shared.ts` 统一注册 `astro:before-swap` 清理，页面卸载取消请求/计时器/动画并 settle 未完成的换书 Promise。书库失败必须解除初始化守卫并显示重试；搜索输入不重播入场，标签/视图短过渡可中断。不要恢复额外240ms模拟等待或旧 Hero CSS 动画。
 

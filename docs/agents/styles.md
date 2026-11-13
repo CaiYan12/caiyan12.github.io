@@ -9,6 +9,8 @@
 ## 前缀与 Autoprefixer（2026-11-03 实测）
 
 - 前端构建链是 **`astro.config.mjs` 的 `vite.plugins` 首位 `tailwindcss()`（`@tailwindcss/vite`）** ＋ `postcss.config.mjs` 的 `[postcssNesting(), autoprefixer()]`，顺序是承重契约，别改。**Tailwind 已于 2026-11-04 升到 4.3.4**（v4 不再是 PostCSS 插件，改由 Vite 插件接管）；`postcss-nesting` 仍必需（`global.css` 有 8 处无 `&` 符号的隐式嵌套），但来源变了——v3 时是 `tailwindcss` 包内附带的 `tailwindcss/nesting/index.js`，v4 的包不再导出该子路径，故改为显式依赖 `postcss-nesting@13.0.2`。**Autoprefixer 现固定 10.6.2**。
+- **当前博客样式归属（2026-11-13）**：博客仅由 `src/styles/global.css` 引入 Tailwind；Nice Books 样式与 `nb.*` token 已迁至独立仓库 [`CaiYan12/nice-books`](https://github.com/CaiYan12/nice-books)。当前博客 `global.css` 有三处必须保留在 `@layer base` 的契约规则：元素重置、表单白底、可点元素手型光标。
+- **迁出前历史说明**：下面 2026-11-04/05 的双入口、四处 `@layer base` 例外及 `nb` 色板记录描述 Nice Books 仍在本仓库时的实现。其测量与故障原因保留作历史证据；`src/nice-books/styles/books.css` 和 `tailwind.config.cjs` 中的 `nb` 映射已不属于博客当前维护面。
 - **两套样式入口各自独立加载 Tailwind 配置**（2026-11-04 迁完实测）：`src/styles/global.css` 与 `src/nice-books/styles/books.css` 各写自己的 `@import "tailwindcss"` + `@config` + `@source`，**相对路径深度不同**（`../../tailwind.config.cjs` vs `../../../tailwind.config.cjs`）——改配置路径时两处都要改。**保留 `tailwind.config.cjs` 走 `@config`，不迁 CSS-first `@theme`**：实测纯 `@theme` 会丢失全部自定义色板工具类（`.text-nb-muted` / `.font-nb-serif` / `.text-nb-seal` / `.bg-primary` / `.rounded-box` 全消失），且 `theme.extend` 的值在 v4 下不生成 `--color-*` 变量（本站全站零处引用 `var(--color-*)`，无损）。**`@source` 必须含 `.ts`/`.js`/`.mjs`**——Nice Books 在 TS 模板字符串里拼工具类（`src/nice-books/lib/render.ts` 与 `src/nice-books/scripts/archive.ts`），漏掉 `.ts` 会**静默**丢失 5 个工具类（产物小 4.3KB，零报错零警告）。取舍见 [ADR 0011](../adr/0011-tailwind4-layer-strategy.md)。
 - **站点样式规则默认不放在 `@layer` 内，但四条「契约类」规则必须留在 `@layer base`**（2026-11-04 迁完实测；**2026-11-05 校正**：原文写「三条」）：v4 是真实 CSS 级联层，typography 插件的 `.prose` 规则落在 `@layer utilities`，会压过站点 `components` 层的 28 条 `.prose` 规则；**只改层序声明不够、提高特异性也无效**（层序压过特异性）。因此 `global.css` 与 `books.css` 的 `@layer base`/`@layer components` 包裹已去掉，**设计规则**以 unlayered 身份参与级联。
     - **例外（必须留在 `@layer base`，共四处，源码里各带一段「为什么」注释）**：① 元素级重置 `body,div,...,input,textarea{margin:0;padding:0;list-style:none;font-family:var(--font-body)}`；② 表单白底 `input,textarea{background-color:#fff}`；③ 可点元素手型光标 `a,button,input[type="submit"]{cursor:var(--cursor-link)}`（**现只有一份**，在 `global.css` 的 `@layer base` 块内；2026-11-04 并掉的那份重复规则已删除，原位置只留注释说明「要改这条契约请只改那一处」）；④ `src/nice-books/styles/books.css` 的 `:focus-visible` 焦点环。这四条若留层外，会压过 `@layer utilities` 里的工具类，实测后果：`/search/` 页搜索框左右内边距 12px → 0px、「正在搜索…」上边距 16px → 0px、提交按钮禁用态光标从 `not-allowed` 变回手型；`/books/` 里带 `rounded-[3px]` 的按钮焦点态圆角 3px → 2px、`#nb-search-input` 的 `outline-none` 失效。
@@ -24,7 +26,7 @@
 
 ## 样式
 
-- **AI 日报样式已迁出（2026-11-02 收尾）**：根 `tailwind.config.cjs` 不再保留日报的 `--t-*` 色板、字体与圆角映射；Nice Books 继续使用既有 `--nb-*` / `nb.` 命名空间。主站样式与独立日报项目分别维护，历史评估中的日报 token 不构成本站配置要求。
+- **AI 日报与 Nice Books 样式均已迁出**：根 `tailwind.config.cjs` 不再保留日报的 `--t-*` 或 Nice Books 的 `nb` 色板、字体映射。两项目的样式与 token 分别由其独立仓库维护，历史评估中的 token 不构成本站配置要求。
 - `src/layouts/Layout.astro` 全站引入 `src/styles/markdown-extended.css`；所有经 `MainGridLayout` 渲染的主站正文页共享 GitHub 卡片、提示块、spoiler、图片网格、Mermaid 等扩展样式，选择器统一收敛在 `.post-context` 下。独立项目 `/ai-news/` 不使用该 Layout，保持隔离。
 - GitHub 卡片的结构由 `remark-extended.mjs` 生成：`.github-card-link` 使用两列 grid，`.github-card-avatar` 为装饰性图片（`alt=""` + `aria-hidden="true"`），`.github-card-body` 必须 `min-width: 0`，仓库名允许任意位置换行，避免长仓库名撑破正文。
 - 表格通用规则位于 `global.css`：`.prose table`/`.prose th`/`.prose td` 提供 `#c4c4c4` 边框、`vertical-align: middle` 和表头底色；`.post-context table` 统一 `width: 100%`，`.table-scroll` 负责过宽表格的局部横向滚动。新增表格不要在文章内另写宽度或滚动容器样式。
