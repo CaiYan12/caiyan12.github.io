@@ -241,9 +241,9 @@ const SEED = `(() => {
 	};
 })();`;
 
-// 页面清单统一取自 scripts/lib/smoke-pages.mjs 的 AUDIT_PAGES（23 页）。
-// 它 = SHELL_PAGES（13 页带壳真页面）+ AUDIT_EXTRA_PAGES（10 页扩展），
-// 后者含 /images/ 与 /this-page-should-404/ 两条无壳边界页——它们只属于本脚本，
+// 页面清单统一取自 scripts/lib/smoke-pages.mjs 的 AUDIT_PAGES，
+// 由其中的 SHELL_PAGES 与 AUDIT_EXTRA_PAGES 派生，避免在本脚本重复维护页数。
+// 扩展集含 /images/ 与 /this-page-should-404/ 两条无壳边界页——它们只属于本脚本，
 // 「恰好一个可见 h1」类判据在上面不成立，故不在 SHELL_PAGES 里。
 // /ai-news/ 已迁为独立项目，不在本仓库的样式审计范围内。
 const PAGES = AUDIT_PAGES;

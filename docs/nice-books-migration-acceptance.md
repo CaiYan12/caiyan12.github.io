@@ -8,6 +8,7 @@
 - `/books/`、`/books/archive/` 与固定 ID `01`–`70` 共 72 个旧地址生成静态兼容页，映射到相同后缀的 `/nice-books/` 地址。跳转保留原 query 与 hash。ID 清单由博客自己的 `src/data/nice-books-legacy-ids.ts` 持有，不导入独立项目业务数据；兼容页不进入 Pagefind。
 - 博客侧 Nice Books 业务实现、数据端点与专属 QA 已移除。已确认 `gsap` 是唯一专用依赖并移除；共享字体、Playwright、Swup 与构建依赖保留。
 - 本次“延续现有搜索范围”按基线实测解释为 28 个路由：23 篇文章，加 `/about/`、`/diary/`、`/projects/`、`/skills/`、`/timeline/`。迁移后与基线集合完全相同，新增和缺失路由均为 0；`/books/` 与 `/nice-books/` 均未索引。此前“Pagefind 只收文章”的维护文档前提已按此测量纠正，没有改变博客搜索页面集合。
+- 最终文档复核将样式审计页数说明改为从 `scripts/lib/smoke-pages.mjs` 的 `SHELL_PAGES` 与 `AUDIT_EXTRA_PAGES` 派生；当前命令说明不再将已移除的 `NICE_BOOKS_BASE_URL` 列为 pelican 对照。
 
 ## 本地验证
 
