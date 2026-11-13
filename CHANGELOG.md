@@ -10,9 +10,9 @@ PR #161 已合并，博客本次生产切换提交为 `b76d657544238bb0fa0b47dc7
 
 真实生产浏览器旅程于 2026-11-13 在 Windows 11、headless Chromium 151.0.7922.34 上通过 **18/18**。公开 HTTP/hash 请求通过 **90/90**，其中 89 个 HTTP 200 响应体与同次 Pages artifact 的 SHA-256 相同，旧 `/books/data.json` 按预期返回 404。一般博客 `pnpm verify:live` 通过 **29/29**。五份 `archive/raw/` 文件与 `D:/pages/myblog/output/nice-books-migration/t6/`、`t7/` 对应源文件大小与 SHA-256 全部一致，来源与判据见归档 README。
 
-**清理边界**
+**清理结果**
 
-博客本地旧分支 `codex/nice-books-integration`、`codex/nice-books-t6` 与远端 `codex/nice-books-integration` 已删除。C 盘 worktree 因主 checkout 保护仍保留在 `b76d657` detached HEAD。独立项目五个迁移分支及空 `D:/pages/nice-books-worktrees/` 仍保留，清理命令在进程启动前被自动审批策略拒绝。独立项目本地 `main` 为 `b602572`，比远端多一条文档提交，本次保留在本地。
+博客本地旧分支 `codex/nice-books-integration`、`codex/nice-books-t6` 与远端 `codex/nice-books-integration` 已删除。代理此前遇到主 checkout 保护和自动审批拒绝，随后由站长手动删除旧工作树、独立项目五个迁移分支及空 `D:/pages/nice-books-worktrees/`，并清理 Git 工作树登记。2026-11-13，站长的 PowerShell 7.6.9 执行输出与本机只读复核均显示两个仓库各仅一个主工作目录和 `main` 分支，两个旧目录均已不存在。独立项目本地 `main` 为 `b602572`，比远端多一条文档提交，本次保留在本地。
 
 **归档说明**
 

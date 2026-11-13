@@ -126,7 +126,7 @@ git show 4a35268:docs/plans/2026-10-14-article-toc-spec.md > /tmp/toc-spec.md
 
 ## 归档清单（第八批：Nice Books 迁出与博客生产收尾）
 
-第八批于 2026-11-13 收尾。Nice Books 业务已迁至独立仓库，博客 PR #161 合并并发布；规格 #153 与票 #154–#160 均 CLOSED。Pages run `43411464223`、deployment `7763262102` 与生产 SHA `b76d657` 对应，真实生产浏览器旅程 18/18、公开 HTTP/hash 核验 90/90、博客一般 `verify:live` 29/29。`/books/` 兼容路径继续保留，退役留待后续单独任务。完整来源、哈希证据和未完成的工作树清理边界见[本批 README](nice-books-migration-2026-11-13/README.md)。
+第八批于 2026-11-13 收尾。Nice Books 业务已迁至独立仓库，博客 PR #161 合并并发布；规格 #153 与票 #154–#160 均 CLOSED。Pages run `43411464223`、deployment `7763262102` 与生产 SHA `b76d657` 对应，真实生产浏览器旅程 18/18、公开 HTTP/hash 核验 90/90、博客一般 `verify:live` 29/29。`/books/` 兼容路径继续保留，退役留待后续单独任务。站长已完成此前受阻的工作树与分支清理，完整来源、哈希证据和清理结果见[本批 README](nice-books-migration-2026-11-13/README.md)。
 
 - 迁出前 `nice-books-design.md` 与博客本地 `nice-books-migration-acceptance.md` 移入 `docs/history/nice-books-migration-2026-11-13/`；五份计划、评审、浏览器与 artifact 摘要逐字保存在该目录的 `archive/raw/`。
 - 实际落地提交：`b185d51`（博客迁移）、`f98bf4c`（文档与本地收尾）、`b76d657`（PR #161 合并发布）。
