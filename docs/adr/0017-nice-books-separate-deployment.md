@@ -62,6 +62,6 @@
 
 托管工作树工具持续未返回，附件与磁盘状态均未出现新工作树。终止该工具调用后，使用 Git 工作树完成本轮隔离实施，路径和证据留在本机 `output/nice-books-migration/implementation-handoff.md`。
 
-迁移验收沿用 Nice Books 现有单测、浏览器冒烟、几何与设计检查，并适配新项目路径及独立运行环境。博客侧负责导航、旧地址承接及实现归属的验证。现有设计契约见 [Nice Books 私人藏书桌](../nice-books-design.md)，当前实现说明见 [组件文档](../agents/components.md) 的“Nice Books 每日好书”节。
+迁移验收沿用 Nice Books 现有单测、浏览器冒烟、几何与设计检查，并适配新项目路径及独立运行环境。博客侧负责导航、旧地址承接及实现归属的验证。迁出前博客副本的设计契约见[历史设计说明](../history/nice-books-migration-2026-11-13/nice-books-design.md)，生产切换与联合验收结果见[迁移归档 README](../history/nice-books-migration-2026-11-13/README.md)；当前实现说明见[组件文档](../agents/components.md)的“Nice Books 每日好书”节。
 
 站长已在 `/to-spec` 阶段确认，以真实浏览器完整访问旅程为主验收边界，覆盖博客入口、独立站首页、书库、详情、后退、返回博客、旧地址跳转与独立 404，并辅以既有单测、视觉、几何、独立构建和实现归属检查。本地与线上分别验收，部署核验关联目标提交及生效产物，独立站线上验收通过后再切换博客。

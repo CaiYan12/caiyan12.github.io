@@ -45,7 +45,7 @@ _Avoid_: 文章评论区
 _Avoid_: 留言板
 
 **Nice Books（每日好书）**:
-由独立仓库 `CaiYan12/nice-books` 维护的图书推荐项目，提供随机发现书籍、站长推荐与书库浏览；博客只保留导航、sitemap 地址、旧路径兼容跳转和归属检查；无评论、无评分、无购买。
+由独立仓库 `CaiYan12/nice-books` 维护的图书推荐项目，提供随机发现书籍、站长推荐与书库浏览；博客只保留导航、sitemap 地址、旧路径兼容跳转和归属检查；无评论、无评分、无购买。博客迁移与发布记录见 [`docs/history/nice-books-migration-2026-11-13/README.md`](docs/history/nice-books-migration-2026-11-13/README.md)。
 _Avoid_: 博客文章、博客内业务模块、AI日报
 
 **今日好书**:

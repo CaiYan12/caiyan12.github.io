@@ -5,3 +5,5 @@ public/pelican-bike/** -text
 # 技能图标与许可按来源 SHA-256 保留原始字节，检出时也不得转换换行。
 public/skill-icons/**/*.svg -text
 public/skill-icons/licenses/*.txt -text
+# Nice Books migration evidence was copied byte-for-byte; keep raw summaries unchanged.
+docs/history/nice-books-migration-2026-11-13/archive/raw/** -text whitespace=-blank-at-eof
