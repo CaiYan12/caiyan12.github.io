@@ -164,11 +164,7 @@ test("汇总口径与 check 的第四参数位", () => {
 		s.failed.map((f) => f.name),
 		["乙"],
 	);
-	assert.equal(
-		s.failed[0].extra.kind,
-		"qa",
-		"第四参数位必须保留给 design-qa 那类形状",
-	);
+	assert.equal(s.failed[0].extra.kind, "qa", "第四参数位保留给结构化附加值");
 });
 
 test("base 形态在启动时回显（三种形态传错曾造出假失败）", () => {
@@ -181,7 +177,7 @@ test("base 形态在启动时回显（三种形态传错曾造出假失败）", 
 	const page = captureLogs(() =>
 		makeHarness({
 			envVar: "HARNESS_TEST_BASE",
-			defaultBase: "http://localhost:4399/books/",
+			defaultBase: "http://localhost:4399/fixture/",
 		}),
 	);
 	assert.match(root[0], /形态：站点根/u);

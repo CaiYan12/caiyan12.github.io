@@ -1,5 +1,19 @@
 # 更新日志
 
+## 2026-11-13：Nice Books 业务迁出博客，保留入口与旧址兼容
+
+**改了什么**：`src/config.ts` 的「每日好书」导航改指 `/nice-books/` 并继续 `noSwup: true`；`astro.config.mjs` 将独立首页加入 sitemap，同时排除旧 `/books/`、归档及 01–70 兼容路径。博客保留 `/books/`、`/books/archive/` 与 `/books/01/`–`/books/70/` 共 72 个静态兼容页，按原 query/hash 跳转到对应独立页面；`/books/data.json` 不保留。业务源码、GSAP 专用依赖、书目单测及业务/设计 QA 脚本移出博客。博客侧迁移边界由 `pnpm test:nice-books-ownership` 与 `pnpm smoke:nice-books-migration` 两项专用检查覆盖。
+
+**为什么这么定**：Nice Books 的业务、设计和产品 QA 由[独立仓库](https://github.com/CaiYan12/nice-books)维护；博客只承担导航、sitemap、兼容跳转与归属验证。Pagefind 继续使用迁移前的博客收录集合，不把兼容跳转页或独立项目内容加入博客索引。
+
+**实测证据（2026-11-13，Windows 11 / Node 24.18.0 / pnpm 10.26.2）**：`pnpm install --frozen-lockfile` 退出码 0（lockfile up-to-date，跳过重新解析）；`pnpm check` **184 files，0 errors / 0 warnings / 5 hints**；`pnpm build` 退出码 0，构建内 **452 项测试通过、0 failed**，Astro 生成 **229 pages**，Pagefind 索引 **28 pages / 47,585 words**。`pnpm test:nice-books-ownership` 退出码 0，检查 70 个旧详情 ID 与 72 个兼容页映射、旧数据接口移除及 sitemap 归属。最终 `dist/` 与保存的迁移前 Pagefind body 路由集合完全一致：两侧均扫描 230 个 HTML，均有 **28 个路由**（23 篇文章及 `/about/`、`/diary/`、`/projects/`、`/skills/`、`/timeline/`），新增与缺失均为 0，`/books/` 与 `/nice-books/` 均未进入博客索引。
+
+`pnpm smoke:nice-books-migration` 退出码 0：1280px 桌面旅程通过导航、旧地址跳转、中文 query/hash、浏览器后退及返回主站；390px 移动旅程通过入口检查。主站迁移前后对照的 1440/390 首页与搜索四组样本计算样式、盒尺寸和搜索结果路由相同，零 pageerror/overflow，导航视觉与 `noSwup` 行为不变、仅 href 更新。验收说明见 [Nice Books 迁移验收记录](docs/nice-books-migration-acceptance.md)，票据与收口记录见 [issue #159](https://github.com/CaiYan12/caiyan12.github.io/issues/159)。
+
+**失败路径与边界**：一次 migration smoke 重跑时漏设必需的 `NICE_BOOKS_DIST`，脚本按前置条件退出 1；将变量指向独立项目构建产物后重跑通过。这是调用环境缺变量，不是页面行为回归。业务视觉、交互和字体 QA 由独立项目负责，不以博客兼容 smoke 代替。
+
+最终文档复核同步修正样式审计页数注释：它直接从 `scripts/lib/smoke-pages.mjs` 的 `SHELL_PAGES` 与 `AUDIT_EXTRA_PAGES` 派生，不重复维护计数；当前 smoke 命令说明也移除了已删除的 `NICE_BOOKS_BASE_URL` 对照。
+
 ## 2026-11-12：架构改进批次落定四个 ADR（0013–0016）
 
 **这条只记决定，不改代码**：本批的实现已在前六笔提交里；这一笔把四条「难以回退、有真实取舍、令人意外」的结论写成 ADR，并改掉上一节里那句会被这次发布推翻的「未 push」表述。

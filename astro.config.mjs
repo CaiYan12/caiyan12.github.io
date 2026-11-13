@@ -93,10 +93,17 @@ export default defineConfig({
 			preprocess: vitePreprocess(),
 		}),
 		sitemap({
-			customPages: [new URL("/ai-news/", siteConfig.siteURL).href],
-			filter: (page) =>
-				!page.endsWith("/page/1/") &&
-				!page.includes("/books/data.json"),
+			customPages: [
+				new URL("/ai-news/", siteConfig.siteURL).href,
+				new URL("/nice-books/", siteConfig.siteURL).href,
+			],
+			filter: (page) => {
+				const pathname = new URL(page).pathname;
+				return (
+					!pathname.endsWith("/page/1/") &&
+					!pathname.startsWith("/books/")
+				);
+			},
 		}),
 	],
 	markdown: {

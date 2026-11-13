@@ -1,0 +1,37 @@
+---
+import { siteConfig } from "../config";
+
+interface Props {
+	destination: string;
+}
+
+const { destination } = Astro.props;
+const canonical = new URL(destination, siteConfig.siteURL).href;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="robots" content="noindex,follow" />
+		<link rel="canonical" href={canonical} />
+		<title>页面已迁移 · Nice Books</title>
+	</head>
+	<body
+		data-pagefind-ignore="all"
+		data-nice-books-redirect
+		data-redirect-target={destination}
+	>
+		<main>
+			<h1>页面已迁移</h1>
+			<p>Nice Books 已迁移至独立站，正在前往对应页面。</p>
+			<p><a href={destination}>如果没有自动跳转，请继续前往。</a></p>
+		</main>
+		<script define:vars={{ target: destination }}>
+			window.location.replace(
+				`${target}${window.location.search}${window.location.hash}`,
+			);
+		</script>
+	</body>
+</html>

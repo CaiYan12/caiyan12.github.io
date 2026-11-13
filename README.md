@@ -37,7 +37,7 @@
 | 改「关于」页正文                     | `src/content/spec/about.md`                                                                | dev 热更新                                                                         |
 | 改「我的技能」                       | `src/data/skills.ts`                                                                       | dev 热更新                                                                         |
 | 改「时间线」                         | `src/data/timeline.ts`                                                                     | dev 热更新                                                                         |
-| 改「每日好书」书单                   | `src/nice-books/data/books.ts`                                                             | dev 热更新                                                                         |
+| 改「每日好书」业务与设计             | [Nice Books 独立仓库（源码/数据/设计/QA）](https://github.com/CaiYan12/nice-books)         | 独立项目自行构建与发布                                                             |
 
 ### 🤝 友链与项目
 
@@ -90,7 +90,7 @@
 | 文章卡「N 次吐槽 / 抢沙发」                     | `src/components/layout/PostCard.astro`                                               |
 | 版权声明整句                                    | `src/components/misc/License.astro`                                                  |
 | `/domain/` 终端壳的名片、自述、友链、署名       | `src/domain.html`（整份都是硬编码）                                                  |
-| `/books/` 三页的标题与导航                      | `src/nice-books/components/SiteHead.astro` / `SiteHeader.astro` / `SiteFooter.astro` |
+| 每日好书入口与旧地址兼容跳转                    | `src/config.ts` / `src/components/NiceBooksLegacyRedirect.astro` / `src/pages/books` |
 
 ### 🔌 需要跑命令的刷新
 
@@ -292,27 +292,11 @@ export const diary: DiaryItem[] = [
 两层数据：`src/data/projects.ts` 是人工策展层（中文简介、技术栈、状态、起止日期、是否推荐），仓库的 star/语言/fork 来自构建期 GitHub 快照。只收录公开仓库，私有项目也能手工加。
 刷新：`pnpm fetch-projects`。统计卡的主人由 `siteConfig.githubUser` 决定。
 
-### 每日好书 `/books/`
+### 每日好书入口与兼容地址
 
-书单 `src/nice-books/data/books.ts`（当前 70 本，模块导入时会做字段断言，不合规则直接构建失败）：
+Nice Books 的业务源码、书目数据、设计和产品验收由[独立仓库 `CaiYan12/nice-books`](https://github.com/CaiYan12/nice-books)维护。博客只维护 `/nice-books/` 导航与 sitemap 入口、旧地址兼容页及边界检查；入口保留 `noSwup: true`，业务页面由独立项目构建发布。
 
-```ts
-{
-	id: "01",
-	title: "百年孤独",
-	author: ["加西亚·马尔克斯", "范晔 译"],
-	publisher: "南海出版公司",
-	firstEdition: { year: 2011, edition: "第一版" },
-	coverUrl: null,              // null = 用程序生成的 SVG 书封
-	description: "……",           // 内容简介
-	recommendationReason: "……",  // 站长荐语（第一人称）
-	excerpts: ["……"],            // 精选摘抄
-	tags: ["文学", "小说"],
-	featured: true,              // 进「站长推荐」
-}
-```
-
-`/books/`、`/books/archive/`、`/books/:id/` 三个页面全部由这一份数据生成，页面文案在 `src/pages/books/*.astro` 与 `src/nice-books/components/`。
+旧地址继续兼容：`/books/` → `/nice-books/`，`/books/archive/` → `/nice-books/archive/`，`/books/01/` 至 `/books/70/` → 对应的 `/nice-books/` 页面。兼容跳转保留查询参数与 hash，旧地址不进入 sitemap 或博客 Pagefind 索引；旧 `/books/data.json` 数据接口已移除，不作为兼容地址。
 
 ### AI 日报 `/ai-news/`
 
@@ -388,12 +372,11 @@ OG 图由 Satori 接收普通元素对象生成；`@types/react` 供其 `ReactNo
 | `pnpm build:weather-cities`              | 重新生成 367 个地级市目录（需网络）                               |
 | `pnpm build:weather-bg -- --from <目录>` | 重新导出天气卡 7 张壁纸（需 640px 原图）                          |
 
-**测试与冒烟**（离线单测注入 `fetchImpl`，不访问真实网络）
+**测试与冒烟**
 
 | 命令                          | 作用                                                          |
 | ----------------------------- | ------------------------------------------------------------- |
 | `pnpm test:utils`             | `src/utils` 纯函数（排序/评分/邻篇/canonical）                |
-| `pnpm test:nice-books`        | Nice Books 数据契约与搜索                                     |
 | `pnpm test:site-stats`        | Giscus 同步                                                   |
 | `pnpm test:contributions`     | 贡献日历数据脚本                                              |
 | `pnpm test:friend-icons`      | 友链图标缓存                                                  |
@@ -402,23 +385,22 @@ OG 图由 Satori 接收普通元素对象生成；`@types/react` 供其 `ReactNo
 | `pnpm test:weather`           | 天气码表与城市目录（**不在 build 链**）                       |
 | `pnpm smoke:ui`               | 主站 UI 实机烟测，需先 `build + preview`                      |
 | `pnpm test:fancybox`          | 灯箱冒烟，需先 `build + preview`                              |
-| `pnpm smoke:nice-books`       | Nice Books 三页冒烟                                           |
 | `pnpm smoke:ai-news`          | 独立日报项目的主站入口检查；参数见 `docs/agents/commands.md`  |
 | `pnpm test:ai-news-ownership` | 构建后确认主站不含日报源码/产物，并保留 sitemap 地址          |
 | `pnpm smoke:pelican`          | 鹈鹕骑车冒烟，需先 `build + preview --port 4322`              |
-| `pnpm qa:nice-books-geometry` | Nice Books 3D 几何检查                                        |
 | `pnpm qa:weather-mainland`    | wttr.in 大陆直连实测（须在大陆网络，`NET`/`WINDOW` 两栏必填） |
 | `pnpm audit:ledger <票册.md>` | 票册自检（刻意不接进 build 与 CI）                            |
 
-> 冒烟脚本的基址参数形态不同，传错会表现为「选择器等不到」的假失败：`FANCY_BASE_URL` / `UI_SMOKE_BASE_URL` / `PELICAN_BASE_URL` 传**站点根**；`NICE_BOOKS_BASE_URL` 传**完整页面地址**。
+> `smoke:nice-books-migration` 需要已构建的博客 `dist/` 和独立项目产物；`NICE_BOOKS_DIST` 指向独立项目的 `dist/`，博客产物默认使用当前仓库的 `dist/`，也可用 `MAIN_DIST` 指定。旧 `NICE_BOOKS_BASE_URL` 参数属于迁出前的博客 smoke。
+
+Nice Books 迁移检查不在 `pnpm build` 链内：`pnpm test:nice-books-ownership` 检查源码与兼容产物归属；`pnpm smoke:nice-books-migration` 检查桌面/移动入口及旧路径旅程。
 
 ### 构建链
 
-`pnpm build` 是一条 16 步的 `&&` 链：
+`pnpm build` 是一条连续的 `&&` 链：
 
 ```
-7 组单测（projects / nice-books / site-stats / utils / contributions /
-          friend-icons / lib）
+6 条单测命令（projects / site-stats / utils / contributions / friend-icons / lib）
 → validate-post-slugs       文章目录名不合规 → 构建失败
 → fetch-friend-icons        拉友链图标
 → generate-lqips            LQIP + WebP 变体 + 两份 manifest
@@ -461,8 +443,7 @@ src/
     spec/about.md          ← 关于页
     spec/friends.md        ← ⚠️ 孤儿文件，无渲染入口
   data/                  ← 微言/友链/技能/时间线/项目/留言 mock 等手改数据
-  pages/                 ← 路由
-  nice-books/            ← /books/ 独立壳（数据/lib/组件/样式）
+  pages/                 ← 路由（其中 books/ 仅保留旧地址兼容跳转）
   layouts/ components/ plugins/ utils/ constants/
 public/
   images/albums/         ← 相册（文件夹驱动）

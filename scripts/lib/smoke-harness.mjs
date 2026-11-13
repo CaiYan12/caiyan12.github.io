@@ -1,11 +1,7 @@
 // 冒烟测试台（缝隙 A 与其三套同族脚本共用的台子）。
 //
-// 为什么存在：check() 此前有四份实现、外加两份 QA 脚本共六种方言，其中
-// nice-books-geometry-qa.mjs 的签名是 check(ok, message)——与其余的
-// check(name, ok, detail) **参数顺序相反**，把一行判据从一套 smoke 复制到另一套
-// 会静默错位（ok 收到一个非空字符串，于是永远 PASS）。console 采集、「外部服务
-// 不计 FAIL」的判定、汇总与退出码也各写一遍，且已经漂了：同一个
-// NICE_BOOKS_BASE_URL 有三处不同默认值。
+// 为什么存在：多套 smoke 曾重复实现判据登记、console 采集、噪声过滤、汇总与退出码，
+// 细节逐渐漂移。现在它们共用同一套采集与结果结构，具体判据仍由调用点负责。
 //
 // 台子只管台子的事：登记判据、采集报错、汇总退出。**判据本身、导航、像素比对
 // 助手都留在各 smoke 里**，且刻意不反转控制——各脚本仍是自己 launch、自己导航、
@@ -33,8 +29,8 @@ export function makeHarness({
 	launch = {},
 }) {
 	const base = process.env[envVar] ?? defaultBase;
-	// 形态回显：AGENTS.md 记过三次踩坑——FANCY_BASE_URL 要站点根，
-	// NICE_BOOKS_BASE_URL 要完整页面地址，传错表现为「选择器等不到」的假失败。
+	// 形态回显：脚本约定有的接收站点根、有的接收完整页面地址，传错会表现为
+	// 「选择器等不到」的假失败。
 	// 判形看 pathname，不看结尾斜杠：站点根写成 `https://x/` 时结尾也有斜杠，
 	// 而它传给「自己拼 /posts/...」的脚本就会造出 `//posts/...`——
 	// 浏览器按**协议相对 URL** 解析它（host 变成 `posts`），于是一整段的
@@ -60,10 +56,8 @@ export function makeHarness({
 	const results = [];
 
 	/**
-	 * 登记一条判据。`extra` 是为 `nice-books-design-qa.mjs` 那类需要附结构化数据的
-	 * 形状预留的槽位（票 06 实测其形状为 `check(name, ok, detail, extra = {})`）：
-	 * 台子只把它原样挂在结果行上，**不展开进结果对象、也不返回布尔**——真去迁那两套
-	 * QA 脚本时要先补这两点，槽位本身不等于契约。现在只有一个消费者用不到，故不提前加宽。
+	 * 登记一条判据。可选的 `extra` 作为结构化附加值原样留在结果行上；台子不展开、
+	 * 也不据此返回布尔。该字段不改变常规判据的 `name/ok/detail` 行为。
 	 */
 	function check(name, ok, detail = "", extra = undefined) {
 		results.push({ name, ok, extra });

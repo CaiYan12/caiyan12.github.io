@@ -2,7 +2,13 @@
 
 > 全部 pnpm 脚本的用途、前置条件、env 变量形态与已知坑。命令名以 package.json 的 scripts 为准（唯一真源），这份是「每条命令的注意事项」缓存。**要跑烟测/单测/构建期取数/票册自检前读这份**。
 
-（本文由 `AGENTS.md` 的「命令清单与每条命令的坑」一节迁出；内容逐字保留。）
+（本文由 `AGENTS.md` 的「命令清单与每条命令的坑」一节迁出；现行命令以本文件和 `package.json` 为准。）
+
+## Nice Books 迁出后的博客维护检查（2026-11-13）
+
+- `pnpm test:nice-books-ownership`：博客构建后检查源代码、兼容页产物、旧数据端点、依赖和 sitemap 归属。默认读取当前仓库 `dist/`；如产物位于其他位置，用 `MAIN_DIST` 指定。
+- `pnpm smoke:nice-books-migration`：本地桌面/移动旅程，检查博客导航、独立站入口、旧 `/books/` 路径的查询参数与 hash、浏览器后退及返回主站。先分别构建博客与独立项目；`MAIN_DIST` 默认 `dist/`，必须设置 `NICE_BOOKS_DIST` 指向独立项目的 `dist/`。脚本把独立站线上 hostname 映射到本地服务，不会访问线上业务页面。
+- 旧 `pnpm test:nice-books`、`pnpm smoke:nice-books`、`pnpm qa:nice-books-geometry`、`node scripts/nice-books-design-qa.mjs` 已不属于博客仓库；下文日期早于 2026-11-13 的旧命令与 `src/nice-books/` 路径均为迁出前记录，不是现行命令或路径。
 
 ## 常用命令
 
@@ -41,7 +47,7 @@ pnpm test:article-toc-browser # 手动 Chromium + 可控时钟验证目录防抖
 pnpm smoke:skills # 构建并启动预览后验证技能图标在外网不可用时仍全部解码；SKILLS_BASE_URL 传不带尾斜杠的站点根
 node scripts/sync-skill-icons.mjs # 手动更新本地技能图标及来源记录；不进普通构建链，原图/许可见 public/skill-icons/README.md
 pnpm test:contributions  # 贡献日历数据脚本离线单测（node --test，注入 fetchImpl 不访问真实网络）
-pnpm test:nice-books  # Nice Books 单测（数据契约/随机去重/搜索/封面，node --test，已串入 build 链头部）
+pnpm test:nice-books-ownership  # build 后核对 Nice Books 博客/独立项目归属、兼容页与 sitemap
 pnpm test:site-stats # Giscus 同步单测（fetchImpl/输出路径全注入，无需令牌、0.6s，已串入 build 链头部）
 pnpm test:utils      # src/utils 纯函数单测（content-utils 排序/评分/邻篇 + pagination canonical）
 pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl，不访问真实网络）
@@ -49,13 +55,12 @@ pnpm smoke:ai-news   # MAIN_SITE_URL 为站点根（默认 http://localhost:4321
 # 线上同源完整旅程：$env:MAIN_SITE_URL="https://caiyan12.github.io/"; $env:AI_NEWS_INTEGRATION_LIVE="1"; pnpm smoke:ai-news
 pnpm test:ai-news-ownership  # build 后检查 src/ai-news、src/pages/ai-news、public/ai-news 与整个 dist/ai-news 均不存在，且 sitemap 保留独立项目地址
 pnpm smoke:series    # 文集（series）接线烟测，117 条判据（2026-11-10 实测；此前这里写的「39 条」是过期数字，以脚本里的 EXPECTED_CHECKS 为准）：组内相邻 href／组内边界不渲染／非成员跳过整块／**成员场景**（MEMBERS 里每个成员四测：顶部行 + 目录链接、末尾行（末章收尾 / 非末章归属句）、侧栏当前项 = 本篇、两行都在；末章由「序号 === 总数 − 1」判定，新增成员登记进 MEMBERS 即自动获得覆盖，不必再手写一段判据）／**系列级侧栏**（条目数 + 链接升序 + 标题栏「查看目录」）／三页 200+封面／粘性跟随；SERIES_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形），需先 `pnpm build && pnpm preview --port 4322`；**不进 CI 只手工跑**。判据总数写死在 `EXPECTED_CHECKS`（现 117），同批固定后不得增减，改判据必须同步该常量并说明差值来源，否则脚本以退出码 2 拒绝运行。套件在 **context 级别掐掉外部视频嵌入**（YouTube / Bilibili / 腾讯视频，与 `smoke:ui` 的 `stubExternalEmbeds` 同款）：`/posts/20260919135000/` 正文含裸 YouTube iframe，而整套用 `waitUntil:"load"` 导航、load 要等这些子帧——本站资源 634ms 就加载完，YouTube 子帧却要 8.7s、Google 广告 7.4s，连访两次把 load 拖到 15.5s、第二次直接 30s 超时（整套中途死掉、不产生任何 FAIL 行，看着像「套件没跑完」）。
-pnpm qa:nice-books-geometry  # Nice Books 统一 3D 几何运行时检查（默认 127.0.0.1:4321；NICE_BOOKS_BASE_URL 可覆盖。注意另一个 `scripts/nice-books-design-qa.mjs` 默认才是 4322 preview）
-pnpm smoke:nice-books  # Nice Books 三页 Playwright Smoke；支持 NICE_BOOKS_BASE_URL 指向 build + preview
+pnpm smoke:nice-books-migration  # 需博客与独立项目均已 build；NICE_BOOKS_DIST 指向独立项目 dist，MAIN_DIST 可指定博客 dist
 pnpm test:fancybox     # 灯箱 Playwright Smoke（关闭不跳位/焦点归还/定位按钮/下载新标签页/中文文案，需先 build + preview；FANCY_BASE_URL 可覆盖地址）
-pnpm test:fancybox 打线上时 FANCY_BASE_URL 传的是**站点根**（脚本自己拼 /posts/... 与 /albums/...），而 NICE_BOOKS_BASE_URL 传的是**完整页面地址** —— 两者形态不同，传错会表现为「选择器等不到」的假失败。2026-09-20 起放大两项改为等原图解码 + 轮询到高度稳定，本地与线上均 27/27
+`NICE_BOOKS_BASE_URL` 与旧 Nice Books 浏览器 smoke 一同于 2026-11-13 移除；2026-09-20 的放大项等待方式及本地/线上 27/27 是该旧 smoke 时期的历史记录。当前 migration smoke 使用两个本地产物目录，不接受站点 URL。
 pnpm smoke:ui           # 主站 UI 缺陷修复实机烟测（UI 整改票册的缝隙 A，需先 build + preview）；UI_SMOKE_BASE_URL 传**站点根**，与 FANCY_BASE_URL 同形。断言只落在计算值/几何/键盘结果/ARIA 属性上，绝不锁 CSS 源文本、类名字符串或行号；相对判据（"只有预期项变化"与"零差异"）由 scripts/upgrade-style-audit.mjs 的整页指纹 capture/diff 承担（页数现测取自 scripts/lib/smoke-pages.mjs 的 AUDIT_PAGES，别在别处抄一份数字），其采集排除表现含 iframe.giscus-frame（远端 postMessage 改 class 与高度，否则同码连采两遍也会翻脸）；套件在 **context 级别掐掉 YouTube / Bilibili 请求**（`stubExternalEmbeds`）——文章正文里有裸的视频 iframe，而整套用 `waitUntil:"load"` 导航，load 要等这些子帧；它们可达与否取决于本地网络当时的状态，2026-09-30 实测两次 30s 超时把整套打断、失败点还随网络漂移，看着像新加判据的锅。判据不依赖外部视频站的可用性。**凡是读动画中间态/几何的判据，相位一律由状态定义，不用 `waitForTimeout`**：等 `getAnimations()` 落定、等计算值到达某个阈值、或逐帧采样要求每帧都满足不变量。2026-10-01 两条老 flake 就是这么来的——「票 22 Tab 首站」把 sleep 从 200ms 加到 400ms 仍是症状修复（`.skip-link` 未展开时 top = 10 − 2×37 = **−64**，那次读到 −39 就是走到约 34%）；「两段黑幕」等 2300ms 而它自己拉长的 2s 过渡实测 420ms 就落定，只剩 300ms 余量。同日把余下 23 处墙钟分桶扫完，又学到两条承重事实：**① `data-fancybox` 是 `initFancybox()` 运行时才给 `.post-context img` 打上去的**（构建期产物里根本没有这个属性，见 `docs/agents/emlog-mapping.md` 的「图片灯箱」条），所以凡以 `.prose img[data-fancybox]` 为入口的判据必须等它出现——睡固定毫秒会把「还没标记」读成「灯箱打不开」（变异：把产物里那次 `setAttribute` 换成别的属性名，「票 22：灯箱确实打开」与顶层层那条立刻 2 红、exit 1）。**② 站点脚本是模块脚本，`waitUntil:"load"` 必然晚于它执行完**，所以 `document` 级委托监听（`src/utils/site-modal.ts` 约 158 行的点击触发）在 load 时早已绑好，点击**之前**的保险睡眠纯属浪费；省下来的是点击**之后**该等的那一等：`#site-modal .site-modal__panel` 入场是 `scale(0.96)→1` / 220ms，未等落定读到的仍是 `matrix(0.96, …)`、控件底边少报 6px——量盒判据因此偏向假绿而不是假红。**③ 读「hover 有没有造成位移」必须用与滚动无关的坐标**：`scripts/ui-smoke.mjs` 的 `hoverProbe()` 取「视口坐标 + 每个祖先容器的 `scrollLeft`/`scrollTop`」。原因：Playwright 的 `hover()` 做 actionability 时会 `scrollIntoViewIfNeeded()`，目标若在 `overflow:hidden` 且内容超宽的容器里（`overflow:hidden` 仍可被程序化滚动），容器 `scrollLeft` 会被改动、容器内所有元素的视口坐标整体平移——那是**测试自己造的读数**，不是 hover 引起的布局位移。2026-10-26 实测：文章卡标题那行 inline 内容（标签 + 箭头 + 文集徽章 + 标题）约 787.9px 宽、超出 h2 内容盒 23px，h2.scrollLeft 由 0 变 23，「票 20：卡片标题悬停零布局位移」被读成位移 23px（2026-10-10 记的 30px 同源，见 issue #106）。**改判据口径后必须做变异验证确认它仍会咬**（往产物里注入 hover 改盒宽/改位置的真缺陷），否则等于把判据削弱成永远绿；也不许靠放宽阈值解决。另有一条**跨帧比较的判据，其「终态」必须等整棵子树**（`getAnimations({subtree:true})`）而不是父元素：该判据要抓的正是「子元素比父慢」，只等父的话缺陷会同时污染两个读数、差值互相抵消（变异实测：注入 4s 的子层黑，等父版读到 半程 −16.5/展现 −16.3 判据绿；等子树版读到 −87.2/−14.2 立刻红）。像素采样还要**每次重新量盒并复核截图前后盒未移动**——盒是视口坐标，量盒与截图是两次异步调用，中间任何 reflow 或滚动锚定都会让同一组像素落到别的内容上。**已知限制（站长 2026-10-01 裁定：只记录、不改代码）**：远端音乐播放器主机 `myhkw.cn` 抖动或不可达时，整套会在某个 `page.goto(..., {waitUntil:"load"})` 上 30s 超时**中途死掉，且不产生任何 FAIL 行**（实测两次：一次跑到 102 项后断、一次连首个导航都没过、0 项），看着像「套件没跑完」而不是「有判据红」——排查时先 `curl -w "%{time_total}" https://myhkw.cn/player/js/jquery.min.js` 与 `…/api/player/<id>`（后者是 302，重定向目标慢也会挂住 load），再决定重跑。**不能照 `stubExternalEmbeds` 把它掐掉**：`#myhkplayer` 是那段远端脚本创建的，票 22 比 z-index 的两条判据正读它，掐掉等于把那两条一起废掉。
 pnpm smoke:wallpaper-pull  # 拉绳壁纸挂件实机烟测（47 项判据：首屏只请求池中一张／单击与拖动达阈值换图且相邻不同张／未达阈值不换图／指针取消与失焦不换图且可继续／忙碌锁连发只落一次／候选全失败背景不变且播报「加载失败」／Enter 与 Space 可激活且 Space 不滚页／焦点环计算值／aria-live=polite／切两页后仍可换图／≤680px 隐藏／减少动态不建临时层仍换图）。WALLPAPER_PULL_BASE_URL 传**站点根**（与 UI_SMOKE_BASE_URL 同形，不带尾斜杠），默认 http://localhost:4322，需先 `pnpm build && pnpm preview --port 4322`；判据相位一律由真实状态定义（等背景地址落定／临时层归零／--wpull-pull 归零），不用固定 sleep
-pnpm smoke:pelican      # 鹈鹕骑车 /pelican-bike/ 实机烟测（vendored Three.js 单文件游戏，25 项判据：HTTP 200 / body.ready / canvas 与 window.__pelican / 两处返回入口 / 署名与 .tools 恒为 8 / 零外部请求 / 开局状态机 / 六档视口几何 / Tab 环 / 真实点回主站 / pageerror 与 console.error 双零；实测 25/25，**需先 `pnpm build && pnpm preview --port 4322`**）；PELICAN_BASE_URL 传**站点根**（脚本自己拼 /pelican-bike/，与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形，不同于 NICE_BOOKS_BASE_URL 的**完整页面地址**）。默认 http://localhost:4322 而非 127.0.0.1——Astro preview 在 Windows 只绑 [::1]，与 test:fancybox / smoke:ui 同口径。全脚本没有一个 waitForTimeout，等的是 body.ready / body.started / #intro 的 computed visibility 三个真实状态信号
+pnpm smoke:pelican      # 鹈鹕骑车 /pelican-bike/ 实机烟测（vendored Three.js 单文件游戏，25 项判据：HTTP 200 / body.ready / canvas 与 window.__pelican / 两处返回入口 / 署名与 .tools 恒为 8 / 零外部请求 / 开局状态机 / 六档视口几何 / Tab 环 / 真实点回主站 / pageerror 与 console.error 双零；实测 25/25，**需先 `pnpm build && pnpm preview --port 4322`**）；PELICAN_BASE_URL 传**站点根**（脚本自己拼 /pelican-bike/，与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形）。默认 http://localhost:4322 而非 127.0.0.1——Astro preview 在 Windows 只绑 [::1]，与 test:fancybox / smoke:ui 同口径。全脚本没有一个 waitForTimeout，等的是 body.ready / body.started / #intro 的 computed visibility 三个真实状态信号
 pnpm smoke:runtime-lifecycle  # 页面级 runtime 会话的生命周期回归（17 项判据），需先 `pnpm exec astro build` + `pnpm exec pagefind --site dist` + `pnpm preview --port 4322`；`RUNTIME_LIFECYCLE_BASE_URL` 传**站点根**（与 UI_SMOKE_BASE_URL 同形，默认 http://localhost:4322）。断言落在**监听计数与定时器计数**上，不靠"点一下看行为"：4s interval 在首页→`/archive/`→回首页应为 `2→1→2`；文章页 `document` 的 pointerdown 计数离开后归零、返回后仍为 1；旧 tab 节点的 click 监听归零；`/tag/` 的 3D 云库被压住 1.5s 后立刻换页，`window.__tagCloud3D` 必须为空（异步竞态）。**不进 CI 只手工跑**（与 `smoke:ui` 同理：要真浏览器 + 真产物）
 pnpm qa:weather-mainland  # wttr.in 大陆直连实测（issue #67 那道发布门已由站长本人在大陆网络实测并裁定通过、票已关闭；本工具留作复测。必须在大陆网络跑并用 $env:NET/$env:WINDOW 标注，缺这两栏不算证据，境外出口机只作旁证）。默认 API 直连 10 次，`-- --site` 量首页侧栏卡片整路径（注入北京粗坐标，因此不测浏览器定位），`-- --rounds N`、`-- --with-egress`；细则见 `docs/agents/weather-capsule.md`
 pnpm build:weather-cities  # 重新生成 public/weather/city-catalog.js（367 个地级市官方中文名+中心点，数据源阿里 DataV 行政区划图集；显式运行、不进 pnpm build，需网络）
@@ -205,8 +210,8 @@ Do not retry this operation or attempt any workaround
     - **`isNoise` 必须写在调用点，不许塞进台子。** 台子不预设放行清单——放行名单是缺陷的藏身处，每条都得可被读到。
     - **`createSink()` 的 `checkClean` 游标按汇各存一份**，不共用整数。共用时 A 汇先收 5 条、再查 B 汇，B 的前 5 条会被当成「上一段已报过」而漏掉；多页面场景（离线快照另开一页）必须各建一个汇。
     - **`finish()` 的退出码只按判据成败决定**，`checkClean` 报的错是否算失败由各 smoke 自己的判据担，台子不重复计。
-- **base URL 的结尾斜杠（触发：给任何 `*_BASE_URL` 传值，或写 `base + "/path"`）**
-    - **两种形态不能混**：`FANCY_BASE_URL` / `UI_SMOKE_BASE_URL` / `SERIES_BASE_URL` / `PELICAN_BASE_URL` 传**站点根**（脚本自己拼路径）；`NICE_BOOKS_BASE_URL` 传**完整页面地址**。传错的表现是「选择器等不到」的假失败，不是报错。
+- **base URL 的结尾斜杠（触发：给当前 `*_BASE_URL` 变量传值，或写 `base + "/path"`）**
+    - 当前使用的 `FANCY_BASE_URL` / `UI_SMOKE_BASE_URL` / `SERIES_BASE_URL` / `PELICAN_BASE_URL` 都传**站点根**（脚本自己拼路径）。传错的表现是「选择器等不到」的假失败，不是报错。
     - **站点根不能带结尾斜杠。** `https://x/` 加上脚本里的 `base + "/posts/..."` 会拼出 `//posts/...`，浏览器按**协议相对 URL** 解析它（host 变成 `posts`），于是一整段 `Failed to construct 'URL': Invalid URL` 与 replaceState 拒绝全是脚手架自己造的——2026-09-25 就这样把一次线上复跑读成 20 项红。
     - **判形态看 `new URL(base).pathname`，不看结尾有没有斜杠**：站点根写成带斜杠时结尾也有斜杠，光看结尾区分不出「站点根」与「目录地址」。`makeHarness` 启动时会把这个形态打在 `[smoke]` 那行里，先读那行再怀疑判据。
 - **norm 聚合与顺序无关比对（触发：给任何页面拍样式指纹、或判「只有预期项变化」）**
