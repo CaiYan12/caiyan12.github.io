@@ -63,6 +63,7 @@
 
 ### Nice Books 每日好书（src/nice-books/ + src/pages/books/，2026-09-06 移植）
 
+- 2026-11-12 已经两轮 GRILLING 确认独立维护与 Pages 发布的目标边界，站长随后授权独立项目本地实施，见 [ADR 0017](../adr/0017-nice-books-separate-deployment.md)。博客仍持有当前实现，以下各条描述博客侧行为；独立站线上验收通过后按既定顺序切换与清理。
 - **独立壳**模块：`/books/`（今日好书随机 + 换一换 + 站长推荐 + 探索更多）、`/books/archive/`（书库：六字段搜索 × 标签叠加 × 双视图 × 载入更多 × `?q=`/`?tag=` 直达）、`/books/:id/`（getStaticPaths **70** 静态页，与 `books.ts` 条目数一致 + 同架 top4；无效 id 自然落站级 404）。不加载博客 Layout/global.css/Pio/播放器；产品契约=访问级随机（禁日期映射）、无评论/评分/购买。
 - 数据单一真相源 `src/nice-books/data/books.ts`（**70 条书目**，`id:`/`author:`/收尾 `},` 三向计数一致；早期 V1 fixture 为 01–22，其后逐批扩充，文档曾长期停在「22 本」——改动时一并核对文件头注释与 `/books/:id/` 的 getStaticPaths 页数 + 顶层运行时断言 fail-fast，build链头部 `pnpm test:nice-books` 把关）；查询函数纯函数化（`lib/random.ts` RNG 可注入、`lib/search.ts` 六字段、`lib/cover.ts` 确定性 SVG 书封兜底——`coverUrl` 非空走 `<img>`、onerror 由 shared 的捕获监听重建 SVG）。
 - **SSR/客户端标记单源**：凡会被客户端 innerHTML 重渲染的片段（hero 卡/网格卡/便签/标签药丸/列表行）一律由 `lib/render.ts` 字符串构造器输出（.astro 侧 `set:html` 引用同一函数），禁止在 .astro 里另写一份标记。
