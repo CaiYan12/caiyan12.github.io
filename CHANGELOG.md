@@ -8,7 +8,7 @@ PR #161 已合并，博客本次生产切换提交为 `b76d657544238bb0fa0b47dc7
 
 **实测证据与验证**
 
-真实生产浏览器旅程通过 **18/18**。公开 HTTP/hash 请求通过 **90/90**，其中 89 个 HTTP 200 响应体与同次 Pages artifact 的 SHA-256 相同，旧 `/books/data.json` 按预期返回 404。一般博客 `pnpm verify:live` 通过 **29/29**。五份 `archive/raw/` 文件与 `D:/pages/myblog/output/nice-books-migration/t6/`、`t7/` 对应源文件大小与 SHA-256 全部一致，来源与判据见归档 README。
+真实生产浏览器旅程于 2026-11-13 在 Windows 11、headless Chromium 151.0.7922.34 上通过 **18/18**。公开 HTTP/hash 请求通过 **90/90**，其中 89 个 HTTP 200 响应体与同次 Pages artifact 的 SHA-256 相同，旧 `/books/data.json` 按预期返回 404。一般博客 `pnpm verify:live` 通过 **29/29**。五份 `archive/raw/` 文件与 `D:/pages/myblog/output/nice-books-migration/t6/`、`t7/` 对应源文件大小与 SHA-256 全部一致，来源与判据见归档 README。
 
 **清理边界**
 

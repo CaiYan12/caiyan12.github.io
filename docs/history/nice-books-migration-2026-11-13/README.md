@@ -38,4 +38,4 @@ git show b76d657544238bb0fa0b47dc7ff6853c82d4e260:docs/nice-books-migration-acce
 - 独立项目五个迁移分支及空目录 `D:/pages/nice-books-worktrees/` 仍保留。清理命令被自动审批策略在进程启动前拒绝。
 - 独立项目本地 `main` 为 `b602572`，比远端多一条文档提交。本次提交保持在本地，没有推送。
 
-博客旧分支已清理，C 盘 worktree 尚待手动移除。独立项目五个分支及空目录仍待处理。相关决定与归档索引见 [ADR 0017](../../adr/0017-nice-books-separate-deployment.md) 和[历史记录索引第八批](../history.md)。
+博客旧分支已清理，C 盘 worktree 尚待手动移除。独立项目五个分支及空目录仍待处理，手动清理清单见 `D:/pages/myblog/output/nice-books-closeout-2026-11-13/MANUAL-CLEANUP.md`。相关决定与归档索引见 [ADR 0017](../../adr/0017-nice-books-separate-deployment.md) 和[历史记录索引第八批](../history.md)。
