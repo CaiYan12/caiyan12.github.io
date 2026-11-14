@@ -15,3 +15,5 @@ docs/history/architecture-2026-11-10/**
 # kept so the protection applies again automatically if it is ever restored with
 # `git show 170c262:docs/plans/2026-09-25-pelican-bike-tickets.md`.
 docs/plans/2026-09-25-pelican-bike-tickets.md
+# 2026-11-13 Nice Books migration evidence copied byte-for-byte; preserve raw summaries
+docs/history/nice-books-migration-2026-11-13/archive/raw/**

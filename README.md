@@ -297,6 +297,7 @@ export const diary: DiaryItem[] = [
 Nice Books 的业务源码、书目数据、设计和产品验收由[独立仓库 `CaiYan12/nice-books`](https://github.com/CaiYan12/nice-books)维护。博客只维护 `/nice-books/` 导航与 sitemap 入口、旧地址兼容页及边界检查；入口保留 `noSwup: true`，业务页面由独立项目构建发布。
 
 旧地址继续兼容：`/books/` → `/nice-books/`，`/books/archive/` → `/nice-books/archive/`，`/books/01/` 至 `/books/70/` → 对应的 `/nice-books/` 页面。兼容跳转保留查询参数与 hash，旧地址不进入 sitemap 或博客 Pagefind 索引；旧 `/books/data.json` 数据接口已移除，不作为兼容地址。
+旧 `/books/` 兼容路径继续保留；退役另由后续任务安排。
 
 ### AI 日报 `/ai-news/`
 
@@ -548,7 +549,7 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 - [x] **内容扩充第 11 项 · 分类云集 `/category/`** —— 2026-09-05。
 - [x] **内容扩充第 12 项 · 热门页 `/hot/`** —— 2026-09-05。
 - [x] **内容扩充第 13 项 · 全站字体策略** —— 2026-09-05 落地，`:root` 四 token 收敛全站字体（微软雅黑从所有主栈退场以消除版权风险）。维护约束见 `docs/agents/styles.md` 的「字体策略（README TODO 13）」条目；其中 `--font-serif` **token 就位但至今零消费者，不要再试着启用**（理由同上那份文档）。
-- [x] **Nice Books「私人藏书桌」升级** —— 2026-09-07 交付。视觉契约见 `docs/nice-books-design.md`，验收记录已于 2026-10-30 归档（全文见 `docs/history/history.md`）。
+- [x] **Nice Books「私人藏书桌」升级** —— 2026-09-07 交付。迁出前视觉契约与博客验收摘要见 `docs/history/nice-books-migration-2026-11-13/nice-books-design.md`、`docs/history/nice-books-migration-2026-11-13/nice-books-migration-acceptance.md`；原文恢复方式、生产发布与迁移结果见同目录 `README.md` 和 `docs/history/history.md`。
 - [x] **内容扩充第 13 项遗留 · 稿纸横线贯穿整纸** —— 2026-09-19 完成。网格改画在 `.letter-paper` 面板层，相位由脚本运行时按正文首行基线反推，头部高度无需确定化；同批把 `/about/` 装饰元件换成手绘墨迹 SVG。维护约束见 AGENTS.md「信纸稿纸」条目。
 - [x] **远期规划第 8 项 · Astro 5 → 6** —— 2026-09-20 完成。先做 Tailwind 接入改造（去掉 `@astrojs/tailwind`，改由根 `postcss.config.mjs` 直连），再升 `astro 6.4.8` / `@astrojs/react 5.0.7` / `@astrojs/svelte 8.1.2` / `astro-expressive-code 0.43.1`。`pnpm check` 零错误、206 页构建通过、三套 Playwright smoke 全绿（fancybox 27/27、nice-books 72/72、ai-news 9/9），样式经 **24 页 15,554 个元素**的计算样式逐元素比对确认零变化。详见 AGENTS.md「构建链与依赖约束」。
 - [x] **Markdown 插件迁移 · `markdown.remarkPlugins`/`rehypePlugins` → `markdown.processor: unified({...})`** —— 2026-09-20 随上一项同批完成（Astro 6 已弃用旧写法）。`@astrojs/markdown-remark` 按 astro 6.4.8 的硬钉版本 7.2.0 作直接依赖，构建告警清零；固定构建期随机后完整产物 **1114 个文件**（含 pagefind 索引）逐字节零差异；全站门禁全绿。

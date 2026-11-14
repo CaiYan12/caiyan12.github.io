@@ -81,6 +81,8 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 
 **AI 日报归属（2026-11-02 收尾）**：AI News 移植已完成，独立仓库为 `CaiYan12/ai-news`；本项目不再包含其页面源码、RSS 快照、React 页面运行时或发布实现。主站按 ADR 0009 仅保留 `/ai-news/` 桌面/移动导航、sitemap 条目与边界验证脚本；这些入口不是未清理的实现。历史 ADR、CHANGELOG、文章及项目展示中的引用保留作追溯。项目记忆索引：`.codex/memories/index.md`。
 
+**Nice Books 归属（2026-11-13 收尾）**：业务源码、书目、设计与产品 QA 由独立仓库 `CaiYan12/nice-books` 维护；博客保留 `/nice-books/` 导航与 sitemap、`/books/` 过渡兼容跳转和归属检查。切分决定见 `docs/adr/0017-nice-books-separate-deployment.md`；迁移、生产验收及清理边界见 `docs/history/nice-books-migration-2026-11-13/README.md` 和 `docs/history/history.md` 第八批。
+
 **元件设计约束（2026-10-06 站长声明）**：新增任何元件前，先最大化复用站内既有设计资产；确需新元件时，其风格与 taste 必须最大化继承既有元件。落地优先级：**直接引用现成组件 → 复用既有类名的 DOM 语法 → 才新写样式**，且新样式的色值 / 字号 / 线型一律取自 `global.css` 既有 token，不引入新设计语言。复用前先看有没有现成的：`ListingHeader.astro`（列表页头）、`WidgetLayout.astro`（侧栏小部件外框）、`PostCard.astro` + `Pagination.astro`（卡片与分页）、`ResponsiveImage.astro` + `getLqipProps()`（带 LQIP 的图）。图标限定在 vendored 的 **Font Awesome 4** 内（`fa-book-open`、`fa-clone`、`fa-layer-group` 这类 FA5+ 新名在本仓库不存在）。
 
 ## 深入文档（按需读，别整篇背）

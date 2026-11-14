@@ -1,5 +1,23 @@
 # 更新日志
 
+## 2026-11-13：Nice Books 生产切换完成并归档迁移记录
+
+**改动**
+
+PR #161 已合并，博客本次生产切换提交为 `b76d657544238bb0fa0b47dc7ff6853c82d4e260`。规格 #153 与票 #154–#160 均 CLOSED。Pages run `43411464223` 与 deployment `7763262102` 均成功，且均对应该提交。原 `docs/nice-books-design.md` 和 `docs/nice-books-migration-acceptance.md` 移入 `docs/history/nice-books-migration-2026-11-13/`，另收录五份迁移原始摘要、发布证据索引与工作树清理实况。原始文件按字节保护。博客继续保留 `/books/` 过渡兼容路径，退役另行安排。
+
+**实测证据与验证**
+
+真实生产浏览器旅程于 2026-11-13 在 Windows 11、headless Chromium 151.0.7922.34 上通过 **18/18**。公开 HTTP/hash 请求通过 **90/90**，其中 89 个 HTTP 200 响应体与同次 Pages artifact 的 SHA-256 相同，旧 `/books/data.json` 按预期返回 404。一般博客 `pnpm verify:live` 通过 **29/29**。五份 `archive/raw/` 文件与 `D:/pages/myblog/output/nice-books-migration/t6/`、`t7/` 对应源文件大小与 SHA-256 全部一致，来源与判据见归档 README。
+
+**清理结果**
+
+博客本地旧分支 `codex/nice-books-integration`、`codex/nice-books-t6` 与远端 `codex/nice-books-integration` 已删除。代理此前遇到主 checkout 保护和自动审批拒绝，随后由站长手动删除旧工作树、独立项目五个迁移分支及空 `D:/pages/nice-books-worktrees/`，并清理 Git 工作树登记。2026-11-13，站长的 PowerShell 7.6.9 执行输出与本机只读复核均显示两个仓库各仅一个主工作目录和 `main` 分支，两个旧目录均已不存在。独立项目本地 `main` 为 `b602572`，比远端多一条文档提交，本次保留在本地。
+
+**归档说明**
+
+业务源码、书目、设计与产品 QA 由独立仓库维护。博客归档保存迁出前契约与此次迁移、生产证据。此前 CHANGELOG 的本地验收条目及其读数继续标作本地证据，线上验收结果单独记录于本条。
+
 ## 2026-11-13：Nice Books 业务迁出博客，保留入口与旧址兼容
 
 **改了什么**：`src/config.ts` 的「每日好书」导航改指 `/nice-books/` 并继续 `noSwup: true`；`astro.config.mjs` 将独立首页加入 sitemap，同时排除旧 `/books/`、归档及 01–70 兼容路径。博客保留 `/books/`、`/books/archive/` 与 `/books/01/`–`/books/70/` 共 72 个静态兼容页，按原 query/hash 跳转到对应独立页面；`/books/data.json` 不保留。业务源码、GSAP 专用依赖、书目单测及业务/设计 QA 脚本移出博客。博客侧迁移边界由 `pnpm test:nice-books-ownership` 与 `pnpm smoke:nice-books-migration` 两项专用检查覆盖。
@@ -8,7 +26,7 @@
 
 **实测证据（2026-11-13，Windows 11 / Node 24.18.0 / pnpm 10.26.2）**：`pnpm install --frozen-lockfile` 退出码 0（lockfile up-to-date，跳过重新解析）；`pnpm check` **184 files，0 errors / 0 warnings / 5 hints**；`pnpm build` 退出码 0，构建内 **452 项测试通过、0 failed**，Astro 生成 **229 pages**，Pagefind 索引 **28 pages / 47,585 words**。`pnpm test:nice-books-ownership` 退出码 0，检查 70 个旧详情 ID 与 72 个兼容页映射、旧数据接口移除及 sitemap 归属。最终 `dist/` 与保存的迁移前 Pagefind body 路由集合完全一致：两侧均扫描 230 个 HTML，均有 **28 个路由**（23 篇文章及 `/about/`、`/diary/`、`/projects/`、`/skills/`、`/timeline/`），新增与缺失均为 0，`/books/` 与 `/nice-books/` 均未进入博客索引。
 
-`pnpm smoke:nice-books-migration` 退出码 0：1280px 桌面旅程通过导航、旧地址跳转、中文 query/hash、浏览器后退及返回主站；390px 移动旅程通过入口检查。主站迁移前后对照的 1440/390 首页与搜索四组样本计算样式、盒尺寸和搜索结果路由相同，零 pageerror/overflow，导航视觉与 `noSwup` 行为不变、仅 href 更新。验收说明见 [Nice Books 迁移验收记录](docs/nice-books-migration-acceptance.md)，票据与收口记录见 [issue #159](https://github.com/CaiYan12/caiyan12.github.io/issues/159)。
+`pnpm smoke:nice-books-migration` 退出码 0：1280px 桌面旅程通过导航、旧地址跳转、中文 query/hash、浏览器后退及返回主站；390px 移动旅程通过入口检查。主站迁移前后对照的 1440/390 首页与搜索四组样本计算样式、盒尺寸和搜索结果路由相同，零 pageerror/overflow，导航视觉与 `noSwup` 行为不变、仅 href 更新。该本地迁移验收说明现归档于 [`docs/history/nice-books-migration-2026-11-13/nice-books-migration-acceptance.md`](docs/history/nice-books-migration-2026-11-13/nice-books-migration-acceptance.md)，票据与收口记录见 [issue #159](https://github.com/CaiYan12/caiyan12.github.io/issues/159)。
 
 **失败路径与边界**：一次 migration smoke 重跑时漏设必需的 `NICE_BOOKS_DIST`，脚本按前置条件退出 1；将变量指向独立项目构建产物后重跑通过。这是调用环境缺变量，不是页面行为回归。业务视觉、交互和字体 QA 由独立项目负责，不以博客兼容 smoke 代替。
 
@@ -277,7 +295,7 @@
 
 **改了什么**：把 2026-11-02～03 依赖升级与阶段五迁移轮留下的 14 份 3053 行过程文档从 `docs/plans/` 删除，索引进 [`docs/history/history.md`](docs/history/history.md) 新增的「归档清单（第五批）」——沿用第四批的 5 列表格，逐份记结果、验收 / 落地提交与 `git show` 恢复命令；结果列写明阶段五评估第三节、实施计划 Task 16、Mermaid 报告第 5 节三个锚点。删后 `docs/plans/` 只剩两份天气胶囊文档。全仓 36 行 / 42 处引用改指第五批索引（`CHANGELOG.md` 15、`docs/agents/build-and-deploy.md` 10、`README.md` 4、`docs/agents/components.md` 3、`docs/agents/commands.md` 3、`docs/agents/styles.md` 1），`docs/agents/build-and-deploy.md` 的「升级路线与交接」节就地补 8 批次上线 sha 简表，承重结论留在活树。
 
-**为什么这么定**：第四批（`4ac31aa`）只归档 Tailwind v4 / Satori 两轮的 9 份 957 行，同轮剩余文档仍在 `docs/plans/`。站长裁定补为第五批、AI 日报迁移收尾那一份一并纳入、走 A 方案（README 与 CHANGELOG 历史条目都改），并明确**推翻 2026-11-05「README 已收口 Tailwind v4 / Satori 条目按硬边界不动」的既有裁决**——按 `AGENTS.md`「文档改动会推翻一条既有裁决先问」，此处为站长已裁决事项，留痕备查。改写沿用第四批范式：删掉旧路径、文档名降级为自然语言、追加归档注记、改指「归档清单（第五批）」、不用 `#` 锚点；实测数字、当时状态（「未推送/未部署」「阶段五剩余 4 类」）、日期、sha 一字不动，`CHANGELOG.md` 两条 2026-11-05 元记录仅改路径；`CHANGELOG.md:476`、`docs/agents/commands.md:182`、`docs/nice-books-design.md:3` 三条早前批次的历史注记不动。零死链限定为**本次 14 个路径在活文档中清零**，排除 `docs/history/history.md` 恢复命令列、qweather 会话转录、`.workbuddy/memory/` 追加型工作日志与被删文件内部互引；`lint.yml` 的 Prettier / 公式保护 / 三个 `verify-*.mjs` 里**没有任何 markdown 死链判据**，零死链是本次 `git grep` 人工判据。
+**为什么这么定**：第四批（`4ac31aa`）只归档 Tailwind v4 / Satori 两轮的 9 份 957 行，同轮剩余文档仍在 `docs/plans/`。站长裁定补为第五批、AI 日报迁移收尾那一份一并纳入、走 A 方案（README 与 CHANGELOG 历史条目都改），并明确**推翻 2026-11-05「README 已收口 Tailwind v4 / Satori 条目按硬边界不动」的既有裁决**——按 `AGENTS.md`「文档改动会推翻一条既有裁决先问」，此处为站长已裁决事项，留痕备查。改写沿用第四批范式：删掉旧路径、文档名降级为自然语言、追加归档注记、改指「归档清单（第五批）」、不用 `#` 锚点；实测数字、当时状态（「未推送/未部署」「阶段五剩余 4 类」）、日期、sha 一字不动，`CHANGELOG.md` 两条 2026-11-05 元记录仅改路径；`CHANGELOG.md:476`、`docs/agents/commands.md:182`、`docs/nice-books-design.md:3`（现归档于 `docs/history/nice-books-migration-2026-11-13/nice-books-design.md`）三条早前批次的历史注记不动。零死链限定为**本次 14 个路径在活文档中清零**，排除 `docs/history/history.md` 恢复命令列、qweather 会话转录、`.workbuddy/memory/` 追加型工作日志与被删文件内部互引；`lint.yml` 的 Prettier / 公式保护 / 三个 `verify-*.mjs` 里**没有任何 markdown 死链判据**，零死链是本次 `git grep` 人工判据。
 
 **有意不做**：`AGENTS.md` 全文件不动——第四批已补齐「改什么 → 必须同步哪一份」表的「归档 / 删除」行与「深入文档」表的 `docs/history/history.md` 入口，本轮它对这 14 个路径零引用，文首 `!IMPORTANT` 以上为只读固定区。ADR 0011 / 0012 仍在生效、继续留在 `docs/adr/`。`docs/history/history.md` 既有四批清单表、「按轮次索引」表、「未完成或未实施的事项」表（含 40 条失效 `output/` 指针那行）均不动；其中 `docs/plans/` 部分的 40 条失效指针已随第五批归档移出活树，改在此处补记，不回写历史表格（改单元格会按显示宽度触发 Prettier 全表重排）。
 
