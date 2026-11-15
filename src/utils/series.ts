@@ -259,3 +259,25 @@ export function buildSeriesNote(
 			: { prefix: belonging, link: null },
 	};
 }
+/** 侧栏「文集目录」的窗口大小：当前篇前后各取若干，固定四条 */
+const SERIES_WINDOW_SIZE = 4;
+
+/**
+ * 侧栏「文集目录」的相邻窗口：从组内序列里取至多 SERIES_WINDOW_SIZE 条，
+ * 当前篇通常落在第 2 位（`[i-1][i][i+1][i+2]`）。
+ *
+ * 首篇 / 次篇向前越界时钳到 0（显示首四条），倒数第二篇 / 末篇向后越界时
+ * 钳到 `n - size`（显示末四条）；`n < size` 时全显，不补空位。侧栏不设滑块，
+ * 完整清单只由「查看目录」指向的 `/series/<slug>/` 承担（GLOSSARY「文集目录」）。
+ *
+ * 当前篇不在序列里是正常构建不可达的防御分支（`getSeriesViewForPost` 已保证
+ * 调用方是成员），此时退化为首四条，不返回空列表。
+ */
+export function getSeriesWindow(members: Post[], currentId: string): Post[] {
+	const index = members.findIndex((p) => p.id === currentId);
+	const start = Math.min(
+		Math.max(index - 1, 0),
+		Math.max(0, members.length - SERIES_WINDOW_SIZE),
+	);
+	return members.slice(start, start + SERIES_WINDOW_SIZE);
+}

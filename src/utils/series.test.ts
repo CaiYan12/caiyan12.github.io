@@ -8,6 +8,7 @@ import {
 	getSeriesNeighbors,
 	getSeriesView,
 	getSeriesViewForPost,
+	getSeriesWindow,
 	isSeriesMember,
 	listSeries,
 	resolveSeriesCover,
@@ -429,4 +430,71 @@ test("getSeriesViewForPost：成员文章反查到所属文集；草稿/私密/�
 	assert.equal(getSeriesViewForPost(posts, "ghost"), null);
 	assert.equal(getSeriesViewForPost(posts, "stray"), null);
 	assert.equal(getSeriesViewForPost(posts, "nope"), null);
+});
+
+test("getSeriesWindow：侧栏相邻窗口四条，首尾钳制、不足四条全显", () => {
+	// 10 篇样本：id 即组内序号，窗口内容由序号直接读出。期望值一律手写字面量，
+	// 不重算 clamp 公式——否则断言与被测实现同形，永远咬不住。
+	const members = Array.from({ length: 10 }, (_, i) =>
+		fakePost({ id: `m${i}` }),
+	);
+	const ids = (list: Post[]) => list.map((p) => p.id);
+
+	// 首篇：[i-1] 越界，向前钳到 0 → 首四条
+	assert.deepEqual(ids(getSeriesWindow(members, "m0")), [
+		"m0",
+		"m1",
+		"m2",
+		"m3",
+	]);
+	// 第二篇：[i-1] 恰好是首篇，仍是首四条
+	assert.deepEqual(ids(getSeriesWindow(members, "m1")), [
+		"m0",
+		"m1",
+		"m2",
+		"m3",
+	]);
+	// 中间篇：当前篇落在窗口第 2 位
+	assert.deepEqual(ids(getSeriesWindow(members, "m5")), [
+		"m4",
+		"m5",
+		"m6",
+		"m7",
+	]);
+	// 倒数第二篇：[i+2] 越界，向后钳到 n - 4 → 末四条
+	assert.deepEqual(ids(getSeriesWindow(members, "m8")), [
+		"m6",
+		"m7",
+		"m8",
+		"m9",
+	]);
+	// 末篇：同样钳到末四条
+	assert.deepEqual(ids(getSeriesWindow(members, "m9")), [
+		"m6",
+		"m7",
+		"m8",
+		"m9",
+	]);
+
+	// 不足四条：全显，不补空位（matt-pocock 现为 2 篇，是真实边界）
+	assert.deepEqual(ids(getSeriesWindow(members.slice(0, 3), "m1")), [
+		"m0",
+		"m1",
+		"m2",
+	]);
+	assert.deepEqual(ids(getSeriesWindow(members.slice(0, 2), "m1")), [
+		"m0",
+		"m1",
+	]);
+	assert.deepEqual(ids(getSeriesWindow(members.slice(0, 1), "m0")), ["m0"]);
+	// 空序列
+	assert.deepEqual(getSeriesWindow([], "m0"), []);
+
+	// 当前篇不在序列里：正常构建不可达的防御分支，退化为首四条
+	assert.deepEqual(ids(getSeriesWindow(members, "nope")), [
+		"m0",
+		"m1",
+		"m2",
+		"m3",
+	]);
 });
