@@ -1,10 +1,34 @@
 # 更新日志
 
+## 2026-11-15：壁纸池扩到 10 张（留白优先的城市夜景）
+
+**改了什么**：从 Pexels 新增 6 张城市夜景，导出为 WebP q80、最长边 2560px（合计 **1,733,454 B**），`backgroundConfig.images` 从 4 条扩到 10 条；`PEXELS-SOURCES.md` 补 6 行与留白口径。`scripts/wallpaper-pull-smoke.mjs` 里写死的 `pool.length === 4` 改成 `> 1`——它的本意只是「池里不止一张」，写死会在每次加壁纸时把判据自己弄红。
+
+**为什么这么定**：初版六张按「亮度 + 蓝青 + 暖色」选出来后**被站长否决**——「内部信息太复杂、太多高楼，尤其最后一张不适合当背景」。补了**留白度**度量（64×64 降采样、8×8 块内标准差 <6 的平滑块占比）后重筛：被点名的那张 `34947070` 只有 **7%**，正是整幅楼群的反例；换上的六张在 **45–71%**。最终口径：平滑块 ≥45%、蓝青 ≥55%、暖色 ≤30%、亮度 ≥35。
+
+**实测证据**：六张导出后 **307,420 / 406,994 / 144,472 / 251,472 / 264,356 / 358,740 B**，单张均 ≤1.5MiB、最长边 2560；池合计 **3,186,872 B**。门 → 「壁纸池 10 条全部落到产物、10 张全部在预算内（≤1536.0KB、≤2560px）」；`pnpm smoke:wallpaper-pull` **47/47**；`pnpm exec astro build` **232 页**。
+
+**怎么验证的**：`pnpm build:bg -- --from output/pexels-new2`、`node scripts/verify-background-assets.mjs`、`pnpm exec astro build`、`pnpm preview --port 4322` + `pnpm smoke:wallpaper-pull`、`pnpm exec prettier --check`、`node scripts/verify-eol.mjs`。
+
+**踩坑**：① `src/config.ts` 在工作区是 **CRLF**（216/216 行），用 LF 写 `oldText` 会 `EDIT_CONFLICT`；② 本机 `astro build` 的 OG 段依赖 `fonts.googleapis.com`，本次连挂两次（`UND_ERR_RES_CONTENT_LENGTH_MISMATCH` → 字体没加载 → satori 抛「No fonts are loaded」），**重跑即过**，不要改构建代码；③ Pexels 检索页与详情页都有 Cloudflare，`web_fetch` 直连 403，有头 Playwright（msedge）能过检索页，详情页需重试。
+
+## 2026-11-15：复盘批次——冒烟就绪探针、壁纸门改读产物、`pnpm done` 对齐 CI
+
+**改了什么**：① `scripts/lib/smoke-harness.mjs` 新增 `waitForServer()`，并把 `harness.browser.launch` 包一层——launch 前先等 base 返回 <500 的 HTTP 应答（30s 上限）；九套基于台子的 smoke 零改动获得就绪判据，`scripts/runtime-lifecycle-smoke.mjs` 与 `scripts/ai-news-smoke.mjs` 这两套自己 launch 的脚本显式调用它。② `scripts/verify-background-assets.mjs` 改为读产物：从 `dist/index.html` 的 `data-backgrounds` 反读真实池、逐条核对文件存在，再对 `dist/images/bg/` 逐张核对字节与最长边；`pnpm build` 里的位置从 `astro build` 之前移到之后。③ `pnpm done` 追加 `verify-no-hardcoded-counts` / `verify-doc-versions` / `verify-eol`，与 `lint.yml` 的 Guardrail 步骤对齐。④ `docs/agents/build-and-deploy.md` 补「脚本与配置的边界」：`scripts/` 不读 `src/config.ts`。
+
+**为什么这么定**：① 服务未起时 `page.goto` 抛 `ERR_CONNECTION_REFUSED`，表现为「判据红了」而不是「服务没起来」——本批之前实测两次白跑（一次 46/47 且唯一红项是某个 chunk 的连接错误，一次直接崩溃）。② 只查目录会漏掉「配置里写了不存在的文件」：目录全绿、线上 404；而 `config.ts` 在裸 node 里不可靠 import，`data-backgrounds` 正是它被序列化后的真实形态。③ `done` 是本地「全绿」口径，与 CI 不一致时会本地过、CI 红。
+
+**实测证据（2026-11-15）**：门基线 → 「壁纸池 4 条全部落到产物、4 张全部在预算内（≤1536.0KB、≤2560px）」；**三条判据各自独立翻红**：移走产物里一张池内文件 → 「配置里有、产物里没有（线上会 404）」；塞 12,826.9KB 噪声 PNG → 体积判据红；塞 4000×1000 纯色 WebP → 最长边判据红；清理后复绿。**就绪探针**：preview 刚起、不等待直接跑 `pnpm smoke:wallpaper-pull` → **47/47 全过**（此前同一时序直接 `page.goto` 崩溃）；指向死端口 → `[smoke] 30000ms 内 http://localhost:4399 没有应答（fetch failed）。先启动 preview / dev 再跑冒烟。`。`pnpm done` 全绿，末尾三条守卫 `[counts] OK: 9 verify scripts, 0 hardcoded expectations` / `[docver] OK: 3 badges` / `[eol] OK: 453 tracked text files, 0 mixed EOL`；`pnpm exec astro build` **232 页**。
+
+**怎么验证的**：`pnpm exec astro build`、`node scripts/verify-background-assets.mjs`（基线 / 缺文件 / 超体积 / 超边长 / 复原五轮）、`pnpm preview --port 4322` 后立即 `pnpm smoke:wallpaper-pull`、死端口负例、`pnpm done`、`pnpm exec prettier --check`。
+
+**踩坑**：门移到 build 之后，坏图要等一次完整构建（约 38s）才报错——这是换取「核对真实产物」的代价，修复仍走 `pnpm build:bg`。
+
 ## 2026-11-15：壁纸池单张体积上限落地（WebP 重导出 + 构建期门）
 
-**改了什么**：`public/images/bg/` 四张背景图从原图（合计 16,305,760 B，最大一张 9520×4810 / 10,044,667 B）重导出为 **WebP q80、最长边 2560px**，合计 **1,453,418 B**（350,102 / 485,416 / 347,282 / 270,618）；`src/config.ts` 的 `backgroundConfig.images` 四条路径改 `.webp`。新增 `scripts/build-backgrounds.mjs`（`pnpm build:bg -- --from <原图目录>`，原图不入库）与 `scripts/verify-background-assets.mjs`（接在 `pnpm build` 的 `astro build` 之前）。删除 4 张原图与当前代码零引用的 `1.jpg` / `2.jpg` / `3.jpg`（355,326 B）；重跑 `generate-lqips.mjs` 清掉 7 条陈旧键、补 4 条 `.webp` 键。
+**改了什么**：`public/images/bg/` 四张背景图从原图（合计 16,305,760 B，最大一张 9520×4810 / 10,044,667 B）重导出为 **WebP q80、最长边 2560px**，合计 **1,453,418 B**（350,102 / 485,416 / 347,282 / 270,618）；`src/config.ts` 的 `backgroundConfig.images` 四条路径改 `.webp`。新增 `scripts/build-backgrounds.mjs`（`pnpm build:bg -- --from <原图目录>`，原图不入库）与 `scripts/verify-background-assets.mjs`（接在 `pnpm build` 的 `astro build` 之后，读产物里的 `data-backgrounds` 核对池→文件）。删除 4 张原图与当前代码零引用的 `1.jpg` / `2.jpg` / `3.jpg`（355,326 B）；重跑 `generate-lqips.mjs` 清掉 7 条陈旧键、补 4 条 `.webp` 键。
 
-**为什么这么定**：背景图是 `fetchpriority="high"` 的首屏资源，超标不会让构建失败——只会让访客多下载几 MB、多占几十 MB 解码内存（9520×4810 解码成 RGBA 约 183MB），并在并发解码时更容易被 Chromium 判成 `EncodingError`。门查目录而不是 `backgroundConfig.images`：`public/` 下的字节会原样进 dist，孤儿图同样要付下载成本；而 `config.ts` 在裸 node 里不可靠 import（JSON import attributes + Astro 虚拟模块）。
+**为什么这么定**：背景图是 `fetchpriority="high"` 的首屏资源，超标不会让构建失败——只会让访客多下载几 MB、多占几十 MB 解码内存（9520×4810 解码成 RGBA 约 183MB），并在并发解码时更容易被 Chromium 判成 `EncodingError`。门读产物而不是 `src/config.ts`：`data-backgrounds` 是它被序列化后的真实形态（裸 node 里 import 不可靠：JSON import attributes + Astro 虚拟模块），而 `public/` 下的字节会原样进 dist，孤儿图同样要付下载成本。
 
 **实测证据（2026-11-15，Windows 11 / Astro 7.4.4）**：`node scripts/verify-background-assets.mjs` → 「壁纸池 4 张全部在预算内（≤1536.0KB、≤2560px）」，退出码 0。**变异验证两条判据各自独立生效**：塞一张 2560×1707 的噪声 PNG（12,826.9KB）→ 体积判据翻红；塞一张 4000×1000 的纯色 WebP（7.1KB）→ 最长边判据翻红；撤掉后复绿。`pnpm check` **184 files，0 errors / 0 warnings / 5 hints**；`pnpm exec astro build` **232 页**，产物 `dist/images/bg/` 只有 4 个 `.webp`，`dist/index.html` 的 `data-backgrounds` 四条均为 `.webp`。并排对比图与 1:1 裁切在 `output/bg-compare-20261115/`（四张 meanΔ 2.18–4.21 / 255），暗部渐变无色带；站长 2026-11-15 在 `pnpm dev` 上目视确认四张背景合格。`pnpm smoke:wallpaper-pull` **47/47 全过**（换图在 `.webp` 池上照常工作；首轮 46/47 那条 `Sakura` 脚本 `ERR_CONNECTION_REFUSED` 是 preview 未就绪的时序问题——第二轮直接 `page.goto` 拒绝连接，等 HTTP 200 后复跑全绿）。`pnpm test:utils` **297/297**。Prettier 通过；`verify-eol` 451 文件 0 混合。
 

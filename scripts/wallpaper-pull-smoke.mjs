@@ -289,7 +289,8 @@ const pool = await page.evaluate(() => {
 });
 check(
 	"首次加载：只请求壁纸池中的一张",
-	pool.length === 4 &&
+	// 只要求「池里不止一张」：写死 4 会在下一次加壁纸时把判据自己弄红
+	pool.length > 1 &&
 		pool.resourcePaths.length === 1 &&
 		pool.paths.includes(pool.resourcePaths[0]),
 	`池 ${pool.length} 张，请求 ${pool.resourcePaths.length} 个：${pool.resourcePaths.join(

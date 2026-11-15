@@ -43,6 +43,12 @@ export const backgroundConfig = {
 		"/images/bg/pexels-5981771.webp",
 		"/images/bg/pexels-8561543.webp",
 		"/images/bg/pexels-30123516.webp",
+		"/images/bg/pexels-29123790.webp",
+		"/images/bg/pexels-33803475.webp",
+		"/images/bg/pexels-20208915.webp",
+		"/images/bg/pexels-28406822.webp",
+		"/images/bg/pexels-33803472.webp",
+		"/images/bg/pexels-40323235.webp",
 	],
 };
 
