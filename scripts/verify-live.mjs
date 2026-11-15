@@ -248,6 +248,61 @@ const browser = await chromium.launch({ headless: true });
 	await ctx.close();
 }
 
+// ---------- F. 壁纸池：池列表与线上字节 ----------
+{
+	const { readdir, stat } = await import("node:fs/promises");
+	const localDir = new URL("../public/images/bg/", import.meta.url);
+	const localFiles = (await readdir(localDir))
+		.filter((name) => /\.(webp|jpe?g|png|avif)$/i.test(name))
+		.sort();
+	const localSizes = new Map();
+	for (const name of localFiles) {
+		localSizes.set(name, (await stat(new URL(name, localDir))).size);
+	}
+
+	const ctx = await browser.newContext({
+		viewport: { width: 1440, height: 900 },
+	});
+	const page = await ctx.newPage();
+	await page.goto(`${BASE}/`, {
+		waitUntil: "domcontentloaded",
+		timeout: 60000,
+	});
+	const pool = await page.evaluate(() => {
+		const raw =
+			document
+				.querySelector(".bg-image[data-backgrounds]")
+				?.getAttribute("data-backgrounds") ?? "[]";
+		try {
+			return JSON.parse(raw);
+		} catch {
+			return [];
+		}
+	});
+	await ctx.close();
+
+	rec(
+		"壁纸池条数等于本地文件数",
+		Array.isArray(pool) && pool.length === localFiles.length,
+		`池 ${Array.isArray(pool) ? pool.length : "?"} / 本地 ${localFiles.length}`,
+	);
+
+	let allOk = true;
+	const details = [];
+	for (const url of Array.isArray(pool) ? pool : []) {
+		const name = String(url).split("/").pop();
+		const expected = localSizes.get(name);
+		const resp = await fetch(`${BASE}${url}`, { method: "HEAD" });
+		const len = Number(resp.headers.get("content-length") ?? 0);
+		const ok = resp.ok && expected != null && len === expected;
+		if (!ok) allOk = false;
+		details.push(
+			`${name}:${resp.status}/${len}${expected != null && len === expected ? "" : `≠${expected}`}`,
+		);
+	}
+	rec("壁纸池每条线上 200 且字节与本地一致", allOk, details.join(" "));
+}
+
 await browser.close();
 
 const passed = results.filter((r) => r.ok).length;

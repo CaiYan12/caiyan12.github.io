@@ -28,6 +28,7 @@
 		"build:weather-cities": "node scripts/build-weather-cities.mjs",
 		"build:weather-bg": "node scripts/build-weather-bg.mjs",
 		"build:bg": "node scripts/build-backgrounds.mjs",
+		"audit:wallpapers": "node scripts/audit-wallpaper-candidates.mjs",
 		"build:favicon": "node scripts/build-favicon.mjs",
 		"audit:ledger": "node scripts/ledger-audit.mjs",
 		"preview": "astro preview",

@@ -87,6 +87,30 @@ async function fetchNotoSansSCFonts() {
 	}
 }
 
+/**
+ * 取字体，失败时清缓存重试。
+ *
+ * 为什么需要（2026-11-15 实测）：原实现把**失败也写进 fontCache**，于是第一次网络
+ * 抖动之后，本次构建里每一张 OG 图都拿到 null 字体，satori 抛「No fonts are loaded」。
+ * 本机两次构建就是这么挂的（根因是 fonts.googleapis.com 的响应被截断，
+ * UND_ERR_RES_CONTENT_LENGTH_MISMATCH）。重试三次并清掉失败缓存即可吸收这类抖动。
+ */
+const FONT_ATTEMPTS = 3;
+
+async function fetchNotoSansSCFontsWithRetry() {
+	for (let attempt = 1; attempt <= FONT_ATTEMPTS; attempt++) {
+		const fonts = await fetchNotoSansSCFonts();
+		if (fonts.regular && fonts.bold) return fonts;
+		fontCache = null;
+		if (attempt < FONT_ATTEMPTS) {
+			await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+		}
+	}
+	throw new Error(
+		`[og] Google Fonts 取数失败（已重试 ${FONT_ATTEMPTS} 次）：没有字体就无法渲染 OG 图`,
+	);
+}
+
 // 读取头像并统一转为 PNG data URL（站点头像是 webp，先转码规避 satori 的 webp 兼容问题）
 async function getAvatarPngDataUrl(): Promise<string> {
 	const avatarPath = `./public${siteConfig.avatar}`;
@@ -103,7 +127,7 @@ export async function GET({
 }: APIContext<{ post: CollectionEntry<"posts"> }>) {
 	const { post } = props;
 	const { regular: fontRegular, bold: fontBold } =
-		await fetchNotoSansSCFonts();
+		await fetchNotoSansSCFontsWithRetry();
 	const avatarBase64 = await getAvatarPngDataUrl();
 
 	const description = post.data.description || post.data.excerpt;
