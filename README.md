@@ -488,7 +488,9 @@ vendor/pelican-bike/     ← 鹈鹕骑车源码（不参与 pnpm build）
 
 ### 进行中
 
-- [ ] **限制壁纸池单张体积上限**（2026-11-02 登记，拉绳壁纸挂件 spec #127 收口时发现）：`src/config.ts` 的 `backgroundConfig.images` 四张实测 **876KB / 2.1MB / 3.1MB / 9.6MB**（原图未压缩）。换壁纸按「均匀随机 × 排除当前图 × 每候选最多试一次」选图并预载，最坏一次操作要串行等最多 3 个候选；**大尺寸图片还会让解码被判据拒绝**——Chromium 在并发或大尺寸下会对合法图片抛 `EncodingError`（见 Odoo PR #243133 与 Chromium issue 40261318，其修复正是把 `Promise.all` 改成 `allSettled`）。挂件侧已做兜底（decode 被拒时退化为「加载完成且具固有尺寸」再判定），但**上限本身应落在资源侧**。触发条件：访客反馈换图慢 / 内存占用高，或新增壁纸。实施建议：统一压到单张 ≤ 1.5MB（现有 4 张不动、只约定新图口径），同步更新 `public/images/bg/PEXELS-SOURCES.md` 的体积记录。
+- [x] **限制壁纸池单张体积上限**（2026-11-02 登记 → 2026-11-15 落地）：`src/config.ts` 的 `backgroundConfig.images` 四张实测 **876KB / 2.1MB / 3.1MB / 9.6MB**（原图未压缩）。换壁纸按「均匀随机 × 排除当前图 × 每候选最多试一次」选图并预载，最坏一次操作要串行等最多 3 个候选；**大尺寸图片还会让解码被判据拒绝**——Chromium 在并发或大尺寸下会对合法图片抛 `EncodingError`（见 Odoo PR #243133 与 Chromium issue 40261318，其修复正是把 `Promise.all` 改成 `allSettled`）。挂件侧已做兜底（decode 被拒时退化为「加载完成且具固有尺寸」再判定），但**上限本身应落在资源侧**。触发条件：访客反馈换图慢 / 内存占用高，或新增壁纸。落地方式：四张统一导出为 **WebP q80、最长边 2560px**，合计 **1,453,418 B**（350,102 / 485,416 / 347,282 / 270,618）；门禁 `scripts/verify-background-assets.mjs` 接在 `pnpm build` 的 `astro build` 之前（字节与最长边两条判据独立生效），导出脚本 `scripts/build-backgrounds.mjs`（`pnpm build:bg -- --from <原图目录>`，原图不入库）。同批删除零引用的 `1.jpg` / `2.jpg` / `3.jpg`（355,326 B）。台账与来源见 `public/images/bg/PEXELS-SOURCES.md`，维护约束见 `docs/agents/components.md`。
+
+- [ ] **≤680px 时壁纸仍会被下载**（2026-11-15 登记，上一条收口时发现）：`global.css` 的 `@media (max-width: 680px)` 把 `.bg-image` / `.bg-image-pattern` 设为 `display:none !important`，但 `src/utils/runtime/random-background.ts` 无条件给 `<img>` 写 `src`——**按代码路径推断（未实测）**，窄屏访客仍会下载整张壁纸，只是看不见。修法是在运行时加 `matchMedia` 守卫，并处理跨断点 resize 时补设 `src`；会动到「整页只跑一次」的装配表约定，故单列。触发条件：移动端流量占比上升或访客反馈流量消耗。
 
 - [x] **Tailwind 3.4.19 → 4.3.4（接入方式重写，不是升级）**（2026-11-03 登记 → 2026-11-04 迁完并**已上线**，合并提交 `7c37de4`、PR [#143](https://github.com/CaiYan12/caiyan12.github.io/pull/143)）
 

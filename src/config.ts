@@ -39,10 +39,10 @@ export const siteConfig = {
 /** 高分辨率都市背景；来源记录见 public/images/bg/PEXELS-SOURCES.md */
 export const backgroundConfig = {
 	images: [
-		"/images/bg/pexels-65441.jpg",
-		"/images/bg/pexels-5981771.jpg",
-		"/images/bg/pexels-8561543.jpg",
-		"/images/bg/pexels-30123516.jpg",
+		"/images/bg/pexels-65441.webp",
+		"/images/bg/pexels-5981771.webp",
+		"/images/bg/pexels-8561543.webp",
+		"/images/bg/pexels-30123516.webp",
 	],
 };
 

@@ -63,34 +63,6 @@
 		"g": "77b6de688caa769db5",
 		"bytes": 101186
 	},
-	"public:images/bg/1.jpg": {
-		"g": "8093a29aaaad87685b",
-		"bytes": 205546
-	},
-	"public:images/bg/2.jpg": {
-		"g": "848798a09fa18792a0",
-		"bytes": 115212
-	},
-	"public:images/bg/3.jpg": {
-		"g": "6174b66d74ac866d74",
-		"bytes": 34568
-	},
-	"public:images/bg/pexels-30123516.jpg": {
-		"g": "4a92d4549ddd0d3561",
-		"bytes": 10044667
-	},
-	"public:images/bg/pexels-5981771.jpg": {
-		"g": "25323d1223313e5e89",
-		"bytes": 3240350
-	},
-	"public:images/bg/pexels-65441.jpg": {
-		"g": "343d3d343a322f4038",
-		"bytes": 2170503
-	},
-	"public:images/bg/pexels-8561543.jpg": {
-		"g": "484c4a50575539342b",
-		"bytes": 895240
-	},
 	"public:images/bg-f.png": {
 		"g": "000000000000000000",
 		"bytes": 923
@@ -934,5 +906,21 @@
 	"public:images/posts/20261114224258/webapp-vibe-coding-ch9-cover.jpg": {
 		"g": "424959182030111622",
 		"bytes": 65221
+	},
+	"public:images/bg/pexels-30123516.webp": {
+		"g": "4892d2559ddc0f3761",
+		"bytes": 350102
+	},
+	"public:images/bg/pexels-5981771.webp": {
+		"g": "25323b121e2b41628c",
+		"bytes": 485416
+	},
+	"public:images/bg/pexels-65441.webp": {
+		"g": "2a3534303b352e4139",
+		"bytes": 347282
+	},
+	"public:images/bg/pexels-8561543.webp": {
+		"g": "454c4b4e585637312a",
+		"bytes": 270618
 	}
 }
