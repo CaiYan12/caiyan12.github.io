@@ -17,7 +17,10 @@ import {
 type FakeNode = {
 	className: string;
 	textContent: string;
-	style: { props: Record<string, string>; setProperty(k: string, v: string) };
+	style: {
+		props: Record<string, string>;
+		setProperty(k: string, v: string): void;
+	};
 	children: FakeNode[];
 	appendChild(c: FakeNode): void;
 	appendChild_text(c: { text: string }): void;

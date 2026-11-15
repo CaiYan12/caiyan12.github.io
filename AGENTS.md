@@ -103,6 +103,7 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 - **阶段序列**：第 1 步信息收集 → 第 2 步 GRILLING（`/grill-with-docs` / `/grill-me`）→ 分支「第 2.1 步 `/implement` + `/code-review`」或「第 3 步 `/to-spec` → 第 4 步 `/to-tickets`」→ 第 5 步 `/implement-spec`（独立分支 + worktree + 子代理；子代理不可用即上报暂停，**不在主会话写任何代码**；完成后双轴 `/code-review`，汇报并待站长点头）→ 第 6 步清理（`/pr` 起草 PR → 合并分支 → 清残留分支与 worktree，被安全政策拦**不绕过**，给路径交站长手删）→ 第 7 步 `/retro`（仅报告，由站长选方向）。
 - **GRILLING 分支判定**：frontier 清空后跑一次 `/ask-matt` 评判直接 `/implement` 还是建议 `/to-spec`，**由站长决定方向**；`/ask-matt` 为 `disable-model-invocation: true`，须站长显式发起，代理不得自行触发。
 - **子代理**：子代理上下文未必包含用户级 `MEMORY.md`，派发 `/implement-spec` 子代理时由 lead 把本节授权边界随任务一并传入；子代理只做被点名的那一票。
+- **`/code-review` 前冻结 diff**：本 harness 的 `subagent` 立即返回，审查期间继续改文件会让报告基于旧状态（2026-11-15 实测：spec 审查报的 17/17 与「导出无消费者」在它返回前已修掉）。启动双轴子代理前完成全部编辑（必要时 `git stash create` 取快照），审查期间不改文件；报告须注明审查基准（HEAD / 快照 SHA）。
 - **意外变动**：先评估风险；小且一轮可修的可先处理再回主线，影响较大、较复杂的列入 `README.md` 的 TODO 之后单独推进；以任务主线为重。
 - **口径冲突**：`ask-matt/SKILL.md` 建议 steps 1–3 连续推进，其 `PHASE-BOUNDARIES.md` 的 "phase" 指上下文管理决策点，与本节 7 个授权阶段**同名不同义**。本节口径优先，不得引用官方默认合理化跳步。
 

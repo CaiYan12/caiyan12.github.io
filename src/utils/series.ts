@@ -5,7 +5,6 @@
  * 本模块只读。总览页、目录页、分页与侧栏目录都从这里取数，不再各自拼接
  * 「过滤 → 排序 → 取成员 → 解析封面」管线；组内序列的定义见 GLOSSARY「组内序列」。
  */
-import type { CollectionEntry } from "astro:content";
 import { seriesList, type SeriesMeta } from "../data/series";
 import { getSortedPosts, type Post } from "./content-utils";
 

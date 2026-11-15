@@ -14,7 +14,10 @@ import {
 
 // ---- 最小 DOM 桩（照 quote-band.test.ts 先例）：只实现这两个纯函数用到的面 ----
 type FakeLi = {
-	style: { props: Record<string, string>; setProperty(k: string, v: string) };
+	style: {
+		props: Record<string, string>;
+		setProperty(k: string, v: string): void;
+	};
 	children: FakeEl[];
 	appendChild(c: FakeEl): void;
 };
