@@ -1,5 +1,17 @@
 # 更新日志
 
+## 2026-11-15：侧栏「文集目录」改为相邻窗口四条
+
+**改了什么**：`src/components/widget/WidgetSeries.astro` 的 `.series-toc` 不再全量渲染组内序列，改用 `src/utils/series.ts` 新增的 `getSeriesWindow`：`start = clamp(i - 1, 0, n - 4)`，渲染 `members.slice(start, start + 4)`，当前篇通常落在第 2 位；首篇/次篇钳到首四条，倒数第二篇/末篇钳到末四条，`n < 4` 时全显、不补空位。侧栏不设滑块，完整清单仍只由标题栏「查看目录」指向的 `/series/<slug>/` 承担。标题保持 frontmatter 原样，`.current` / `aria-current="page"` / `title` 全部保留。
+
+**为什么这么定**：《看懂 AI 写的网站》已到 10 章，侧栏全量渲染把下方的「文章目录」压到只剩标题栏。窗口化把高度钉死在四条，且不引入运行时脚本（构建期求值，swup 换页随 `<main>` 重渲染自动重算）。不补位置提示，因为文章页顶部已有「本文属于《X》· 第 i / N 章」一行。
+
+**实测证据（2026-11-15，Windows 11 / Node 26.13.1 / Astro 7.4.4）**：`pnpm test:utils` **297/297**；`series.test.ts` **14/14**；窗口常量 4 变异为 5 时新用例转红（13 pass / 1 fail），改回复绿。`pnpm check` **184 files，0 errors / 0 warnings / 5 hints**。`pnpm exec astro build` 生成 **232 页**。`pnpm smoke:series` **124 项全过、失败 0**（`EXPECTED_CHECKS` 122→124，+2 为每个文集新增的「末篇窗口」判据）。构建产物直读：第〇章 `20261002071103` → 首四条；第二章 `20261002093931` → `[1][2][3][4]`；第九章 `20261114224258` → 末四条；`matt-pocock`（2 篇）两条全显。
+
+**怎么验证的**：`node --import ./scripts/test-hooks.mjs --test "src/utils/series.test.ts"`、`pnpm test:utils`、`pnpm check`、`pnpm exec astro build`、`pnpm preview --port 4322` + `SERIES_BASE_URL=http://localhost:4322 pnpm smoke:series`。
+
+**踩坑**：本机 `SERIES_BASE_URL=http://127.0.0.1:4322` 会 `ERR_CONNECTION_REFUSED`（preview 只监听 `localhost`，解析到 ::1），必须用 `http://localhost:4322`。
+
 ## 2026-11-14：修正部署验收指引并精简代理常驻上下文
 
 根 `AGENTS.md` 的文档写作与同步细节下沉到 `docs/agents/documentation.md`，保留导航、阶段授权和固定前缀。`docs/agents/commands.md`、`docs/agents/build-and-deploy.md` 与 README 的现行部署指引统一关联目标 SHA、Actions、deployment 和同次 run 的线上产物，缓存头用于诊断。依据为 Nice Books T7 的文件时间早于部署成功 11 秒且线上字节匹配的实测记录。命令文档同时补齐长运行约 60 秒查询、Range 分段下载及发布前临时分支清理安排。
