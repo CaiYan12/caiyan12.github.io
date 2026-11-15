@@ -87,7 +87,8 @@ import { makeHarness } from "./lib/smoke-harness.mjs";
 // （20261002081331）、第 2 章（20261002093931）与 matt 第 0 篇（20260919135000）；
 // 末章判定改为「序号 === 总数 − 1」，不再写死章节号，新增成员不必再手写一段判据。
 // 生产代码零改动。
-const EXPECTED_CHECKS = 122;
+// 2026-11-15：侧栏文集目录改为相邻窗口四条，每个文集多一条「末篇窗口」判据（+2）。
+const EXPECTED_CHECKS = 124;
 
 // 组成员与序号：与 src/data/series.ts 及十篇文章的 frontmatter 同批核对。
 // 增删文集成员/章节必须同步这里，否则相邻 href 判据会整段失真。
@@ -363,22 +364,43 @@ check(
 );
 
 // —— 4. 侧栏章节目录（系列级）：条目数、按组内序升序、标题栏「查看目录」入口 ——
-// 期望继续从 MEMBERS 派生，不复用生产 getSeriesView；侧栏内容与文集绑定、
-// 与当前打开的是哪一篇无关，故取该文集第一篇作为入口页。
+// 期望继续从 MEMBERS 派生，不复用生产 getSeriesView。侧栏内容自 2026-11-15 起
+// **取决于当前打开的是哪一篇**（相邻窗口），故首篇与末篇两个端点各测一次。
+// 侧栏窗口：只呈现当前篇的相邻四条 [i-1][i][i+1][i+2]，首尾越界时钳到首四条 /
+// 末四条，不足四条全显。这里复刻同一 clamp 形状只为验「元件把窗口接到了 DOM 上」；
+// 公式本身的字面量期望由 series.test.ts 的 getSeriesWindow 用例兜底。
+const SIDEBAR_WINDOW = 4;
+const sidebarWindowOf = (ids, idx) => {
+	const start = Math.min(
+		Math.max(idx - 1, 0),
+		Math.max(0, ids.length - SIDEBAR_WINDOW),
+	);
+	return ids
+		.slice(start, start + SIDEBAR_WINDOW)
+		.map((id) => `/posts/${id}/`);
+};
 for (const [slug, ids] of Object.entries(MEMBERS)) {
 	const name = SERIES_NAME[slug];
 	await goto(`/posts/${ids[0]}/`);
 	const sb = await sidebarSeries();
 	check(
-		`${name}：侧栏有章节目录，${ids.length} 条成员链接`,
-		sb !== null && sb.items === ids.length,
+		`${name}：侧栏有章节目录，${Math.min(ids.length, SIDEBAR_WINDOW)} 条窗口链接`,
+		sb !== null && sb.items === Math.min(ids.length, SIDEBAR_WINDOW),
 		`items=${sb?.items ?? "无"}`,
 	);
 	check(
-		`${name}：侧栏目录的链接按 seriesOrder 升序 = ${ids.length} 条成员顺序`,
-		JSON.stringify(sb?.links) ===
-			JSON.stringify(ids.map((id) => `/posts/${id}/`)),
+		`${name}：侧栏目录 = 首篇的相邻窗口（seriesOrder 升序，至多 ${SIDEBAR_WINDOW} 条）`,
+		JSON.stringify(sb?.links) === JSON.stringify(sidebarWindowOf(ids, 0)),
 		`${sb?.links?.join(",")}`,
+	);
+	// 末篇：向后越界，钳到末四条——与首篇那条成对，覆盖 clamp 的两个端点
+	await goto(`/posts/${ids[ids.length - 1]}/`);
+	const sbLast = await sidebarSeries();
+	check(
+		`${name}：末篇的侧栏窗口钳到最后 ${Math.min(ids.length, SIDEBAR_WINDOW)} 条`,
+		JSON.stringify(sbLast?.links) ===
+			JSON.stringify(sidebarWindowOf(ids, ids.length - 1)),
+		`${sbLast?.links?.join(",")}`,
 	);
 	// 标题栏 actions 槽的「查看目录」（站长 2026-10-06 目视后由左下角移入）：
 	// 在 h2 内且指向该文集目录页；旧的底部入口 .series-toc-more 必须已不存在。

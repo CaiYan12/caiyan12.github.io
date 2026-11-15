@@ -54,7 +54,7 @@ pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl，�
 pnpm smoke:ai-news   # MAIN_SITE_URL 为站点根（默认 http://localhost:4321/）；本地只检查桌面/移动入口 DOM
 # 线上同源完整旅程：$env:MAIN_SITE_URL="https://caiyan12.github.io/"; $env:AI_NEWS_INTEGRATION_LIVE="1"; pnpm smoke:ai-news
 pnpm test:ai-news-ownership  # build 后检查 src/ai-news、src/pages/ai-news、public/ai-news 与整个 dist/ai-news 均不存在，且 sitemap 保留独立项目地址
-pnpm smoke:series    # 文集（series）接线烟测，117 条判据（2026-11-10 实测；此前这里写的「39 条」是过期数字，以脚本里的 EXPECTED_CHECKS 为准）：组内相邻 href／组内边界不渲染／非成员跳过整块／**成员场景**（MEMBERS 里每个成员四测：顶部行 + 目录链接、末尾行（末章收尾 / 非末章归属句）、侧栏当前项 = 本篇、两行都在；末章由「序号 === 总数 − 1」判定，新增成员登记进 MEMBERS 即自动获得覆盖，不必再手写一段判据）／**系列级侧栏**（条目数 + 链接升序 + 标题栏「查看目录」）／三页 200+封面／粘性跟随；SERIES_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形），需先 `pnpm build && pnpm preview --port 4322`；**不进 CI 只手工跑**。判据总数写死在 `EXPECTED_CHECKS`（现 117），同批固定后不得增减，改判据必须同步该常量并说明差值来源，否则脚本以退出码 2 拒绝运行。套件在 **context 级别掐掉外部视频嵌入**（YouTube / Bilibili / 腾讯视频，与 `smoke:ui` 的 `stubExternalEmbeds` 同款）：`/posts/20260919135000/` 正文含裸 YouTube iframe，而整套用 `waitUntil:"load"` 导航、load 要等这些子帧——本站资源 634ms 就加载完，YouTube 子帧却要 8.7s、Google 广告 7.4s，连访两次把 load 拖到 15.5s、第二次直接 30s 超时（整套中途死掉、不产生任何 FAIL 行，看着像「套件没跑完」）。
+pnpm smoke:series    # 文集（series）接线烟测，判据条数由脚本里的 `EXPECTED_CHECKS` 派生（2026-11-15 实测 124；现值现测：`grep 'const EXPECTED_CHECKS' scripts/series-smoke.mjs`）：组内相邻 href／组内边界不渲染／非成员跳过整块／**成员场景**（MEMBERS 里每个成员四测：顶部行 + 目录链接、末尾行（末章收尾 / 非末章归属句）、侧栏当前项 = 本篇、两行都在；末章由「序号 === 总数 − 1」判定，新增成员登记进 MEMBERS 即自动获得覆盖，不必再手写一段判据）／**系列级侧栏**（相邻窗口四条：首篇与末篇两端各一测 + 条目数 + 标题栏「查看目录」）／三页 200+封面／粘性跟随；SERIES_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形），需先 `pnpm build && pnpm preview --port 4322`；**不进 CI 只手工跑**。判据总数写死在 `EXPECTED_CHECKS`（现值不在本文记，现测方式见上），同批固定后不得增减，改判据必须同步该常量并说明差值来源，否则脚本以退出码 2 拒绝运行。套件在 **context 级别掐掉外部视频嵌入**（YouTube / Bilibili / 腾讯视频，与 `smoke:ui` 的 `stubExternalEmbeds` 同款）：`/posts/20260919135000/` 正文含裸 YouTube iframe，而整套用 `waitUntil:"load"` 导航、load 要等这些子帧——本站资源 634ms 就加载完，YouTube 子帧却要 8.7s、Google 广告 7.4s，连访两次把 load 拖到 15.5s、第二次直接 30s 超时（整套中途死掉、不产生任何 FAIL 行，看着像「套件没跑完」）。
 pnpm smoke:nice-books-migration  # 需博客与独立项目均已 build；NICE_BOOKS_DIST 指向独立项目 dist，MAIN_DIST 可指定博客 dist
 pnpm test:fancybox     # 灯箱 Playwright Smoke（关闭不跳位/焦点归还/定位按钮/下载新标签页/中文文案，需先 build + preview；FANCY_BASE_URL 可覆盖地址）
 `NICE_BOOKS_BASE_URL` 与旧 Nice Books 浏览器 smoke 一同于 2026-11-13 移除；2026-09-20 的放大项等待方式及本地/线上 27/27 是该旧 smoke 时期的历史记录。当前 migration smoke 使用两个本地产物目录，不接受站点 URL。
@@ -390,13 +390,16 @@ gh run list --commit <sha> --json databaseId,name,conclusion,headSha
 
 1. `gh run list --limit 3` 确认 **Deploy to GitHub Pages** 那条 `conclusion=success`，并记下 `headSha`；
 2. `gh run view <id> --json headSha` 核对 `headSha` **等于你要验证的那个 commit**——不是「最近一次运行成功」就等于「你的提交上线了」；
-3. 线上验响应头 `Last-Modified` 是否**晚于**部署完成时刻（`AGENTS.md`「环境区分」节）；
-4. 必要时跑 `pnpm verify:live` 做内容级复核。
+3. 查询该目标 SHA 的 `github-pages` deployment 与最新 status，确认成功且环境 URL 正确。
+4. 从对应 run 的 `github-pages` artifact 取待验收页面和资源，逐项比较线上响应状态及响应体 SHA-256，并记录 URL、请求时间、run、目标 SHA 和两侧 hash。
+5. 按改动范围执行 `pnpm verify:live` 或对应浏览器旅程，记录内容与交互结果。
+
+`Last-Modified`、`Age` 和 `Cache-Control` 作为缓存诊断记录。构建文件时间可以早于 deployment success。2026-11-13 Nice Books T7 实测早 11 秒，线上内容仍与目标 artifact 字节一致，见 [T7 产物核验记录](../history/nice-books-migration-2026-11-13/archive/raw/t7-artifact.md)。生产站的缓存观察同见该记录。
 
 **不要做的事**
 
 - **别为这件事新写脚本或接 MCP**：`gh run` 已覆盖全部需求，加一层只会多一处要维护的失败点。原有计划里的「用 GitHub MCP 接管 run 查询」已按实测废除。
-- **别用 `sleep` 等构建**：`gh run list` 便宜到可以反复查，等待时间应由真实状态决定，不是猜一个毫秒数。
+- 长运行使用 `gh run watch <id> --interval 60 --exit-status`，或约每 60 秒查询一次状态。根据已取得的运行状态继续，向站长报告阶段变化、失败或需要处理的事项。
 - 一次 `gh` 失败**不能**判定命令或参数有错（`issue-tracker.md` 第 50 条：2026-10-14 有过 TLS 抖动期）。先重试再下结论。
 
 ---
@@ -474,3 +477,13 @@ gh run list --commit <sha> --json databaseId,name,conclusion,headSha
 Pio「dev 下不渲染」的过期结论误导了一整轮排查；挂件里硬编码镜像导航宽度导致首帧错位 187px；CHANGELOG 空窗三周，2026-10-01 ~ 11-01 的九批变更事后才补。
 
 三条的共同点：**过期文档不会报错，只会让人按错误方向排查或补记**。第一例烧掉了一整轮排查，第二例是硬编码量值不改的后果，第三例是「等下次一起补」的代价——那次补记只能从 `git log` 反推事实，当时的实测读数全丢了。
+
+## 发布前与收尾安排
+
+发布前确认仓库、目标分支、待发布提交、授权覆盖的项目及发布后验证范围。复用现有检出和分支，按仓库实际合并约束选择直接推送或 PR。采用 PR 时一并说明临时分支的清理方式，远端引用删除遵循本页「CC Safety Net 的实测拦截型态与被拦后的处置」。
+
+大型 Pages artifact 整包传输中断后，先验证下载端点是否支持 Range。支持时按可恢复分段方式下载，检查每段的 206、Content-Range、长度与 hash，再校验整包大小和 ZIP CRC，安全解包后核对线上响应。2026-11-13 T7 的成功方案、失败尝试和本机脚本入口见 [产物核验归档](../history/nice-books-migration-2026-11-13/archive/raw/t7-artifact.md)。该批脚本保存在 `output/nice-books-migration/t7/artifact-proof/`，跨检出先确认其存在，复用时重新查询目标 run 和 artifact 元数据。
+
+## 构建报错与网络诊断
+
+Windows 上构建失败时保存并读取完整日志，esbuild 错误可能出现在输出中部。Google Fonts 的 Node 请求、环境代理与 TUN 诊断见本页「常用命令」中的 `NODE_USE_ENV_PROXY` 实测条目，依实际命令及采样核对。

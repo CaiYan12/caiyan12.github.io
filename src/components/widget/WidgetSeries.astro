@@ -1,7 +1,7 @@
 ---
 import WidgetLayout from "./WidgetLayout.astro";
 import { getCollection } from "astro:content";
-import { getSeriesViewForPost } from "../../utils/series";
+import { getSeriesViewForPost, getSeriesWindow } from "../../utils/series";
 
 // 仅在文章页侧栏显示：从 URL 提取当前文章 slug（与 WidgetRelatedPosts 同法）。
 // 成员判定单源：getSeriesViewForPost 即「组内序列」口径——该文不在公开时间线
@@ -12,6 +12,9 @@ const slug = Astro.url.pathname.replace(/\/+$/, "").split("/")[2];
 const view = slug
 	? getSeriesViewForPost(await getCollection("posts"), slug)
 	: null;
+// 侧栏只呈现当前篇的相邻窗口（至多四条目 [i-1][i][i+1][i+2]，首尾钳制、不设滑块）：
+// 全量清单由标题栏「查看目录」指向的 /series/<slug>/ 承担（GLOSSARY「文集目录」）。
+const windowMembers = view ? getSeriesWindow(view.members, slug) : [];
 ---
 
 {
@@ -32,7 +35,7 @@ const view = slug
 				/>
 			</a>
 			<ol class="series-toc">
-				{view.members.map((member) => (
+				{windowMembers.map((member) => (
 					<li class:list={[member.id === slug && "current"]}>
 						<a
 							href={`/posts/${member.id}/`}

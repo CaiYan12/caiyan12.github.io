@@ -424,7 +424,7 @@ Nice Books 迁移检查不在 `pnpm build` 链内：`pnpm test:nice-books-owners
 ### 环境
 
 - **本地**：`pnpm dev` → `http://localhost:4321`。已知 dev 限制：Pio 看板娘因 Svelte hydration 报错不渲染，验证 Pio 必须 `pnpm build && pnpm preview`；dev 下评论/留言是 mock 数据。
-- **线上**：<https://caiyan12.github.io/>。GitHub Actions 部署；Fastly 边缘缓存 HTML `max-age=600` 且缓存键不含查询串（加 `?cb=` 无效），刚推送完最多等 10 分钟。验证部署是否生效看响应头 `Last-Modified`，或直接下载 run 的 `github-pages` artifact。
+- **线上**：<https://caiyan12.github.io/>。GitHub Actions 部署；Fastly 边缘缓存 HTML `max-age=600` 且缓存键不含查询串（加 `?cb=` 无效），刚推送完最多等 10 分钟。部署身份通过目标 SHA、Actions、deployment 及同次 run 的产物核对，步骤见 [命令文档](docs/agents/commands.md) 的「查 CI / 部署状态」节。
 
 ### CI 与部署
 
