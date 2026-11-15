@@ -16,7 +16,7 @@
 //   RUNTIME_LIFECYCLE_BASE_URL=http://localhost:4322 pnpm smoke:runtime-lifecycle
 // 退出码：0 全绿；1 有判据失败。
 import { chromium } from "playwright";
-import { makeHarness } from "./lib/smoke-harness.mjs";
+import { makeHarness, waitForServer } from "./lib/smoke-harness.mjs";
 
 const { base, check, createSink, checkClean, finish } = makeHarness({
 	envVar: "RUNTIME_LIFECYCLE_BASE_URL",
@@ -76,6 +76,7 @@ const PROBE = `(() => {
 	};
 })();`;
 
+await waitForServer(base);
 const browser = await chromium.launch();
 const context = await browser.newContext({
 	viewport: { width: 1440, height: 900 },

@@ -14,6 +14,39 @@
 import { chromium } from "playwright";
 
 /**
+ * 等 base 真正应答，再让脚本开始导航。
+ *
+ * 为什么需要：`astro preview` / `astro dev` 的「ready」是进程内日志，端口真正可连
+ * 往往还要再等几百毫秒到几秒。冒烟直接 `page.goto` 会拿到
+ * `net::ERR_CONNECTION_REFUSED`，表现为「判据红了」而不是「服务没起来」——
+ * 2026-11-15 实测：一次 46/47（唯一红项是某个 chunk 的 ERR_CONNECTION_REFUSED，
+ * 差点被当成回归），一次直接 goto 崩溃，等 HTTP 200 后复跑 47/47。
+ *
+ * 判据只看「有没有 HTTP 应答」：404 也算起来了（地址写错是另一类问题，由各 smoke
+ * 自己的判据抓）；5xx 视为未就绪，继续等。
+ */
+export async function waitForServer(
+	base,
+	{ timeoutMs = 30000, intervalMs = 500 } = {},
+) {
+	const deadline = Date.now() + timeoutMs;
+	let lastError = "无应答";
+	while (Date.now() < deadline) {
+		try {
+			const res = await fetch(base, { method: "GET" });
+			if (res.status < 500) return;
+			lastError = `HTTP ${res.status}`;
+		} catch (error) {
+			lastError = String(error?.message ?? error);
+		}
+		await new Promise((resolve) => setTimeout(resolve, intervalMs));
+	}
+	throw new Error(
+		`[smoke] ${timeoutMs}ms 内 ${base} 没有应答（${lastError}）。先启动 preview / dev 再跑冒烟。`,
+	);
+}
+
+/**
  * @param {object}   options
  * @param {string}   options.envVar      该套 smoke 的 base URL 环境变量名
  * @param {string}   options.defaultBase 未设环境变量时的默认值（各点自述，台子不统一端口）
@@ -136,7 +169,16 @@ export function makeHarness({
 	return {
 		base,
 		launch,
-		browser: chromium,
+		// 台子替所有冒烟挡掉「服务还没起来」：launch 前先等 HTTP 应答。
+		// 包一层而不是改每个调用点——九套 smoke 都写 `await harness.browser.launch(...)`，
+		// 这一处包装就让它们全部拿到同一个就绪判据。
+		browser: {
+			...chromium,
+			launch: async (opts) => {
+				await waitForServer(base);
+				return chromium.launch(opts);
+			},
+		},
 		check,
 		checkClean,
 		createSink,

@@ -1,10 +1,12 @@
 import assert from "node:assert/strict";
 import { chromium } from "playwright";
+import { waitForServer } from "./lib/smoke-harness.mjs";
 
 // MAIN_SITE_URL 是站点根；本地模式只核对入口，LIVE 模式要求同源实际部署。
 const root = new URL(process.env.MAIN_SITE_URL || "http://localhost:4321/");
 assert.equal(root.pathname, "/", "MAIN_SITE_URL must be a site root");
 const live = process.env.AI_NEWS_INTEGRATION_LIVE === "1";
+await waitForServer(root.href);
 const browser = await chromium.launch();
 try {
 	for (const width of [1280, 390]) {
