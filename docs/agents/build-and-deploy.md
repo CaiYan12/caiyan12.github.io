@@ -111,11 +111,11 @@ node -e "const p=require('./package.json'); console.log(JSON.stringify({astro:p.
 
 **CI 执行拓扑**：Pull Request 由 `build.yml` 执行 `Astro Check` 和完整 `Astro Build`，`lint.yml` 执行 Prettier 检查与公式保护测试；`main` push 时 `build.yml` 的 `Astro Build` job 通过 `if: ${{ github.event_name == 'pull_request' }}` 跳过，完整构建只由 `deploy.yml` 执行一次后部署。`deploy.yml` 也支持 `workflow_dispatch`，并通过 `concurrency` 取消同一 workflow/ref 的旧部署。
 
-**线上验证部署是否生效**：Fastly 边缘缓存 HTML `max-age=600`，且缓存键不含查询串（加 `?cb=` 无效）；看响应头 `Last-Modified` 是否晚于部署完成时间，或下载 Actions run 的 `github-pages` artifact 直接查 HTML（确定性验证）。
+**线上验证部署是否生效**：按 [命令文档](commands.md) 的「查 CI / 部署状态」节关联目标 SHA、Actions、deployment 与该 run 的 artifact，逐项核对线上状态和响应体。`Last-Modified`、`Age` 和 `Cache-Control` 用于缓存诊断，构建文件时间可以早于 deployment success。
 
 **跨平台部署验证不能用 JS chunk 哈希或 Pagefind 索引哈希当身份证据（2026-11-03 实测）**：同一次提交，本地 Windows 构建出 `Pio.sk4GzkC6.js`，CI Linux 构建出 `Pio.CS2Sx7XP.js`，Pagefind 索引哈希也不同（`zh-cn_8c3aa7783188c` vs `zh-cn_c626e8a99f542`）。**这不是部署没生效**，而是内容寻址哈希与索引字节受平台影响。当时差点据此误判发布失败。
 
-可用的平台无关证据，按可靠性排序：
+以下保留跨平台差异的诊断经验。当前部署身份验收按 [命令文档](commands.md) 与同一 run 的产物比较，下面的本地构建对照读数用于辅助诊断。
 
 1. **CSS 资源名**——**自 Tailwind v4 起不再绝对可靠，须同时比对内容**（2026-11-04 实测）。v3 时代两侧完全一致（`Layout.BkMsQfIt.css`、`MainGridLayout.CKaYaVTj.css`、`katex.BPpMaF0t.css`、`noto-sans-sc.WH83ST03.css`）；v4 首批上线时本地 `MainGridLayout.B_utt6QD.css` 与线上 `MainGridLayout.TXd5OLZn.css` **名字不同**，而两者**字节数完全相同（195,513 B）、仅差 1 个字节**——`bg-primary/15` 的 `oklab(69.9907% -.188933 .144998/.15)` 在 Linux 上是 `-.188934`，色彩转换的浮点末位随平台变，内容寻址哈希因此改变。判据改为**「同名即同源；不同名则下载比对字节数与逐字节差异」**，差异仅出现在 `oklab()`/`color-mix()` 的浮点末位即属正常，落在某个 utility 的色值上**不可见**。
 2. **页面可见文本**——剥掉 `data-tab-widget` 块（客户端脚本渲染，抓取时机不同会读到占位态或渲染态）、脚本、样式与空白后逐字节比。实测 6 个代表页 5 页全等。

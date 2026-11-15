@@ -52,24 +52,12 @@ Your agent and bash are running on:
 
 五个默认标签串（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`）是技能侧的**约定词表**，与角色名一一对应，不另设映射。2026-09-24 实测本仓库 GitHub 端只有 `wontfix` 与 `ready-for-agent` 两个；2026-10-06 补建 `needs-triage`（#fbca04）、`needs-info`（#d4c5f9）、`ready-for-human`（#1d76db），五个角色现全部可用。贴标签前仍先 `gh label list` 核可用值（现值现测，本文件不记标签总数）。见 `docs/agents/triage-labels.md`。
 
-### 文档写作约定（2026-09-22 立，Q45-B）
+### 文档与命令导航
 
-- **约束以「选择器 + 文件路径」为锚点**，行号只作辅助且必须写「约」。本轮 UI 整改里三次误判的根源都是拿旧行号当现值（药丸样式记录漂了约 220 行、`.prose code` 的定位两次都错）。引用另一节用**节标题**，不用「上节 / 下节」这类相对指代词——节顺序会变，写死的方位会失效。
-- **改 Prettier 对齐的表格单元格前先量列宽**：Prettier 按显示宽度（中文算 2）填充，列宽由同列最长单元格决定。`docs/history/history.md`「未完成或未实施的事项」表改单元格文字若超出列宽，会让 Prettier 重排全表、连累相邻行也进 diff。新文字先量宽度，超宽就换落点（如把说明移到更宽的列），不靠事后格式化收拾。量宽用 `node scripts/md-table-width.mjs <file> --check`（打印哪一列变宽、会连带重排几行）。
-- 带日期的历史实测数字**保留原样**（它们是那次测量的记录，不是当前事实）；需要当前值就重新测。
-- 无法本地复核的数字（第三方图种数量、历史构建文件数）标 `UNKNOWN` 或明确写「未复核」，不得当作改动依据。
-- **本文件（`AGENTS.md`）不写会随仓库增长的计数**（ADR 份数、标签个数、模块数……）。这类现值一改就漂。需要数字时现测，别在这里留一份快照。**本文件自 2026-11-03 起已纳入格式门禁**（`lint.yml` 的 Prettier 范围含 `./*.md`，本地 pre-commit 同步覆盖仓库根的 md）；但**格式门禁不检查内容正确性**——数字写错不会因此变红，仍须实测。改动时注意：Prettier 只填充表格列宽、不碰文首声明的固定上下文（实测：格式化只改表格列宽填充，不碰 `!IMPORTANT` 以上的固定上下文；行号不写，它随增删漂移）。
-- **参考材料按分支拆在 `docs/agents/`**，本文件只留指针（见「深入文档」表）。**新增约束时先判断它属于哪条分支**：只对某一类工作成立的（改样式 / 改天气 / 动组件 / 改构建 / 写文章 / 跑命令）就写进对应那份，别塞回本文件——常驻上下文里每一行都在每轮计价。**注入预算的现值与改法不在本文件记录**（会漂）：见 `~/.dsh/AGENTS.md` §4，核验跑 `node ~/.dsh/tools/verify-maxbytes-override.mjs`；唯一要记住的是**这份预算由整条指令链共享，超了会从最宽泛的文件开始丢且无提示**。
-- **交付纪律（门禁级）**：未经允许**不 commit、不 push**，改完停在本地；只做点名的那几条，做完即停；选项选中后先讲清含义与后果再等指令。**push 到 `main` 等于生产部署**（`deploy.yml` 在 `push: branches [main]` 上触发），不是「备份一下」。 提交流程与 push 前核对见 [`docs/agents/commands.md`](docs/agents/commands.md)。
-- **写交接文档、台账或报告里的 git 状态与提交区间时**（远端状态分哪几档、历史区间怎么落死）→ `docs/agents/commands.md` 的「git 远端状态与提交区间的表述纪律」节（2026-10-30 立）。
-- **脚本输出编码、heredoc 吃掉转义等「跑命令」类坑**（Windows GBK 控制台、`print` 带 emoji 崩溃、正则转义被 shell 吃掉）→ [`docs/agents/commands.md`](docs/agents/commands.md) 的「脚本输出编码」节。本文件不再复述细节。
-- **命令被本机守卫拦下时**（`BLOCKED by CC Safety Net` 或 `[safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED]`，都是文本错误、不改退出码）→ [`docs/agents/commands.md`](docs/agents/commands.md) 的「CC Safety Net 的实测拦截型态与被拦后的处置」与「宿主的批量删除守卫」两节。要点：**被拦不绕过**（不换 shell / 不拼字符串 / 不改走别的 CLI）；`git.push-delete`、`git.stash-drop` 无安全等价物，须交回用户手动执行；恢复被构建改写的 `src/constants/*.json` 用 `git show HEAD:<path>` 写回，不用 `git restore`。
-- **跑 `astro build` / `pnpm smoke:ui` 之前** → [`docs/agents/commands.md`](docs/agents/commands.md) 的「宿主的批量删除守卫」节：确认输出里没有 `SAFE_DELETE_*`、且 `dist/pagefind/` 非空，否则构建收尾失败或缺索引会让冒烟判据假红。
-- **一次性探针脚本写在哪（含只读盘点的扫描脚本）** → `output/<批次名>/`，不是系统临时目录。判据值钱的脚本另存进 `scripts/`。只读阶段落盘不算改仓库文件，长脚本写文件再跑。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「一次性探针脚本该放哪」节。
-- **用 CodeGraph 之前** → 先看 `codegraph_status` 的 `pendingChanges`；非零就 `codegraph_sync`（增量、秒级）。索引会静默失真（2026-11-04 实测列出 60 多个已迁出的文件）。**磁盘才是权威**。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「CodeGraph 索引会静默失真」节。
-- **查 CI / 部署状态** → `gh run list` / `gh run view --json`，**不需要代理**，也**不要**为它新写脚本或接 MCP。核对部署生效必须比对 `headSha` 与目标 commit，不是「最近一次成功」。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「查 CI / 部署状态」节。
-- **改 `scripts/upgrade-style-audit.mjs` 或新增样式判据** → 该工具现已在静态指纹之外采样 `:hover` / `:focus-visible` / `:active` / `:disabled` 四种状态（CDP 强制伪类），且**指纹格式随状态数变化，旧采集结果不可与新采集互比**。改动它之后**必须做变异验证**：故意改坏产物 CSS，确认工具真的报差异，否则等于把判据削弱成永远绿。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「样式指纹的状态采样」节。
-- **决定这次改动要验到什么程度** → 分**承重档**（换构建工具 / 升大版本依赖 / 改级联层语义 / 动全站样式入口 / 换渲染管线）与**轻量档**（单组件微调 / 文案 / 单页 / 明确 bug）。承重走四道判据，轻量走两道；拿不准按承重。详见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「两档验证力度」节。
+- 写作、归档、同步维护文档时，先读 [文档维护约定](docs/agents/documentation.md)，按改动类型核对同步目标与格式。
+- 提交和发布须有对应授权，推送 main 会触发生产部署。发布前核对、分支清理安排、部署身份与等待方式见 [命令文档](docs/agents/commands.md) 的「发布前与收尾安排」和「查 CI / 部署状态」节。
+- 跑构建、烟测、一次性探针、CodeGraph 或样式审计前，按 [命令文档](docs/agents/commands.md) 的对应标题读取前置与已知坑。探针保存在 output/<批次名>/，复用判据保存在 scripts/。
+- 命令被守卫拦截时，按 [命令文档](docs/agents/commands.md) 的「CC Safety Net 的实测拦截型态与被拦后的处置」与「宿主的批量删除守卫」节处理。
 
 ### Domain docs
 
@@ -102,54 +90,9 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 | 想知道某一轮做过什么，或取回已归档的规格 / 票册原文                                                  | `docs/history/history.md`（已归档文档的索引：结果、落地提交、`git show` 恢复命令）                  |
 | issue 规范、标签                                                                                     | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md`                                      |
 
-## 文档同步（门禁级 · 每一轮变更都要做）
+## 文档同步
 
-> **为什么有这一节**：这些文档是下一个 agent 唯一的上下文，落后就会让后来者照过期口径改回去。这个仓库为此付过代价——具体三例与教训见 [`docs/agents/commands.md`](docs/agents/commands.md) 的「文档同步的历史代价」节。
-
-### 1. 硬规则
-
-- **改了代码就改文档，同一笔 commit 里改完**。不许"等下次一起补"——2026-11-02 那次补记就是"下次"的代价：只能从 git log 反推出事实，当时的实测读数全丢了。
-- **文档与代码矛盾时，先证明哪边是真的，再改表述**；不许为了少改一行而把代码往过期文档上凑。
-- **写进文档的每个数字都要能指回来源**：当天实测（写日期 + 环境）、或某个 commit / ADR / issue。反推出来的必须标「补记」并写清证据来源。
-- **不许写会自己漂的计数**（ADR 份数、标签个数、烟测判据数、组件个数……）。要数字就现测；必须写时写成"由 X 派生、现测方式为 Y"。
-- 改完自查一遍：**文档里被这次改动推翻的句子**（旧数字、旧口径、旧文件路径）有没有残留。用 `grep` 找旧值，别靠记忆。
-
-### 2. 改什么 → 必须同步哪一份
-
-| 这轮改了什么                                     | 必须同步                                                                                                                   |
-| ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| 任何用户可见的行为 / 视觉 / 交互                 | `CHANGELOG.md`（新条目，日期在最新一条之上）+ 相关 `docs/agents/*.md`                                                      |
-| 样式、token、类名、层叠值、光标                  | `docs/agents/styles.md`（层叠关系表是契约，改值前先核对）                                                                  |
-| 客户端脚本、Swup 生命周期、layout 级组件         | `docs/agents/components.md`（含"新增客户端代码必须遵守"的协议条）                                                          |
-| 构建链、依赖、部署、remark/rehype 插件           | `docs/agents/build-and-deploy.md`                                                                                          |
-| 命令 / env 形态 / 烟测判据条数 / 已知坑          | `docs/agents/commands.md`                                                                                                  |
-| 领域术语、称呼、"它是什么不是什么"               | `GLOSSARY.md`（`_Avoid_` 行也要跟着改）                                                                                    |
-| 难以回退、有真实取舍、令人意外的决定             | 新建 `docs/adr/NNNN-*.md`（按序编号，不记份数）；**改了某个 ADR 的决定**就写新 ADR 并在开头写明替代谁，旧 ADR 保留为历史   |
-| 天气判据 / 取数                                  | `docs/agents/weather-capsule.md`                                                                                           |
-| 文章写法、外部 Markdown 导入、头图               | `docs/agents/post-authoring.md`                                                                                            |
-| issue / 标签规范                                 | `docs/agents/issue-tracker.md`、`docs/agents/triage-labels.md`                                                             |
-| 归档 / 删除既有的计划、规格、票册                | `docs/history/history.md`（新增索引行：结果 + 落地提交 + `git show` 恢复命令）**并且**全仓库改掉指向旧路径的引用，别留死链 |
-| 本文件里的事实（工具名、命令、路径、协议、约束） | **本文件**；只改「项目背景」以下的可编辑区，上面的固定上下文一个字都不许动（见文首 `!IMPORTANT`）                          |
-
-### 3. `CHANGELOG.md` 的写法
-
-- **一条 = 一天或一批相关变更**，标题 `## YYYY-MM-DD：一句话说清"变了什么"`，**新的在最上面**。
-- 正文写四类东西，能少写但不能不写：**改了什么**（含选择器 / 文件锚点）、**为什么这么定**（裁决点，尤其"看起来该改但不许改"的地方）、**实测证据**（数字 + 日期 + 环境；没测就写"未验证"）、**怎么验证的**（命令 / 判据）。
-- 失败路径与踩坑要写进去——那是后来者最容易重复踩的部分。
-- 细节不在这里复述：指向 commit、ADR、`docs/agents/*.md`。
-- **允许补记**，但必须在该条目或该段开头标「补记（日期）」并写清证据来源（git log / ADR），且只写证据支持得住的结论。
-
-### 4. `docs/adr/` 的写法
-
-- 只记**难以回退、有真实取舍、令人意外**的决定；能顺手改回去的、纯实现细节的，写进 `CHANGELOG.md` 或 `docs/agents/` 就够。
-- 结构：一句话决定 → 背景（为什么需要决定）→ 决定 → **被否掉的其他方案及否决理由**（这一段最有价值）→ 代价与边界 → 守卫在哪（哪条判据/哪份文档守着它）。
-- ADR 里不复制代码全文，只写路径与锚点。
-
-### 5. 什么时候必须停下来问站长
-
-- 文档改动会**推翻一条既有裁决**（比如"这是有意为之，勿改"的那类）——先问，不要自行改写口径。
-- 发现**文档与代码矛盾但你无法证明哪边对**——把两边的证据摆出来问，不要猜。
-- 想删/归档既有文档——先问。
+代码与对应维护文档在同一变更中同步。写入事实须有证据，历史实测保留日期与来源。同步清单、CHANGELOG 和 ADR 写法、归档链接及既有裁决的处理见 [文档维护约定](docs/agents/documentation.md)。
 
 ## 工作流与阶段授权（门禁级 · 2026-11-05 站长明确声明）
 
@@ -171,15 +114,10 @@ WindowsIt 个人博客（WindowsIt's Music Club），由 Emlog Colorful（明月
 
 提交时有本地 prettier 门禁（只查暂存内容，`git commit --no-verify` 可单次绕过）：启用方式、worktree 影响与边界见 `.githooks/README.md`。
 
-两条不做就会白跑的事实：
+## 环境区分
 
-- **Windows 上 `pnpm build` 失败时，尾部可能看不到完整错误**（esbuild 崩溃断言）——看完整输出，不要只 tail。
-- **OG 图端点在构建期从 `fonts.googleapis.com` 拉字体交给 satori**：Node 内置 fetch **默认不读 `HTTP_PROXY`**，只有 `NODE_USE_ENV_PROXY=1` 才读（坏代理对照实测：不设变量请求成功、设了 `ECONNREFUSED`）。但**本机没有真直连**：Clash Verge 的 Mihomo TUN 用 fake-ip 接管 DNS 与流量（`dns.lookup` 返回 `198.18.0.108`，网卡 `Mihomo` Up），不设变量的那条路照样经代理，只是走 TUN 而非 `HTTP_PROXY`。两条路依赖同一份订阅节点，节点抖动时都会超时——**报字体错误先换节点或重试，别改构建代码**。**用 curl 或 PowerShell 探这个域名返回 200 证明不了 Node 那条路能过**——两者走的不是同一条路。
-
-## 环境区分（必须遵守）
-
-- **测试环境（本地）**：`http://localhost:4321`（`pnpm dev`；preview 可用 `pnpm preview --port 4322` 等指定端口）。验证交互、布局、Swup 切页均在本地做。**`pnpm dev` 下 Pio 是正常渲染的**（`start.bat` = `pnpm start --open` = `astro dev`，与 `pnpm dev` 同一条命令；2026-11-02 实测 `.pio-container` 存在、水合成功、pageerror 为 0）。它「看起来没渲染」是因为**默认折叠**（`posterGirl` 不为 `"1"` 时带 `hidden`、盒子 0×0），点左下角「召唤」才展开。旧文档「dev 下 Pio 不渲染、必须 build && preview」的结论已作废，别再按它判断。
-- **生产环境（线上）**：`https://caiyan12.github.io/`（GitHub Actions 部署）。验证部署是否生效看响应头 `Last-Modified` 是否晚于部署完成时间，或下载 run 的 `github-pages` artifact；Fastly 边缘缓存 HTML `max-age=600` 且缓存键不含查询串（加 `?cb=` 无效）。playwright 线上偶发 30s 超时时可用 `Invoke-WebRequest` 直接下载 HTML/JS 做内容断言。
+- 本地交互与布局验证使用开发或预览服务，命令与前置见 [命令文档](docs/agents/commands.md)。Pio 的 dev 渲染、默认折叠及视口边界见 [组件文档](docs/agents/components.md) 的 Pio 条目。
+- 生产站为 `https://caiyan12.github.io/`。上线验收关联目标 SHA、Actions、deployment 和实际产物，步骤见 [命令文档](docs/agents/commands.md) 的「查 CI / 部署状态」节。
 
 ## 架构要点
 

@@ -1,5 +1,11 @@
 # 更新日志
 
+## 2026-11-14：修正部署验收指引并精简代理常驻上下文
+
+根 `AGENTS.md` 的文档写作与同步细节下沉到 `docs/agents/documentation.md`，保留导航、阶段授权和固定前缀。`docs/agents/commands.md`、`docs/agents/build-and-deploy.md` 与 README 的现行部署指引统一关联目标 SHA、Actions、deployment 和同次 run 的线上产物，缓存头用于诊断。依据为 Nice Books T7 的文件时间早于部署成功 11 秒且线上字节匹配的实测记录。命令文档同时补齐长运行约 60 秒查询、Range 分段下载及发布前临时分支清理安排。
+
+Nice Books 独立项目已在本地新增可复用浏览器验收工具及对应命令，验证页面内容就绪、Swup 文档身份、精确 HTTP 例外和实际字体。2026-11-14 Windows 11、headless Chromium 151.0.7922.34 上，工具回归 4/4，本地预览与线上各 8/8。独立项目构建含 52/52 单测通过，Pages 产物检查通过，保留既有 `INEFFECTIVE_DYNAMIC_IMPORT` 提示。本批验证入口与结果见独立项目 `docs/browser-verification.md`，本机日志保存在 `output/nice-books-retro-2026-11-14/` 与独立项目 `output/retro-2026-11-14/`。
+
 ## 2026-11-13：Nice Books 生产切换完成并归档迁移记录
 
 **改动**
