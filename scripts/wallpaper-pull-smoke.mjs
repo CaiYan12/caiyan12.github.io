@@ -947,6 +947,63 @@ check(
 checkClean("减少动态");
 
 await rmContext.close();
+// ---- 窄屏不下载壁纸（README TODO「≤680px 时壁纸仍会被下载」，2026-11-15） ----
+// 判据落在网络层：390 全新加载时 /images/bg/ 请求数必须为 0、.bg-image 不得有 src；
+// 拉到 1024 后必须补上 src（跨断点补选），且只请求一张。
+const narrowContext = await browser.newContext({
+	viewport: { width: 390, height: 844 },
+});
+const narrowPage = harness.attach(await narrowContext.newPage());
+const narrowBgRequests = [];
+narrowPage.on("request", (request) => {
+	if (request.url().includes("/images/bg/"))
+		narrowBgRequests.push(request.url());
+});
+await narrowPage.goto(base + "/", { waitUntil: "load", timeout: 60000 });
+await boot(narrowPage);
+const narrowBg = await narrowPage.evaluate(
+	({ BG }) => {
+		const bg = document.querySelector(BG);
+		return {
+			src: bg?.getAttribute("src") ?? null,
+			display: bg ? getComputedStyle(bg).display : null,
+		};
+	},
+	{ BG },
+);
+check(
+	"窄屏 390 全新加载：背景层不可见时不下壁纸",
+	narrowBgRequests.length === 0 &&
+		narrowBg.src === null &&
+		narrowBg.display === "none",
+	`请求 ${narrowBgRequests.length} 次，src=${narrowBg.src}，display=${narrowBg.display}`,
+);
+// 先挂等待再改视口：resize 处理器可能同步补选，后挂会漏掉那一次请求
+const wideRequest = narrowPage.waitForRequest(
+	(request) => request.url().includes("/images/bg/"),
+	{ timeout: 15000 },
+);
+await narrowPage.setViewportSize({ width: 1024, height: 900 });
+await wideRequest;
+const wideBg = await narrowPage.evaluate(
+	({ BG }) => {
+		const bg = document.querySelector(BG);
+		return {
+			src: bg?.getAttribute("src") ?? null,
+			display: bg ? getComputedStyle(bg).display : null,
+		};
+	},
+	{ BG },
+);
+check(
+	"跨断点补选：拉到 1024 后壁纸补上，且只请求一张",
+	wideBg.src !== null &&
+		wideBg.display !== "none" &&
+		narrowBgRequests.length === 1,
+	`src=${wideBg.src}，请求 ${narrowBgRequests.length} 次，display=${wideBg.display}`,
+);
+checkClean("窄屏不下载");
+await narrowContext.close();
 await context.close();
 await browser.close();
 harness.finish();

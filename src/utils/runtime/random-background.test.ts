@@ -65,6 +65,53 @@ let mounted: FakeImage | null = null;
 	},
 };
 
+// ---- 计算样式桩：背景层可见性（README TODO「≤680px 时壁纸仍会被下载」） ----
+//
+// 判据是**计算出来的 display**，不是 matchMedia 的 680 字面量：断点只存在 CSS
+// 一处。这里把「浏览器算出来的值」做成可变量，用例只改它来模拟跨断点。
+
+/** 当前计算出来的 display；默认 block = 宽屏可见 */
+let layerDisplay = "block";
+
+let styleThrows = false;
+
+(globalThis as Record<string, unknown>).getComputedStyle = (
+	element: unknown,
+) => {
+	// 取不到计算样式的分支（fail open）由 styleThrows 模拟
+	if (styleThrows) throw new Error("computed style unavailable");
+	// 传错元素就该立刻炸，而不是静默返回一个值让用例变成空跑
+	if (element !== mounted) {
+		throw new Error("getComputedStyle called with unexpected element");
+	}
+	return { display: layerDisplay };
+};
+
+// ---- window 桩：resize 监听 ----
+
+type FakeWindow = {
+	handlers: Array<() => void>;
+	addEventListener(type: string, fn: () => void): void;
+};
+
+let win: FakeWindow;
+
+function installWindow() {
+	win = {
+		handlers: [],
+		addEventListener(type, fn) {
+			if (type !== "resize") throw new Error(`unexpected event: ${type}`);
+			win.handlers.push(fn);
+		},
+	};
+	(globalThis as Record<string, unknown>).window = win;
+}
+
+/** 触发一次 resize（只跑本模块挂上的处理器） */
+function fireResize() {
+	for (const handler of win.handlers) handler();
+}
+
 // ---- 随机数控制 ----
 
 const realRandom = Math.random;
@@ -94,6 +141,9 @@ function seededSequence(seed: number, count: number): number[] {
 beforeEach(() => {
 	mounted = null;
 	restoreRandom();
+	layerDisplay = "block";
+	styleThrows = false;
+	installWindow();
 });
 
 // ---- 语料坏掉时的安全返回 ----
@@ -309,4 +359,104 @@ test("守卫置位时机：dataset.selected 已是 true 时整块跳过", () => 
 	restoreRandom();
 
 	assert.deepEqual(image.srcWrites, []);
+});
+
+// ---- 窄屏不下载（README TODO「≤680px 时壁纸仍会被下载」，2026-11-15） ----
+
+test("背景层不可见：不写 src、不置守卫（窄屏访客不下载那张看不见的壁纸）", () => {
+	const image = makeImage(JSON.stringify(POOL));
+	mounted = image;
+	layerDisplay = "none";
+	setRandom(0);
+
+	initRandomBackground();
+	restoreRandom();
+
+	assert.deepEqual(image.srcWrites, [], "不可见时不应写 src");
+	assert.equal(image.dataset.selected, undefined, "不可见时不应置守卫");
+});
+
+test("跨断点：隐藏时加载，拉宽到可见后补选一次；再 resize 不重复写", () => {
+	const image = makeImage(JSON.stringify(POOL));
+	mounted = image;
+	layerDisplay = "none";
+	setRandom(0);
+
+	initRandomBackground();
+	assert.deepEqual(image.srcWrites, [], "隐藏时加载不应写 src");
+
+	// 仍隐藏：resize 不补选
+	fireResize();
+	assert.deepEqual(image.srcWrites, []);
+
+	// 跨到可见：补选一次
+	layerDisplay = "block";
+	fireResize();
+	restoreRandom();
+	assert.deepEqual(image.srcWrites, [POOL[0]]);
+	assert.equal(image.dataset.selected, "true");
+
+	// 已选中：再 resize 不重复写
+	fireResize();
+	assert.equal(image.srcWrites.length, 1);
+});
+
+test("重复初始化不重复挂 resize 监听（dataset 守卫）", () => {
+	const image = makeImage(JSON.stringify(POOL));
+	mounted = image;
+	layerDisplay = "none";
+
+	initRandomBackground();
+	initRandomBackground();
+
+	assert.equal(win.handlers.length, 1, "重复初始化不应叠加监听");
+
+	layerDisplay = "block";
+	setRandom(0);
+	fireResize();
+	restoreRandom();
+
+	assert.deepEqual(image.srcWrites, [POOL[0]], "补选只发生一次");
+});
+
+test("宽屏加载后缩到窄屏：保留已下载的图、不清空，也不挂监听", () => {
+	const image = makeImage(JSON.stringify(POOL));
+	mounted = image;
+	layerDisplay = "block";
+	setRandom(0);
+
+	initRandomBackground();
+	restoreRandom();
+	assert.deepEqual(image.srcWrites, [POOL[0]]);
+	assert.equal(win.handlers.length, 0, "宽屏加载不需要 resize 监听");
+
+	layerDisplay = "none";
+	fireResize();
+	assert.deepEqual(image.srcWrites, [POOL[0]], "缩到窄屏不应改写 src");
+});
+
+test("取不到计算样式时按可见处理（fail open：宁可多下一张，也不让宽屏没有壁纸）", () => {
+	const image = makeImage(JSON.stringify(POOL));
+	mounted = image;
+	styleThrows = true;
+	setRandom(0);
+
+	initRandomBackground();
+	restoreRandom();
+
+	assert.deepEqual(image.srcWrites, [POOL[0]]);
+	assert.equal(image.dataset.selected, "true");
+});
+
+test("背景层可见：照常选一张（宽屏行为不变）", () => {
+	const image = makeImage(JSON.stringify(POOL));
+	mounted = image;
+	layerDisplay = "block";
+	setRandom(0);
+
+	initRandomBackground();
+	restoreRandom();
+
+	assert.deepEqual(image.srcWrites, [POOL[0]]);
+	assert.equal(image.dataset.selected, "true");
 });

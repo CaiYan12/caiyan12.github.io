@@ -1,5 +1,17 @@
 # 更新日志
 
+## 2026-11-15：≤680px 不再下载壁纸
+
+**改了什么**：`src/utils/runtime/random-background.ts` 选图前先读计算样式（`isBackgroundLayerVisible`，`display !== "none"`）：背景层被 `global.css` 的 `@media (max-width: 680px)` 隐藏时不写 `src`、不置 `dataset.selected`，只在 resize 跨回可见时补选（`dataset.visibilityBound` 防重复挂监听；处理器回到同一个 `initRandomBackground()` 入口）。`random-background.test.ts` 新增 6 条（隐藏不写 / 可见照写 / 跨断点补选 / 重复 init 不叠监听 / 宽屏缩窄保留 / 取不到计算样式时 fail open）；`scripts/wallpaper-pull-smoke.mjs` 新增「390 全新加载无 `/images/bg/` 请求、拉到 1024 补上」两条判据（47 → 50 项）。README TODO 勾选并写实测证据；`docs/agents/components.md` 加维护约束；`GLOSSARY.md` 的「壁纸池」补「背景层可见时」。
+
+**为什么这么定**：判据刻意不用 `matchMedia("(max-width: 680px)")`——680 只存在 CSS 一处，镜像字面量会与断点脱钩（ADR 0010 的单一真源口径）；读计算样式让断点/选择器改了自动跟上，取不到时按可见处理（fail open，退回今天的行为）。跨断点只补不清：清空 `src` 不会撤销已经发生的下载，回到宽屏还要再下一次。
+
+**实测证据**：线上 390×844 实测 `.bg-image` 计算 `display:none` 但 `src` 已写、请求已发、`naturalWidth` 2560；池 10 张合计 3,186,872 B（均值 ≈311 KiB、最大 ≈474 KiB），该 `<img>` 带 `fetchpriority="high"`。同档位 `.bg-image-pattern`（923 B）在 `display:none` 下浏览器不取（实测无请求）、`body` 背景为 `none`。修复后 `pnpm smoke:wallpaper-pull` **50/50**（390 请求 0 次、src=null；1024 后 src 补上、请求 1 次）；`pnpm test:utils` **303/303**；`pnpm done` 全绿；`pnpm exec astro build` **232 页**。
+
+**怎么验证的**：线上 Playwright 探针（390/1280 对照、资源请求、CSS 与壁纸请求时序，留在 `output/wallpaper-680/`）、`pnpm test:utils`、`pnpm exec astro build` + `pnpm preview --port 4322` + `pnpm smoke:wallpaper-pull`、`pnpm done`。
+
+**踩坑**：① `random-background.test.ts` 与 `scripts/wallpaper-pull-smoke.mjs` 在工作区是 **CRLF**，`ops_edit_file` 用 LF 写 `oldText` 会 `EDIT_CONFLICT`（与同日上一条同源）；② 判断「CSS 是否已应用」不能只看 init 时机——实测 CSS 1102ms 就绪、壁纸请求 1834ms 才发起，计算样式在 init 时已可读。
+
 ## 2026-11-15：壁纸池扩到 10 张（留白优先的城市夜景）
 
 **改了什么**：从 Pexels 新增 6 张城市夜景，导出为 WebP q80、最长边 2560px（合计 **1,733,454 B**），`backgroundConfig.images` 从 4 条扩到 10 条；`PEXELS-SOURCES.md` 补 6 行与留白口径。`scripts/wallpaper-pull-smoke.mjs` 里写死的 `pool.length === 4` 改成 `> 1`——它的本意只是「池里不止一张」，写死会在每次加壁纸时把判据自己弄红。
