@@ -1,5 +1,10 @@
+# 全仓库默认：文本文件在 index 与检出时一律 LF（2026-11-15 立）。
+# 此前本机 worktree 是 CRLF、blob 是 LF，而 core.autocrlf 未设、这里也没有 text=auto，
+# 于是任何一次编辑都会把整文件算成全行改动（实测 src/config.ts 216/216 行）。
+# 下面带 -text 的规则写在后面，按「后匹配者优先」覆盖本条，那些文件保持逐字节不变。
+* text=auto eol=lf
 # 第三方 vendored 游戏源码与其构建产物：保持字节原样，禁用 Git 的 EOL 转换
-# （本仓库 core.autocrlf=true，这两处必须与工作区/blob 逐字节一致）
+# （这些路径必须与工作区/blob 逐字节一致；本条覆盖上面的 * text=auto）
 vendor/pelican-bike/** -text
 public/pelican-bike/** -text
 # 技能图标与许可按来源 SHA-256 保留原始字节，检出时也不得转换换行。

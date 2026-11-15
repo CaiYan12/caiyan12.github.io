@@ -12,6 +12,8 @@
 
 ## 常用命令
 
+**完成前自检（2026-11-15 立）**：`pnpm done` = `prettier --check` + `pnpm check` + 全部纯 node 单测（utils / lib / projects / site-stats / contributions / friend-icons）。它不跑构建、不跑烟测，是提交前的快闸；完整门禁仍是 `pnpm build`。加这条的直接原因：2026-11-15 那轮改动里两位评审员独立判出的 4 条硬违规中有 3 条机械可查（prettier 红、文档过期数字、缺 CHANGELOG 条目），而「prettier --check 必须绿」当时已经写在本文里却没被执行——规则存在而不生效。
+
 **升级批次 A/B 的两条实测前提（2026-11-03 立）**：
 
 - **先测噪声底线再判 A/B**。同版本连做两次构建，本仓库的非 HTML 产物应逐字节 0 差异，HTML 差异全部集中在侧栏「文章推荐」随机块（2026-11-03 实测 146/230 个 HTML 有差异、剥除后 0 差异）。不先量这条底线，就无法区分「升级造成的差异」与「构建自身的随机噪声」。
@@ -54,7 +56,7 @@ pnpm test:friend-icons  # 友链图标缓存单测（离线注入 fetchImpl，�
 pnpm smoke:ai-news   # MAIN_SITE_URL 为站点根（默认 http://localhost:4321/）；本地只检查桌面/移动入口 DOM
 # 线上同源完整旅程：$env:MAIN_SITE_URL="https://caiyan12.github.io/"; $env:AI_NEWS_INTEGRATION_LIVE="1"; pnpm smoke:ai-news
 pnpm test:ai-news-ownership  # build 后检查 src/ai-news、src/pages/ai-news、public/ai-news 与整个 dist/ai-news 均不存在，且 sitemap 保留独立项目地址
-pnpm smoke:series    # 文集（series）接线烟测，判据条数由脚本里的 `EXPECTED_CHECKS` 派生（2026-11-15 实测 124；现值现测：`grep 'const EXPECTED_CHECKS' scripts/series-smoke.mjs`）：组内相邻 href／组内边界不渲染／非成员跳过整块／**成员场景**（MEMBERS 里每个成员四测：顶部行 + 目录链接、末尾行（末章收尾 / 非末章归属句）、侧栏当前项 = 本篇、两行都在；末章由「序号 === 总数 − 1」判定，新增成员登记进 MEMBERS 即自动获得覆盖，不必再手写一段判据）／**系列级侧栏**（相邻窗口四条：首篇与末篇两端各一测 + 条目数 + 标题栏「查看目录」）／三页 200+封面／粘性跟随；SERIES_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形），需先 `pnpm build && pnpm preview --port 4322`；**不进 CI 只手工跑**。判据总数写死在 `EXPECTED_CHECKS`（现值不在本文记，现测方式见上），同批固定后不得增减，改判据必须同步该常量并说明差值来源，否则脚本以退出码 2 拒绝运行。套件在 **context 级别掐掉外部视频嵌入**（YouTube / Bilibili / 腾讯视频，与 `smoke:ui` 的 `stubExternalEmbeds` 同款）：`/posts/20260919135000/` 正文含裸 YouTube iframe，而整套用 `waitUntil:"load"` 导航、load 要等这些子帧——本站资源 634ms 就加载完，YouTube 子帧却要 8.7s、Google 广告 7.4s，连访两次把 load 拖到 15.5s、第二次直接 30s 超时（整套中途死掉、不产生任何 FAIL 行，看着像「套件没跑完」）。
+pnpm smoke:series    # 文集（series）接线烟测，判据条数由脚本里的 `EXPECTED_CHECKS` 派生（2026-11-15 实测 124；现值现测：`grep 'const EXPECTED_CHECKS' scripts/series-smoke.mjs`）：组内相邻 href／组内边界不渲染／非成员跳过整块／**成员场景**（MEMBERS 里每个成员四测：顶部行 + 目录链接、末尾行（末章收尾 / 非末章归属句）、侧栏当前项 = 本篇、两行都在；末章由「序号 === 总数 − 1」判定，新增成员登记进 MEMBERS 即自动获得覆盖，不必再手写一段判据）／**系列级侧栏**（相邻窗口四条：首篇与末篇两端各一测 + 条目数 + 标题栏「查看目录」）／三页 200+封面／粘性跟随；SERIES_BASE_URL 传**站点根**（与 FANCY_BASE_URL / UI_SMOKE_BASE_URL 同形），需先 `pnpm exec astro build && pnpm preview --port 4322`（只验 DOM / 样式的烟测用 astro build 即可，2026-11-15 实测 `smoke:series` 124/124；完整 `pnpm build` 只在要验构建期取数 / OG / Pagefind 时必要）；**base URL 必须写 `http://localhost:4322`**——本机 preview 解析到 ::1，写 `127.0.0.1` 会 `ERR_CONNECTION_REFUSED`（2026-11-15 实测，整套白跑约 2 分钟）；**不进 CI 只手工跑**。判据总数写死在 `EXPECTED_CHECKS`（现值不在本文记，现测方式见上），同批固定后不得增减，改判据必须同步该常量并说明差值来源，否则脚本以退出码 2 拒绝运行。套件在 **context 级别掐掉外部视频嵌入**（YouTube / Bilibili / 腾讯视频，与 `smoke:ui` 的 `stubExternalEmbeds` 同款）：`/posts/20260919135000/` 正文含裸 YouTube iframe，而整套用 `waitUntil:"load"` 导航、load 要等这些子帧——本站资源 634ms 就加载完，YouTube 子帧却要 8.7s、Google 广告 7.4s，连访两次把 load 拖到 15.5s、第二次直接 30s 超时（整套中途死掉、不产生任何 FAIL 行，看着像「套件没跑完」）。
 pnpm smoke:nice-books-migration  # 需博客与独立项目均已 build；NICE_BOOKS_DIST 指向独立项目 dist，MAIN_DIST 可指定博客 dist
 pnpm test:fancybox     # 灯箱 Playwright Smoke（关闭不跳位/焦点归还/定位按钮/下载新标签页/中文文案，需先 build + preview；FANCY_BASE_URL 可覆盖地址）
 `NICE_BOOKS_BASE_URL` 与旧 Nice Books 浏览器 smoke 一同于 2026-11-13 移除；2026-09-20 的放大项等待方式及本地/线上 27/27 是该旧 smoke 时期的历史记录。当前 migration smoke 使用两个本地产物目录，不接受站点 URL。
