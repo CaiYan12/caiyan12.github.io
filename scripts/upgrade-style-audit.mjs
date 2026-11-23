@@ -148,11 +148,10 @@ const STATE_SELECTORS = [
 ].join(",");
 // 只采这些属性：状态变化主要体现在描边、颜色、光标与盒模型
 // transform 族四个都必须在：Tailwind v4 把位移/旋转/缩放拆成独立属性，
-// 计算后的 `transform` 恒为 `none`（实测：nb-shuffle 的 hover:-translate-y-px 体现在
-// `translate: 0px -1px`，transform 不动）。站内所有 :active 规则改的正是这些
-// （`.gift-fab-btn:active` 的 scale(0.94)、`.nb-archive-action:active` 的
-// translateY(1px) scale(0.98)、`open-nav:active` 的 scale(0.94)），
-// Tailwind 的 `active:translate-y-0` / `disabled:translate-y-0` 同理。
+// 计算后的 `transform` 恒为 `none`（2026-11-04 实测迁出前的 nb-shuffle：hover:-translate-y-px
+// 体现在 `translate: 0px -1px`，transform 不动）。站内 :active 规则改的正是这些
+// （`.gift-fab-btn:active` 与 `open-nav:active` / `#mmenu .close-nav:active` 的 scale(0.94)）；
+// Tailwind 的位移/缩放 utility 同理。本站当前无 `-translate-*` utility 消费，仍保留采集以防回归。
 const STATE_PROPS = [
 	"color",
 	"background-color",
@@ -181,10 +180,11 @@ const STATE_MAX = 60;
 //
 // 纳不纳入的判断依据（2026-11-04 实测，探针 output/eng-discipline-2/probe-force-states.mjs）：
 //   · :active   —— 强制有效（实测色值改变），且站内有真实规则（gift-fab / open-nav /
-//                  site-modal__close / nb-archive-action），纳入。
+//                  .site-modal__close / #mmenu .close-nav），纳入。
 //   · :disabled —— 强制有效（实测在「已启用」按钮上强制后 cursor=not-allowed、opacity=0.5），
-//                  且站内有真实消费（src/pages/books/index.astro:22 的 nb-shuffle 按钮带
-//                  disabled:translate-y-0 / disabled:cursor-wait / disabled:opacity-60），纳入。
+//                  且站内有真实消费（src/components/control/Search.svelte 的
+//                  disabled:cursor-not-allowed / disabled:opacity-60，及
+//                  .newcomment-refresh:disabled / .weather-widget__refresh:disabled），纳入。
 //                  这类 utility 静默失效过（v4 迁移时 disabled: 变体不出 CSS），是具体补这个缺口的原因。
 //   · :checked  —— 强制有效，但全站零 `:checked` 规则、零 checkbox/radio 元素（只有 range 输入，
 //                  其 thumb 伪元素的规则靠元素自身 computed style 采不到），纳入只产出与默认态

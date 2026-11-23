@@ -276,17 +276,17 @@ OG 图端点在**构建期**从 `fonts.googleapis.com` 拉字体交给 satori，
 
 **哪种状态该加、怎么造（每条都有实测，别按直觉扩）**：
 
-| 状态                        | `forcePseudoState` | 站内消费方                                                                                          | 结论                           |
-| --------------------------- | ------------------ | --------------------------------------------------------------------------------------------------- | ------------------------------ |
-| `:hover` / `:focus-visible` | 有效               | 导航、卡片、焦点环                                                                                  | 已在用                         |
-| `:active`                   | 有效               | `.gift-fab-btn:active`、`open-nav:active`、`.site-modal__close:active`、`.nb-archive-action:active` | 2026-11-05 纳入                |
-| `:disabled`                 | 有效               | `src/pages/books/index.astro` 的 `nb-shuffle` 按钮（`disabled:cursor-wait` 等三个）                 | 2026-11-05 纳入                |
-| `:checked`                  | 有效               | **全站零 `:checked` 规则、零 checkbox/radio**（只有 range 输入）                                    | 不纳入：只产出噪声             |
-| `:visited`                  | **无效**           | —                                                                                                   | 永久排除：强制结果恒等于默认态 |
+| 状态                        | `forcePseudoState` | 站内消费方                                                                                                                                                              | 结论                           |
+| --------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `:hover` / `:focus-visible` | 有效               | 导航、卡片、焦点环                                                                                                                                                      | 已在用                         |
+| `:active`                   | 有效               | `.gift-fab-btn:active`、`open-nav:active`、`.site-modal__close:active`、`#mmenu .close-nav:active`                                                                      | 2026-11-05 纳入                |
+| `:disabled`                 | 有效               | `src/components/control/Search.svelte` 的 `disabled:cursor-not-allowed` / `disabled:opacity-60`，及 `.newcomment-refresh:disabled`、`.weather-widget__refresh:disabled` | 2026-11-05 纳入                |
+| `:checked`                  | 有效               | **全站零 `:checked` 规则、零 checkbox/radio**（只有 range 输入）                                                                                                        | 不纳入：只产出噪声             |
+| `:visited`                  | **无效**           | —                                                                                                                                                                       | 永久排除：强制结果恒等于默认态 |
 
 `:visited` 无效不是配置问题：Chrome 对 visited 样式有隐私限制，只在真实历史命中时生效，强制出来永远是默认态——那是**假阴性**，不是覆盖。
 
-**transform 族必须四个属性都采**：Tailwind v4 把位移/旋转/缩放拆成独立的 `translate` / `rotate` / `scale`，计算后的 `transform` 恒为 `none`。实测 `nb-shuffle` 的 `hover:-translate-y-px` 只体现在 `translate: 0px -1px`（`transform` 不动）。只采 `transform` 时，站内所有 `:active` 规则与 `active:` / `disabled:translate-y-0` 这类工具类**全都采不到**。静态 `PROPS` 同样补齐了这三个——静态层也有 `-translate-y` / `rotate-45` 的真实用法。diff 侧已把四者当同一「有效变换矩阵」判定（`TRANSFORM_FAMILY`），不会重复计数。
+**transform 族必须四个属性都采**：Tailwind v4 把位移/旋转/缩放拆成独立的 `translate` / `rotate` / `scale`，计算后的 `transform` 恒为 `none`。实测 `nb-shuffle` 的 `hover:-translate-y-px` 只体现在 `translate: 0px -1px`（`transform` 不动）——该按钮已随 Nice Books 迁出，现站内无 `-translate-*` utility，本条作为机制记录保留。只采 `transform` 时，站内所有 `:active` 规则与 `active:` / `disabled:translate-y-0` 这类工具类**全都采不到**。静态 `PROPS` 同样补齐了这三个——静态层也有 `-translate-y` / `rotate-45` 的真实用法。diff 侧已把四者当同一「有效变换矩阵」判定（`TRANSFORM_FAMILY`），不会重复计数。
 
 **指纹的行键必须带状态前缀**（2026-11-05 修，这条最隐蔽）：状态行的格式是 `:hover <标识> | <位置路径> | <属性…>`，**位置路径与静态行完全相同**；原实现 `key = l.split(" | ")[1]` 拿路径当键，同元素的多行在 `Map.set` 时互相覆盖。用真实采集量：首页 971 行按路径去重只剩 851 条——120 条状态行**全部丢失**，同时 60 条静态行被替换成该元素最后一条状态行。修法是键取「状态前缀 + 路径」。**加状态前必须先修这个，否则新增的状态只是把覆盖做得更彻底。** 判据：任一页 `new Set(lines.map(key)).size === lines.length`。
 
