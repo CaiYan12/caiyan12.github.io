@@ -49,7 +49,7 @@ _Avoid_: 文章评论区
 _Avoid_: 留言板
 
 **Nice Books（每日好书）**:
-由独立仓库 `CaiYan12/nice-books` 维护的图书推荐项目，提供随机发现书籍、站长推荐与书库浏览；博客只保留导航、sitemap 地址、旧路径兼容跳转和归属检查；无评论、无评分、无购买。博客迁移与发布记录见 [`docs/history/nice-books-migration-2026-11-13/README.md`](docs/history/nice-books-migration-2026-11-13/README.md)。
+由独立仓库 `CaiYan12/nice-books` 维护的图书推荐项目，提供随机发现书籍、站长推荐与书库浏览；博客只保留导航、sitemap 地址与归属检查，`/books/` 旧地址已于 2026-11-23 退役；无评论、无评分、无购买。博客迁移与发布记录见 [`docs/history/nice-books-migration-2026-11-13/README.md`](docs/history/nice-books-migration-2026-11-13/README.md)。
 _Avoid_: 博客文章、博客内业务模块、AI日报
 
 **今日好书**:
@@ -57,7 +57,7 @@ Nice Books 首页的访问级随机单本推荐；「换一换」约束新书 �
 _Avoid_: 每日固定推荐、按日期选书
 
 **书库**:
-Nice Books 的书籍资源库页面（/nice-books/archive/），支持搜索、标签筛选与双视图；博客旧地址 `/books/archive/` 会跳转到这里；不是推荐历史记录。
+Nice Books 的书籍资源库页面（/nice-books/archive/），支持搜索、标签筛选与双视图；博客旧地址 `/books/archive/` 已于 2026-11-23 退役；不是推荐历史记录。
 _Avoid_: 文章归档
 
 **站长荐语**:
@@ -85,7 +85,7 @@ _Avoid_: 头图、封面图、分享缩略图、社媒预览页
 _Avoid_: 把"关闭后自动跳回图片"当作定位
 
 **独立壳**:
-本仓库内不加载博客 `Layout.astro`、与主站样式隔离的页面形态，例如 `/domain/`、`/pelican-bike/`；它们各自维护字体、配色与导航入口。`/ai-news/` 与 Nice Books 已迁为独立项目，不属于本仓库的独立壳；`/books/` 路径仅作为兼容跳转保留。
+本仓库内不加载博客 `Layout.astro`、与主站样式隔离的页面形态，例如 `/domain/`、`/pelican-bike/`；它们各自维护字体、配色与导航入口。`/ai-news/` 与 Nice Books 已迁为独立项目，不属于本仓库的独立壳；`/books/` 兼容跳转已于 2026-11-23 退役。
 _Avoid_: 隔离页、裸页、外链页、已迁出的独立项目
 
 **当前页态**:

@@ -1,5 +1,17 @@
 # 更新日志
 
+## 2026-11-23：退役 /books/ 旧地址兼容层
+
+**改了什么**：删除 `/books/`、`/books/archive/` 与 `/books/01/`–`/books/70/` 共 72 个静态兼容页（`src/pages/books/`）、`NiceBooksLegacyRedirect.astro`、`src/data/nice-books-legacy-ids.ts` 与 `scripts/nice-books-migration-smoke.mjs`；`package.json` 移除 `smoke:nice-books-migration`，`astro.config.mjs` 的 sitemap 去掉 `/books/` 前缀过滤。`test:nice-books-ownership` 改为退役守卫：断言兼容层源码与脚本不再出现、`dist/books` 不存在，sitemap 仍保留 `/nice-books/` 且不含 `/books/`。同步 AGENTS、README、GLOSSARY、`docs/agents/components.md`、`docs/agents/commands.md` 与 `scripts/lib/smoke-pages.mjs`；新增 [ADR 0018](docs/adr/0018-retire-books-compatibility.md)。
+
+**为什么这么定**：ADR 0017 已写明旧地址退役由后续清理任务安排。兼容层是博客里唯一为已迁出业务保留的运行时产物，需要 ID 数据、跳转组件、归属测试和一条只验旧路径的 smoke；保留它只有历史链接收益，却持续占用构建产物与维护面。404 页兜底跳转、只删书目页等备选因仍需常驻特判或留下两条兼容路由被否，理由见 ADR 0018。
+
+**实测证据（2026-11-23，Windows 11 / Node 24.18.0 / pnpm 10.26.2）**：`pnpm build` **160 页**（退役前 232 页，差 72 = 3 条路由 + 70 个书目页）；`dist/books` 不存在；`dist/sitemap-0.xml` 中 `/books/` 命中 **0**、`/nice-books/` 命中 1；`pnpm test:nice-books-ownership` 与 `pnpm test:ai-news-ownership` 均 PASS；`pnpm done` 全绿。
+
+**怎么验证的**：`pnpm build` + `pnpm test:nice-books-ownership` + 对 `dist/sitemap-0.xml` 的 grep；`pnpm done`（prettier / astro check / 全部纯 node 单测 / 文档计数、版本与行尾守卫）。
+
+**踩坑**：① `scripts/verify-eol.mjs` 按 `git ls-files` 扫文件，删除未暂存时会对已删文件 `ENOENT` 退出 1——退役删除必须先 `git add` 再跑 `pnpm done`；② 构建会顺带改写 `src/constants/lqips.json` 与 GitHub 快照，本次刷新与退役无关，已还原（快照刷新留在 `stash@{0}`）。
+
 ## 2026-11-15：≤680px 不再下载壁纸
 
 **改了什么**：`src/utils/runtime/random-background.ts` 选图前先读计算样式（`isBackgroundLayerVisible`，`display !== "none"`）：背景层被 `global.css` 的 `@media (max-width: 680px)` 隐藏时不写 `src`、不置 `dataset.selected`，只在 resize 跨回可见时补选（`dataset.visibilityBound` 防重复挂监听；处理器回到同一个 `initRandomBackground()` 入口）。`random-background.test.ts` 新增 6 条（隐藏不写 / 可见照写 / 跨断点补选 / 重复 init 不叠监听 / 宽屏缩窄保留 / 取不到计算样式时 fail open）；`scripts/wallpaper-pull-smoke.mjs` 新增「390 全新加载无 `/images/bg/` 请求、拉到 1024 补上」两条判据（47 → 50 项）。README TODO 勾选并写实测证据；`docs/agents/components.md` 加维护约束；`GLOSSARY.md` 的「壁纸池」补「背景层可见时」。

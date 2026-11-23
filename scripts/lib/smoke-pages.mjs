@@ -47,8 +47,8 @@ export const SHELL_PAGES = [
  *
  * 注意 `/images/` 与 `/this-page-should-404/`：它们**没有 Layout 壳**，
  * 「恰好一个可见 h1」类判据在上面不成立，故只能进本组、不能进 SHELL_PAGES。
- * `/ai-news/` 与 Nice Books 均由独立项目维护；Nice Books 旧 URL 由
- * `smoke:nice-books-migration` 单独验收，不进入主站页面和样式审计清单。
+ * `/ai-news/` 与 Nice Books 均由独立项目维护；Nice Books 旧 `/books/` 地址已于
+ * 2026-11-23 退役（ADR 0018），不进入主站页面和样式审计清单。
  */
 export const AUDIT_EXTRA_PAGES = [
 	"/posts/20260831000000/",

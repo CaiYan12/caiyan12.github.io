@@ -99,10 +99,7 @@ export default defineConfig({
 			],
 			filter: (page) => {
 				const pathname = new URL(page).pathname;
-				return (
-					!pathname.endsWith("/page/1/") &&
-					!pathname.startsWith("/books/")
-				);
+				return !pathname.endsWith("/page/1/");
 			},
 		}),
 	],

@@ -76,21 +76,21 @@
 
 ### ✏️ 页面上的文字
 
-| 我想…                                           | 改这里                                                                               |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------ |
-| 留言板欢迎语                                    | `src/pages/guestbook.astro`                                                          |
-| 友链申请须知                                    | `src/pages/friends.astro`                                                            |
-| 404 页全部文案                                  | `src/pages/404.astro`                                                                |
-| 搜索页无 JS 兜底文案                            | `src/pages/search.astro`                                                             |
-| 各列表页的 `title=` / `description=` / 空态文案 | 对应 `src/pages/` 下的 `.astro`（每页 frontmatter 里就是）                           |
-| 技能页的分类/等级中文名                         | `src/pages/skills.astro` frontmatter 的 `categoryLabels` / `levelLabels`             |
-| 时间线的类型中文名                              | `src/pages/timeline.astro` frontmatter 的 `typeLabels`                               |
-| 标签云/分类云集的标题与前缀                     | `src/components/layout/TaxonomyListing.astro` 的 `KIND_CONFIG`                       |
-| 面包屑首项「首页」                              | `src/components/layout/ListingHeader.astro`                                          |
-| 文章卡「N 次吐槽 / 抢沙发」                     | `src/components/layout/PostCard.astro`                                               |
-| 版权声明整句                                    | `src/components/misc/License.astro`                                                  |
-| `/domain/` 终端壳的名片、自述、友链、署名       | `src/domain.html`（整份都是硬编码）                                                  |
-| 每日好书入口与旧地址兼容跳转                    | `src/config.ts` / `src/components/NiceBooksLegacyRedirect.astro` / `src/pages/books` |
+| 我想…                                           | 改这里                                                                   |
+| ----------------------------------------------- | ------------------------------------------------------------------------ |
+| 留言板欢迎语                                    | `src/pages/guestbook.astro`                                              |
+| 友链申请须知                                    | `src/pages/friends.astro`                                                |
+| 404 页全部文案                                  | `src/pages/404.astro`                                                    |
+| 搜索页无 JS 兜底文案                            | `src/pages/search.astro`                                                 |
+| 各列表页的 `title=` / `description=` / 空态文案 | 对应 `src/pages/` 下的 `.astro`（每页 frontmatter 里就是）               |
+| 技能页的分类/等级中文名                         | `src/pages/skills.astro` frontmatter 的 `categoryLabels` / `levelLabels` |
+| 时间线的类型中文名                              | `src/pages/timeline.astro` frontmatter 的 `typeLabels`                   |
+| 标签云/分类云集的标题与前缀                     | `src/components/layout/TaxonomyListing.astro` 的 `KIND_CONFIG`           |
+| 面包屑首项「首页」                              | `src/components/layout/ListingHeader.astro`                              |
+| 文章卡「N 次吐槽 / 抢沙发」                     | `src/components/layout/PostCard.astro`                                   |
+| 版权声明整句                                    | `src/components/misc/License.astro`                                      |
+| `/domain/` 终端壳的名片、自述、友链、署名       | `src/domain.html`（整份都是硬编码）                                      |
+| 每日好书入口                                    | `src/config.ts`                                                          |
 
 ### 🔌 需要跑命令的刷新
 
@@ -294,10 +294,9 @@ export const diary: DiaryItem[] = [
 
 ### 每日好书入口与兼容地址
 
-Nice Books 的业务源码、书目数据、设计和产品验收由[独立仓库 `CaiYan12/nice-books`](https://github.com/CaiYan12/nice-books)维护。博客只维护 `/nice-books/` 导航与 sitemap 入口、旧地址兼容页及边界检查；入口保留 `noSwup: true`，业务页面由独立项目构建发布。
+Nice Books 的业务源码、书目数据、设计和产品验收由[独立仓库 `CaiYan12/nice-books`](https://github.com/CaiYan12/nice-books)维护。博客只维护 `/nice-books/` 导航与 sitemap 入口及归属检查；入口保留 `noSwup: true`，业务页面由独立项目构建发布。
 
-旧地址继续兼容：`/books/` → `/nice-books/`，`/books/archive/` → `/nice-books/archive/`，`/books/01/` 至 `/books/70/` → 对应的 `/nice-books/` 页面。兼容跳转保留查询参数与 hash，旧地址不进入 sitemap 或博客 Pagefind 索引；旧 `/books/data.json` 数据接口已移除，不作为兼容地址。
-旧 `/books/` 兼容路径继续保留；退役另由后续任务安排。
+旧 `/books/` 兼容地址已于 2026-11-23 退役（[ADR 0018](docs/adr/0018-retire-books-compatibility.md)）：`/books/`、`/books/archive/` 与 `/books/01/`–`/books/70/` 不再生成兼容页，访问返回站内 404，也不再转发 query 与 hash。退役前它们从未进入 sitemap 或 Pagefind 索引；旧 `/books/data.json` 数据接口更早已移除。
 
 ### AI 日报 `/ai-news/`
 
@@ -392,9 +391,9 @@ OG 图由 Satori 接收普通元素对象生成；`@types/react` 供其 `ReactNo
 | `pnpm qa:weather-mainland`    | wttr.in 大陆直连实测（须在大陆网络，`NET`/`WINDOW` 两栏必填） |
 | `pnpm audit:ledger <票册.md>` | 票册自检（刻意不接进 build 与 CI）                            |
 
-> `smoke:nice-books-migration` 需要已构建的博客 `dist/` 和独立项目产物；`NICE_BOOKS_DIST` 指向独立项目的 `dist/`，博客产物默认使用当前仓库的 `dist/`，也可用 `MAIN_DIST` 指定。旧 `NICE_BOOKS_BASE_URL` 参数属于迁出前的博客 smoke。
+> `smoke:nice-books-migration` 与 `NICE_BOOKS_DIST` 已于 2026-11-23 随 `/books/` 兼容层退役删除（ADR 0018）。
 
-Nice Books 迁移检查不在 `pnpm build` 链内：`pnpm test:nice-books-ownership` 检查源码与兼容产物归属；`pnpm smoke:nice-books-migration` 检查桌面/移动入口及旧路径旅程。
+Nice Books 归属检查不在 `pnpm build` 链内：`pnpm test:nice-books-ownership` 断言退役后的源码、脚本、依赖、产物与 sitemap 边界。
 
 ### 构建链
 
