@@ -26,6 +26,12 @@
 		"tags": ["Blog", "Design"]
 	},
 	{
+		"name": "有毒的羊",
+		"url": "https://poisonous-sheep.github.io/",
+		"description": "我们打ACM不是区",
+		"tags": ["Blog", "Design", "Study"]
+	},
+	{
 		"name": "JUFE Offer",
 		"url": "https://jufe.woodfish.site/",
 		"description": "实习、竞赛和学习资料交流，打破信息差。",
