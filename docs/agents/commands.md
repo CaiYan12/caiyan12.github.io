@@ -71,6 +71,8 @@ pnpm audit:ledger <票册.md> [--offline]   # 票册自检：把票册「本文�
 pnpm format      # Prettier 格式化（tabWidth 4, useTabs true）
 ```
 
+新增友链后、提交前，运行 `pnpm fetch-friend-icons` 补齐缺失的缓存，再运行 `pnpm test:friend-icons`。将 `src/data/friends.json`、更新后的 `src/constants/friend-icons.json` 和新生成的 `public/friend-icons/` 图标一同提交。构建先运行离线缓存测试，再运行图标抓取。漏提交缓存会在抓取前中断部署。
+
 ### 本地预览该用哪一条（2026-11-02 立）
 
 - **Astro 7 本地监听（2026-11-02）**：`astro.config.mjs` 的 `vite.server.watch.ignored` 排除 `.pnpm-store` / `output`。Windows 上监听大量缓存/审计文件曾使启动阻塞到内容 RPC 超时，不能仅看首页 200 判断正常；检查日志有 `Synced content`、实际文章存在，以及内容/CSS/Svelte 的改动与恢复确实热更新。`pnpm dev` 会检查已有 dev server，换端口也不会绕过；先确认并停止本轮启动的旧进程，不要直接替换用户的服务。证据见 Astro 7 实施验收（已归档，索引与取回命令见 `docs/history/history.md` 的「归档清单（第五批）」）。
