@@ -1,5 +1,11 @@
 # 更新日志
 
+## 2026-11-26：补齐「有毒的羊」友链图标缓存
+
+新增友链时漏提交 favicon 及缓存清单条目，导致 [Pages 构建](https://github.com/CaiYan12/caiyan12.github.io/actions/runs/45741973640) 在 `test:friend-icons` 中退出。已从对方站点的源码仓库取回官网 favicon，并补入 `public/friend-icons/` 和 `src/constants/friend-icons.json`。本地运行 `node --test scripts/fetch-friend-icons.test.mjs`，全部通过。
+
+新增友链时的缓存生成与提交步骤见 [命令文档](docs/agents/commands.md#常用命令)。
+
 ## 2026-11-23：退役 /books/ 旧地址兼容层
 
 **改了什么**：删除 `/books/`、`/books/archive/` 与 `/books/01/`–`/books/70/` 共 72 个静态兼容页（`src/pages/books/`）、`NiceBooksLegacyRedirect.astro`、`src/data/nice-books-legacy-ids.ts` 与 `scripts/nice-books-migration-smoke.mjs`；`package.json` 移除 `smoke:nice-books-migration`，`astro.config.mjs` 的 sitemap 去掉 `/books/` 前缀过滤。`test:nice-books-ownership` 改为退役守卫：断言兼容层源码与脚本不再出现、`dist/books` 不存在，sitemap 仍保留 `/nice-books/` 且不含 `/books/`。同步 AGENTS、README、GLOSSARY、`docs/agents/components.md`、`docs/agents/commands.md` 与 `scripts/lib/smoke-pages.mjs`；新增 [ADR 0018](docs/adr/0018-retire-books-compatibility.md)。
